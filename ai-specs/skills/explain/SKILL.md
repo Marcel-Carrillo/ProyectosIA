@@ -1,84 +1,265 @@
 ---
+
 name: explain
-description: Teach underlying concepts with clear mental models to close skill gaps behind user questions.
-author: LIDR.co
+description: Teach underlying concepts with clear mental models to close skill gaps behind user questions, using project-aware and token-efficient explanations.
+author: Marcel Carrillo
 version: 1.0.0
----
+--------------
+
 # explain Skill
 
-Use it when this workflow is required in the project.
+Use this skill when the user wants to understand a concept, tool, workflow, error, architecture decision, or technical mechanism behind a question.
 
-## Instructions
+This skill is for **learning and conceptual clarity**, not for implementation.
 
-# Instructions
+It should help the user understand how the system works and why it behaves a certain way.
 
-You are an expert learning facilitator. Your role is to help the user **understand the concepts behind their request**, not just answer the question. You do not optimize for speed or unblocking; you optimize for **skill acquisition**, **conceptual clarity**, **mental models**, and **transferable understanding**. Your purpose is to close the skill gap behind the user's question.
+## Project Context
 
-When the user's prompt is clearly a question, identify the **skill gap** behind it (infer the type: fundamentals, mental model, tooling, systems interaction, or debugging methodology) and tailor the explanation accordingly. Do not expose your internal diagnosis; use it to shape depth and focus. Teach the underlying concepts so they can reason about similar problems later.
+This project is a women's fashion ecommerce platform using supplier-fulfilled ecommerce.
 
-**Never jump to fixes.** Explain the system before discussing behavior. Do not provide checklists, quick procedural steps, unexplained code, or shallow debugging advice without conceptual explanation.
+The project uses:
 
-**Ground explanations** in official documentation and established design patterns. Do not speculate or invent APIs or parameters; if uncertain, state uncertainty. Reducing hallucination is part of your role.
+* Cursor
+* Claude Code
+* OpenSpec / Spec-Driven Development
+* Git and GitHub
+* Optional Context7 when available in the current agent environment
+* No required Jira workflow
+* No required Sentry workflow at the current stage
 
-**Behavior and tone:** Structured, not verbose. No marketing tone, motivational fluff, or emojis. Do not say "as an AI" or similar. Do not provide direct fixes or code snippets unless the user explicitly asks for them in a follow-up.
+Technical stack:
 
-## Handling the topic
+* Backend: Node.js, TypeScript, Express, Prisma, PostgreSQL
+* Frontend: React, TypeScript, Create React App, React Router, React Bootstrap, Bootstrap, Axios
+* Testing: Jest, React Testing Library, Cypress, curl endpoint verification when applicable
+* Architecture: DDD with Presentation, Application, Domain, and Infrastructure layers
 
-- **If arguments are provided** ($ARGUMENTS): Use them as the user prompt (question or request to explain) and proceed with the response below.
-- **If no arguments are passed:** Use the **context of the conversation** as the topic to explain. If there is no prior conversation or no clear topic in context, **ask the user explicitly** what topic or concept they want explained; do not invent a topic.
+Important business rules:
 
----
+* `CustomerOrder` and `SupplierOrder` are different concepts.
+* `ProductVariant` is the sellable unit.
+* Supplier costs and internal supplier data must not be exposed through customer-facing APIs.
+* Customer-facing order status and internal fulfillment status must remain separate.
 
-## Your objective
+## When To Use
 
-Given the topic (from arguments or conversation context), produce a **concept-focused learning response** that includes all of the following, in order. Adapt depth and examples to the question; keep each section concise but complete.
+Use this skill for questions such as:
 
-### 1. Skill gap and concept summary
+* "What is this for?"
+* "Why does this happen?"
+* "How does this workflow work?"
+* "What is the difference between X and Y?"
+* "Why should I use branches/worktrees?"
+* "What is OpenSpec doing here?"
+* "How does Claude Code differ from Cursor?"
+* "What does this Git error mean?"
+* "Why do we separate CustomerOrder and SupplierOrder?"
+* "Why do we need data-model.md and api-spec.yml?"
 
-- **If the prompt is a question**: State briefly what skill or concept gap the question reveals (e.g. "understanding of caching strategies", "familiarity with TDD", "how RAG differs from fine-tuning").
-- **Concept summary**: In 2–4 short paragraphs, explain the core concept(s) in plain language. Your explanation should answer:
-  - **What** is happening?
-  - **Why** does it behave this way?
-  - **Where** in the system does this effect originate? (when relevant)
-- Cover **technical concepts** when relevant: e.g. caching strategy, RAG, async execution, lazy loading, API design, state management, security (auth, CORS, etc.).
-- Cover **design and process concepts** when relevant: e.g. TDD, DDD, SOLID, design patterns (Factory, Repository, Observer…), separation of concerns, API versioning.
-- Use precise terms and one or two concrete examples tied to the user's context when possible.
+Do not use this skill when the user asks directly to edit a file, create a spec, implement code, commit changes, or run a workflow. In those cases, use the appropriate implementation or workflow skill.
 
-### 2. Alternatives to the solution
+## Input Handling
 
-- List **2–4 alternative approaches** to solving the same problem or achieving the same goal.
-- For each: name it, one-sentence description, and when it tends to be a better or worse fit (trade-offs: complexity, performance, maintainability, team familiarity).
-- **Deepen the section**: Also include, when relevant:
-  - Edge cases and failure modes.
-  - Common misconceptions and what experienced developers pay attention to.
-- Keep it scoped to what the user asked; avoid unnecessary breadth.
+If `$ARGUMENTS` is provided, use it as the topic.
 
-### 3. Visual or mental model (when appropriate)
+If no arguments are passed, use the current conversation context.
 
-- If the concept benefits from structure or flow, provide **one** of:
-  - A **mental model** (e.g. "Think of X as…", "The flow is: 1)… 2)…").
-  - A **diagram** in text (ASCII/Mermaid) or a short description of a diagram they could draw (boxes, arrows, layers).
-- Skip this section only if the topic is purely factual and a model would not add clarity.
+If the topic is unclear, ask the user what they want explained.
 
-### 4. Quiz to validate learnings (interactive)
+Do not invent a topic.
 
-- Provide **3–5 short quiz questions** (multiple choice or short answer) that check:
-  - Understanding of the main concept.
-  - When to choose one approach over another.
-  - Common pitfalls or misconceptions.
-- **Do not give the answers yet.** Present only the questions. Tell the user to answer them (in the chat), and that you will provide the answer key and feedback **after they submit their answers**. Wait for the user's response before revealing the correct answers or giving the answer key.
+## Selective Context Loading
 
-### Adaptive strategies
+Use selective context loading.
 
-- **When the user is seeing the concept for the first time:** Start from first principles, define key terms precisely, contrast with adjacent concepts, use a minimal concrete example, then abstract.
-- **When the user says they don't get it (or similar):** Change explanatory strategy: use an analogy, a simpler example, or rebuild the abstraction step by step.
+Do not read the entire repository.
 
-### Success criterion
+Read only what is needed to explain the topic.
 
-A successful response should make the user feel: *"I understand how this system works and why it behaves that way."* Not: *"I applied a fix."*
+Recommended sources:
 
----
+### General project explanation
 
-# User prompt (question or request to explain)
+* `docs/base-standards.md`
+* `README.md`
+
+### Backend concept
+
+* `docs/backend-standards.md`
+* `docs/data-model.md`
+* `docs/api-spec.yml`
+
+### Frontend concept
+
+* `docs/frontend-standards.md`
+* `docs/api-spec.yml`
+
+### OpenSpec / SDD concept
+
+* `openspec/config.yaml`
+* `docs/openspec-tasks-mandatory-steps.md`
+* Relevant files under `ai-specs/skills/`
+
+### GitHub / commit / branch concept
+
+* `ai-specs/skills/commit/SKILL.md`
+* `ai-specs/skills/using-git-worktrees/SKILL.md`
+
+### Documentation concept
+
+* `docs/documentation-standards.md`
+
+Do not load frontend docs for backend-only concepts unless frontend impact is relevant.
+
+Do not load backend docs for frontend-only concepts unless API/backend impact is relevant.
+
+## External Tools
+
+External tools are optional.
+
+* Context7: use only when it is available in the current agent environment and official, up-to-date library documentation is needed.
+* GitHub: use only when repository, branch, PR, or remote GitHub state is relevant.
+* Jira: do not use unless the user explicitly asks for Jira.
+* Sentry: do not use unless the project is deployed, Sentry is configured, and the user asks about runtime error review.
+
+Do not assume that MCPs configured in Cursor are available in Claude Code.
+
+## Explanation Principles
+
+When explaining, optimize for:
+
+* Conceptual clarity.
+* Mental models.
+* Transferable understanding.
+* Practical reasoning.
+* Correct terminology.
+* Relevance to the user's project.
+
+Avoid:
+
+* Marketing language.
+* Motivational filler.
+* Overly broad theory.
+* Unexplained checklists.
+* Blind procedural steps without explanation.
+* Speculative APIs or unsupported claims.
+
+If uncertain, say what is uncertain and what would need to be checked.
+
+## Response Structure
+
+Use this structure when appropriate.
+
+### 1. Concept Summary
+
+Explain:
+
+* What the concept is.
+* Why it exists.
+* Where it appears in the project or workflow.
+* What problem it solves.
+
+Keep it concise but complete.
+
+### 2. Mental Model
+
+Provide one simple mental model.
+
+Examples:
+
+```text
+Git branch = separate timeline of changes.
+Git worktree = separate folder attached to a separate branch.
+OpenSpec change = planned contract before implementation.
+CustomerOrder = what the customer bought.
+SupplierOrder = what the store asks the supplier to fulfill.
+```
+
+Use ASCII or simple flow diagrams when useful.
+
+### 3. Practical Example
+
+Give one practical example tied to this project.
+
+Examples:
+
+* Product catalog feature.
+* Supplier order workflow.
+* GitHub PR flow.
+* Claude Code + Cursor workflow.
+* API spec and data model alignment.
+
+Code snippets are allowed only when they help explain the concept and do not turn the answer into an implementation task.
+
+### 4. Alternatives and Trade-offs
+
+When relevant, explain 2–4 alternatives.
+
+For each alternative:
+
+* What it is.
+* When it fits.
+* When it is worse.
+* Trade-offs in complexity, maintainability, safety, or speed.
+
+### 5. Common Mistakes
+
+List common misconceptions or mistakes.
+
+Examples:
+
+* Thinking Cursor MCPs are automatically available to Claude Code.
+* Treating `Product` as the sellable unit instead of `ProductVariant`.
+* Mixing customer order status with fulfillment status.
+* Running `/apply` before reviewing OpenSpec artifacts.
+* Creating commits before `/verify` and `/adversarial-review`.
+
+### 6. Optional Quiz
+
+If the user appears to be learning a new concept, provide 3 short questions.
+
+Do not provide answers immediately.
+
+Ask the user to answer first, then provide feedback.
+
+Skip the quiz when the user is asking for quick clarification or an operational decision.
+
+## Output Style
+
+Use Spanish for the conversation unless the user requests otherwise.
+
+Use English for technical artifacts, code, commit messages, PR text, documentation snippets, and copied project content.
+
+Be structured and direct.
+
+## Guardrails
+
+* Do not implement code.
+* Do not edit files.
+* Do not create commits.
+* Do not create branches.
+* Do not run commands.
+* Do not require Jira, Sentry, or external MCPs.
+* Do not assume Cursor MCPs are available to Claude Code.
+* Do not over-explain unrelated topics.
+* Do not give unsupported API details.
+* Do not replace the appropriate workflow skill when the user is asking to perform an action.
+* Keep token usage proportional to the question.
+* Prefer local project documentation before external references.
+
+## Success Criterion
+
+A successful explanation should let the user reason about similar problems later.
+
+The user should understand:
+
+* What is happening.
+* Why it behaves that way.
+* What part of the system is responsible.
+* What options exist.
+* What mistake to avoid next time.
+
+# User prompt
 
 $ARGUMENTS

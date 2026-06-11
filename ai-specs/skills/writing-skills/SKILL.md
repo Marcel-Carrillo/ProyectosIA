@@ -1,655 +1,578 @@
 ---
 name: writing-skills
-description: Use when creating new skills, editing existing skills, or verifying skills work before deployment
+description: Use when creating, editing, reviewing, or validating local project skills for Claude Code, Cursor, OpenSpec, or AI workflow automation.
+author: Marcel Carrillo
+version: 1.0.0
 ---
 
-# Writing Skills
+# writing-skills Skill
 
-## Overview
+Use this skill when creating, editing, reviewing, or validating local skills for this project.
 
-**Writing skills IS Test-Driven Development applied to process documentation.**
+This project uses local skills to guide Claude Code, Cursor, OpenSpec, GitHub workflows, documentation updates, audits, reviews, and implementation support.
 
-**Personal skills live in agent-specific directories (`~/.claude/skills` for Claude Code, `~/.agents/skills/` for Codex)** 
+Skills must be precise, scoped, project-aware, safe, and efficient.
 
-You write test cases (pressure scenarios with subagents), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
+## Project Context
 
-**Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill teaches the right thing.
+This project is a women's fashion ecommerce platform using supplier-fulfilled ecommerce.
 
-**REQUIRED BACKGROUND:** You MUST understand superpowers:test-driven-development before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
+The project uses:
 
-**Official guidance:** For Anthropic's official skill authoring best practices, see anthropic-best-practices.md. This document provides additional patterns and guidelines that complement the TDD-focused approach in this skill.
+* Cursor
+* Claude Code
+* OpenSpec / Spec-Driven Development
+* Git and GitHub
+* Optional Context7 when available in the current agent environment
+* No required Jira workflow
+* No required Sentry workflow at the current stage
 
-## What is a Skill?
+Technical stack:
 
-A **skill** is a reference guide for proven techniques, patterns, or tools. Skills help future Claude instances find and apply effective approaches.
+* Backend: Node.js, TypeScript, Express, Prisma, PostgreSQL
+* Frontend: React, TypeScript, Create React App, React Router, React Bootstrap, Bootstrap, Axios
+* Testing: Jest, React Testing Library, Cypress, curl endpoint verification when applicable
+* Architecture: DDD with Presentation, Application, Domain, and Infrastructure layers
 
-**Skills are:** Reusable techniques, patterns, tools, reference guides
+Important business rules:
 
-**Skills are NOT:** Narratives about how you solved a problem once
+* `CustomerOrder` and `SupplierOrder` are different concepts.
+* A customer order may generate one or more supplier orders.
+* `ProductVariant` is the sellable unit.
+* Supplier costs, supplier credentials, supplier notes, supplier references, and internal fulfillment notes must not be exposed through customer-facing APIs.
+* Customer-facing order status and internal fulfillment status must remain separate.
+* Payment status, order status, fulfillment status, supplier order status, shipment status, return status, and refund status must not be mixed.
+* The first version prioritizes manual supplier order processing over premature automation.
 
-## TDD Mapping for Skills
+## Canonical Skill Location
 
-| TDD Concept | Skill Creation |
-|-------------|----------------|
-| **Test case** | Pressure scenario with subagent |
-| **Production code** | Skill document (SKILL.md) |
-| **Test fails (RED)** | Agent violates rule without skill (baseline) |
-| **Test passes (GREEN)** | Agent complies with skill present |
-| **Refactor** | Close loopholes while maintaining compliance |
-| **Write test first** | Run baseline scenario BEFORE writing skill |
-| **Watch it fail** | Document exact rationalizations agent uses |
-| **Minimal code** | Write skill addressing those specific violations |
-| **Watch it pass** | Verify agent now complies |
-| **Refactor cycle** | Find new rationalizations → plug → re-verify |
+Canonical skills live under:
 
-The entire skill creation process follows RED-GREEN-REFACTOR.
-
-## When to Create a Skill
-
-**Create when:**
-- Technique wasn't intuitively obvious to you
-- You'd reference this again across projects
-- Pattern applies broadly (not project-specific)
-- Others would benefit
-
-**Don't create for:**
-- One-off solutions
-- Standard practices well-documented elsewhere
-- Project-specific conventions (put in CLAUDE.md)
-- Mechanical constraints (if it's enforceable with regex/validation, automate it—save documentation for judgment calls)
-
-## Skill Types
-
-### Technique
-Concrete method with steps to follow (condition-based-waiting, root-cause-tracing)
-
-### Pattern
-Way of thinking about problems (flatten-with-flags, test-invariants)
-
-### Reference
-API docs, syntax guides, tool documentation (office docs)
-
-## Directory Structure
-
-
-```
-skills/
-  skill-name/
-    SKILL.md              # Main reference (required)
-    supporting-file.*     # Only if needed
+```text
+ai-specs/skills/<skill-name>/SKILL.md
 ```
 
-**Flat namespace** - all skills in one searchable namespace
+Agent-facing mirrors may exist under:
 
-**Separate files for:**
-1. **Heavy reference** (100+ lines) - API docs, comprehensive syntax
-2. **Reusable tools** - Scripts, utilities, templates
+```text
+.claude/skills
+.cursor/skills
+```
 
-**Keep inline:**
-- Principles and concepts
-- Code patterns (< 50 lines)
-- Everything else
+`ai-specs/skills` is the source of truth.
 
-## SKILL.md Structure
+Use `sync-agent-symlinks` after adding, removing, renaming, or moving skills.
 
-**Frontmatter (YAML):**
-- Two required fields: `name` and `description` (see [agentskills.io/specification](https://agentskills.io/specification) for all supported fields)
-- Max 1024 characters total
-- `name`: Use letters, numbers, and hyphens only (no parentheses, special chars)
-- `description`: Third-person, describes ONLY when to use (NOT what it does)
-  - Start with "Use when..." to focus on triggering conditions
-  - Include specific symptoms, situations, and contexts
-  - **NEVER summarize the skill's process or workflow** (see CSO section for why)
-  - Keep under 500 characters if possible
+## What Is a Skill?
 
-```markdown
+A skill is a reusable instruction document that teaches an AI agent how to perform a recurring task safely and consistently.
+
+Skills are:
+
+* Workflow guides.
+* Process rules.
+* Project-specific operational instructions.
+* Reusable patterns.
+* Safety and verification guardrails.
+* Tool usage policies.
+
+Skills are not:
+
+* One-off notes.
+* Random chat summaries.
+* Long project documentation.
+* Full implementation plans.
+* Temporary scratchpads.
+* Replacement for OpenSpec changes.
+
+## When To Create or Edit a Skill
+
+Create or edit a skill when:
+
+* The same workflow will be used repeatedly.
+* The agent needs consistent behavior across sessions.
+* A previous agent made the same mistake more than once.
+* A workflow needs clear guardrails.
+* A tool should be used only under specific conditions.
+* A project-specific process should be preserved.
+
+Do not create a skill when:
+
+* The instruction is one-off.
+* The content belongs in `docs/`.
+* The change is purely feature-specific and belongs in OpenSpec.
+* A simple script or validation rule would enforce it better.
+* The user only needs a temporary prompt.
+
+## Skill Naming Rules
+
+Skill names should:
+
+* Use lowercase letters, numbers, and hyphens.
+* Be short and descriptive.
+* Describe the action or workflow.
+* Avoid spaces, underscores, parentheses, and special characters.
+
+Good examples:
+
+```text
+commit
+update-docs
+adversarial-review
+code-auditing
+using-git-worktrees
+openspec-sync-specs
+sync-agent-symlinks
+```
+
+Avoid:
+
+```text
+Commit Skill
+skill_creation
+my(skill)
+general-helper
+misc
+```
+
+## Required File Structure
+
+Each skill should follow this structure:
+
+```text
+ai-specs/skills/<skill-name>/
+  SKILL.md
+```
+
+Optional supporting files are allowed only when useful:
+
+```text
+ai-specs/skills/<skill-name>/
+  SKILL.md
+  references/
+    <reference-file>.md
+  examples/
+    <example-file>.md
+  scripts/
+    <script-file>
+```
+
+Use supporting files only for:
+
+* Long references.
+* Reusable examples.
+* Scripts.
+* Heavy documentation that would make `SKILL.md` too large.
+
+Keep the main `SKILL.md` focused.
+
+## Frontmatter
+
+Each `SKILL.md` must start with YAML frontmatter.
+
+Required fields:
+
+```yaml
 ---
-name: Skill-Name-With-Hyphens
-description: Use when [specific triggering conditions and symptoms]
+name: <skill-name>
+description: Use when <specific triggering condition>
+author: Marcel Carrillo
+version: 1.0.0
 ---
-
-# Skill Name
-
-## Overview
-What is this? Core principle in 1-2 sentences.
-
-## When to Use
-[Small inline flowchart IF decision non-obvious]
-
-Bullet list with SYMPTOMS and use cases
-When NOT to use
-
-## Core Pattern (for techniques/patterns)
-Before/after code comparison
-
-## Quick Reference
-Table or bullets for scanning common operations
-
-## Implementation
-Inline code for simple patterns
-Link to file for heavy reference or reusable tools
-
-## Common Mistakes
-What goes wrong + fixes
-
-## Real-World Impact (optional)
-Concrete results
 ```
 
+Rules:
 
-## Claude Search Optimization (CSO)
+* `name` must match the skill folder name.
+* `description` should explain when to use the skill.
+* `description` should start with `Use when`.
+* `description` should not summarize the entire workflow.
+* `author` should be `Marcel Carrillo`.
+* `version` should use semantic-style numbering such as `1.0.0`.
 
-**Critical for discovery:** Future Claude needs to FIND your skill
-
-### 1. Rich Description Field
-
-**Purpose:** Claude reads description to decide which skills to load for a given task. Make it answer: "Should I read this skill right now?"
-
-**Format:** Start with "Use when..." to focus on triggering conditions
-
-**CRITICAL: Description = When to Use, NOT What the Skill Does**
-
-The description should ONLY describe triggering conditions. Do NOT summarize the skill's process or workflow in the description.
-
-**Why this matters:** Testing revealed that when a description summarizes the skill's workflow, Claude may follow the description instead of reading the full skill content. A description saying "code review between tasks" caused Claude to do ONE review, even though the skill's flowchart clearly showed TWO reviews (spec compliance then code quality).
-
-When the description was changed to just "Use when executing implementation plans with independent tasks" (no workflow summary), Claude correctly read the flowchart and followed the two-stage review process.
-
-**The trap:** Descriptions that summarize workflow create a shortcut Claude will take. The skill body becomes documentation Claude skips.
+Example:
 
 ```yaml
-# ❌ BAD: Summarizes workflow - Claude may follow this instead of reading skill
-description: Use when executing plans - dispatches subagent per task with code review between tasks
-
-# ❌ BAD: Too much process detail
-description: Use for TDD - write test first, watch it fail, write minimal code, refactor
-
-# ✅ GOOD: Just triggering conditions, no workflow summary
-description: Use when executing implementation plans with independent tasks in the current session
-
-# ✅ GOOD: Triggering conditions only
-description: Use when implementing any feature or bugfix, before writing implementation code
+---
+name: update-docs
+description: Use when project documentation must be updated after code, API, data model, OpenSpec, or workflow changes.
+author: Marcel Carrillo
+version: 1.0.0
+---
 ```
 
-**Content:**
-- Use concrete triggers, symptoms, and situations that signal this skill applies
-- Describe the *problem* (race conditions, inconsistent behavior) not *language-specific symptoms* (setTimeout, sleep)
-- Keep triggers technology-agnostic unless the skill itself is technology-specific
-- If skill is technology-specific, make that explicit in the trigger
-- Write in third person (injected into system prompt)
-- **NEVER summarize the skill's process or workflow**
+## Description Rules
+
+The description is important because agents use it to decide whether to load the skill.
+
+Good descriptions:
 
 ```yaml
-# ❌ BAD: Too abstract, vague, doesn't include when to use
-description: For async testing
-
-# ❌ BAD: First person
-description: I can help you with async tests when they're flaky
-
-# ❌ BAD: Mentions technology but skill isn't specific to it
-description: Use when tests use setTimeout/sleep and are flaky
-
-# ✅ GOOD: Starts with "Use when", describes problem, no workflow
-description: Use when tests have race conditions, timing dependencies, or pass/fail inconsistently
-
-# ✅ GOOD: Technology-specific skill with explicit trigger
-description: Use when using React Router and handling authentication redirects
+description: Use when project documentation must be updated after code, API, data model, OpenSpec, or workflow changes.
+description: Use when creating focused commits and GitHub pull requests after local verification.
+description: Use when reviewing implemented changes for spec alignment, safety, ecommerce correctness, and release readiness.
 ```
 
-### 2. Keyword Coverage
-
-Use words Claude would search for:
-- Error messages: "Hook timed out", "ENOTEMPTY", "race condition"
-- Symptoms: "flaky", "hanging", "zombie", "pollution"
-- Synonyms: "timeout/hang/freeze", "cleanup/teardown/afterEach"
-- Tools: Actual commands, library names, file types
-
-### 3. Descriptive Naming
-
-**Use active voice, verb-first:**
-- ✅ `creating-skills` not `skill-creation`
-- ✅ `condition-based-waiting` not `async-test-helpers`
-
-### 4. Token Efficiency (Critical)
-
-**Problem:** getting-started and frequently-referenced skills load into EVERY conversation. Every token counts.
-
-**Target word counts:**
-- getting-started workflows: <150 words each
-- Frequently-loaded skills: <200 words total
-- Other skills: <500 words (still be concise)
-
-**Techniques:**
-
-**Move details to tool help:**
-```bash
-# ❌ BAD: Document all flags in SKILL.md
-search-conversations supports --text, --both, --after DATE, --before DATE, --limit N
-
-# ✅ GOOD: Reference --help
-search-conversations supports multiple modes and filters. Run --help for details.
-```
-
-**Use cross-references:**
-```markdown
-# ❌ BAD: Repeat workflow details
-When searching, dispatch subagent with template...
-[20 lines of repeated instructions]
-
-# ✅ GOOD: Reference other skill
-Always use subagents (50-100x context savings). REQUIRED: Use [other-skill-name] for workflow.
-```
-
-**Compress examples:**
-```markdown
-# ❌ BAD: Verbose example (42 words)
-your human partner: "How did we handle authentication errors in React Router before?"
-You: I'll search past conversations for React Router authentication patterns.
-[Dispatch subagent with search query: "React Router authentication error handling 401"]
-
-# ✅ GOOD: Minimal example (20 words)
-Partner: "How did we handle auth errors in React Router?"
-You: Searching...
-[Dispatch subagent → synthesis]
-```
-
-**Eliminate redundancy:**
-- Don't repeat what's in cross-referenced skills
-- Don't explain what's obvious from command
-- Don't include multiple examples of same pattern
-
-**Verification:**
-```bash
-wc -w skills/path/SKILL.md
-# getting-started workflows: aim for <150 each
-# Other frequently-loaded: aim for <200 total
-```
-
-**Name by what you DO or core insight:**
-- ✅ `condition-based-waiting` > `async-test-helpers`
-- ✅ `using-skills` not `skill-usage`
-- ✅ `flatten-with-flags` > `data-structure-refactoring`
-- ✅ `root-cause-tracing` > `debugging-techniques`
-
-**Gerunds (-ing) work well for processes:**
-- `creating-skills`, `testing-skills`, `debugging-with-logs`
-- Active, describes the action you're taking
-
-### 4. Cross-Referencing Other Skills
-
-**When writing documentation that references other skills:**
-
-Use skill name only, with explicit requirement markers:
-- ✅ Good: `**REQUIRED SUB-SKILL:** Use superpowers:test-driven-development`
-- ✅ Good: `**REQUIRED BACKGROUND:** You MUST understand superpowers:systematic-debugging`
-- ❌ Bad: `See skills/testing/test-driven-development` (unclear if required)
-- ❌ Bad: `@skills/testing/test-driven-development/SKILL.md` (force-loads, burns context)
-
-**Why no @ links:** `@` syntax force-loads files immediately, consuming 200k+ context before you need them.
-
-## Flowchart Usage
-
-```dot
-digraph when_flowchart {
-    "Need to show information?" [shape=diamond];
-    "Decision where I might go wrong?" [shape=diamond];
-    "Use markdown" [shape=box];
-    "Small inline flowchart" [shape=box];
-
-    "Need to show information?" -> "Decision where I might go wrong?" [label="yes"];
-    "Decision where I might go wrong?" -> "Small inline flowchart" [label="yes"];
-    "Decision where I might go wrong?" -> "Use markdown" [label="no"];
-}
-```
-
-**Use flowcharts ONLY for:**
-- Non-obvious decision points
-- Process loops where you might stop too early
-- "When to use A vs B" decisions
-
-**Never use flowcharts for:**
-- Reference material → Tables, lists
-- Code examples → Markdown blocks
-- Linear instructions → Numbered lists
-- Labels without semantic meaning (step1, helper2)
-
-See @graphviz-conventions.dot for graphviz style rules.
-
-**Visualizing for your human partner:** Use `render-graphs.js` in this directory to render a skill's flowcharts to SVG:
-```bash
-./render-graphs.js ../some-skill           # Each diagram separately
-./render-graphs.js ../some-skill --combine # All diagrams in one SVG
-```
-
-## Code Examples
-
-**One excellent example beats many mediocre ones**
-
-Choose most relevant language:
-- Testing techniques → TypeScript/JavaScript
-- System debugging → Shell/Python
-- Data processing → Python
-
-**Good example:**
-- Complete and runnable
-- Well-commented explaining WHY
-- From real scenario
-- Shows pattern clearly
-- Ready to adapt (not generic template)
-
-**Don't:**
-- Implement in 5+ languages
-- Create fill-in-the-blank templates
-- Write contrived examples
-
-You're good at porting - one great example is enough.
-
-## File Organization
-
-### Self-Contained Skill
-```
-defense-in-depth/
-  SKILL.md    # Everything inline
-```
-When: All content fits, no heavy reference needed
-
-### Skill with Reusable Tool
-```
-condition-based-waiting/
-  SKILL.md    # Overview + patterns
-  example.ts  # Working helpers to adapt
-```
-When: Tool is reusable code, not just narrative
-
-### Skill with Heavy Reference
-```
-pptx/
-  SKILL.md       # Overview + workflows
-  pptxgenjs.md   # 600 lines API reference
-  ooxml.md       # 500 lines XML structure
-  scripts/       # Executable tools
-```
-When: Reference material too large for inline
-
-## The Iron Law (Same as TDD)
-
-```
-NO SKILL WITHOUT A FAILING TEST FIRST
-```
-
-This applies to NEW skills AND EDITS to existing skills.
-
-Write skill before testing? Delete it. Start over.
-Edit skill without testing? Same violation.
-
-**No exceptions:**
-- Not for "simple additions"
-- Not for "just adding a section"
-- Not for "documentation updates"
-- Don't keep untested changes as "reference"
-- Don't "adapt" while running tests
-- Delete means delete
-
-**REQUIRED BACKGROUND:** The superpowers:test-driven-development skill explains why this matters. Same principles apply to documentation.
-
-## Testing All Skill Types
-
-Different skill types need different test approaches:
-
-### Discipline-Enforcing Skills (rules/requirements)
-
-**Examples:** TDD, verification-before-completion, designing-before-coding
-
-**Test with:**
-- Academic questions: Do they understand the rules?
-- Pressure scenarios: Do they comply under stress?
-- Multiple pressures combined: time + sunk cost + exhaustion
-- Identify rationalizations and add explicit counters
-
-**Success criteria:** Agent follows rule under maximum pressure
-
-### Technique Skills (how-to guides)
-
-**Examples:** condition-based-waiting, root-cause-tracing, defensive-programming
-
-**Test with:**
-- Application scenarios: Can they apply the technique correctly?
-- Variation scenarios: Do they handle edge cases?
-- Missing information tests: Do instructions have gaps?
-
-**Success criteria:** Agent successfully applies technique to new scenario
-
-### Pattern Skills (mental models)
-
-**Examples:** reducing-complexity, information-hiding concepts
-
-**Test with:**
-- Recognition scenarios: Do they recognize when pattern applies?
-- Application scenarios: Can they use the mental model?
-- Counter-examples: Do they know when NOT to apply?
-
-**Success criteria:** Agent correctly identifies when/how to apply pattern
-
-### Reference Skills (documentation/APIs)
-
-**Examples:** API documentation, command references, library guides
-
-**Test with:**
-- Retrieval scenarios: Can they find the right information?
-- Application scenarios: Can they use what they found correctly?
-- Gap testing: Are common use cases covered?
-
-**Success criteria:** Agent finds and correctly applies reference information
-
-## Common Rationalizations for Skipping Testing
-
-| Excuse | Reality |
-|--------|---------|
-| "Skill is obviously clear" | Clear to you ≠ clear to other agents. Test it. |
-| "It's just a reference" | References can have gaps, unclear sections. Test retrieval. |
-| "Testing is overkill" | Untested skills have issues. Always. 15 min testing saves hours. |
-| "I'll test if problems emerge" | Problems = agents can't use skill. Test BEFORE deploying. |
-| "Too tedious to test" | Testing is less tedious than debugging bad skill in production. |
-| "I'm confident it's good" | Overconfidence guarantees issues. Test anyway. |
-| "Academic review is enough" | Reading ≠ using. Test application scenarios. |
-| "No time to test" | Deploying untested skill wastes more time fixing it later. |
-
-**All of these mean: Test before deploying. No exceptions.**
-
-## Bulletproofing Skills Against Rationalization
-
-Skills that enforce discipline (like TDD) need to resist rationalization. Agents are smart and will find loopholes when under pressure.
-
-**Psychology note:** Understanding WHY persuasion techniques work helps you apply them systematically. See persuasion-principles.md for research foundation (Cialdini, 2021; Meincke et al., 2025) on authority, commitment, scarcity, social proof, and unity principles.
-
-### Close Every Loophole Explicitly
-
-Don't just state the rule - forbid specific workarounds:
-
-<Bad>
-```markdown
-Write code before test? Delete it.
-```
-</Bad>
-
-<Good>
-```markdown
-Write code before test? Delete it. Start over.
-
-**No exceptions:**
-- Don't keep it as "reference"
-- Don't "adapt" it while writing tests
-- Don't look at it
-- Delete means delete
-```
-</Good>
-
-### Address "Spirit vs Letter" Arguments
-
-Add foundational principle early:
-
-```markdown
-**Violating the letter of the rules is violating the spirit of the rules.**
-```
-
-This cuts off entire class of "I'm following the spirit" rationalizations.
-
-### Build Rationalization Table
-
-Capture rationalizations from baseline testing (see Testing section below). Every excuse agents make goes in the table:
-
-```markdown
-| Excuse | Reality |
-|--------|---------|
-| "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
-| "I'll test after" | Tests passing immediately prove nothing. |
-| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" |
-```
-
-### Create Red Flags List
-
-Make it easy for agents to self-check when rationalizing:
-
-```markdown
-## Red Flags - STOP and Start Over
-
-- Code before test
-- "I already manually tested it"
-- "Tests after achieve the same purpose"
-- "It's about spirit not ritual"
-- "This is different because..."
-
-**All of these mean: Delete code. Start over with TDD.**
-```
-
-### Update CSO for Violation Symptoms
-
-Add to description: symptoms of when you're ABOUT to violate the rule:
+Bad descriptions:
 
 ```yaml
-description: use when implementing any feature or bugfix, before writing implementation code
+description: This skill stages files, writes a commit, pushes, creates a PR, checks verification, and reports the URL.
+description: A useful skill for docs.
+description: General helper.
 ```
 
-## RED-GREEN-REFACTOR for Skills
+Why:
 
-Follow the TDD cycle:
+* Descriptions should trigger loading.
+* They should not replace the full skill body.
+* They should not encourage shortcuts.
 
-### RED: Write Failing Test (Baseline)
+## Recommended SKILL.md Structure
 
-Run pressure scenario with subagent WITHOUT the skill. Document exact behavior:
-- What choices did they make?
-- What rationalizations did they use (verbatim)?
-- Which pressures triggered violations?
+Use this structure unless the skill clearly needs something different:
 
-This is "watch the test fail" - you must see what agents naturally do before writing the skill.
+```markdown
+# <skill-name> Skill
 
-### GREEN: Write Minimal Skill
+<One short paragraph explaining the purpose.>
 
-Write skill that addresses those specific rationalizations. Don't add extra content for hypothetical cases.
+## Project Context
 
-Run same scenarios WITH skill. Agent should now comply.
+<Only include project context relevant to this skill.>
 
-### REFACTOR: Close Loopholes
+## When To Use
 
-Agent found new rationalization? Add explicit counter. Re-test until bulletproof.
+<Specific triggers and situations.>
 
-**Testing methodology:** See @testing-skills-with-subagents.md for the complete testing methodology:
-- How to write pressure scenarios
-- Pressure types (time, sunk cost, authority, exhaustion)
-- Plugging holes systematically
-- Meta-testing techniques
+## Inputs
 
-## Anti-Patterns
+<Arguments, files, or context the skill expects.>
 
-### ❌ Narrative Example
-"In session 2025-10-03, we found empty projectDir caused..."
-**Why bad:** Too specific, not reusable
+## Selective Context Loading
 
-### ❌ Multi-Language Dilution
-example-js.js, example-py.py, example-go.go
-**Why bad:** Mediocre quality, maintenance burden
+<Which files to read and when.>
 
-### ❌ Code in Flowcharts
-```dot
-step1 [label="import fs"];
-step2 [label="read file"];
+## Workflow
+
+<Steps to follow.>
+
+## Output Format
+
+<Expected final response or report format.>
+
+## External Tools
+
+<Which tools are allowed, optional, forbidden, or conditional.>
+
+## Guardrails
+
+<What the agent must not do.>
 ```
-**Why bad:** Can't copy-paste, hard to read
 
-### ❌ Generic Labels
-helper1, helper2, step3, pattern4
-**Why bad:** Labels should have semantic meaning
+## Selective Context Loading
 
-## STOP: Before Moving to Next Skill
+Every skill should avoid loading the whole repository.
 
-**After writing ANY skill, you MUST STOP and complete the deployment process.**
+Prefer task-specific context.
 
-**Do NOT:**
-- Create multiple skills in batch without testing each
-- Move to next skill before current one is verified
-- Skip testing because "batching is more efficient"
+### Backend-related skill context
 
-**The deployment checklist below is MANDATORY for EACH skill.**
+Use only when backend is relevant:
 
-Deploying untested skills = deploying untested code. It's a violation of quality standards.
+```text
+docs/base-standards.md
+docs/backend-standards.md
+docs/data-model.md
+docs/api-spec.yml
+docs/openspec-tasks-mandatory-steps.md
+```
 
-## Skill Creation Checklist (TDD Adapted)
+### Frontend-related skill context
 
-**IMPORTANT: Use TodoWrite to create todos for EACH checklist item below.**
+Use only when frontend is relevant:
 
-**RED Phase - Write Failing Test:**
-- [ ] Create pressure scenarios (3+ combined pressures for discipline skills)
-- [ ] Run scenarios WITHOUT skill - document baseline behavior verbatim
-- [ ] Identify patterns in rationalizations/failures
+```text
+docs/base-standards.md
+docs/frontend-standards.md
+docs/api-spec.yml
+docs/openspec-tasks-mandatory-steps.md
+```
 
-**GREEN Phase - Write Minimal Skill:**
-- [ ] Name uses only letters, numbers, hyphens (no parentheses/special chars)
-- [ ] YAML frontmatter with required `name` and `description` fields (max 1024 chars; see [spec](https://agentskills.io/specification))
-- [ ] Description starts with "Use when..." and includes specific triggers/symptoms
-- [ ] Description written in third person
-- [ ] Keywords throughout for search (errors, symptoms, tools)
-- [ ] Clear overview with core principle
-- [ ] Address specific baseline failures identified in RED
-- [ ] Code inline OR link to separate file
-- [ ] One excellent example (not multi-language)
-- [ ] Run scenarios WITH skill - verify agents now comply
+### Documentation-related skill context
 
-**REFACTOR Phase - Close Loopholes:**
-- [ ] Identify NEW rationalizations from testing
-- [ ] Add explicit counters (if discipline skill)
-- [ ] Build rationalization table from all test iterations
-- [ ] Create red flags list
-- [ ] Re-test until bulletproof
+Use only when documentation is relevant:
 
-**Quality Checks:**
-- [ ] Small flowchart only if decision non-obvious
-- [ ] Quick reference table
-- [ ] Common mistakes section
-- [ ] No narrative storytelling
-- [ ] Supporting files only for tools or heavy reference
+```text
+docs/base-standards.md
+docs/documentation-standards.md
+```
 
-**Deployment:**
-- [ ] Commit skill to git and push to your fork (if configured)
-- [ ] Consider contributing back via PR (if broadly useful)
+### OpenSpec-related skill context
 
-## Discovery Workflow
+Use only when OpenSpec is relevant:
 
-How future Claude finds your skill:
+```text
+openspec/config.yaml
+docs/openspec-tasks-mandatory-steps.md
+openspec/changes/<change-name>/
+openspec/specs/
+```
 
-1. **Encounters problem** ("tests are flaky")
-3. **Finds SKILL** (description matches)
-4. **Scans overview** (is this relevant?)
-5. **Reads patterns** (quick reference table)
-6. **Loads example** (only when implementing)
+### GitHub / Git-related skill context
 
-**Optimize for this flow** - put searchable terms early and often.
+Use only when Git, branches, commits, or PRs are relevant:
 
-## The Bottom Line
+```text
+ai-specs/skills/commit/SKILL.md
+ai-specs/skills/using-git-worktrees/SKILL.md
+```
 
-**Creating skills IS TDD for process documentation.**
+Do not instruct agents to read the whole repository unless the user explicitly requests a full audit or full migration.
 
-Same Iron Law: No skill without failing test first.
-Same cycle: RED (baseline) → GREEN (write skill) → REFACTOR (close loopholes).
-Same benefits: Better quality, fewer surprises, bulletproof results.
+## External Tool Policy
 
-If you follow TDD for code, follow it for skills. It's the same discipline applied to documentation.
+Skills should be explicit about external tools.
+
+### GitHub
+
+Allowed when:
+
+* Branches are relevant.
+* Commits are relevant.
+* Pull Requests are relevant.
+* Remote repository state is relevant.
+
+Prefer Git and GitHub CLI when available.
+
+Do not require GitHub MCP unless explicitly configured and requested.
+
+### Context7
+
+Allowed only when:
+
+* It is available in the current agent environment.
+* Official, up-to-date documentation is needed.
+* Local project documentation is insufficient.
+
+Do not assume Context7 configured in Cursor is available in Claude Code.
+
+### Jira
+
+Do not include Jira unless the user explicitly asks for Jira.
+
+### Sentry
+
+Do not include Sentry unless:
+
+* The project is deployed.
+* Sentry is configured.
+* The user explicitly asks for runtime error review.
+
+### Browser MCP / Playwright MCP
+
+Allowed only when:
+
+* Frontend behavior needs to be demonstrated or verified.
+* The MCP is available in the current environment.
+* The task benefits from browser automation.
+
+Do not require browser MCP for general skills.
+
+## Project-Specific Guardrails
+
+Skills must protect these project decisions:
+
+* Do not change the approved stack without explicit user approval.
+* Do not introduce new dependencies without explicit user approval.
+* Do not replace OpenSpec workflow without explicit user approval.
+* Do not require Jira.
+* Do not require Sentry.
+* Do not assume Cursor MCPs are available in Claude Code.
+* Do not expose supplier costs or internal supplier data through customer-facing behavior.
+* Do not mix `CustomerOrder` and `SupplierOrder`.
+* Do not treat `Product` as the sellable unit when the behavior belongs to `ProductVariant`.
+* Do not mix order, payment, fulfillment, supplier order, shipment, return, or refund statuses.
+* Do not automate supplier fulfillment prematurely in the first version.
+
+## Writing Style
+
+Use:
+
+* Clear headings.
+* Short paragraphs.
+* Concrete guardrails.
+* Explicit allowed/forbidden actions.
+* English for technical artifacts.
+* Spanish only in chat responses when talking to the user.
+
+Avoid:
+
+* Long theory sections.
+* Project-irrelevant examples.
+* External vendor references unless needed.
+* Overly broad instructions.
+* Hidden assumptions.
+* Ambiguous phrases like "handle appropriately" or "use best practices" without specifics.
+
+## Skill Testing
+
+Skill testing should be proportional.
+
+For small local edits:
+
+* Check frontmatter.
+* Check triggers.
+* Check scope.
+* Check guardrails.
+* Check tool policy.
+* Check that it does not conflict with project standards.
+
+For workflow-critical skills:
+
+* Test with one or more realistic scenarios.
+* Confirm the skill would prevent known failure modes.
+* Confirm it does not encourage over-reading context.
+* Confirm it does not require unavailable tools.
+* Confirm it respects project guardrails.
+
+For high-risk skills such as `commit`, `adversarial-review`, `code-auditing`, or `show-spec-working`:
+
+* Include dry-run behavior when relevant.
+* Include safety checks.
+* Include explicit non-destructive defaults.
+* Include a clear report format.
+* Include external tool limitations.
+
+Do not impose heavy subagent testing for every small local edit unless the user asks for strict validation.
+
+## Common Skill Failure Modes
+
+| Failure Mode                                   | Correction                             |
+| ---------------------------------------------- | -------------------------------------- |
+| Skill requires Jira by default                 | Make Jira optional and explicit-only   |
+| Skill assumes Sentry exists                    | Make Sentry optional and future-only   |
+| Skill assumes Cursor MCPs exist in Claude Code | Add environment-specific MCP guardrail |
+| Skill reads the whole repository               | Add selective context loading          |
+| Skill changes files when it should only review | Add non-modification guardrail         |
+| Skill commits automatically                    | Require explicit commit workflow       |
+| Skill starts services automatically            | Require user approval                  |
+| Skill exposes supplier data                    | Add ecommerce data-safety rule         |
+| Skill mixes customer and supplier orders       | Add domain consistency rule            |
+| Skill has vague output                         | Add explicit output format             |
+
+## Skill Review Checklist
+
+Before accepting a skill, verify:
+
+* [ ] Frontmatter is valid YAML.
+* [ ] `name` matches the folder name.
+* [ ] `description` starts with `Use when`.
+* [ ] `author` is `Marcel Carrillo`.
+* [ ] The skill has a clear purpose.
+* [ ] The skill defines when to use it.
+* [ ] The skill defines when not to use it if relevant.
+* [ ] The skill uses selective context loading.
+* [ ] The skill has explicit external tool rules.
+* [ ] The skill does not require Jira.
+* [ ] The skill does not require Sentry.
+* [ ] The skill does not assume Cursor MCPs are available in Claude Code.
+* [ ] The skill does not introduce new stack choices.
+* [ ] The skill protects ecommerce business rules when relevant.
+* [ ] The skill has guardrails.
+* [ ] The skill has an output format when useful.
+* [ ] The skill does not read or modify unrelated areas.
+* [ ] The skill does not create commits unless it is the `commit` skill or explicitly says so.
+* [ ] The skill is not longer than necessary.
+
+## Supporting Files
+
+Use supporting files when the main `SKILL.md` would become too large.
+
+Recommended folders:
+
+```text
+references/
+examples/
+scripts/
+```
+
+Rules:
+
+* Supporting files must be relevant to the skill.
+* Do not force-load supporting files unless needed.
+* Avoid `@` references that automatically load large files.
+* Prefer plain relative references such as `references/audit-methodology.md`.
+* Keep examples project-relevant.
+
+## Updating Existing Skills
+
+When editing an existing skill:
+
+1. Preserve the original purpose unless the user asks to change it.
+2. Remove obsolete references.
+3. Add project context only where useful.
+4. Add selective context loading.
+5. Add external tool policy.
+6. Add guardrails.
+7. Keep the skill focused.
+8. Validate the frontmatter.
+9. Check whether `sync-agent-symlinks` is needed afterward.
+10. Summarize what changed.
+
+## Creating a New Skill
+
+When creating a new skill:
+
+1. Define the trigger.
+2. Choose a clear skill name.
+3. Create the folder under `ai-specs/skills/<skill-name>/`.
+4. Create `SKILL.md`.
+5. Add valid frontmatter.
+6. Add project-aware workflow.
+7. Add guardrails.
+8. Add output format when useful.
+9. Add supporting files only if needed.
+10. Run `sync-agent-symlinks` if `.claude/skills` or `.cursor/skills` mirror canonical skills.
+
+## Output Format
+
+When this skill is used to review or create a skill, return:
+
+```markdown
+## Skill Review Summary
+
+**Skill**: `<skill-name>`
+**Action**: Created | Updated | Reviewed
+
+### Changes
+
+- <change>
+- <change>
+
+### Validation
+
+- Frontmatter: Passed | Failed
+- Scope: Passed | Failed
+- Selective context loading: Passed | Failed
+- External tool policy: Passed | Failed
+- Project guardrails: Passed | Failed
+
+### Follow-up
+
+- <next action or "None">
+```
+
+## Guardrails
+
+* Do not require Jira.
+* Do not require Sentry.
+* Do not assume Cursor MCPs are available in Claude Code.
+* Do not require Context7 for local skill writing.
+* Do not require GitHub unless the skill involves branches, commits, PRs, or remote repository state.
+* Do not force-load large supporting files.
+* Do not use `@` references for large files.
+* Do not create multiple unrelated skills in one operation unless the user explicitly asks.
+* Do not overfit skills to one-off tasks.
+* Do not remove existing safety rules unless replacing them with clearer ones.
+* Do not introduce new technologies or workflows without user approval.
+* Keep skills short enough to be useful.
