@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { healthRoutes } from './routes';
+import { healthRoutes, categoryRoutes } from './routes';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
 import { logger } from './infrastructure/logger';
 
@@ -21,6 +21,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/health', healthRoutes);
+app.use('/categories', categoryRoutes);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FUTURE: /api/admin routes

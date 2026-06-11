@@ -19,3 +19,24 @@ export function validateRequiredFields(
     }
   }
 }
+
+export function validateCategoryData(data: Record<string, unknown>): void {
+  const name = data['name'];
+  if (name === undefined || name === null || name === '') {
+    throw new ValidationError("Field 'name' is required");
+  }
+
+  const status = data['status'];
+  if (status !== undefined && status !== null && status !== '') {
+    if (status !== 'Active' && status !== 'Inactive') {
+      throw new ValidationError("Field 'status' must be 'Active' or 'Inactive'");
+    }
+  }
+
+  const parentId = data['parentId'];
+  if (parentId !== undefined && parentId !== null) {
+    if (typeof parentId !== 'number' || !Number.isInteger(parentId) || parentId <= 0) {
+      throw new ValidationError("Field 'parentId' must be a positive integer");
+    }
+  }
+}
