@@ -559,7 +559,7 @@ create refund
 // cypress.config.ts
 export default defineConfig({
     e2e: {
-        baseUrl: 'http://localhost:3000',
+        baseUrl: 'http://localhost:3001',
         env: {
             API_URL: 'http://localhost:3000'
         }

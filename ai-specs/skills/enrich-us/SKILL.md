@@ -1,7 +1,7 @@
 ---
 name: enrich-us
 description: Analyze and enhance user stories with complete, implementation-ready technical detail from direct ticket input or Jira.
-author: LIDR.co
+author: Marcel Carrillo
 version: 1.0.0
 ---
 # enrich-us Skill

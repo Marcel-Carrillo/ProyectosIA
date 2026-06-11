@@ -1,137 +1,459 @@
 ---
+
 name: show-spec-working
-description: Use when the user asks "show me X", "demo X", "walk me through X", "how X works" or requests a live feature demonstration from a spec, feature or ticket.
-author: LIDR.co
+description: Demonstrate how an OpenSpec change, feature, endpoint, or frontend flow works using the available local project context and safe verification steps.
+author: Marcel Carrillo
 version: 1.0.0
----
+--------------
 
 # show-spec-working Skill
 
-Demonstrate a spec in a runnable way.
+Use this skill when the user asks to see a feature, spec, endpoint, workflow, or behavior working.
 
-If the user does not provide explicit context, use the spec/change currently being worked on in this session.
+This skill is for **demonstration and verification**, not for implementation.
 
-Always end by reporting completion in chat.
+It should prove behavior using the safest available method:
 
-## Trigger phrases (high priority)
+* Frontend walkthrough when a frontend exists and browser automation is available.
+* Backend API walkthrough using explicit curl commands when endpoints exist.
+* Spec walkthrough when implementation does not exist yet.
+* Evidence-based explanation when runnable code is not available.
 
-Treat these expressions as execution commands, not analysis requests:
+## Project Context
 
-- `show me X`
-- `demo X`
-- `walk me through X`
-- `show X working`
-- `how X works`
-- `prove X works`
+This project is a women's fashion ecommerce platform using supplier-fulfilled ecommerce.
 
-When any of these appear, run the demonstration workflow directly.
-Do not stop at a feature summary or quick report.
+The project uses:
+
+* Cursor
+* Claude Code
+* OpenSpec / Spec-Driven Development
+* Git and GitHub
+* Optional Context7 when available in the current agent environment
+* Optional browser automation when available
+* No required Jira workflow
+* No required Sentry workflow at the current stage
+
+Technical stack:
+
+* Backend: Node.js, TypeScript, Express, Prisma, PostgreSQL
+* Frontend: React, TypeScript, Create React App, React Router, React Bootstrap, Bootstrap, Axios
+* Testing: Jest, React Testing Library, Cypress, curl endpoint verification when applicable
+* Architecture: DDD with Presentation, Application, Domain, and Infrastructure layers
+
+Important business rules:
+
+* `CustomerOrder` and `SupplierOrder` are different concepts.
+* A customer order may generate one or more supplier orders.
+* `ProductVariant` is the sellable unit.
+* Supplier costs, supplier credentials, supplier notes, supplier references, and internal fulfillment notes must not be exposed through customer-facing APIs.
+* Customer-facing order status and internal fulfillment status must remain separate.
+* Payment status, order status, fulfillment status, supplier order status, shipment status, return status, and refund status must not be mixed.
+* The first version prioritizes manual supplier order processing over premature automation.
+
+## Trigger Phrases
+
+Use this skill when the user says things like:
+
+* `show me <feature>`
+* `demo <feature>`
+* `walk me through <feature>`
+* `show <feature> working`
+* `how <feature> works`
+* `prove <feature> works`
+* `show the endpoint working`
+* `show the OpenSpec change working`
+
+Treat these as demonstration requests, not just explanation requests.
+
+Do not respond only with a high-level summary if a runnable or inspectable demo is possible.
 
 ## Inputs
 
-- Optional spec context from user:
-  - Direct ticket id in text (for example: `SCRUM-10`)
-  - Feature name
-  - Endpoint
-  - Frontend route
-- If missing, infer from current session context and currently active work.
+The user may provide:
+
+* OpenSpec change name, for example `product-catalog-management`
+* Feature name, for example `product catalog`
+* Endpoint, for example `GET /products`
+* Frontend route, for example `/products`
+* Branch name, for example `feature/product-catalog-management`
+* Specific scenario from a spec
+* No explicit input, relying on the current session context
+
+If no explicit input is provided, infer the current active OpenSpec change only when it is unambiguous.
+
+If the target is ambiguous, ask the user to choose.
+
+Do not guess.
+
+## Selective Context Loading
+
+Use selective context loading.
+
+Do not read the entire repository.
+
+Always prefer the smallest context needed to demonstrate the requested behavior.
+
+### For OpenSpec change demos
+
+Read:
+
+```text
+openspec/config.yaml
+openspec/changes/<change-name>/proposal.md
+openspec/changes/<change-name>/tasks.md
+openspec/changes/<change-name>/specs/*/spec.md
+```
+
+Read `design.md` only if needed.
+
+### For backend endpoint demos
+
+Read:
+
+```text
+docs/api-spec.yml
+docs/backend-standards.md
+docs/data-model.md
+```
+
+Then inspect only the relevant backend files if implementation exists.
+
+### For frontend demos
+
+Read:
+
+```text
+docs/frontend-standards.md
+docs/api-spec.yml
+```
+
+Then inspect only the relevant frontend route, component, service, and test files if implementation exists.
+
+### For documentation-only demos
+
+Read:
+
+```text
+docs/base-standards.md
+docs/documentation-standards.md
+```
+
+Then inspect the relevant documentation files.
+
+Do not load frontend docs for backend-only demos unless frontend impact is relevant.
+
+Do not load backend docs for frontend-only demos unless API/backend behavior is relevant.
+
+## Demonstration Modes
+
+Choose one mode based on what exists.
+
+### Mode A: Runnable Frontend Demo
+
+Use this when:
+
+* Frontend code exists.
+* The relevant route or component exists.
+* Local app can be run or is already running.
+* Browser automation is available or the user is manually viewing the app.
+
+### Mode B: Runnable Backend API Demo
+
+Use this when:
+
+* Backend code exists.
+* Endpoint exists.
+* Local API can be run or is already running.
+* Required database/state is available.
+
+### Mode C: Spec-Based Demo
+
+Use this when:
+
+* OpenSpec artifacts exist.
+* Implementation does not exist yet.
+* The user wants to understand how the feature is supposed to work.
+
+In this mode, demonstrate the expected behavior from the spec, but clearly state that it is not a live implementation demo.
+
+### Mode D: Evidence-Based Code Walkthrough
+
+Use this when:
+
+* Code exists but cannot be run safely.
+* Required services are unavailable.
+* Browser automation is not available.
+* The user wants a walkthrough of how the implementation works.
+
+In this mode, show the relevant files, flow, and expected runtime behavior based on code inspection.
 
 ## Workflow
 
-### Step 1 - Resolve target spec and scope
+### Step 1: Resolve Target
 
-1. Identify the target spec/change:
-   - Prefer explicit user-provided context.
-   - If user text contains a ticket id pattern like `[A-Z]+-[0-9]+`, use it as primary context (example: `show me SCRUM-10`).
-   - Otherwise, infer the spec currently being worked on.
-2. Determine modality:
-   - `frontend` when the spec includes UI behavior.
-   - `backend-only` when it only defines API behavior.
-   - `mixed` when both exist.
-3. List concrete scenarios to demo from the spec acceptance criteria.
+Identify:
 
-### Step 1.1 - Anti-report guardrail
+* Target change, feature, endpoint, route, or scenario.
+* Whether the target is backend, frontend, mixed, documentation-only, or spec-only.
+* What evidence is available:
 
-Before continuing, enforce this rule:
+  * OpenSpec artifacts
+  * API spec
+  * frontend route/component
+  * backend endpoint/controller/service
+  * tests
+  * reports
+  * running app/API
 
-- Never finish after only analyzing requirements.
-- Never return only a quick report when the user asked to "show" or "demo".
-- If execution is blocked, explicitly report the blocker and ask for exactly what is needed to continue the live demo.
+If the target is ambiguous, ask the user to choose.
 
-### Step 2 - Frontend demonstration path
+### Step 2: Determine Whether It Can Be Run
 
-Run this path when modality is `frontend` or `mixed`.
+Check whether runnable implementation exists.
 
-1. Start required local services if needed.
-2. Use browser automation to open the app and navigate to the target feature.
-3. Demonstrate feature behavior from the spec, one interaction at a time.
-   - Example sequence for list/table features:
-     - Open listing page
-     - Verify table data appears
-     - Use search box
-     - Apply filters
-     - Change sorting
-     - Open details view
-4. After each meaningful action:
-   - Verify visible result matches spec expectations.
-5. Stop on a stable end state and let the user continue manual exploration or close the window.
-6. Keep the browser open unless the user asks to close it.
+Do not assume it exists.
 
-### Step 3 - Backend API demonstration path
+If no backend/frontend app exists yet, report:
 
-Run this path when modality is `backend-only` or `mixed`.
+```text
+No runnable application code exists yet for this feature. I can demonstrate the intended behavior from the OpenSpec artifacts instead.
+```
 
-1. Identify the endpoint(s) and sample payload(s) defined by the spec.
-2. Execute curl command(s) that show real response behavior.
-3. If any call changes data state (CREATE/UPDATE/DELETE):
-   - Execute the paired restore/reset curl command (or equivalent restore action) immediately after demonstrating the behavior.
-4. Confirm restored state so repeated demos remain deterministic.
-5. Include command and key response evidence in chat (concise).
+If commands are needed to start services, do not run modifying or long-running commands without approval.
 
-## Browser MCP requirements
+Examples of commands that require care:
 
-Before calling any MCP browser tool:
+```bash
+npm start
+npm run dev
+docker compose up
+npx prisma migrate dev
+npm install
+npm ci
+```
 
-1. Read the MCP tool descriptor JSON first.
-2. Follow the server instructions for lock/unlock and snapshot-refresh workflow.
-3. Avoid repeated blind retries; if blocked, report blocker and best next action.
+Do not install dependencies, run migrations, start Docker, or modify the database unless the user approves.
 
-## API demo requirements
+### Step 3: Frontend Demonstration Path
 
-- Use explicit `curl` commands (not pseudocode) whenever environment data is available.
-- Mask sensitive values in chat output.
-- Keep commands idempotent when possible.
-- Include restore commands for any state-changing operation.
+Use this path for frontend or mixed demos when frontend code exists.
 
-## Completion contract
+1. Identify the route and expected UI behavior.
+2. Confirm required local services:
 
-Always send a final chat message containing:
+   * frontend server
+   * backend API if needed
+   * database if needed
+3. If the app is not running, ask before starting it.
+4. Use browser automation only if available in the current agent environment.
+5. Navigate to the target route.
+6. Demonstrate each relevant scenario from the spec:
 
-1. Target spec/change demonstrated.
-2. What was executed:
-   - Frontend flows shown.
-   - Backend curl commands executed.
-3. Verification result per demonstrated scenario (pass/fail with short note).
-4. Data restore status (if applicable).
-5. Final handoff:
-   - "Demo complete. You can continue checking in the open browser window or ask me to close it."
+   * page loads
+   * data appears
+   * form validation
+   * search/filter/sort
+   * navigation
+   * create/update/delete flow, when safe
+7. After each meaningful action, verify visible result against the spec.
 
-## Output format
+Do not expose supplier cost or internal supplier data in customer-facing UI demos.
 
-Use this concise structure in the final chat response:
+If browser automation is not available, provide manual demo steps and expected results.
+
+### Step 4: Backend API Demonstration Path
+
+Use this path for backend-only or mixed demos when backend code exists.
+
+1. Identify endpoint(s) from `docs/api-spec.yml`.
+2. Identify required sample payloads.
+3. Confirm whether the API is already running.
+4. If the API is not running, ask before starting it.
+5. Use explicit `curl` commands when environment data is available.
+6. Mask sensitive values in chat output.
+7. Prefer read-only requests when possible.
+8. For state-changing requests:
+
+   * Explain what state will change.
+   * Ask for approval before executing.
+   * Restore/reset state immediately after the demo when possible.
+   * Confirm restore result.
+
+Example structure:
+
+```bash
+curl -X GET "http://localhost:3000/products" \
+  -H "Content-Type: application/json"
+```
+
+Do not expose supplier costs or internal supplier fields in customer-facing API demo output.
+
+### Step 5: Spec-Based Demonstration Path
+
+Use this path when implementation does not exist yet.
+
+Demonstrate the intended behavior from the OpenSpec change.
+
+For each scenario:
+
+* Name the requirement.
+* Show the `WHEN / THEN` behavior.
+* Explain what frontend/backend/API behavior would prove it later.
+* Identify what test or curl command should exist once implemented.
+
+Example:
 
 ```markdown
-Spec demo completed for: <spec/change>
+### Scenario: Product variant is the sellable unit
 
-Frontend walkthrough:
+Spec behavior:
+- WHEN an admin creates a product
+- AND adds one or more variants
+- THEN each variant defines the sellable SKU, public price, size, color, and availability
+
+Future proof:
+- API test should verify that products without variants cannot become active.
+- UI demo should verify that the admin manages sizes/colors at variant level.
+```
+
+Clearly label this as a spec demo, not a live runtime demo.
+
+### Step 6: Evidence-Based Code Walkthrough
+
+Use this path when code exists but cannot be run.
+
+Show:
+
+* Relevant files.
+* Entry point.
+* Request/UI flow.
+* Business rule enforcement.
+* Validation.
+* Persistence or API interaction.
+* Test evidence if available.
+
+Keep it focused.
+
+Do not read unrelated files.
+
+## Browser Automation Requirements
+
+Use browser automation only when available in the current agent environment.
+
+Do not assume browser MCP configured in Cursor is available in Claude Code.
+
+Before using browser tools:
+
+* Check the available tool instructions.
+* Follow the tool-specific snapshot/refresh workflow if required.
+* Avoid repeated blind retries.
+* If blocked, report the blocker and best next action.
+
+If browser automation is unavailable, provide manual steps instead.
+
+## API Demo Requirements
+
+Use real curl commands when possible.
+
+Do not provide pseudocode as if it had been executed.
+
+For every API command shown, clarify whether it was:
+
+* Executed
+* Proposed but not executed
+* Not executable because the app/API is not running
+
+For state-changing commands:
+
+* Prefer test data.
+* Ask before execution.
+* Restore state after demo.
+* Report restore result.
+
+## Data Safety
+
+Be careful with ecommerce data.
+
+Never expose in customer-facing demos:
+
+* Supplier costs
+* Supplier credentials
+* Supplier references
+* Internal supplier notes
+* Internal fulfillment notes
+* Private customer data beyond what is necessary for the demo
+
+Do not create, update, or delete records without confirming the impact.
+
+Do not leave demo data behind if a restore path exists.
+
+## Completion Contract
+
+Always finish with a final chat message.
+
+Use this format:
+
+```markdown
+## Spec Demo Completed
+
+**Target**: `<spec/change/feature/endpoint/route>`
+**Mode**: Frontend | Backend API | Spec-based | Code walkthrough | Mixed
+
+### What Was Demonstrated
+
+- <step/result>
 - <step/result>
 
-Backend API walkthrough:
-- <curl + key response note>
+### Verification Result
 
-Data restore:
-- <restored / not needed / failed + reason>
+- <scenario>: Passed | Failed | Not runnable | Not applicable
+- <scenario>: Passed | Failed | Not runnable | Not applicable
 
-Next:
-- You can continue in the open browser window, or ask me to close it.
+### Commands Executed
+
+- `<command>` — <result>
+- None
+
+### Data Restore
+
+- Restored | Not needed | Not executed | Failed: <reason>
+
+### Blockers
+
+- None
+- <blocker>
+
+### Next
+
+- <recommended next step>
 ```
+
+## External Tools
+
+* GitHub: use only if branch, PR, commit, or remote state is relevant to the demo.
+* Context7: use only if it is available in the current agent environment and official, up-to-date documentation is needed.
+* Jira: do not use unless the user explicitly asks for Jira.
+* Sentry: do not use unless the app is deployed, Sentry is configured, and the user explicitly asks for runtime error review.
+* Browser MCP: optional; use only when available.
+* Playwright MCP: optional; use only when available and useful for frontend demonstration.
+
+Do not require any external MCP for this skill.
+
+## Guardrails
+
+* Do not implement code.
+* Do not edit files.
+* Do not create commits.
+* Do not create branches.
+* Do not push to GitHub.
+* Do not update Jira, Sentry, GitHub, or external systems unless the user explicitly asks.
+* Do not start services without approval when that changes local state or may run indefinitely.
+* Do not install dependencies automatically.
+* Do not run database migrations automatically.
+* Do not run Docker commands automatically.
+* Do not create/update/delete records without explaining and getting approval.
+* Do not expose supplier cost or internal supplier data in customer-facing demos.
+* Do not claim a demo was executed if it was only described.
+* Do not assume Cursor MCPs are available in Claude Code.
+* Keep the demonstration focused on the requested spec, feature, endpoint, or route.

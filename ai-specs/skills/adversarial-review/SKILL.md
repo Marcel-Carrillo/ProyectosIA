@@ -2,7 +2,7 @@
 
 name: adversarial-review
 description: Use when the user requests an adversarial review, red-team review, devil's advocate check, or independent verification pass before archiving an OpenSpec change.
-author: LIDR.co
+author: Marcel Carrillo
 version: 1.0.0
 --------------
 

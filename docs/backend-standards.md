@@ -173,7 +173,7 @@ Entities are objects with a distinct identity that persists over time.
 
 **Before:**
 ```typescript
-// Previously, candidate data might have been handled as a simple JSON object without methods.
+// Previously, product data might have been handled as a simple JSON object without methods.
 const product = {
      id: 1, name: 'Black midi dress', description: 'Elegant black midi dress', publicPrice: 49.99 
 };
@@ -198,11 +198,11 @@ export class Product {
         } 
         
         activate(): void { 
-            this.status = 'ACTIVE'; 
+            this.status = 'Active'; 
         } 
         
         deactivate(): void { 
-            this.status = 'INACTIVE'; 
+            this.status = 'Inactive'; 
         } 
     }
 ```
@@ -321,7 +321,7 @@ export class CustomerOrder {
     } 
     
     markAsPaid(): void { 
-        if (this.status === 'CANCELLED') { throw new Error('Cancelled orders cannot be marked as paid'); } this.status = 'PAID'; 
+        if (this.status === 'Cancelled') { throw new Error('Cancelled orders cannot be marked as paid'); } this.status = 'Paid'; 
     }
 }
 ```
@@ -423,7 +423,7 @@ function createSupplierOrdersFromCustomerOrder(customerOrder: any): any[] {
 ```typescript
 export class SupplierOrderService { 
     static createSupplierOrdersFromCustomerOrder(customerOrder: CustomerOrder): SupplierOrder[] { 
-        if (customerOrder.status !== 'PAID') { 
+        if (customerOrder.status !== 'Paid') { 
             throw new Error('Supplier orders can only be created for paid customer orders'); 
         } 
         // Group customer order items by supplier and create one supplier order per supplier. 
@@ -464,8 +464,8 @@ export class CustomerOrderFactory {
         // Set initial status
         return new CustomerOrder({
             ...data,
-            status: 'PENDING_PAYMENT',
-            fulfillmentStatus: 'NOT_STARTED'
+            status: 'PendingPayment',
+            fulfillmentStatus: 'NotStarted'
         });
     }
 }
@@ -674,7 +674,7 @@ interface SupplierOrderOperations {
     createSupplierOrder(): void; 
 }
 
-class Candidate implements SaveOperation, PublishOperation {
+class Product implements SaveOperation, PublishOperation {
     save() {
         // implementation
     }
@@ -1039,7 +1039,7 @@ SUPPLIER_COST_EXPOSURE_BLOCKED
 import cors from 'cors';
 
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
     credentials: true
 };
 

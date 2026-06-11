@@ -2,7 +2,7 @@
 
 name: update-docs
 description: Identify and update required technical documentation based on implemented changes, using selective context loading and the project's ecommerce documentation rules.
-author: LIDR.co
+author: Marcel Carrillo
 version: 1.0.0
 --------------
 

@@ -91,7 +91,7 @@ OpenSpec is recommended for this project because it supports a spec-driven workf
 
 Requirements:
 
-* Node.js `20.19.0` or higher
+* Node.js `24.16.0` or higher
 
 Install OpenSpec globally:
 
