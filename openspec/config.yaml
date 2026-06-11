@@ -1,0 +1,131 @@
+schema: spec-driven
+
+# Project context
+
+# This is shown to AI when creating OpenSpec artifacts.
+
+context: |
+Project: Women's Fashion Ecommerce Platform
+
+Domain:
+This project is an online store for women's fashion and accessories.
+The initial business model is supplier-fulfilled ecommerce:
+
+* The store does not manage its own warehouse at the beginning.
+* Customers place orders through the online store.
+* Store administrators process customer orders and place the corresponding supplier orders in the background.
+* Suppliers ship products directly to customers.
+* The system must support future changes to this model, including internal stock, multiple suppliers, automated supplier integrations, hybrid fulfillment, or warehouse-based fulfillment.
+
+Tech stack:
+
+* Backend: Node.js, TypeScript, Express, Prisma, PostgreSQL
+* Frontend: React, TypeScript, Create React App, React Router, React Bootstrap, Bootstrap, Axios
+* Testing: Jest, React Testing Library, Cypress, curl manual endpoint testing
+* Database: PostgreSQL with Prisma migrations
+* Deployment target: Serverless Framework and AWS Lambda when applicable
+
+Architecture:
+
+* Domain-Driven Design
+* Layered architecture: Presentation, Application, Domain, Infrastructure
+* Repository pattern
+* Service layer orchestration
+* REST API documented with OpenAPI
+* Technical artifacts must be kept in English
+
+Core documentation:
+
+* Always start with docs/base-standards.md.
+* Load additional documentation selectively depending on the task type.
+* Backend work: docs/backend-standards.md, docs/data-model.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md.
+* Frontend work: docs/frontend-standards.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md.
+* Documentation work: docs/documentation-standards.md and the specific documents being updated.
+* Product strategy or requirement refinement: docs/data-model.md, docs/api-spec.yml, ai-specs/agents/product-strategy-analyst.md.
+
+AI agents:
+
+* ai-specs/agents/backend-developer.md for backend planning and review
+* ai-specs/agents/frontend-developer.md for frontend planning and review
+* ai-specs/agents/product-strategy-analyst.md for product strategy, target users, MVP scope, and value proposition analysis
+
+Skills:
+
+* ai-specs/skills/ contains reusable workflows and skill instructions.
+* When a task matches a skill, read and apply the corresponding SKILL.md before creating or updating OpenSpec artifacts.
+
+Critical business rules:
+
+* Customer orders and supplier orders are different concepts.
+* A customer order may generate one or more supplier orders.
+* Product variants are the sellable units of the catalog.
+* Customer order items must snapshot product and variant data at purchase time.
+* Supplier costs, supplier credentials, supplier notes, supplier references, and internal fulfillment notes must not be exposed through customer-facing APIs.
+* Customer-facing order status and internal fulfillment status must be modeled separately.
+* Payment status, order status, fulfillment status, supplier order status, shipment status, return status, and refund status must not be mixed.
+* The first version should prioritize manual supplier order processing over premature automation.
+* The system must remain flexible enough to support future internal stock, hybrid fulfillment, multiple suppliers, and supplier automation.
+
+# Per-artifact rules
+
+rules:
+_global:
+- Before creating any artifact, read and apply docs/base-standards.md.
+- Keep all technical artifacts in English.
+- Keep changes small, focused, and incremental.
+- Do not change the technology stack, architecture, folder structure, database engine, API style, testing framework, deployment model, business model, supplier fulfillment assumptions, documentation rules, AI agent rules, or OpenSpec workflow rules without explicit user approval.
+- Use selective context loading to reduce token usage.
+- Do not read all documentation by default.
+- Use docs/data-model.md and docs/api-spec.yml as the source of truth for entities, relationships, API contracts, schemas, and business rules, but only load them when the task affects data models, APIs, persistence, or business rules.
+- Update technical documentation when changes affect data models, APIs, backend behavior, frontend behavior, setup, testing, or business rules.
+- For backend-only work, read only docs/base-standards.md, docs/backend-standards.md, docs/data-model.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md, and ai-specs/agents/backend-developer.md.
+- For frontend-only work, read only docs/base-standards.md, docs/frontend-standards.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md, and ai-specs/agents/frontend-developer.md.
+- For documentation-only work, read only docs/base-standards.md, docs/documentation-standards.md, and the documents being updated.
+- For product strategy or requirement refinement, read only docs/base-standards.md, docs/data-model.md, docs/api-spec.yml, and ai-specs/agents/product-strategy-analyst.md.
+- Only load cross-area documentation when the requested change explicitly affects multiple areas.
+- Do not load frontend standards for backend-only tasks unless the API change requires frontend impact analysis.
+- Do not load backend standards for frontend-only tasks unless the frontend change requires backend or API changes.
+
+proposal:
+- Clearly describe the business problem and the expected ecommerce outcome.
+- Include a "Non-goals" section.
+- Include affected domain concepts such as Product, ProductVariant, Category, Supplier, CustomerOrder, SupplierOrder, Shipment, ReturnRequest, or Refund when relevant.
+- State whether the change affects customer-facing behavior, internal supplier fulfillment, or both.
+- Explicitly mention any impact on supplier data exposure, order lifecycle, fulfillment status, payment status, returns, or refunds.
+- Keep scope focused and avoid premature automation unless explicitly requested.
+
+requirements:
+- Use clear acceptance criteria.
+- Include business rules before implementation details.
+- Include edge cases and error scenarios.
+- Separate customer-facing requirements from internal administration or supplier fulfillment requirements.
+- Reference docs/data-model.md when requirements affect entities, fields, relationships, or validation rules.
+- Reference docs/api-spec.yml when requirements affect endpoints, request bodies, response bodies, status codes, or error formats.
+
+design:
+- Use selective context loading before reading documentation.
+- For backend-related changes, read docs/backend-standards.md and ai-specs/agents/backend-developer.md.
+- For frontend-related changes, read docs/frontend-standards.md and ai-specs/agents/frontend-developer.md.
+- For product or business strategy changes, read ai-specs/agents/product-strategy-analyst.md.
+- Identify affected layers only when backend is in scope: Presentation, Application, Domain, and Infrastructure.
+- Identify affected frontend areas only when frontend is in scope: routes, components, services, forms, loading states, error states, and E2E workflows.
+- Identify whether Prisma schema, migrations, repositories, services, controllers, routes, frontend services, or React components need changes.
+- Explicitly define how supplier costs and internal supplier data remain protected when supplier-related data is affected.
+
+tasks:
+- Before creating or updating tasks.md, read docs/openspec-tasks-mandatory-steps.md.
+- Step 0 must always be "Create Feature Branch" and must be the first step.
+- Include "Review and Update Existing Unit Tests (MANDATORY)".
+- Include "Run Unit Tests and Verify Database State (MANDATORY)".
+- Include "Manual Endpoint Testing with curl (MANDATORY - AGENT MUST EXECUTE)" for backend endpoint changes.
+- Include "E2E Testing with Playwright MCP (MANDATORY if applicable - AGENT MUST EXECUTE)" for frontend user workflow changes.
+- Include "Update Technical Documentation (MANDATORY)".
+- Include report paths under specs/<change-name>/reports/ for unit test/database verification, curl endpoint testing, and E2E testing when applicable.
+- Tasks must include database state restoration for CREATE, UPDATE, and DELETE test operations.
+- Tasks must not delegate manual testing to the user.
+
+specs:
+- Keep specs aligned with docs/data-model.md and docs/api-spec.yml when the change affects entities, relationships, endpoints, schemas, or business rules.
+- Use ecommerce domain language consistently.
+- Do not mix customer order status, payment status, fulfillment status, supplier order status, shipment status, return status, or refund status.
+- Preserve the distinction between customer-facing ecommerce behavior and internal supplier fulfillment behavior.
