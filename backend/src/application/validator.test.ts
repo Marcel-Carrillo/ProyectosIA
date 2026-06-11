@@ -1,4 +1,4 @@
-import { validateRequiredFields, ValidationError } from './validator';
+import { validateRequiredFields, validateCategoryData, ValidationError } from './validator';
 
 describe('validateRequiredFields', () => {
   it('passes when all required fields are present', () => {
@@ -38,5 +38,44 @@ describe('validateRequiredFields', () => {
       expect(err).toBeInstanceOf(ValidationError);
       expect((err as ValidationError).code).toBe('VALIDATION_ERROR');
     }
+  });
+});
+
+describe('validateCategoryData', () => {
+  it('passes when name is provided', () => {
+    expect(() => validateCategoryData({ name: 'Dresses' })).not.toThrow();
+  });
+
+  it('passes when name and valid status are provided', () => {
+    expect(() => validateCategoryData({ name: 'Dresses', status: 'Active' })).not.toThrow();
+    expect(() => validateCategoryData({ name: 'Dresses', status: 'Inactive' })).not.toThrow();
+  });
+
+  it('passes when parentId is a positive integer', () => {
+    expect(() => validateCategoryData({ name: 'Dresses', parentId: 5 })).not.toThrow();
+  });
+
+  it('throws ValidationError when name is missing', () => {
+    expect(() => validateCategoryData({})).toThrow(ValidationError);
+    expect(() => validateCategoryData({ name: '' })).toThrow(ValidationError);
+    expect(() => validateCategoryData({ name: null })).toThrow(ValidationError);
+  });
+
+  it('throws ValidationError when status is invalid', () => {
+    expect(() =>
+      validateCategoryData({ name: 'Dresses', status: 'Published' })
+    ).toThrow(ValidationError);
+  });
+
+  it('throws ValidationError when parentId is not a positive integer', () => {
+    expect(() =>
+      validateCategoryData({ name: 'Dresses', parentId: -1 })
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateCategoryData({ name: 'Dresses', parentId: 'abc' })
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateCategoryData({ name: 'Dresses', parentId: 0 })
+    ).toThrow(ValidationError);
   });
 });

@@ -40,22 +40,16 @@ paths:
   /categories:
     get:
       summary: Get all categories
-      description: Retrieve a paginated list of product categories
+      description: Retrieve all product categories
       tags:
         - Categories
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/LimitParam'
         - in: query
-          name: search
-          schema:
-            type: string
-          description: Search term to filter categories by name or slug
-        - in: query
-          name: isActive
+          name: includeInactive
           schema:
             type: boolean
-          description: Filter categories by active status
+            default: false
+          description: When true, includes inactive (soft-deleted) categories in the response
       responses:
         '200':
           description: Successfully retrieved categories
@@ -143,19 +137,21 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
     delete:
-      summary: Delete category
-      description: Delete an existing category
+      summary: Soft-delete category
+      description: Soft-delete a category by setting its status to Inactive (row is not removed from the database)
       tags:
         - Categories
       parameters:
         - $ref: '#/components/parameters/IdPathParam'
       responses:
-        '204':
-          description: Category deleted successfully
+        '200':
+          description: Category soft-deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -1112,20 +1108,22 @@ components:
         name:
           type: string
           example: Dresses
-        slug:
-          type: string
-          example: dresses
         description:
           type: string
           nullable: true
-          example: Women's dresses
-        parentCategoryId:
+          example: Women's dresses collection
+        imageUrl:
+          type: string
+          nullable: true
+          example: https://cdn.example.com/categories/dresses.jpg
+        status:
+          type: string
+          enum: [Active, Inactive]
+          example: Active
+        parentId:
           type: integer
           nullable: true
           example: null
-        isActive:
-          type: boolean
-          example: true
         createdAt:
           type: string
           format: date-time
@@ -1137,28 +1135,28 @@ components:
       type: object
       required:
         - name
-        - slug
       properties:
         name:
           type: string
           maxLength: 100
           example: Dresses
-        slug:
-          type: string
-          maxLength: 150
-          example: dresses
         description:
           type: string
           maxLength: 500
           nullable: true
-          example: Women's dresses
-        parentCategoryId:
+          example: Women's dresses collection
+        imageUrl:
+          type: string
+          nullable: true
+          example: https://cdn.example.com/categories/dresses.jpg
+        status:
+          type: string
+          enum: [Active, Inactive]
+          default: Active
+        parentId:
           type: integer
           nullable: true
           example: null
-        isActive:
-          type: boolean
-          default: true
 
     UpdateCategoryRequest:
       allOf:
@@ -1186,8 +1184,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Category'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
+        message:
+          type: string
+          example: Categories retrieved successfully
 
     ProductImage:
       type: object

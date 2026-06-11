@@ -1,1 +1,7 @@
-// HTTP controllers will be added here per feature
+export {
+  listCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from './categoryController';

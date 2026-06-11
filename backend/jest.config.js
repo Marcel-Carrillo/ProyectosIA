@@ -24,5 +24,7 @@ module.exports = {
     '!src/domain/repositories/index.ts',
     '!src/application/services/index.ts',
     '!src/presentation/controllers/index.ts',
+    '!src/routes/categoryRoutes.ts',
+    '!src/routes/healthRoutes.ts',
   ],
 };
