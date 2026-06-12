@@ -109,6 +109,7 @@ rules:
     - Explicitly define how supplier costs and internal supplier data remain protected when supplier-related data is affected.
 
   tasks:
+    - Before Step 0 execution, apply ai-specs/skills/using-git-worktrees/SKILL.md to determine workspace isolation strategy (current checkout vs Git worktree).
     - Before creating or updating tasks.md, read docs/openspec-tasks-mandatory-steps.md.
     - Step 0 must always be "Create Feature Branch" and must be the first step.
     - Include "Review and Update Existing Unit Tests (MANDATORY)".

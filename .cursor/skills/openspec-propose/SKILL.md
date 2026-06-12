@@ -16,7 +16,7 @@ I'll create a change with artifacts:
 - design.md (how)
 - tasks.md (implementation steps)
 
-When ready to implement, run /opsx:apply
+When ready to implement, switch to Sonnet 4.6 and run /opsx:apply
 
 ---
 
@@ -33,13 +33,27 @@ When ready to implement, run /opsx:apply
 
    **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
 
-2. **Create the change directory**
+2. **Enrich the request with enrich-us before creating anything (MANDATORY MODEL: Opus 4.8)**
+
+   Load and apply `ai-specs/skills/enrich-us/SKILL.md`.
+
+   Before running enrich-us, switch the working model to **Opus 4.8** (`claude-opus-4-8-thinking-high`).
+
+   Pass the user's full description as the ticket input (direct input mode — no Jira needed).
+
+   **MANDATORY**: Display the full `## Functional Analysis`, `## Original`, and `## Enhanced` output in chat.
+
+   **Do NOT ask for confirmation after enrichment.** Apply the enriched version immediately.
+
+   Use `## Functional Analysis` + `## Enhanced` as the definitive input for all subsequent artifacts (proposal, design, tasks).
+
+3. **Create the change directory**
    ```bash
    openspec new change "<name>"
    ```
    This creates a scaffolded change in the planning home resolved by the CLI with `.openspec.yaml`.
 
-3. **Get the artifact build order**
+4. **Get the artifact build order**
    ```bash
    openspec status --change "<name>" --json
    ```
@@ -48,7 +62,7 @@ When ready to implement, run /opsx:apply
    - `artifacts`: list of all artifacts with their status and dependencies
    - `planningHome`, `changeRoot`, `artifactPaths`, and `actionContext`: path and scope context. Use these instead of assuming repo-local paths.
 
-4. **Create artifacts in sequence until apply-ready**
+5. **Create artifacts in sequence until apply-ready**
 
    Use the **TodoWrite tool** to track progress through the artifacts.
 
@@ -80,7 +94,7 @@ When ready to implement, run /opsx:apply
       - Use **AskUserQuestion tool** to clarify
       - Then continue with creation
 
-5. **Show final status**
+6. **Show final status**
    ```bash
    openspec status --change "<name>"
    ```

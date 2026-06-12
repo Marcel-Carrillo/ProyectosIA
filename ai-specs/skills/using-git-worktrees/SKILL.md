@@ -31,11 +31,24 @@ create feature branch or worktree
 /apply
 /verify
 /adversarial-review
-/archive
 /commit
 push branch
 create PR
+/archive
 ```
+
+## Spec-Driven Integration
+
+Use this skill as the isolation gate before implementation work starts.
+
+When integrated with OpenSpec commands:
+
+* During `/opsx:propose`: decide branch/worktree strategy for the upcoming change and state the target branch name.
+* During `/opsx:apply`: ensure the change runs in an isolated branch/worktree before editing files.
+* In `tasks.md`: keep "Step 0: Create Feature Branch" as mandatory. If a worktree is used, Step 0 still applies to the branch inside that worktree.
+* During `/opsx:archive`: do not remove worktrees automatically. Cleanup is explicit and only after merge/close confirmation.
+
+The goal is deterministic isolation without changing the mandatory OpenSpec task order.
 
 ## Project Context
 
@@ -109,9 +122,32 @@ Default worktree location:
 
 The `.worktrees/` directory must be ignored by Git.
 
-## Step 0: Inspect Current State
+## Step 0: Detect Existing Isolation and Inspect Current State
 
-Before creating anything, inspect the repository state.
+Before creating anything, detect whether you are already in an isolated workspace.
+
+Run:
+
+```bash
+GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
+GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
+BRANCH=$(git branch --show-current)
+```
+
+Submodule guard:
+
+```bash
+git rev-parse --show-superproject-working-tree 2>/dev/null
+```
+
+Interpretation:
+
+* If `GIT_DIR != GIT_COMMON` and the submodule command returns empty, you are already in a linked worktree.
+  * Continue in this isolated workspace.
+  * Do not create another worktree.
+* If `GIT_DIR == GIT_COMMON` (or you are in a submodule), treat as normal checkout and continue with inspection/decision steps below.
+
+Then inspect repository state:
 
 Run:
 
@@ -135,6 +171,12 @@ Identify:
 * Whether the remote points to `Marcel-Carrillo/ProyectosIA`.
 * Whether the current branch is `main`, `master`, or already a feature branch.
 
+If already in a linked worktree, report:
+
+```text
+Already in isolated workspace at <path> on branch <name>.
+```
+
 If the remote does not point to the expected repository, stop and ask the user before continuing.
 
 Expected remote examples:
@@ -145,7 +187,7 @@ https://github.com/Marcel-Carrillo/ProyectosIA.git
 git@github.com:Marcel-Carrillo/ProyectosIA.git
 ```
 
-## Step 1: Decide Branch or Worktree
+## Step 1: Decide Branch or Worktree (Spec-Driven)
 
 ### If already on a suitable feature branch
 
@@ -180,6 +222,16 @@ There are existing local changes that may be unrelated to this task. Do you want
 ### If user wants a worktree
 
 Proceed to Step 2.
+
+### If this is an OpenSpec implementation (`/opsx:apply`)
+
+Resolve `<change-name>` and use:
+
+```text
+feature/<change-name>
+```
+
+as the default branch name for either standard branch mode or worktree mode.
 
 ## Step 2: Create Git Worktree
 
