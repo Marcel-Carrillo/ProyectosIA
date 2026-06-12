@@ -96,4 +96,4 @@
 - [x] 12.3 Stage all relevant files: backend source, tests, prisma schema, migration, routes, docs updates, and OpenSpec artifacts (exclude `.env`, `node_modules/`, `dist/`, `coverage/`)
 - [x] 12.4 Create commit with Conventional Commit message: `feat(categories): implement product category management CRUD`
 - [x] 12.5 Push branch `feature/product-category-management` to remote origin
-- [ ] 12.6 Create Pull Request with `gh pr create` and report the PR URL in chat
+- [x] 12.6 Create Pull Request with `gh pr create` and report the PR URL in chat

@@ -23,13 +23,17 @@ const productService = new ProductService(
 
 export async function listProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { status, categoryId, search, page, pageSize } = req.query;
+    const { status, categoryId, search, page, pageSize, sort, order } = req.query;
+    const sortValue = sort === 'name' ? 'name' : sort === 'createdAt' ? 'createdAt' : undefined;
+    const orderValue = order === 'asc' ? 'asc' : order === 'desc' ? 'desc' : undefined;
     const result = await productService.findAll({
       status: status as string | undefined,
       categoryId: parseOptionalQueryInt(categoryId, 'categoryId'),
       search: search as string | undefined,
       page: parseOptionalQueryInt(page, 'page'),
       pageSize: parseOptionalQueryInt(pageSize, 'pageSize'),
+      sort: sortValue,
+      order: orderValue,
     });
     logger.info('Products listed', { total: result.total, page: result.page });
     res.json({ success: true, data: result, message: 'Products retrieved successfully' });
