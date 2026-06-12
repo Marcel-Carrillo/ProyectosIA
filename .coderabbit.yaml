@@ -1,0 +1,25 @@
+language: "en-US"
+
+reviews:
+  profile: "assertive"
+  high_level_summary: true
+  review_status: true
+  poem: false
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - master
+  path_filters:
+    - "**/*"
+    - "!**/node_modules/**"
+    - "!**/coverage/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!openspec/changes/archive/**"
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+
+chat:
+  auto_reply: true

@@ -1,0 +1,181 @@
+name: PR Gate - CodeRabbit Required
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  checks: read
+  statuses: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: coderabbit-required-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  coderabbit-required:
+    name: coderabbit-required
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Wait for CodeRabbit check and validate result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.payload.pull_request.head.sha;
+            const prNumber = context.payload.pull_request.number;
+            const headUpdatedAt = Date.parse(context.payload.pull_request.updated_at || 0);
+
+            const maxAttempts = 30; // ~10 minutes
+            const delayMs = 20000;
+
+            function sleep(ms) {
+              return new Promise((resolve) => setTimeout(resolve, ms));
+            }
+
+            function pickCodeRabbitCheck(checkRuns) {
+              return checkRuns.find((run) => {
+                const name = (run.name || "").toLowerCase();
+                const appSlug = (run.app && run.app.slug) ? run.app.slug.toLowerCase() : "";
+                // Never match the enforcement gates themselves (this job and other "*-required" gates),
+                // otherwise this check finds itself in_progress and loops until timeout.
+                if (name.endsWith("-required")) {
+                  return false;
+                }
+                return name.includes("coderabbit") || appSlug.includes("coderabbit");
+              });
+            }
+
+            // Identity-first allowlist: only the official CodeRabbit bot account
+            // can satisfy the gate, so an unrelated user/bot cannot bypass it by
+            // posting text that merely contains "coderabbit".
+            const CODERABBIT_LOGINS = ["coderabbitai[bot]", "coderabbit[bot]"];
+
+            function isLikelyBot(login = "") {
+              return CODERABBIT_LOGINS.includes(login.toLowerCase());
+            }
+
+            function isCodeRabbitMessage(body = "") {
+              return body.toLowerCase().includes("coderabbit");
+            }
+
+            let lastStatus = "not_found";
+            let lastConclusion = "unknown";
+
+            for (let i = 1; i <= maxAttempts; i++) {
+              const checks = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: sha,
+                per_page: 100
+              });
+
+              const run = pickCodeRabbitCheck(checks.data.check_runs || []);
+
+              if (run) {
+                lastStatus = run.status;
+                lastConclusion = run.conclusion || "null";
+                core.info(`Found CodeRabbit check: "${run.name}" (status=${lastStatus}, conclusion=${lastConclusion})`);
+
+                if (run.status === "completed") {
+                  if (["success", "neutral", "skipped"].includes(run.conclusion)) {
+                    core.notice("CodeRabbit check passed.");
+                    return;
+                  }
+                  core.setFailed(`CodeRabbit check completed with conclusion: ${run.conclusion}`);
+                  return;
+                }
+              }
+
+              // CodeRabbit reports via a commit status (context "CodeRabbit"), not a check run,
+              // so the checks API above never sees it. Inspect commit statuses too.
+              const combined = await github.rest.repos.getCombinedStatusForRef({
+                owner,
+                repo,
+                ref: sha
+              });
+              const crStatus = (combined.data.statuses || []).find((s) =>
+                (s.context || "").toLowerCase().includes("coderabbit")
+              );
+
+              if (crStatus) {
+                core.info(`Found CodeRabbit commit status: state=${crStatus.state}`);
+                if (crStatus.state === "success") {
+                  core.notice("CodeRabbit commit status passed.");
+                  return;
+                }
+                if (crStatus.state === "failure" || crStatus.state === "error") {
+                  core.setFailed(`CodeRabbit commit status reported: ${crStatus.state}`);
+                  return;
+                }
+                // state === "pending" -> CodeRabbit is still reviewing; keep waiting.
+              }
+
+              // An authoritative signal (check run or commit status) exists but is still
+              // pending. Do not let the comment/review fallback pass the gate early; the
+              // pending signal remains authoritative, so wait for it to complete.
+              if (run || crStatus) {
+                core.info(`Attempt ${i}/${maxAttempts}: CodeRabbit signal still pending.`);
+                if (i < maxAttempts) {
+                  await sleep(delayMs);
+                }
+                continue;
+              }
+
+              // Fallback: accept CodeRabbit PR comments/reviews as signal when no check run is emitted
+              const [issueComments, reviews] = await Promise.all([
+                github.paginate(github.rest.issues.listComments, {
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  per_page: 100
+                }),
+                github.paginate(github.rest.pulls.listReviews, {
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  per_page: 100
+                })
+              ]);
+
+              const crIssueComment = issueComments.find((c) => {
+                const login = c?.user?.login || "";
+                const createdAt = Date.parse(c.created_at || 0);
+                // Only accept evidence tied to the current head push, so an older
+                // review cannot prematurely pass a freshly synchronized head SHA.
+                return createdAt >= headUpdatedAt &&
+                  isLikelyBot(login) &&
+                  isCodeRabbitMessage(c.body || "");
+              });
+
+              if (crIssueComment) {
+                core.notice(`CodeRabbit signal found in PR comment by ${crIssueComment.user.login}.`);
+                return;
+              }
+
+              const crReview = reviews.find((r) => {
+                const login = r?.user?.login || "";
+                const submittedAt = Date.parse(r.submitted_at || 0);
+                return (r.commit_id === sha || submittedAt >= headUpdatedAt) &&
+                  isLikelyBot(login) &&
+                  isCodeRabbitMessage(r.body || "");
+              });
+
+              if (crReview) {
+                core.notice(`CodeRabbit signal found in PR review by ${crReview.user.login}.`);
+                return;
+              }
+
+              core.info(`Attempt ${i}/${maxAttempts}: CodeRabbit signal not found yet.`);
+              if (i < maxAttempts) {
+                await sleep(delayMs);
+              }
+            }
+
+            core.setFailed(`Timed out waiting for CodeRabbit signal. Last status=${lastStatus}, conclusion=${lastConclusion}`);
