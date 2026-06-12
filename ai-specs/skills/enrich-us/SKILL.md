@@ -48,7 +48,7 @@ Follow these steps:
    - Assumptions and risks
    - Customer-facing vs internal impact split
 9. **MANDATORY — Always output the enriched result to chat before continuing.** Never internalize the enriched version silently. The user must see `## Functional Analysis`, `## Original`, and `## Enhanced` in the chat response. Do not proceed to the next step of any workflow until the enriched output has been displayed.
-7. Jira write-back is optional and only applies in Jira mode:
+10. Jira write-back is optional and only applies in Jira mode:
    - Update the Jira ticket by appending the enhanced content after the original content, with clear `h2` sections `[original]` and `[enhanced]` and readable formatting (lists/code snippets when useful).
    - If ticket status is `To refine`, move it to `Pending refinement validation`.
 

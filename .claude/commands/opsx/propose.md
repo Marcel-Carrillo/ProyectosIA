@@ -29,19 +29,25 @@ When ready to implement, switch to Sonnet 4.6 and run /opsx:apply
 
    **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
 
-2. **Enrich the request with enrich-us before creating anything (MANDATORY MODEL: Opus 4.8)**
+2. **Enrich the request using an Opus 4.8 subagent (MANDATORY — fully automated)**
 
-   Load and apply `ai-specs/skills/enrich-us/SKILL.md`.
+   Use the **Agent tool** to spawn a subagent on Opus 4.8 that runs the full enrich-us workflow:
 
-   Before running enrich-us, switch the working model to **Opus 4.8** (`claude-opus-4-8-thinking-high`).
+   ```
+   Agent(
+     subagent_type: "general-purpose",
+     model: "opus",
+     prompt: "Read and apply ai-specs/skills/enrich-us/SKILL.md in full.
+              The user's request to enrich (direct input mode — no Jira needed): <user's full description>
+              Output the complete ## Functional Analysis, ## Original, and ## Enhanced sections exactly as the skill specifies."
+   )
+   ```
 
-   Pass the user's full description as the ticket input (direct input mode — no Jira needed).
+   Wait for the subagent to return. Its response contains the enrichment output.
 
-   **MANDATORY**: Display the full `## Functional Analysis`, `## Original`, and `## Enhanced` output in chat.
+   **Display the subagent's full output in chat** (## Functional Analysis, ## Original, ## Enhanced) before continuing.
 
-   **Do NOT ask for confirmation after enrichment.** Apply the enriched version immediately.
-
-   Use `## Functional Analysis` + `## Enhanced` as the definitive input for all subsequent artifacts (proposal, design, tasks).
+   **Do NOT ask for confirmation after enrichment.** Use `## Functional Analysis` + `## Enhanced` as the definitive input for all subsequent artifacts (proposal, design, tasks).
 
 3. **Create the change directory**
    ```bash
