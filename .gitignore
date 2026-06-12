@@ -18,6 +18,9 @@ build/
 !.env.example
 !.env.*.example
 
+# local MCP config (credentials stay on your machine)
+.mcp.json
+
 # worktree directories
 .worktrees/
 
