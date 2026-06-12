@@ -64,7 +64,7 @@ Archive a completed change in the experimental workflow.
 
    **Sync is MANDATORY when delta specs exist. Do NOT ask the user — always sync automatically.**
 
-   Use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive after sync completes.
+   Use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). If the sync task fails or reports errors, abort the archive immediately and report the sync error to the user — do NOT proceed to archive with unsynced specs.
 
 5. **Perform the archive**
 
