@@ -5,6 +5,7 @@ import {
   ProductCreateData,
   ProductUpdateData,
   ProductListFilters,
+  ProductListResult,
 } from '../../domain/repositories/productRepository';
 
 export class ProductNotFoundError extends Error {
@@ -19,7 +20,7 @@ export class ProductNotFoundError extends Error {
 }
 
 export class ProductSlugConflictError extends Error {
-  readonly code = 'PRODUCT_SLUG_ALREADY_EXISTS' as const;
+  readonly code = 'PRODUCT_SLUG_CONFLICT' as const;
   readonly status = 409;
 
   constructor() {
@@ -61,28 +62,51 @@ const variantSelect = {
   compareAtPrice: true,
   stockPolicy: true,
   status: true,
+  deletedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;
 
 export class ProductRepository implements IProductRepository {
-  async findAll(filters: ProductListFilters = {}): Promise<Product[]> {
-    const where: Record<string, unknown> = {};
+  async findAll(filters: ProductListFilters = {}): Promise<ProductListResult> {
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 20;
+    const skip = (page - 1) * pageSize;
+
+    const where: Record<string, unknown> = { deletedAt: null };
     if (filters.status) where['status'] = filters.status;
     if (filters.categoryId) where['categoryId'] = filters.categoryId;
+    if (filters.search) {
+      where['name'] = { contains: filters.search, mode: 'insensitive' };
+    }
 
-    const rows = await prisma.product.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
-    return rows.map((r) => new Product(r));
+    const [rows, total] = await prisma.$transaction([
+      prisma.product.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return {
+      items: rows.map((r) => new Product(r)),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async findById(id: number): Promise<Product | null> {
-    const row = await prisma.product.findUnique({
-      where: { id },
+    const row = await prisma.product.findFirst({
+      where: { id, deletedAt: null },
       include: {
-        variants: { select: variantSelect, orderBy: { createdAt: 'asc' } },
+        variants: {
+          select: variantSelect,
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'asc' },
+        },
         images: { orderBy: { sortOrder: 'asc' } },
       },
     });
@@ -90,7 +114,7 @@ export class ProductRepository implements IProductRepository {
   }
 
   async findBySlug(slug: string): Promise<Product | null> {
-    const row = await prisma.product.findUnique({ where: { slug } });
+    const row = await prisma.product.findFirst({ where: { slug, deletedAt: null } });
     return row ? new Product(row) : null;
   }
 
@@ -136,14 +160,13 @@ export class ProductRepository implements IProductRepository {
     return new Product(row);
   }
 
-  async softDelete(id: number): Promise<Product> {
+  async softDelete(id: number): Promise<void> {
     const current = await this.findById(id);
     if (!current) throw new ProductNotFoundError();
 
-    const row = await prisma.product.update({
+    await prisma.product.update({
       where: { id },
-      data: { status: 'Inactive' },
+      data: { deletedAt: new Date() },
     });
-    return new Product(row);
   }
 }

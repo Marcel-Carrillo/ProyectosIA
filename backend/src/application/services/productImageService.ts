@@ -30,7 +30,7 @@ export class ProductImageService {
   }
 
   async add(data: ProductImageCreateData): Promise<ProductImage> {
-    validateProductImageData(data as Record<string, unknown>);
+    validateProductImageData(data as unknown as Record<string, unknown>);
     const product = await this.productRepo.findById(data.productId);
     if (!product) throw new ProductNotFoundError();
     return this.imageRepo.create(data);

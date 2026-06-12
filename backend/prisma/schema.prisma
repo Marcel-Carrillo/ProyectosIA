@@ -48,6 +48,7 @@ model Product {
   mainImageUrl String?          @db.VarChar(500)
   categoryId   Int?
   category     Category?        @relation(fields: [categoryId], references: [id])
+  deletedAt    DateTime?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   variants     ProductVariant[]
@@ -69,6 +70,7 @@ model ProductVariant {
   supplierCost      Decimal?  @db.Decimal(10, 2)
   stockPolicy       String    @default("SupplierManaged")
   status            String    @default("Active")
+  deletedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }

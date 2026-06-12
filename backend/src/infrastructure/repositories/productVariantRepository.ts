@@ -18,7 +18,7 @@ export class VariantNotFoundError extends Error {
 }
 
 export class VariantSkuConflictError extends Error {
-  readonly code = 'VARIANT_SKU_ALREADY_EXISTS' as const;
+  readonly code = 'VARIANT_SKU_CONFLICT' as const;
   readonly status = 409;
 
   constructor() {
@@ -33,7 +33,7 @@ export class VariantComparePriceInvalidError extends Error {
   readonly status = 422;
 
   constructor() {
-    super('compareAtPrice must be greater than or equal to publicPrice');
+    super('compareAtPrice must be greater than publicPrice');
     this.name = 'VariantComparePriceInvalidError';
     Object.setPrototypeOf(this, VariantComparePriceInvalidError.prototype);
   }
@@ -49,6 +49,7 @@ const variantSelect = {
   compareAtPrice: true,
   stockPolicy: true,
   status: true,
+  deletedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -56,7 +57,7 @@ const variantSelect = {
 export class ProductVariantRepository implements IProductVariantRepository {
   async findByProduct(productId: number): Promise<ProductVariant[]> {
     const rows = await prisma.productVariant.findMany({
-      where: { productId },
+      where: { productId, deletedAt: null },
       select: variantSelect,
       orderBy: { createdAt: 'asc' },
     });
@@ -64,16 +65,16 @@ export class ProductVariantRepository implements IProductVariantRepository {
   }
 
   async findById(id: number): Promise<ProductVariant | null> {
-    const row = await prisma.productVariant.findUnique({
-      where: { id },
+    const row = await prisma.productVariant.findFirst({
+      where: { id, deletedAt: null },
       select: variantSelect,
     });
     return row ? new ProductVariant(row) : null;
   }
 
   async findBySku(sku: string): Promise<ProductVariant | null> {
-    const row = await prisma.productVariant.findUnique({
-      where: { sku },
+    const row = await prisma.productVariant.findFirst({
+      where: { sku, deletedAt: null },
       select: variantSelect,
     });
     return row ? new ProductVariant(row) : null;
@@ -81,7 +82,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
 
   async countActiveByProduct(productId: number): Promise<number> {
     return prisma.productVariant.count({
-      where: { productId, status: 'Active' },
+      where: { productId, status: 'Active', deletedAt: null },
     });
   }
 
@@ -142,7 +143,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
 
     const row = await prisma.productVariant.update({
       where: { id },
-      data: { status: 'Inactive' },
+      data: { deletedAt: new Date() },
       select: variantSelect,
     });
     return new ProductVariant(row);

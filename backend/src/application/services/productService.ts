@@ -4,6 +4,7 @@ import {
   ProductCreateData,
   ProductUpdateData,
   ProductListFilters,
+  ProductListResult,
 } from '../../domain/repositories/productRepository';
 import { Product } from '../../domain/models/product';
 import { validateProductData } from '../validator';
@@ -11,6 +12,7 @@ import {
   ProductNotFoundError,
   ProductRequiresActiveVariantError,
   ProductArchivedCannotReactivateError,
+  ProductSlugConflictError,
 } from '../../infrastructure/repositories/productRepository';
 
 export class ProductService {
@@ -19,7 +21,7 @@ export class ProductService {
     private readonly variantRepo: IProductVariantRepository,
   ) {}
 
-  async findAll(filters: ProductListFilters = {}): Promise<Product[]> {
+  async findAll(filters: ProductListFilters = {}): Promise<ProductListResult> {
     return this.repo.findAll(filters);
   }
 
@@ -51,7 +53,7 @@ export class ProductService {
     return this.repo.update(id, data);
   }
 
-  async softDelete(id: number): Promise<Product> {
+  async softDelete(id: number): Promise<void> {
     const current = await this.repo.findById(id);
     if (!current) throw new ProductNotFoundError();
     return this.repo.softDelete(id);
@@ -75,6 +77,6 @@ export class ProductService {
       if (!existing) return slug;
       slug = `${base}-${attempt}`;
     }
-    throw new Error('Could not generate a unique slug after 5 attempts');
+    throw new ProductSlugConflictError();
   }
 }

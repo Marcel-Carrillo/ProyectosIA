@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { healthRoutes, categoryRoutes } from './routes';
+import productAdminRoutes from './routes/admin/productRoutes';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
 import { logger } from './infrastructure/logger';
 
@@ -23,14 +24,7 @@ app.use(express.json());
 app.use('/health', healthRoutes);
 app.use('/categories', categoryRoutes);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FUTURE: /api/admin routes
-// Register backoffice routers here. These endpoints are for store administrators
-// and may expose internal data (supplier costs, fulfillment status, etc.).
-// Example:
-//   import productAdminRoutes from './routes/admin/productRoutes';
-//   app.use('/api/admin/products', productAdminRoutes);
-// ─────────────────────────────────────────────────────────────────────────────
+app.use('/api/admin/products', productAdminRoutes);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FUTURE: /api/public routes

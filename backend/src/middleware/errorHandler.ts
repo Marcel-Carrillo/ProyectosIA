@@ -1,5 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '../application/validator';
+import {
+  ProductNotFoundError,
+  ProductSlugConflictError,
+  ProductRequiresActiveVariantError,
+  ProductArchivedCannotReactivateError,
+} from '../infrastructure/repositories/productRepository';
+import {
+  VariantNotFoundError,
+  VariantSkuConflictError,
+  VariantComparePriceInvalidError,
+} from '../infrastructure/repositories/productVariantRepository';
+import { ImageNotFoundError } from '../infrastructure/repositories/productImageRepository';
 
 interface AppError {
   message: string;
@@ -34,6 +46,22 @@ export function globalErrorHandler(
     statusCode = 400;
     code = err.code;
     message = err.message;
+  } else if (err instanceof ProductNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof VariantNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof ImageNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof ProductSlugConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof VariantSkuConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof ProductRequiresActiveVariantError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof ProductArchivedCannotReactivateError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof VariantComparePriceInvalidError) {
+    statusCode = 422; code = err.code; message = err.message;
   } else if ('status' in err && typeof err.status === 'number') {
     statusCode = err.status;
     code = (err as AppError).code ?? 'ERROR';

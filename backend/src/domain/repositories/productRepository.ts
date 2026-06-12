@@ -25,15 +25,25 @@ export interface ProductUpdateData {
 export interface ProductListFilters {
   status?: string;
   categoryId?: number;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProductListResult {
+  items: Product[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface IProductRepository {
-  findAll(filters?: ProductListFilters): Promise<Product[]>;
+  findAll(filters?: ProductListFilters): Promise<ProductListResult>;
   findById(id: number): Promise<Product | null>;
   findBySlug(slug: string): Promise<Product | null>;
   create(data: ProductCreateData): Promise<Product>;
   update(id: number, data: ProductUpdateData): Promise<Product>;
-  softDelete(id: number): Promise<Product>;
+  softDelete(id: number): Promise<void>;
 }
 
 export interface ProductVariantCreateData {

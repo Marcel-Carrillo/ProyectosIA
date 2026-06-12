@@ -11,6 +11,7 @@ export class ProductVariant {
   compareAtPrice?: number | null;
   stockPolicy: StockPolicy;
   status: ProductVariantStatus;
+  deletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 
@@ -24,6 +25,7 @@ export class ProductVariant {
     compareAtPrice?: unknown;
     stockPolicy?: string;
     status?: string;
+    deletedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -36,6 +38,7 @@ export class ProductVariant {
     this.compareAtPrice = data.compareAtPrice != null ? Number(data.compareAtPrice) : null;
     this.stockPolicy = (data.stockPolicy as StockPolicy) ?? 'SupplierManaged';
     this.status = (data.status as ProductVariantStatus) ?? 'Active';
+    this.deletedAt = data.deletedAt ?? null;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
   }

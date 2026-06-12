@@ -20,6 +20,50 @@ export function validateRequiredFields(
   }
 }
 
+export function validateProductData(data: Record<string, unknown>): void {
+  const name = data['name'];
+  if (name === undefined || name === null || name === '') {
+    throw new ValidationError("Field 'name' is required");
+  }
+  if (typeof name === 'string' && name.length > 150) {
+    throw new ValidationError("Field 'name' must not exceed 150 characters");
+  }
+
+  const status = data['status'];
+  if (status !== undefined && status !== null && status !== '') {
+    const validStatuses = ['Draft', 'Active', 'Inactive', 'Archived'];
+    if (!validStatuses.includes(status as string)) {
+      throw new ValidationError(`Field 'status' must be one of: ${validStatuses.join(', ')}`);
+    }
+  }
+}
+
+export function validateProductVariantData(data: Record<string, unknown>): void {
+  const publicPrice = data['publicPrice'];
+  if (publicPrice === undefined || publicPrice === null || publicPrice === '') {
+    throw new ValidationError("Field 'publicPrice' is required");
+  }
+  const price = Number(publicPrice);
+  if (isNaN(price) || price <= 0) {
+    throw new ValidationError("Field 'publicPrice' must be a positive number");
+  }
+
+  const sku = data['sku'];
+  if (sku === undefined || sku === null || sku === '') {
+    throw new ValidationError("Field 'sku' is required");
+  }
+}
+
+export function validateProductImageData(data: Record<string, unknown>): void {
+  const url = data['url'];
+  if (url === undefined || url === null || url === '') {
+    throw new ValidationError("Field 'url' is required");
+  }
+  if (typeof url === 'string' && url.length > 500) {
+    throw new ValidationError("Field 'url' must not exceed 500 characters");
+  }
+}
+
 export function validateCategoryData(data: Record<string, unknown>): void {
   const name = data['name'];
   if (name === undefined || name === null || name === '') {

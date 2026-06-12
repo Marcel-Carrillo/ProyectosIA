@@ -296,6 +296,448 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/products:
+    get:
+      summary: List products (admin)
+      description: Returns a paginated list of non-deleted products with optional filtering.
+      tags:
+        - Admin — Products
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ProductStatus'
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create product (admin)
+      description: Creates a new product. Slug is auto-generated from name in kebab-case. Default status is Draft.
+      tags:
+        - Admin — Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Slug conflict after 5 auto-retry attempts (PRODUCT_SLUG_CONFLICT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}:
+    get:
+      summary: Get product by ID (admin)
+      tags:
+        - Admin — Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Product with variants and images
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update product (admin)
+      description: Partial update. To activate, product must have ≥1 active variant. Archived products cannot be reactivated.
+      tags:
+        - Admin — Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: |
+            Business rule violation:
+            - PRODUCT_REQUIRES_ACTIVE_VARIANT: activating product with no active variants
+            - PRODUCT_ARCHIVED_CANNOT_REACTIVATE: attempting to reactivate an archived product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Soft-delete product (admin)
+      description: Sets deletedAt timestamp. Product is excluded from all subsequent queries.
+      tags:
+        - Admin — Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Product soft-deleted
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/variants:
+    get:
+      summary: List variants for product (admin)
+      description: Returns all non-deleted variants. supplierId, supplierReference, and supplierCost are NEVER included in responses.
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Variants retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create variant (admin)
+      description: >
+        Creates a new variant for the product. compareAtPrice must be strictly greater than
+        publicPrice if provided. supplierId/supplierReference/supplierCost are accepted as
+        input but never returned in the response.
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductVariantRequest'
+      responses:
+        '201':
+          description: Variant created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: SKU already exists (VARIANT_SKU_CONFLICT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: compareAtPrice is not greater than publicPrice (VARIANT_COMPARE_PRICE_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/variants/{variantId}:
+    get:
+      summary: Get variant by ID (admin)
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Variant retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update variant (admin)
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductVariantRequest'
+      responses:
+        '200':
+          description: Variant updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: compareAtPrice validation error (VARIANT_COMPARE_PRICE_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Soft-delete variant (admin)
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Variant soft-deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/images:
+    get:
+      summary: List images for product (admin)
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Images retrieved ordered by sortOrder
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductImage'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Add image to product (admin)
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductImageRequest'
+      responses:
+        '201':
+          description: Image added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductImage'
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/images/{imageId}:
+    patch:
+      summary: Update image (admin)
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: imageId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductImageRequest'
+      responses:
+        '200':
+          description: Image updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductImage'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Hard-delete image (admin)
+      description: Permanently removes the image row (hard-delete, no deletedAt).
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: imageId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Image deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /suppliers:
     get:
       summary: Get all suppliers
@@ -1213,6 +1655,10 @@ components:
 
     ProductVariant:
       type: object
+      description: >
+        Represents a sellable variant of a product. Note: supplierId, supplierReference,
+        and supplierCost are stored in the database but are NEVER included in API responses.
+        These fields are excluded at the Prisma select layer as a security invariant.
       properties:
         id:
           type: integer
@@ -1240,23 +1686,14 @@ components:
           format: decimal
           nullable: true
           example: 59.99
-        supplierId:
-          type: integer
-          nullable: true
-          example: 1
-        supplierReference:
-          type: string
-          nullable: true
-          example: SUP-BLACK-DRESS-S
-        supplierCost:
-          type: number
-          format: decimal
-          nullable: true
-          example: 24.99
         stockPolicy:
           $ref: '#/components/schemas/StockPolicy'
         status:
           $ref: '#/components/schemas/ProductVariantStatus'
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1440,6 +1877,24 @@ components:
           type: string
           example: Operation completed successfully
 
+    ProductListResult:
+      type: object
+      description: Paginated product list result as returned by GET /api/admin/products
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+          example: 42
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+
     ProductListResponse:
       type: object
       properties:
@@ -1447,11 +1902,10 @@ components:
           type: boolean
           example: true
         data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Product'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: '#/components/schemas/ProductListResult'
+        message:
+          type: string
+          example: Products retrieved successfully
 
     Supplier:
       type: object

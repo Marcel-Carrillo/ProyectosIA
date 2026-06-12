@@ -7,7 +7,10 @@ import {
 import { ProductVariant } from '../../domain/models/productVariant';
 import { validateProductVariantData } from '../validator';
 import { ProductNotFoundError } from '../../infrastructure/repositories/productRepository';
-import { VariantNotFoundError } from '../../infrastructure/repositories/productVariantRepository';
+import {
+  VariantNotFoundError,
+  VariantComparePriceInvalidError,
+} from '../../infrastructure/repositories/productVariantRepository';
 
 export class ProductVariantService {
   constructor(
@@ -30,9 +33,12 @@ export class ProductVariantService {
   }
 
   async create(data: ProductVariantCreateData): Promise<ProductVariant> {
-    validateProductVariantData(data as Record<string, unknown>);
+    validateProductVariantData(data as unknown as Record<string, unknown>);
     const product = await this.productRepo.findById(data.productId);
     if (!product) throw new ProductNotFoundError();
+    if (data.compareAtPrice != null && data.compareAtPrice <= data.publicPrice) {
+      throw new VariantComparePriceInvalidError();
+    }
     return this.variantRepo.create(data);
   }
 
@@ -45,12 +51,9 @@ export class ProductVariantService {
     if (data.publicPrice !== undefined || data.compareAtPrice !== undefined) {
       const effectivePublicPrice = data.publicPrice ?? variant.publicPrice;
       const effectiveCompareAt = data.compareAtPrice !== undefined ? data.compareAtPrice : variant.compareAtPrice;
-      validateProductVariantData({
-        ...variant,
-        publicPrice: effectivePublicPrice,
-        compareAtPrice: effectiveCompareAt,
-        stockPolicy: data.stockPolicy ?? variant.stockPolicy,
-      } as Record<string, unknown>);
+      if (effectiveCompareAt != null && effectiveCompareAt <= effectivePublicPrice) {
+        throw new VariantComparePriceInvalidError();
+      }
     }
 
     return this.variantRepo.update(id, data);

@@ -12,6 +12,7 @@ export class Product {
   status: ProductStatus;
   mainImageUrl?: string | null;
   categoryId?: number | null;
+  deletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
   variants?: ProductVariant[];
@@ -26,6 +27,7 @@ export class Product {
     status?: string;
     mainImageUrl?: string | null;
     categoryId?: number | null;
+    deletedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
     variants?: ConstructorParameters<typeof ProductVariant>[0][];
@@ -39,6 +41,7 @@ export class Product {
     this.status = (data.status as ProductStatus) ?? 'Draft';
     this.mainImageUrl = data.mainImageUrl ?? null;
     this.categoryId = data.categoryId ?? null;
+    this.deletedAt = data.deletedAt ?? null;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
     if (data.variants) {
