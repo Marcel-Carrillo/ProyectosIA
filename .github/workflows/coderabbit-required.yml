@@ -25,6 +25,7 @@ jobs:
             const repo = context.repo.repo;
             const sha = context.payload.pull_request.head.sha;
             const prNumber = context.payload.pull_request.number;
+            const headUpdatedAt = Date.parse(context.payload.pull_request.updated_at || 0);
 
             const maxAttempts = 30; // ~10 minutes
             const delayMs = 20000;
@@ -101,7 +102,12 @@ jobs:
 
               const crIssueComment = issueComments.find((c) => {
                 const login = c?.user?.login || "";
-                return isLikelyBot(login) && isCodeRabbitMessage(c.body || "");
+                const createdAt = Date.parse(c.created_at || 0);
+                // Only accept evidence tied to the current head push, so an older
+                // review cannot prematurely pass a freshly synchronized head SHA.
+                return createdAt >= headUpdatedAt &&
+                  isLikelyBot(login) &&
+                  isCodeRabbitMessage(c.body || "");
               });
 
               if (crIssueComment) {
@@ -111,7 +117,10 @@ jobs:
 
               const crReview = reviews.find((r) => {
                 const login = r?.user?.login || "";
-                return isLikelyBot(login) && isCodeRabbitMessage(r.body || "");
+                const submittedAt = Date.parse(r.submitted_at || 0);
+                return (r.commit_id === sha || submittedAt >= headUpdatedAt) &&
+                  isLikelyBot(login) &&
+                  isCodeRabbitMessage(r.body || "");
               });
 
               if (crReview) {
