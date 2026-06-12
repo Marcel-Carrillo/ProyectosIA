@@ -39,7 +39,7 @@ jobs:
                 const appSlug = (run.app && run.app.slug) ? run.app.slug.toLowerCase() : "";
                 // Never match the enforcement gates themselves (this job and other "*-required" gates),
                 // otherwise this check finds itself in_progress and loops until timeout.
-                if (name.endsWith("-required") || name.includes("required")) {
+                if (name.endsWith("-required")) {
                   return false;
                 }
                 return name.includes("coderabbit") || appSlug.includes("coderabbit");
