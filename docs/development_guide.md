@@ -37,11 +37,14 @@ NODE_ENV=development
 FRONTEND_URL=http://localhost:3001
 ```
 
-**Frontend Environment** (`frontend/.env`):
+**Frontend Environment** (`frontend/.env.development`):
 
 ```env
-REACT_APP_API_URL=http://localhost:3000
+REACT_APP_API_BASE_URL=http://localhost:3000
+PORT=3001
 ```
+
+> See `frontend/.env.example` for the full list of supported variables. Do not commit `.env.development` — it is listed in `.gitignore`.
 
 ### 3. Database Setup (PostgreSQL with Docker)
 

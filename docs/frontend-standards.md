@@ -112,7 +112,7 @@ frontend/
 │   ├── services/          # API service layer
 │   ├── pages/             # Page components
 │   ├── assets/            # Images, fonts, static resources
-│   ├── App.js             # Main application component
+│   ├── App.tsx            # Main application component
 │   ├── index.tsx          # Application entry point
 │   └── index.css          # Global styles
 ├── cypress/

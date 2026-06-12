@@ -1,7 +1,32 @@
+# dependencies
 node_modules/
-dist/
-.env
-.env.local
+**/node_modules/
+
+# test artifacts
 coverage/
-*.log
+**/coverage/
+
+# build artifacts
+dist/
+build/
+**/dist/
+**/build/
+
+# local environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# worktree directories
+.worktrees/
+
+# local Claude session artifacts
 .claude/sessions/
+
+# logs
+*.log
+
+# OS noise
+.DS_Store
+Thumbs.db
