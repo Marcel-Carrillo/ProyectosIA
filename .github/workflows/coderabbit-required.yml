@@ -12,6 +12,10 @@ permissions:
   pull-requests: read
   issues: read
 
+concurrency:
+  group: coderabbit-required-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   coderabbit-required:
     name: coderabbit-required

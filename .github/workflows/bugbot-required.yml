@@ -11,6 +11,10 @@ permissions:
   pull-requests: read
   issues: read
 
+concurrency:
+  group: bugbot-required-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   bugbot-required:
     name: bugbot-required
