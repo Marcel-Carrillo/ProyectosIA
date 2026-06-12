@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
+import './styles/tokens.css';
+import './styles/storefront.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

@@ -649,3 +649,96 @@ npm run cypress:run     # Run Cypress tests headlessly
 * **Responsive design** principles throughout
 
 This document serves as the foundation for maintaining code quality and consistency across the women's fashion ecommerce frontend application. All team members should follow these practices to ensure a maintainable and scalable codebase.
+
+---
+
+## Storefront (Public-Facing) UI
+
+### Route Namespace
+
+The application has two isolated route trees:
+
+| Namespace | Layout | Purpose |
+|---|---|---|
+| `/catalog`, `/catalog/:id` | `StorefrontLayout` | Public storefront (visible to customers) |
+| `/products`, `/categories`, `/suppliers`, … | Admin `Layout` | Admin panel |
+
+The root `/` redirects to `/catalog`. Admin routes are unchanged and use no storefront components.
+
+### Folder Structure
+
+```
+frontend/src/
+├── components/
+│   └── storefront/          # Storefront-only UI components
+│       ├── StorefrontLayout.tsx
+│       ├── StorefrontHeader.tsx
+│       ├── StorefrontFooter.tsx
+│       ├── CategoryNav.tsx
+│       ├── PriceTag.tsx
+│       ├── ProductCard.tsx
+│       ├── ProductGrid.tsx
+│       ├── ProductGallery.tsx
+│       ├── VariantSelector.tsx
+│       └── Pagination.tsx
+├── pages/
+│   └── storefront/          # Storefront page components (lazy-loaded)
+│       ├── CatalogPage.tsx
+│       └── ProductPage.tsx
+├── styles/
+│   ├── tokens.css           # CSS custom properties (design tokens)
+│   └── storefront.css       # Storefront utility classes
+└── types/
+    ├── product.ts           # Product, ProductVariant, ProductImage types
+    ├── category.ts          # Category type
+    └── index.ts             # Re-exports
+```
+
+### Design Token Convention
+
+Design tokens live in `frontend/src/styles/tokens.css` as CSS custom properties on `:root`. They are imported before Bootstrap in `index.tsx` and apply globally. Storefront components consume them via `var(--token-name)`.
+
+Token categories:
+
+| Prefix | Example | Purpose |
+|---|---|---|
+| `--color-*` | `--color-near-black` | Neutral palette |
+| `--font-family-*` | `--font-family-body` | Typography |
+| `--font-size-*` | `--font-size-sm` | Type scale |
+| `--font-weight-*` | `--font-weight-regular` | Weights |
+| `--spacing-*` | `--spacing-4` | Whitespace scale |
+| `--radius-*` | `--radius-sm` | Border radii |
+| `--shadow-*` | `--shadow-card` | Elevation |
+
+Tokens are a layer **on top of** Bootstrap, not a replacement. Use Bootstrap grid and utilities; override visual style via tokens.
+
+### Security Invariant
+
+Supplier fields (`supplierId`, `supplierReference`, `supplierCost`) must **never** appear in any storefront component output. They are excluded at the Prisma select layer on the server and are absent from all `ProductVariant` types.
+
+### Storefront Testing
+
+Add Cypress test file: `cypress/e2e/storefront.cy.ts`
+
+Recommended scenarios:
+- Catalog page loads with product cards
+- Category nav filters grid
+- Search updates URL and results
+- Product detail shows gallery, price, variant selector
+- No supplier fields in HTML source
+- Admin routes unaffected (layout isolation)
+
+---
+
+## Stack Decisions
+
+### CRA vs. Vite
+
+**Decision:** Keep Create React App 5.0.1. **Vite migration is deferred until explicitly approved.**
+
+Rationale:
+- All existing tooling (Cypress config, Jest, `react-scripts`) is CRA-based.
+- Migration requires updating `tsconfig.json`, `vite.config.ts`, adjusting import aliases, and re-testing the full suite.
+- No performance bottleneck has been identified that justifies the migration risk at this stage.
+
+If Vite is reconsidered, create a dedicated change proposal through the OpenSpec workflow before proceeding.
