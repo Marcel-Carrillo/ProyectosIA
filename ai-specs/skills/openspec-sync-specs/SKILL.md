@@ -5,7 +5,7 @@ description: Sync delta specs from an active OpenSpec change into main specs wit
 license: MIT
 compatibility: Requires OpenSpec CLI.
 metadata:
-author: openspec
+author: Marcel Carrillo
 version: "1.0"
 generatedBy: "1.3.1"
 --------------------
@@ -53,22 +53,25 @@ Always read:
 
 Read additional documentation only when relevant:
 
-* For backend-related specs:
+### Backend-related specs
 
-  * `docs/backend-standards.md`
-  * `docs/data-model.md`
-  * `docs/api-spec.yml`
-* For frontend-related specs:
+* `docs/backend-standards.md`
+* `docs/data-model.md`
+* `docs/api-spec.yml`
 
-  * `docs/frontend-standards.md`
-  * `docs/api-spec.yml`
-* For documentation-only changes:
+### Frontend-related specs
 
-  * `docs/documentation-standards.md`
-* For ecommerce domain changes:
+* `docs/frontend-standards.md`
+* `docs/api-spec.yml`
 
-  * `docs/data-model.md`
-  * `docs/api-spec.yml`
+### Documentation-only changes
+
+* `docs/documentation-standards.md`
+
+### Ecommerce domain changes
+
+* `docs/data-model.md`
+* `docs/api-spec.yml`
 
 Do not read frontend standards for backend-only spec synchronization unless frontend impact must be analyzed.
 

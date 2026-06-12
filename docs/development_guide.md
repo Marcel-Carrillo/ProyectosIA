@@ -10,7 +10,7 @@ The project uses a React frontend, a Node.js/TypeScript/Express backend, Prisma,
 
 Ensure you have the following installed:
 
-* **Node.js** (v16 or higher)
+* **Node.js** (v24.16.0 or higher)
 * **npm** (v8 or higher)
 * **Docker** and **Docker Compose**
 * **Git**
@@ -28,20 +28,13 @@ Create environment files for both backend and frontend.
 
 **Backend Environment** (`backend/.env`):
 
-```env
-# Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=ecommerceUser
-DB_PASSWORD=ecommercePassword
-DB_NAME=ecommerceDb
+Copy `backend/.env.example` to `backend/.env` and adjust values for your local environment:
 
-# Application Configuration
+```env
+DATABASE_URL="postgresql://ecommerceUser:ecommercePassword@localhost:5432/ecommerceDb"
 PORT=3000
 NODE_ENV=development
-
-# Prisma Database URL
-DATABASE_URL="postgresql://ecommerceUser:ecommercePassword@localhost:5432/ecommerceDb"
+FRONTEND_URL=http://localhost:3001
 ```
 
 **Frontend Environment** (`frontend/.env.development`):
@@ -272,9 +265,10 @@ npm start
 After starting the project, verify:
 
 ```text
-Backend API: http://localhost:3000
-Frontend app: http://localhost:3001
-PostgreSQL: localhost:5432
+Backend health:  http://localhost:3000/health  → 200 {"status":"ok"}
+Backend API:     http://localhost:3000
+Frontend app:    http://localhost:3001
+PostgreSQL:      localhost:5432
 ```
 
 If the backend cannot connect to the database, verify:

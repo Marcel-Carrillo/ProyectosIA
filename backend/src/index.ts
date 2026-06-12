@@ -1,0 +1,50 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import { healthRoutes, categoryRoutes } from './routes';
+import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
+import { logger } from './infrastructure/logger';
+
+const requiredEnvVars = ['DATABASE_URL', 'PORT'];
+for (const key of requiredEnvVars) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+}
+
+export const app = express();
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+  credentials: true,
+}));
+app.use(express.json());
+
+app.use('/health', healthRoutes);
+app.use('/categories', categoryRoutes);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FUTURE: /api/admin routes
+// Register backoffice routers here. These endpoints are for store administrators
+// and may expose internal data (supplier costs, fulfillment status, etc.).
+// Example:
+//   import productAdminRoutes from './routes/admin/productRoutes';
+//   app.use('/api/admin/products', productAdminRoutes);
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FUTURE: /api/public routes
+// Register customer-facing routers here. These endpoints MUST NEVER expose
+// supplier costs, supplier references, internal notes, or fulfillment data.
+// Example:
+//   import productPublicRoutes from './routes/public/productRoutes';
+//   app.use('/api/public/products', productPublicRoutes);
+// ─────────────────────────────────────────────────────────────────────────────
+
+app.use(notFoundHandler);
+app.use(globalErrorHandler);
+
+const PORT = parseInt(process.env.PORT as string, 10);
+app.listen(PORT, () => {
+  logger.info('Server started', { port: PORT, env: process.env.NODE_ENV });
+});

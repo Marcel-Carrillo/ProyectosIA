@@ -14,7 +14,7 @@ The initial business model is supplier-fulfilled ecommerce:
 
 ### 1. Category
 
-Represents a product category used to organize the online catalog.
+Represents a product category used to organize the online catalog. Supports optional parent-child hierarchy for two-level category trees.
 
 Examples:
 
@@ -26,28 +26,30 @@ Examples:
 
 **Fields:**
 
-* `id`: Unique identifier for the category (Primary Key)
-* `name`: Category name (max 100 characters)
-* `slug`: Unique URL-friendly category identifier (max 150 characters)
-* `description`: Category description (optional, max 500 characters)
-* `parentCategoryId`: Foreign key referencing another Category for nested categories (optional)
-* `isActive`: Boolean indicating if the category is active
-* `createdAt`: Date and time when the category was created
-* `updatedAt`: Date and time when the category was last updated
+* `id`: Auto-incremented integer primary key
+* `name`: Category name — unique, required
+* `description`: Category description (optional)
+* `imageUrl`: URL for the category image (optional, stored as plain string)
+* `status`: Lifecycle status — `Active` or `Inactive` (default: `Active`)
+* `parentId`: Foreign key referencing another Category for optional hierarchy (nullable)
+* `createdAt`: Timestamp when the category was created
+* `updatedAt`: Timestamp when the category was last updated
 
 **Validation Rules:**
 
-* Name is required and cannot exceed 100 characters
-* Slug is required, must be unique, and cannot exceed 150 characters
-* Description is optional but cannot exceed 500 characters
-* Parent category is optional but must reference an existing category if provided
-* A category cannot be its own parent
+* `name` is required and must be unique across all categories
+* `status` must be `Active` or `Inactive` if provided
+* `parentId` must reference an existing category if provided; a category cannot reference itself
+
+**Soft Delete:**
+
+Categories are soft-deleted by setting `status = Inactive` rather than removing the row. This preserves referential integrity with future `Product` references.
 
 **Relationships:**
 
-* `parentCategory`: Many-to-one self relationship with Category model
-* `subcategories`: One-to-many self relationship with Category model
-* `products`: One-to-many relationship with Product model
+* `parent`: Many-to-one self-referencing relationship with Category model (via `parentId`)
+* `children`: One-to-many self-referencing relationship with Category model
+* `products`: One-to-many relationship with Product model (planned)
 
 ### 2. Product
 

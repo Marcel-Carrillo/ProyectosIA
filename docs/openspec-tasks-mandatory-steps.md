@@ -34,6 +34,7 @@ All implementation tasks MUST include these steps in the correct order:
 * **Step N+2**: Manual Endpoint Testing with curl (MANDATORY) - **AGENT MUST EXECUTE**
 * **Step N+3**: E2E Testing with Playwright MCP (MANDATORY if applicable) - **AGENT MUST EXECUTE**
 * **Step N+4**: Update Technical Documentation (MANDATORY)
+* **Step N+5**: Commit and Create Pull Request (MANDATORY - LAST STEP)
 
 ## 3. Manual Testing Requirements - CRITICAL: Agent Must Execute
 
@@ -439,7 +440,83 @@ This rule applies when:
    * Database state restoration actions.
    * Any issues encountered and resolutions.
 
-## 8. Ecommerce-Specific Task Requirements
+## 8. Step N+5: Commit and Create Pull Request (MANDATORY — LAST STEP)
+
+This step must always be the last implementation step, after documentation has been updated and all tests have passed.
+
+**Agent Responsibility**: The coding agent MUST execute the commit and PR creation using the `commit` skill. This is NOT optional and cannot be delegated to the user.
+
+**When to include this step**: Always — for every OpenSpec change that modifies code, tests, or documentation.
+
+**Implementation Steps** (Agent must perform):
+
+1. **Load and apply the `commit` skill** from `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
+
+2. **Verify pre-commit readiness**:
+
+   * All tasks in `tasks.md` are marked `[x]`.
+   * Required test reports exist under `openspec/changes/<change-name>/reports/`.
+   * Documentation updates are complete.
+   * No `.env`, secrets, `node_modules`, or build artifacts are staged.
+
+3. **Stage all relevant changes**:
+
+   * Use `git add` for all files belonging to this change (code, tests, docs, OpenSpec artifacts).
+   * Exclude: `.env`, `node_modules/`, `dist/`, `coverage/`, secrets, temporary files.
+
+4. **Create commit** following Conventional Commit format:
+
+   ```text
+   feat(<scope>): <imperative summary>
+
+   - <relevant change 1>
+   - <relevant change 2>
+   - OpenSpec change: <change-name>
+   - Tests: <unit / curl / E2E — passed or not applicable>
+   ```
+
+5. **Push branch** to remote origin:
+
+   ```bash
+   git push -u origin <branch-name>
+   ```
+
+6. **Create Pull Request** using GitHub CLI:
+
+   ```bash
+   gh pr create --title "<type>(<scope>): <summary>" --body "..."
+   ```
+
+   PR body must include:
+   * Summary of changes
+   * OpenSpec change name
+   * Verification status (unit tests, curl, E2E, adversarial review)
+   * Notes or known limitations
+
+7. **Report PR URL** in the chat so the user can review it.
+
+**Task structure** in `tasks.md`:
+
+```markdown
+## N+5. Commit and Create Pull Request (MANDATORY)
+
+- [ ] N+5.1 Load and apply ai-specs/skills/commit/SKILL.md
+- [ ] N+5.2 Verify all tasks complete and reports exist
+- [ ] N+5.3 Stage all relevant files (exclude .env, node_modules, dist, coverage)
+- [ ] N+5.4 Create commit with Conventional Commit message
+- [ ] N+5.5 Push branch to remote origin
+- [ ] N+5.6 Create Pull Request with gh pr create and report URL
+```
+
+**Guardrails**:
+
+* Do not commit `.env` or secrets under any circumstance.
+* Do not commit `node_modules/`, `dist/`, or `coverage/`.
+* Do not push to `master` directly — always use the feature branch.
+* Do not force push without explicit user approval.
+* Do not skip this step — the change is not complete until the PR exists.
+
+## 9. Ecommerce-Specific Task Requirements
 
 When creating or implementing tasks for this ecommerce project, ensure relevant tasks consider:
 
@@ -456,3 +533,5 @@ When creating or implementing tasks for this ecommerce project, ensure relevant 
 If you create tasks without following these mandatory steps, the user will need to manually fix the `tasks.md` file. Always read `openspec/config.yaml` first and ensure all mandatory steps are included.
 
 **If you implement tasks without executing manual tests yourself, you are violating this rule. The agent must execute all tests to mark tasks as completed.**
+
+**If you complete all tasks but do not create a commit and Pull Request, the change is incomplete. The commit + PR step is mandatory for every OpenSpec change.**
