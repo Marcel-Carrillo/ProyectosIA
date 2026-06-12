@@ -73,8 +73,9 @@ export class ProductVariantRepository implements IProductVariantRepository {
   }
 
   async findBySku(sku: string): Promise<ProductVariant | null> {
+    // Global SKU lookup (includes soft-deleted) — DB unique index is not scoped to deletedAt.
     const row = await prisma.productVariant.findFirst({
-      where: { sku, deletedAt: null },
+      where: { sku },
       select: variantSelect,
     });
     return row ? new ProductVariant(row) : null;

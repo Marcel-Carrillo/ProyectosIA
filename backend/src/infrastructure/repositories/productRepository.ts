@@ -69,8 +69,14 @@ const variantSelect = {
 
 export class ProductRepository implements IProductRepository {
   async findAll(filters: ProductListFilters = {}): Promise<ProductListResult> {
-    const page = filters.page ?? 1;
-    const pageSize = filters.pageSize ?? 20;
+    const page =
+      filters.page != null && Number.isFinite(filters.page) && filters.page >= 1
+        ? filters.page
+        : 1;
+    const pageSize =
+      filters.pageSize != null && Number.isFinite(filters.pageSize) && filters.pageSize >= 1
+        ? filters.pageSize
+        : 20;
     const skip = (page - 1) * pageSize;
 
     const where: Record<string, unknown> = { deletedAt: null };
@@ -114,7 +120,8 @@ export class ProductRepository implements IProductRepository {
   }
 
   async findBySlug(slug: string): Promise<Product | null> {
-    const row = await prisma.product.findFirst({ where: { slug, deletedAt: null } });
+    // Global slug lookup (includes soft-deleted) — DB unique index is not scoped to deletedAt.
+    const row = await prisma.product.findFirst({ where: { slug } });
     return row ? new Product(row) : null;
   }
 

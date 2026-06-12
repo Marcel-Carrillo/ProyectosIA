@@ -5,7 +5,7 @@ import {
   ProductVariantUpdateData,
 } from '../../domain/repositories/productRepository';
 import { ProductVariant } from '../../domain/models/productVariant';
-import { validateProductVariantData } from '../validator';
+import { validateProductVariantData, validateProductVariantPublicPrice } from '../validator';
 import { ProductNotFoundError } from '../../infrastructure/repositories/productRepository';
 import {
   VariantNotFoundError,
@@ -47,6 +47,10 @@ export class ProductVariantService {
     if (!product) throw new ProductNotFoundError();
     const variant = await this.variantRepo.findById(id);
     if (!variant || variant.productId !== productId) throw new VariantNotFoundError();
+
+    if (data.publicPrice !== undefined) {
+      validateProductVariantPublicPrice(data.publicPrice);
+    }
 
     if (data.publicPrice !== undefined || data.compareAtPrice !== undefined) {
       const effectivePublicPrice = data.publicPrice ?? variant.publicPrice;

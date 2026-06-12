@@ -100,10 +100,30 @@ describe('ProductService - create', () => {
     expect(result.slug).toBe('summer-dress-2');
   });
 
-  it('should throw ProductSlugConflictError after 5 collision retries', async () => {
+  it('should throw ProductSlugConflictError after all slug suffixes are taken', async () => {
     const existing = makeProduct();
     mockRepo.findBySlug.mockResolvedValue(existing);
     await expect(service.create({ name: 'Summer Dress' })).rejects.toBeInstanceOf(ProductSlugConflictError);
+    expect(mockRepo.findBySlug).toHaveBeenCalledTimes(6);
+  });
+
+  it('should use base-6 slug when base through base-5 are taken', async () => {
+    const existing = makeProduct();
+    mockRepo.findBySlug
+      .mockResolvedValueOnce(existing)
+      .mockResolvedValueOnce(existing)
+      .mockResolvedValueOnce(existing)
+      .mockResolvedValueOnce(existing)
+      .mockResolvedValueOnce(existing)
+      .mockResolvedValueOnce(null);
+    mockRepo.create.mockResolvedValue(makeProduct({ slug: 'summer-dress-6' }));
+    const result = await service.create({ name: 'Summer Dress' });
+    expect(result.slug).toBe('summer-dress-6');
+  });
+
+  it('should throw ProductRequiresActiveVariantError when creating with Active status', async () => {
+    await expect(service.create({ name: 'Summer Dress', status: 'Active' }))
+      .rejects.toBeInstanceOf(ProductRequiresActiveVariantError);
   });
 
   it('should throw ValidationError when name is missing', async () => {
@@ -135,6 +155,12 @@ describe('ProductService - update lifecycle', () => {
     const archived = makeProduct({ status: 'Archived' });
     mockRepo.findById.mockResolvedValue(archived);
     await expect(service.update(1, { status: 'Active' })).rejects.toBeInstanceOf(ProductArchivedCannotReactivateError);
+  });
+
+  it('should reject any status change on Archived product', async () => {
+    const archived = makeProduct({ status: 'Archived' });
+    mockRepo.findById.mockResolvedValue(archived);
+    await expect(service.update(1, { status: 'Inactive' })).rejects.toBeInstanceOf(ProductArchivedCannotReactivateError);
   });
 
   it('should throw ProductNotFoundError when product does not exist', async () => {

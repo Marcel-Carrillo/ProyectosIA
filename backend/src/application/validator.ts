@@ -38,8 +38,7 @@ export function validateProductData(data: Record<string, unknown>): void {
   }
 }
 
-export function validateProductVariantData(data: Record<string, unknown>): void {
-  const publicPrice = data['publicPrice'];
+export function validateProductVariantPublicPrice(publicPrice: unknown): void {
   if (publicPrice === undefined || publicPrice === null || publicPrice === '') {
     throw new ValidationError("Field 'publicPrice' is required");
   }
@@ -47,6 +46,10 @@ export function validateProductVariantData(data: Record<string, unknown>): void 
   if (isNaN(price) || price <= 0) {
     throw new ValidationError("Field 'publicPrice' must be a positive number");
   }
+}
+
+export function validateProductVariantData(data: Record<string, unknown>): void {
+  validateProductVariantPublicPrice(data['publicPrice']);
 
   const sku = data['sku'];
   if (sku === undefined || sku === null || sku === '') {

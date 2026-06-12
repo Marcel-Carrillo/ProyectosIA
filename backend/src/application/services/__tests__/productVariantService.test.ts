@@ -102,6 +102,26 @@ describe('ProductVariantService - findById', () => {
   });
 });
 
+describe('ProductVariantService - update', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('should throw ValidationError when publicPrice is zero on update', async () => {
+    const v = makeVariant();
+    mockProductRepo.findById.mockResolvedValue(makeProduct());
+    mockVariantRepo.findById.mockResolvedValue(v);
+    await expect(service.update(1, 1, { publicPrice: 0 }))
+      .rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('should throw ValidationError when publicPrice is negative on update', async () => {
+    const v = makeVariant();
+    mockProductRepo.findById.mockResolvedValue(makeProduct());
+    mockVariantRepo.findById.mockResolvedValue(v);
+    await expect(service.update(1, 1, { publicPrice: -5 }))
+      .rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
 describe('ProductVariantService - softDelete', () => {
   beforeEach(() => jest.clearAllMocks());
 

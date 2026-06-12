@@ -3,6 +3,18 @@ import { ProductService } from '../../application/services/productService';
 import { ProductRepository } from '../../infrastructure/repositories/productRepository';
 import { ProductVariantRepository } from '../../infrastructure/repositories/productVariantRepository';
 import { logger } from '../../infrastructure/logger';
+import { ValidationError } from '../../application/validator';
+
+function parseOptionalQueryInt(value: unknown, paramName: string): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const parsed = parseInt(String(value), 10);
+  if (Number.isNaN(parsed)) {
+    throw new ValidationError(`Query parameter '${paramName}' must be a valid integer`);
+  }
+  return parsed;
+}
 
 const productService = new ProductService(
   new ProductRepository(),
@@ -14,10 +26,10 @@ export async function listProducts(req: Request, res: Response, next: NextFuncti
     const { status, categoryId, search, page, pageSize } = req.query;
     const result = await productService.findAll({
       status: status as string | undefined,
-      categoryId: categoryId ? parseInt(categoryId as string, 10) : undefined,
+      categoryId: parseOptionalQueryInt(categoryId, 'categoryId'),
       search: search as string | undefined,
-      page: page ? parseInt(page as string, 10) : undefined,
-      pageSize: pageSize ? parseInt(pageSize as string, 10) : undefined,
+      page: parseOptionalQueryInt(page, 'page'),
+      pageSize: parseOptionalQueryInt(pageSize, 'pageSize'),
     });
     logger.info('Products listed', { total: result.total, page: result.page });
     res.json({ success: true, data: result, message: 'Products retrieved successfully' });

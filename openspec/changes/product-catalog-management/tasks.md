@@ -151,9 +151,9 @@
 
 ## 16. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 16.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 16.2 Verify all tasks complete (`[x]`) and reports exist under `openspec/changes/product-catalog-management/reports/`
-- [ ] 16.3 Stage all relevant files — code, tests, OpenSpec artifacts, docs (exclude `.env`, `node_modules/`, `dist/`, `coverage/`)
-- [ ] 16.4 Create commit: `feat(product-catalog): wire admin CRUD endpoints for products, variants, and images`
-- [ ] 16.5 Push branch to remote origin: `git push -u origin feature/product-catalog-management`
-- [ ] 16.6 Create Pull Request with `gh pr create` and report the PR URL in chat
+- [x] 16.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 16.2 Verify all tasks complete (`[x]`) and reports exist under `openspec/changes/product-catalog-management/reports/`
+- [x] 16.3 Stage all relevant files — code, tests, OpenSpec artifacts, docs (exclude `.env`, `node_modules/`, `dist/`, `coverage/`)
+- [x] 16.4 Create commit: `feat(product-catalog): wire admin CRUD endpoints for products, variants, and images`
+- [x] 16.5 Push branch to remote origin: `git push -u origin feature/product-catalog-management`
+- [x] 16.6 Create Pull Request with `gh pr create` and report the PR URL in chat

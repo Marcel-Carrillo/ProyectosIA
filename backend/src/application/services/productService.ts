@@ -33,6 +33,10 @@ export class ProductService {
 
   async create(data: Omit<ProductCreateData, 'slug'> & { slug?: string }): Promise<Product> {
     validateProductData(data as Record<string, unknown>);
+    const effectiveStatus = data.status ?? 'Draft';
+    if (effectiveStatus === 'Active') {
+      throw new ProductRequiresActiveVariantError();
+    }
     const slug = data.slug ?? (await this.resolveUniqueSlug(data.name));
     return this.repo.create({ ...data, slug });
   }
@@ -41,7 +45,11 @@ export class ProductService {
     const current = await this.repo.findById(id);
     if (!current) throw new ProductNotFoundError();
 
-    if (data.status === 'Active' && current.status === 'Archived') {
+    if (
+      current.status === 'Archived' &&
+      data.status !== undefined &&
+      data.status !== current.status
+    ) {
       throw new ProductArchivedCannotReactivateError();
     }
 
@@ -77,6 +85,8 @@ export class ProductService {
       if (!existing) return slug;
       slug = `${base}-${attempt}`;
     }
+    const existing = await this.repo.findBySlug(slug);
+    if (!existing) return slug;
     throw new ProductSlugConflictError();
   }
 }
