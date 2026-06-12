@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   checks: read
+  statuses: read
   pull-requests: read
   issues: read
 
@@ -82,6 +83,30 @@ jobs:
                   core.setFailed(`CodeRabbit check completed with conclusion: ${run.conclusion}`);
                   return;
                 }
+              }
+
+              // CodeRabbit reports via a commit status (context "CodeRabbit"), not a check run,
+              // so the checks API above never sees it. Inspect commit statuses too.
+              const combined = await github.rest.repos.getCombinedStatusForRef({
+                owner,
+                repo,
+                ref: sha
+              });
+              const crStatus = (combined.data.statuses || []).find((s) =>
+                (s.context || "").toLowerCase().includes("coderabbit")
+              );
+
+              if (crStatus) {
+                core.info(`Found CodeRabbit commit status: state=${crStatus.state}`);
+                if (crStatus.state === "success") {
+                  core.notice("CodeRabbit commit status passed.");
+                  return;
+                }
+                if (crStatus.state === "failure" || crStatus.state === "error") {
+                  core.setFailed(`CodeRabbit commit status reported: ${crStatus.state}`);
+                  return;
+                }
+                // state === "pending" -> CodeRabbit is still reviewing; keep waiting.
               }
 
               // Fallback: accept CodeRabbit PR comments/reviews as signal when no check run is emitted
