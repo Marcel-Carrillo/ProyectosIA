@@ -112,7 +112,7 @@ frontend/
 │   ├── services/          # API service layer
 │   ├── pages/             # Page components
 │   ├── assets/            # Images, fonts, static resources
-│   ├── App.js             # Main application component
+│   ├── App.tsx            # Main application component
 │   ├── index.tsx          # Application entry point
 │   └── index.css          # Global styles
 ├── cypress/
@@ -559,7 +559,7 @@ create refund
 // cypress.config.ts
 export default defineConfig({
     e2e: {
-        baseUrl: 'http://localhost:3000',
+        baseUrl: 'http://localhost:3001',
         env: {
             API_URL: 'http://localhost:3000'
         }

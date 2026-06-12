@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# test artifacts
+coverage/
+**/coverage/
+
+# build artifacts
+dist/
+build/
+**/dist/
+**/build/
+
+# local environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# worktree directories
+.worktrees/
+
+# OS noise
+.DS_Store
+Thumbs.db
