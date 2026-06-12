@@ -5,7 +5,7 @@ import StorefrontFooter from './StorefrontFooter';
 
 const StorefrontLayout: React.FC = () => {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="storefront-root">
       <StorefrontHeader />
       <main style={{ flex: 1 }}>
         <Outlet />

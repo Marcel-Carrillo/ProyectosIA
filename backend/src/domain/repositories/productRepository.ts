@@ -28,6 +28,8 @@ export interface ProductListFilters {
   search?: string;
   page?: number;
   pageSize?: number;
+  sort?: 'name' | 'createdAt';
+  order?: 'asc' | 'desc';
 }
 
 export interface ProductListResult {

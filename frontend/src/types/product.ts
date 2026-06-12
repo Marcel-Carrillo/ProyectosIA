@@ -66,4 +66,6 @@ export interface ProductQueryParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  sort?: 'name' | 'createdAt';
+  order?: 'asc' | 'desc';
 }

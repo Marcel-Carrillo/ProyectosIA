@@ -22,13 +22,20 @@ const CatalogPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
 
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const categoryId = searchParams.get('categoryId')
-    ? parseInt(searchParams.get('categoryId')!, 10)
-    : undefined;
+  // Keep searchInput in sync when URL changes externally (e.g. browser back)
+  useEffect(() => {
+    setSearchInput(searchParams.get('search') || '');
+  }, [searchParams]);
+
+  const pageRaw = parseInt(searchParams.get('page') || '1', 10);
+  const page = Number.isNaN(pageRaw) || pageRaw < 1 ? 1 : pageRaw;
+  const categoryIdRaw = parseInt(searchParams.get('categoryId') || '', 10);
+  const categoryId = Number.isNaN(categoryIdRaw) ? undefined : categoryIdRaw;
   const search = searchParams.get('search') || undefined;
-  const sort = searchParams.get('sort') || 'createdAt';
-  const order = searchParams.get('order') || 'desc';
+  const sortRaw = searchParams.get('sort');
+  const orderRaw = searchParams.get('order');
+  const sort = (sortRaw === 'name' || sortRaw === 'createdAt' ? sortRaw : 'createdAt') as 'name' | 'createdAt';
+  const order = (orderRaw === 'asc' || orderRaw === 'desc' ? orderRaw : 'desc') as 'asc' | 'desc';
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -42,6 +49,8 @@ const CatalogPage: React.FC = () => {
         pageSize: PAGE_SIZE,
         categoryId,
         search,
+        sort,
+        order,
       });
       setProducts(res.data.items);
       setTotal(res.data.total);
@@ -50,7 +59,7 @@ const CatalogPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, categoryId, search]); // sort/order intentionally omitted: they're used only for URL state, not in the fetch call
+  }, [page, categoryId, search, sort, order]);
 
   useEffect(() => {
     fetchProducts();

@@ -38,6 +38,15 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onVariantCh
   const [selectedSize, setSelectedSize] = useState<string | null>(sizes[0] ?? null);
   const [selectedColor, setSelectedColor] = useState<string | null>(colors[0] ?? null);
 
+  // Reset selection when the product changes (variants prop reference changes)
+  useEffect(() => {
+    const newActive = getActiveVariants(variants);
+    const newSizes = getDistinctValues(newActive, 'size');
+    const newColors = getDistinctValues(newActive, 'color');
+    setSelectedSize(newSizes[0] ?? null);
+    setSelectedColor(newColors[0] ?? null);
+  }, [variants]);
+
   useEffect(() => {
     if (!sizes.length && !colors.length) {
       onVariantChange(active[0] ?? null);

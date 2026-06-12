@@ -86,12 +86,22 @@ export class ProductRepository implements IProductRepository {
       where['name'] = { contains: filters.search, mode: 'insensitive' };
     }
 
+    const sortField = filters.sort === 'name' ? 'name' : 'createdAt';
+    const sortOrder = filters.order === 'asc' ? 'asc' : 'desc';
+
     const [rows, total] = await prisma.$transaction([
       prisma.product.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortField]: sortOrder },
         skip,
         take: pageSize,
+        include: {
+          variants: {
+            select: variantSelect,
+            where: { deletedAt: null, status: 'Active' },
+            orderBy: { publicPrice: 'asc' },
+          },
+        },
       }),
       prisma.product.count({ where }),
     ]);

@@ -15,7 +15,7 @@ for (const key of requiredEnvVars) {
 
 export const app = express();
 
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002').split(',');
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002').split(',').map((s) => s.trim());
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);

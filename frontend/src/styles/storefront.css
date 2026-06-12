@@ -1,10 +1,13 @@
 /* Storefront utility classes using design tokens */
 
-body {
+.storefront-root {
   font-family: var(--font-family-body);
   color: var(--color-near-black);
   background-color: var(--color-white);
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Layout */
