@@ -26,6 +26,7 @@ All implementation tasks MUST include these steps in the correct order:
 * **Location**: Must be the very first step (Step 0)
 * **Branch naming**: `feature/[ticket-id]` or `feature/[change-name]`
 * **Action**: Create and switch to feature branch before any code changes
+* **Isolation integration**: Before Step 0 execution, apply `ai-specs/skills/using-git-worktrees/SKILL.md` to decide whether to work in the current checkout or a dedicated Git worktree. Step 0 still applies to the branch inside that chosen workspace.
 
 ### Mandatory Steps (Must Be Included):
 
