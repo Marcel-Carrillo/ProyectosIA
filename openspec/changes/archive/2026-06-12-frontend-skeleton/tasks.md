@@ -119,7 +119,7 @@
 
 - [x] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md`
 - [x] 14.2 Verify all tasks above are marked `[x]` and required reports exist under `openspec/changes/frontend-skeleton/reports/`
-- [ ] 14.3 Stage all relevant files: `frontend/`, `openspec/changes/frontend-skeleton/`, updated `docs/` files (exclude `.env.development`, `node_modules/`, `build/`, `coverage/`)
-- [ ] 14.4 Create commit with message: `feat(frontend): scaffold React TypeScript frontend skeleton`
-- [ ] 14.5 Push branch `feature/frontend-skeleton` to remote origin
-- [ ] 14.6 Create Pull Request with `gh pr create` and report the PR URL in chat
+- [x] 14.3 Stage all relevant files: `frontend/`, `openspec/changes/frontend-skeleton/`, updated `docs/` files (exclude `.env.development`, `node_modules/`, `build/`, `coverage/`)
+- [x] 14.4 Create commit with message: `feat(frontend): scaffold React TypeScript frontend skeleton`
+- [x] 14.5 Push branch `feature/frontend-skeleton` to remote origin
+- [x] 14.6 Create Pull Request with `gh pr create` and report the PR URL in chat

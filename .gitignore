@@ -24,6 +24,12 @@ build/
 # local Claude session artifacts
 .claude/sessions/
 
+# Playwright MCP session artifacts
+.playwright-mcp/
+
+# verification screenshots
+verify-*.png
+
 # logs
 *.log
 
