@@ -24,7 +24,7 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Run unit tests
         run: npm test -- --runInBand
       - name: Run TypeScript build check
