@@ -58,7 +58,7 @@ Archive a completed change in the experimental workflow.
    - Determine what changes would be applied (adds, modifications, removals, renames)
    - Show a combined summary of what will be synced
 
-   **Sync is MANDATORY when delta specs exist. Do NOT ask the user. Always sync automatically.**
+   **Sync is MANDATORY when delta specs exist. Do NOT ask the user — always sync automatically.**
 
    Use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive after sync completes.
 

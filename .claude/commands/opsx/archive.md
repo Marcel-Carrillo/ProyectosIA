@@ -58,7 +58,7 @@ Archive a completed change in the experimental workflow.
    - Determine what changes would be applied (adds, modifications, removals, renames)
    - Show a combined summary of what will be synced
 
-   **Sync is MANDATORY when delta specs exist. Do NOT ask the user. Always sync automatically.**
+   **Sync is MANDATORY when delta specs exist. Do NOT ask the user — always sync automatically.**
 
    Use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive after sync completes.
 
@@ -122,7 +122,7 @@ All artifacts complete. All tasks complete.
 **Change:** <change-name>
 **Schema:** <schema-name>
 **Archived to:** the archive path derived from `planningHome.changesDir`/YYYY-MM-DD-<name>/
-**Specs:** ✓ Synced to main specs (or "No delta specs")
+**Specs:** ✓ Synced to main specs
 
 **Warnings:**
 - Archived with 2 incomplete artifacts
@@ -153,5 +153,5 @@ Target archive directory already exists.
 - Don't block archive on warnings - just inform and confirm
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
-- If delta specs exist, always sync automatically using `openspec-sync-specs` (agent-driven)
-- Do not offer "skip sync" when delta specs exist
+- If delta specs exist, always sync automatically — never ask the user, never skip sync
+- Use the Skill tool to invoke `openspec-sync-specs` (agent-driven) whenever delta specs are present
