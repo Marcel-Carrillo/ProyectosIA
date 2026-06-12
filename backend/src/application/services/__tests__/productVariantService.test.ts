@@ -6,7 +6,6 @@ import { ValidationError } from '../../validator';
 import { ProductNotFoundError } from '../../../infrastructure/repositories/productRepository';
 import {
   VariantNotFoundError,
-  VariantSkuConflictError,
   VariantComparePriceInvalidError,
 } from '../../../infrastructure/repositories/productVariantRepository';
 

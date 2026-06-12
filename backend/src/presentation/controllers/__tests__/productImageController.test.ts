@@ -28,7 +28,6 @@ jest.mock('../../../infrastructure/repositories/productRepository', () => ({
 import {
   listImages,
   addImage,
-  updateImage,
   deleteImage,
 } from '../productImageController';
 

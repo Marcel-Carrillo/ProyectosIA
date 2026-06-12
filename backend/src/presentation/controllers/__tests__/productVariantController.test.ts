@@ -27,9 +27,7 @@ jest.mock('../../../infrastructure/repositories/productRepository', () => ({
 
 import {
   listVariants,
-  getVariantById,
   createVariant,
-  updateVariant,
   deleteVariant,
 } from '../productVariantController';
 

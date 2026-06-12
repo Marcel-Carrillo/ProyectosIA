@@ -31,6 +31,8 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Run ESLint
+        run: npm run lint
       - name: Run unit tests
         run: npm test -- --runInBand
       - name: Run TypeScript build check
@@ -54,6 +56,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+      - name: Run ESLint
+        run: npx eslint src --ext .ts,.tsx
       - name: Run unit tests
         run: npm test -- --watchAll=false
       - name: Run TypeScript check
