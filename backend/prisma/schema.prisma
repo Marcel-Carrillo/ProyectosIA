@@ -21,4 +21,66 @@ model Category {
   children    Category[] @relation("CategoryHierarchy")
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  products    Product[]
+}
+
+model Supplier {
+  id              Int              @id @default(autoincrement())
+  name            String           @db.VarChar(150)
+  contactName     String?          @db.VarChar(150)
+  contactEmail    String?          @db.VarChar(255)
+  contactPhone    String?          @db.VarChar(30)
+  website         String?          @db.VarChar(500)
+  notes           String?          @db.VarChar(2000)
+  status          String           @default("Active")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  productVariants ProductVariant[]
+}
+
+model Product {
+  id           Int              @id @default(autoincrement())
+  name         String           @db.VarChar(150)
+  slug         String           @unique @db.VarChar(200)
+  description  String?          @db.VarChar(2000)
+  brand        String?          @db.VarChar(100)
+  status       String           @default("Draft")
+  mainImageUrl String?          @db.VarChar(500)
+  categoryId   Int?
+  category     Category?        @relation(fields: [categoryId], references: [id])
+  deletedAt    DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  variants     ProductVariant[]
+  images       ProductImage[]
+}
+
+model ProductVariant {
+  id                Int       @id @default(autoincrement())
+  productId         Int
+  product           Product   @relation(fields: [productId], references: [id])
+  sku               String    @unique @db.VarChar(100)
+  size              String?   @db.VarChar(50)
+  color             String?   @db.VarChar(50)
+  publicPrice       Decimal   @db.Decimal(10, 2)
+  compareAtPrice    Decimal?  @db.Decimal(10, 2)
+  supplierId        Int?
+  supplier          Supplier? @relation(fields: [supplierId], references: [id])
+  supplierReference String?   @db.VarChar(150)
+  supplierCost      Decimal?  @db.Decimal(10, 2)
+  stockPolicy       String    @default("SupplierManaged")
+  status            String    @default("Active")
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  url       String   @db.VarChar(500)
+  altText   String?  @db.VarChar(250)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 }

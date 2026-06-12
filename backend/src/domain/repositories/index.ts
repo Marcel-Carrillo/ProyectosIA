@@ -1,3 +1,18 @@
+export {
+  IProductRepository,
+  IProductVariantRepository,
+  IProductImageRepository,
+} from './productRepository';
+export type {
+  ProductCreateData,
+  ProductUpdateData,
+  ProductListFilters,
+  ProductVariantCreateData,
+  ProductVariantUpdateData,
+  ProductImageCreateData,
+  ProductImageUpdateData,
+} from './productRepository';
+
 import { Category } from '../models';
 
 export interface CategoryCreateData {

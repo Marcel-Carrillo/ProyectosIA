@@ -61,24 +61,39 @@ A product is the public catalog item. It may have one or more variants depending
 
 * `id`: Unique identifier for the product (Primary Key)
 * `name`: Product name (max 150 characters)
-* `slug`: Unique URL-friendly product identifier (max 200 characters)
+* `slug`: Unique URL-friendly product identifier (max 200 characters); auto-generated from name in kebab-case with up to 5 collision retries
 * `description`: Product description (optional, max 2000 characters)
 * `brand`: Product brand or label name (optional, max 100 characters)
 * `status`: Current product status (valid values: Draft, Active, Inactive, Archived)
 * `mainImageUrl`: Main product image URL (optional, max 500 characters)
 * `categoryId`: Foreign key referencing the Category
+* `deletedAt`: Soft-delete timestamp — null means active, non-null means deleted
 * `createdAt`: Date and time when the product was created
 * `updatedAt`: Date and time when the product was last updated
 
 **Validation Rules:**
 
 * Name is required and cannot exceed 150 characters
-* Slug is required, must be unique, and cannot exceed 200 characters
+* Slug is auto-generated from name; must be unique and cannot exceed 200 characters
 * Description is optional but cannot exceed 2000 characters
 * Brand is optional but cannot exceed 100 characters
 * Status must be one of: Draft, Active, Inactive, Archived
 * Category reference is optional but must exist in the database if provided
-* A product must have at least one variant before it can be published as Active
+* A product must have at least one active variant to be set to Active (`PRODUCT_REQUIRES_ACTIVE_VARIANT`)
+* An Archived product cannot be reactivated (`PRODUCT_ARCHIVED_CANNOT_REACTIVATE`)
+
+**Status Lifecycle:**
+
+```
+Draft → Active (requires ≥1 active variant) → Inactive
+Draft → Archived
+Active → Inactive → Active (re-activation allowed)
+Active/Inactive → Archived (terminal — cannot reactivate)
+```
+
+**Soft Delete:**
+
+Products are soft-deleted by setting `deletedAt = now()` rather than removing the row. Soft-deleted products are excluded from all `findAll` queries and return 404 on `findById`.
 
 **Relationships:**
 
@@ -105,12 +120,13 @@ Examples:
 * `size`: Product size (optional, max 50 characters)
 * `color`: Product color (optional, max 50 characters)
 * `publicPrice`: Price shown to customers
-* `compareAtPrice`: Optional previous price or crossed-out price
-* `supplierId`: Foreign key referencing the Supplier (optional)
-* `supplierReference`: Supplier product reference (optional, max 150 characters)
-* `supplierCost`: Internal supplier cost, never exposed to customers
+* `compareAtPrice`: Optional previous price or crossed-out price (must be strictly greater than publicPrice)
+* `supplierId`: Foreign key referencing the Supplier (optional) — **INTERNAL ONLY, never returned by API**
+* `supplierReference`: Supplier product reference (optional, max 150 characters) — **INTERNAL ONLY, never returned by API**
+* `supplierCost`: Internal supplier cost — **INTERNAL ONLY, never returned by API**
 * `stockPolicy`: Stock policy (valid values: SupplierManaged, InternalStock, Hybrid)
 * `status`: Variant status (valid values: Active, Inactive, OutOfStock, Archived)
+* `deletedAt`: Soft-delete timestamp — null means active, non-null means deleted
 * `createdAt`: Date and time when the variant was created
 * `updatedAt`: Date and time when the variant was last updated
 
@@ -119,12 +135,15 @@ Examples:
 * Product reference is required and must exist in the database
 * SKU is required, must be unique, and cannot exceed 100 characters
 * Public price is required and must be greater than 0
-* Compare-at price is optional but must be greater than or equal to public price if provided
+* Compare-at price is optional but must be **strictly greater** than public price if provided (enforced with HTTP 422 `VARIANT_COMPARE_PRICE_INVALID`)
 * Supplier reference is optional but cannot exceed 150 characters
 * Supplier cost is optional but must be greater than or equal to 0 if provided
 * Stock policy must be one of: SupplierManaged, InternalStock, Hybrid
 * Status must be one of: Active, Inactive, OutOfStock, Archived
-* Supplier cost must never be exposed through customer-facing APIs
+
+**Supplier Field Protection (CRITICAL):**
+
+The fields `supplierId`, `supplierReference`, and `supplierCost` are stored in the database but **must never appear in any API response**. This is enforced at the Prisma repository layer via a `variantSelect` constant that explicitly omits these fields from all read operations. Automated tests assert their absence on every variant query and controller response.
 
 **Relationships:**
 
@@ -542,6 +561,7 @@ erDiagram
         String status
         String mainImageUrl
         Int categoryId FK
+        DateTime deletedAt
         DateTime createdAt
         DateTime updatedAt
     }
@@ -559,6 +579,7 @@ erDiagram
         Decimal supplierCost
         String stockPolicy
         String status
+        DateTime deletedAt
         DateTime createdAt
         DateTime updatedAt
     }
