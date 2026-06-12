@@ -48,9 +48,13 @@ jobs:
               });
             }
 
+            // Identity-first allowlist: only the official CodeRabbit bot account
+            // can satisfy the gate, so an unrelated user/bot cannot bypass it by
+            // posting text that merely contains "coderabbit".
+            const CODERABBIT_LOGINS = ["coderabbitai[bot]", "coderabbit[bot]"];
+
             function isLikelyBot(login = "") {
-              const v = login.toLowerCase();
-              return v.endsWith("[bot]") || v.includes("coderabbit");
+              return CODERABBIT_LOGINS.includes(login.toLowerCase());
             }
 
             function isCodeRabbitMessage(body = "") {
@@ -107,6 +111,17 @@ jobs:
                   return;
                 }
                 // state === "pending" -> CodeRabbit is still reviewing; keep waiting.
+              }
+
+              // An authoritative signal (check run or commit status) exists but is still
+              // pending. Do not let the comment/review fallback pass the gate early; the
+              // pending signal remains authoritative, so wait for it to complete.
+              if (run || crStatus) {
+                core.info(`Attempt ${i}/${maxAttempts}: CodeRabbit signal still pending.`);
+                if (i < maxAttempts) {
+                  await sleep(delayMs);
+                }
+                continue;
               }
 
               // Fallback: accept CodeRabbit PR comments/reviews as signal when no check run is emitted
