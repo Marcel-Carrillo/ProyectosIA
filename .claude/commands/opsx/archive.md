@@ -56,13 +56,11 @@ Archive a completed change in the experimental workflow.
    **If delta specs exist:**
    - Compare each delta spec with its corresponding main spec at `openspec/specs/<capability>/spec.md`
    - Determine what changes would be applied (adds, modifications, removals, renames)
-   - Show a combined summary before prompting
+   - Show a combined summary of what will be synced
 
-   **Prompt options:**
-   - If changes needed: "Sync now (recommended)", "Archive without syncing"
-   - If already synced: "Archive now", "Sync anyway", "Cancel"
+   **Sync is MANDATORY when delta specs exist. Do NOT ask the user. Always sync automatically.**
 
-   If user chooses sync, use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive regardless of choice.
+   Use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive after sync completes.
 
 5. **Perform the archive**
 
@@ -87,7 +85,7 @@ Archive a completed change in the experimental workflow.
    - Change name
    - Schema that was used
    - Archive location
-   - Spec sync status (synced / sync skipped / no delta specs)
+  - Spec sync status (synced / no delta specs)
    - Note about any warnings (incomplete artifacts/tasks)
 
 **Output On Success**
@@ -124,12 +122,11 @@ All artifacts complete. All tasks complete.
 **Change:** <change-name>
 **Schema:** <schema-name>
 **Archived to:** the archive path derived from `planningHome.changesDir`/YYYY-MM-DD-<name>/
-**Specs:** Sync skipped (user chose to skip)
+**Specs:** ✓ Synced to main specs (or "No delta specs")
 
 **Warnings:**
 - Archived with 2 incomplete artifacts
 - Archived with 3 incomplete tasks
-- Delta spec sync was skipped (user chose to skip)
 
 Review the archive if this was not intentional.
 ```
@@ -156,5 +153,5 @@ Target archive directory already exists.
 - Don't block archive on warnings - just inform and confirm
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
-- If sync is requested, use the Skill tool to invoke `openspec-sync-specs` (agent-driven)
-- If delta specs exist, always run the sync assessment and show the combined summary before prompting
+- If delta specs exist, always sync automatically using `openspec-sync-specs` (agent-driven)
+- Do not offer "skip sync" when delta specs exist

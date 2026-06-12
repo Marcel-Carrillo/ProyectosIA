@@ -1,0 +1,77 @@
+name: PR Gate - CodeRabbit Required
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  checks: read
+  pull-requests: read
+
+jobs:
+  coderabbit-required:
+    name: coderabbit-required
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Wait for CodeRabbit check and validate result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.payload.pull_request.head.sha;
+
+            const maxAttempts = 30; // ~10 minutes
+            const delayMs = 20000;
+
+            function sleep(ms) {
+              return new Promise((resolve) => setTimeout(resolve, ms));
+            }
+
+            function pickCodeRabbitCheck(checkRuns) {
+              return checkRuns.find((run) => {
+                const name = (run.name || "").toLowerCase();
+                const appSlug = (run.app && run.app.slug) ? run.app.slug.toLowerCase() : "";
+                return name.includes("coderabbit") || appSlug.includes("coderabbit");
+              });
+            }
+
+            let lastStatus = "not_found";
+            let lastConclusion = "unknown";
+
+            for (let i = 1; i <= maxAttempts; i++) {
+              const checks = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: sha,
+                per_page: 100
+              });
+
+              const run = pickCodeRabbitCheck(checks.data.check_runs || []);
+
+              if (run) {
+                lastStatus = run.status;
+                lastConclusion = run.conclusion || "null";
+                core.info(`Found CodeRabbit check: "${run.name}" (status=${lastStatus}, conclusion=${lastConclusion})`);
+
+                if (run.status === "completed") {
+                  if (["success", "neutral", "skipped"].includes(run.conclusion)) {
+                    core.notice("CodeRabbit check passed.");
+                    return;
+                  }
+                  core.setFailed(`CodeRabbit check completed with conclusion: ${run.conclusion}`);
+                  return;
+                }
+              } else {
+                core.info(`Attempt ${i}/${maxAttempts}: CodeRabbit check not found yet.`);
+              }
+
+              if (i < maxAttempts) {
+                await sleep(delayMs);
+              }
+            }
+
+            core.setFailed(`Timed out waiting for CodeRabbit check. Last status=${lastStatus}, conclusion=${lastConclusion}`);

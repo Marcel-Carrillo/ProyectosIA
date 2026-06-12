@@ -1,0 +1,123 @@
+name: PR Gate - Bugbot Required
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  checks: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  bugbot-required:
+    name: bugbot-required
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Wait for Bugbot review signal and validate result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.payload.pull_request.head.sha;
+            const prNumber = context.payload.pull_request.number;
+
+            const maxAttempts = 30; // ~10 minutes
+            const delayMs = 20000;
+
+            function sleep(ms) {
+              return new Promise((resolve) => setTimeout(resolve, ms));
+            }
+
+            function isBugbotCheck(run) {
+              const name = (run.name || "").toLowerCase();
+              const appSlug = (run.app && run.app.slug) ? run.app.slug.toLowerCase() : "";
+              // Exclude this gate itself to avoid false positives
+              if (name === "bugbot-required") return false;
+              return name.includes("bugbot") || appSlug.includes("bugbot");
+            }
+
+            function isLikelyBot(login = "") {
+              const v = login.toLowerCase();
+              return v.endsWith("[bot]") || v.includes("bot");
+            }
+
+            function isBugbotMessage(body = "") {
+              return body.toLowerCase().includes("bugbot");
+            }
+
+            let lastStatus = "not_found";
+            let lastConclusion = "unknown";
+
+            for (let i = 1; i <= maxAttempts; i++) {
+              const checks = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: sha,
+                per_page: 100
+              });
+
+              const bugbotCheck = (checks.data.check_runs || []).find(isBugbotCheck);
+
+              if (bugbotCheck) {
+                lastStatus = bugbotCheck.status;
+                lastConclusion = bugbotCheck.conclusion || "null";
+                core.info(`Found Bugbot check: "${bugbotCheck.name}" (status=${lastStatus}, conclusion=${lastConclusion})`);
+
+                if (bugbotCheck.status === "completed") {
+                  if (["success", "neutral", "skipped"].includes(bugbotCheck.conclusion)) {
+                    core.notice("Bugbot check passed.");
+                    return;
+                  }
+                  core.setFailed(`Bugbot check completed with conclusion: ${bugbotCheck.conclusion}`);
+                  return;
+                }
+              }
+
+              // Fallback: accept Bugbot PR comments/reviews as signal when no check run is emitted
+              const [issueComments, reviews] = await Promise.all([
+                github.paginate(github.rest.issues.listComments, {
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  per_page: 100
+                }),
+                github.paginate(github.rest.pulls.listReviews, {
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  per_page: 100
+                })
+              ]);
+
+              const bugbotIssueComment = issueComments.find((c) => {
+                const login = c?.user?.login || "";
+                return isLikelyBot(login) && isBugbotMessage(c.body || "");
+              });
+
+              if (bugbotIssueComment) {
+                core.notice(`Bugbot signal found in PR comment by ${bugbotIssueComment.user.login}.`);
+                return;
+              }
+
+              const bugbotReview = reviews.find((r) => {
+                const login = r?.user?.login || "";
+                return isLikelyBot(login) && isBugbotMessage(r.body || "");
+              });
+
+              if (bugbotReview) {
+                core.notice(`Bugbot signal found in PR review by ${bugbotReview.user.login}.`);
+                return;
+              }
+
+              core.info(`Attempt ${i}/${maxAttempts}: Bugbot signal not found yet.`);
+              if (i < maxAttempts) {
+                await sleep(delayMs);
+              }
+            }
+
+            core.setFailed(`Timed out waiting for Bugbot review signal. Last status=${lastStatus}, conclusion=${lastConclusion}`);
