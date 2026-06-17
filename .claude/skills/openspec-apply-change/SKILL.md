@@ -59,6 +59,20 @@ Implement tasks from an OpenSpec change.
    - **spec-driven**: proposal, specs, design, tasks
    - Other schemas: follow the contextFiles from CLI output
 
+   Also read (selective context loading per `docs/base-standards.md`):
+   - `docs/base-standards.md` (always) and `docs/openspec-tasks-mandatory-steps.md`
+   - Backend scope: `docs/backend-standards.md`, `docs/data-model.md`, `docs/api-spec.yml`
+   - Frontend scope: `docs/frontend-standards.md`, `docs/api-spec.yml`
+
+4b. **Isolate the workspace, then plan each layer with its agent (MANDATORY — before editing any file)**
+
+   a. **Workspace isolation (Step 0).** Apply `ai-specs/skills/using-git-worktrees/SKILL.md`: ensure you are on a feature branch / worktree (default `feature/<change-name>`), never on `master`/`main` or an unrelated branch. If `tasks.md` defines Step 0, execute it; otherwise create the branch/worktree now, before any code change.
+
+   b. **Per-layer planning subagents — they plan, the parent builds (complements `design.md`, does not replace it).** Decide whether the change touches backend, frontend, or both (from `design.md`, `specs`, `tasks.md`). For each affected layer: write `.claude/sessions/context_session_<change-name>.md` with the change context (links to proposal/design/specs/tasks), then spawn the matching planning agent and wait:
+      - Backend → `Agent(subagent_type: "general-purpose", model: "sonnet", prompt: "Read and apply ai-specs/agents/backend-developer.md in full. Feature: <change-name>. Read .claude/sessions/context_session_<change-name>.md plus the change's design.md / specs / tasks.md, then save a per-file implementation plan to .claude/doc/<change-name>/backend.md.")`
+      - Frontend → same with `ai-specs/agents/frontend-developer.md` → `.claude/doc/<change-name>/frontend.md`
+      Then read `.claude/doc/<change-name>/{backend,frontend}.md` and implement from those file-level plans together with `design.md`. The agents ONLY plan; you (the parent) do the building and run tests/servers. For small single-file or non-code changes you may skip the subagent and implement directly — state why.
+
 5. **Show current progress**
 
    Display:
@@ -71,9 +85,10 @@ Implement tasks from an OpenSpec change.
 
    For each pending task:
    - Show which task is being worked on
-   - Make the code changes required
+   - Make the code changes required, implementing from the `.claude/doc/<change-name>/{backend,frontend}.md` plan plus `design.md`
    - Keep changes minimal and focused
-   - Mark task complete in the tasks file: `- [ ]` → `- [x]`
+   - **Execute the mandatory verification yourself** (per `docs/openspec-tasks-mandatory-steps.md`): run unit tests + verify DB state; run curl for backend endpoints; run Playwright E2E for frontend workflows; write reports under `openspec/changes/<change-name>/reports/`. NEVER delegate testing to the user.
+   - Mark a task complete (`- [ ]` → `- [x]`) **only with evidence** (tests pass, DB restored for CREATE/UPDATE/DELETE, report created)
    - Continue to next task
 
    **Pause if:**
@@ -89,6 +104,10 @@ Implement tasks from an OpenSpec change.
    - Overall progress: "N/M tasks complete"
    - If all done: suggest archive
    - If paused: explain why and wait for guidance
+
+8. **Commit and open the Pull Request (MANDATORY — last step)**
+
+   When all tasks are complete, load and apply `ai-specs/skills/commit/SKILL.md`: stage the change (exclude `.env`, `node_modules`, build artifacts), commit with a Conventional Commit message, push the feature branch, and run `gh pr create`. Report the PR URL. A change is not complete without a PR.
 
 **Output During Implementation**
 
@@ -150,6 +169,10 @@ What would you like to do?
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
+- Isolate on a feature branch / worktree (Step 0) BEFORE editing any file; never implement on `master`/`main`
+- Plan backend/frontend work with `ai-specs/agents/{backend,frontend}-developer.md` (plan saved to `.claude/doc/<change-name>/`), then implement from the plan — agents plan, the parent builds
+- Execute all mandatory tests yourself (unit, curl, E2E) and create reports; mark tasks `[x]` only with evidence
+- Finish with Commit + PR via `ai-specs/skills/commit/SKILL.md`
 
 **Fluid Workflow Integration**
 
