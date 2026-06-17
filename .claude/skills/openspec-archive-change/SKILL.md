@@ -53,6 +53,14 @@ Archive a completed change in the experimental workflow.
 
    **If no tasks file exists:** Proceed without task-related warning.
 
+3b. **Verify the change was delivered (PR merged)**
+
+   Archiving is post-delivery cleanup. Confirm the change's Pull Request is merged before archiving:
+   ```bash
+   gh pr list --state merged --search "<change-name>"
+   ```
+   If no merged PR is found, warn that the change does not appear delivered and use **AskUserQuestion** to confirm before proceeding (the user may be archiving tooling/docs with no PR).
+
 4. **Assess delta spec sync state**
 
    Use `artifactPaths.specs.existingOutputPaths` from status JSON to check for delta specs. If none exist, proceed without sync prompt.
@@ -66,22 +74,13 @@ Archive a completed change in the experimental workflow.
 
    Use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). If the sync task fails or reports errors, abort the archive immediately and report the sync error to the user — do NOT proceed to archive with unsynced specs.
 
-5. **Perform the archive**
+5. **Perform the archive (validated CLI move)**
 
-   Create an `archive` directory under `planningHome.changesDir` if it doesn't exist:
+   Step 4 already synced the main specs, so archive with the native CLI using `--skip-specs` — this validates the change and moves it to `openspec/changes/archive/YYYY-MM-DD-<name>/`:
    ```bash
-   mkdir -p "<planningHome.changesDir>/archive"
+   openspec archive "<name>" --skip-specs -y
    ```
-
-   Generate target name using current date: `YYYY-MM-DD-<change-name>`
-
-   **Check if target already exists:**
-   - If yes: Fail with error, suggest renaming existing archive or using different date
-   - If no: Move `changeRoot` to the archive directory
-
-   ```bash
-   mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
-   ```
+   If the target archive already exists the CLI fails — rename the existing archive or archive on a different date. Only fall back to a manual `mkdir`/`mv` if the CLI is unavailable.
 
 6. **Display summary**
 
@@ -91,6 +90,12 @@ Archive a completed change in the experimental workflow.
    - Archive location
    - Whether specs were synced (if applicable)
    - Note about any warnings (incomplete artifacts/tasks)
+
+7. **Commit the archive result and clean up the workspace (git close-out, MANDATORY)**
+
+   The spec sync (Step 4) edited `openspec/specs/*` and the archive (Step 5) moved the change directory — both are uncommitted repo changes. Close the loop:
+   - Stage and commit them (e.g. `chore(openspec): archive <name> and sync main specs`), excluding `.env`/secrets. If review is wanted, push and open a PR via `ai-specs/skills/commit/SKILL.md`.
+   - Per `ai-specs/skills/using-git-worktrees/SKILL.md`, if the change used a Git worktree, OFFER to clean it up now — explicit, only after the PR is merged: verify no uncommitted/unpushed work, then `git worktree remove` and delete the merged branch. NEVER auto-remove a worktree with unsaved work.
 
 **Output On Success**
 
@@ -111,5 +116,9 @@ All artifacts complete. All tasks complete.
 - Don't block archive on warnings - just inform and confirm
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
-- If delta specs exist, always sync automatically using `openspec-sync-specs` (agent-driven)
-- Do not offer "skip sync" when delta specs exist
+- Archive is post-merge cleanup: verify the PR is merged before archiving
+- Use the native `openspec archive <name> --skip-specs -y` for the validated move; keep the agent-driven `openspec-sync-specs` for the spec merge
+- After archiving, commit the spec sync + the moved directory — never leave the working tree dirty
+- Offer explicit Git worktree cleanup only after merge confirmation (per using-git-worktrees); never auto-remove
+- If delta specs exist, always sync automatically — never ask the user, never skip sync
+- Use the Skill tool to invoke `openspec-sync-specs` (agent-driven) whenever delta specs are present
