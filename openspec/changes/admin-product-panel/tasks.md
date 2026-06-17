@@ -73,5 +73,5 @@
 ## 13. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
 - [x] 13.1 Before committing, offer an adversarial review (`ai-specs/skills/adversarial-review/SKILL.md`); fix blockers/majors. _(2 majors fixed: Draft→Archive button, status refetch error handling)_
-- [ ] 13.2 Load and apply `ai-specs/skills/commit/SKILL.md`: stage relevant files (exclude `.env`, `node_modules`, build artifacts), Conventional Commit message.
-- [ ] 13.3 Push `feature/admin-product-panel`; `gh pr create`; report the PR URL.
+- [x] 13.2 Load and apply `ai-specs/skills/commit/SKILL.md`: stage relevant files (exclude `.env`, `node_modules`, build artifacts), Conventional Commit message. _(8af8ab1)_
+- [x] 13.3 Push `feature/admin-product-panel`; `gh pr create`; report the PR URL. _(PR #16)_
