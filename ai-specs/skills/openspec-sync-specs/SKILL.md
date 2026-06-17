@@ -16,6 +16,12 @@ Sync delta specs from an active OpenSpec change into the main OpenSpec specs.
 
 This is an **agent-driven** operation. The agent reads delta specs and directly edits main specs to apply the changes intelligently.
 
+> **Canonical source of truth.** This file is the single definition of the spec-sync logic.
+> `/opsx:sync` (`.claude/commands/opsx/sync.md`, `.cursor/commands/opsx-sync.md`) and the
+> sync step inside `/opsx:archive` both defer to this file. The CLI-generated
+> `.claude/skills/openspec-sync-specs` / `.cursor/skills/openspec-sync-specs` mirrors are a
+> thinner default and must NOT be treated as canonical. Make all sync changes here.
+
 This skill is useful when a change has been accepted conceptually and the main specs must be updated, but the change should remain active and must not be archived yet.
 
 ## Project Context
