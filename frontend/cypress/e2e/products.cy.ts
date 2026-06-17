@@ -3,6 +3,7 @@ describe('Admin Products Panel', () => {
   const sku = `E2E-SKU-${Date.now()}`;
 
   it('lists products with filters and supports full CRUD lifecycle', () => {
+    cy.viewport(1280, 800);
     cy.visit('/products');
     cy.get('[data-testid="btn-new-product"]').should('be.visible');
 
@@ -62,6 +63,7 @@ describe('Admin Products Panel', () => {
   it('shows activate error when trying via API guard (draft without variant)', () => {
     const draftName = `E2E Draft Only ${Date.now()}`;
 
+    cy.viewport(1280, 800);
     cy.visit('/products');
     cy.get('[data-testid="btn-new-product"]').click();
     cy.get('[data-testid="input-product-name"]').type(draftName);

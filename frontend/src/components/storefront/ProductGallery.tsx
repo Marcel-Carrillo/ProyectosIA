@@ -32,7 +32,6 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productName }) 
               aria-current={idx === activeIdx ? 'true' : undefined}
               onClick={() => setActiveIdx(idx)}
               className={`storefront-gallery__thumb${idx === activeIdx ? ' storefront-gallery__thumb--active' : ''}`}
-              style={{ padding: 0 }}
             >
               <img src={img.url} alt={img.altText || `${productName} thumbnail ${idx + 1}`} />
             </button>

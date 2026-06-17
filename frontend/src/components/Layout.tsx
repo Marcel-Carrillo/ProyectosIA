@@ -9,7 +9,7 @@ const Layout: React.FC = () => {
         <Container>
           <Navbar.Brand href="/products">Admin</Navbar.Brand>
           <Navbar.Toggle aria-controls="main-nav" />
-          <Navbar.Collapse id="main-nav">
+          <Navbar.Collapse id="main-nav" className="admin-navbar-collapse">
             <Nav className="me-auto">
               <Nav.Link as={NavLink} to="/products">Products</Nav.Link>
               <Nav.Link as={NavLink} to="/categories">Categories</Nav.Link>

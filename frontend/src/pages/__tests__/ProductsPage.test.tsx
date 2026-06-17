@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProductsPage from '../ProductsPage';
 import { Product } from '../../types/product';
@@ -47,9 +47,10 @@ describe('ProductsPage', () => {
   it('renders products from the admin API', async () => {
     mockedAdmin.list.mockResolvedValue(listResult([mockProduct]));
     renderPage();
-    expect(await screen.findByTestId('products-table')).toBeInTheDocument();
-    expect(screen.getByTestId('product-row-7')).toBeInTheDocument();
-    expect(screen.getByText('Red Hoodie')).toBeInTheDocument();
+    expect(await screen.findByTestId('products-card-list')).toBeInTheDocument();
+    const card = screen.getByTestId('product-card-row-7');
+    expect(card).toBeInTheDocument();
+    expect(within(card).getByText('Red Hoodie')).toBeInTheDocument();
   });
 
   it('shows the empty state when there are no products', async () => {
@@ -67,7 +68,7 @@ describe('ProductsPage', () => {
   it('always restricts and forwards filters: status filter triggers a re-query', async () => {
     mockedAdmin.list.mockResolvedValue(listResult([mockProduct]));
     renderPage();
-    await screen.findByTestId('products-table');
+    await screen.findByTestId('products-card-list');
     fireEvent.change(screen.getByTestId('filter-status'), { target: { value: 'Draft' } });
     await waitFor(() =>
       expect(mockedAdmin.list).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'Draft', page: 1 })),
@@ -78,8 +79,8 @@ describe('ProductsPage', () => {
     mockedAdmin.list.mockResolvedValue(listResult([mockProduct]));
     mockedAdmin.remove.mockResolvedValue(undefined);
     renderPage();
-    await screen.findByTestId('products-table');
-    fireEvent.click(screen.getByTestId('btn-delete-7'));
+    await screen.findByTestId('products-card-list');
+    fireEvent.click(within(screen.getByTestId('product-card-row-7')).getByTestId('btn-delete-7'));
     fireEvent.click(await screen.findByTestId('btn-confirm-delete'));
     await waitFor(() => expect(mockedAdmin.remove).toHaveBeenCalledWith(7));
   });

@@ -114,6 +114,7 @@ rules:
     - Tasks must include database state restoration for CREATE, UPDATE, and DELETE test operations.
     - Tasks must not delegate manual testing to the user.
     - Tasks must not end without a commit and Pull Request. A change without a PR is not complete.
+    - During `/opsx:apply`, the agent MUST mark each completed sub-task `- [x]` in `tasks.md` immediately on the fly (user must not need to ask). Verification steps are marked only after tests/reports pass; see docs/openspec-tasks-mandatory-steps.md §7.2.
 
   specs:
     - Use clear acceptance criteria, and state business rules before implementation details.

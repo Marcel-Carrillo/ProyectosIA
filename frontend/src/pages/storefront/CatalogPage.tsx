@@ -22,7 +22,6 @@ const CatalogPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
 
-  // Keep searchInput in sync when URL changes externally (e.g. browser back)
   useEffect(() => {
     setSearchInput(searchParams.get('search') || '');
   }, [searchParams]);
@@ -99,55 +98,26 @@ const CatalogPage: React.FC = () => {
       <div className="storefront-container">
         <div className="storefront-controls">
           <form onSubmit={handleSearch} className="storefront-controls__search" role="search">
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="storefront-controls__search-row">
               <input
                 type="search"
+                className="storefront-controls__input"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search products…"
                 aria-label="Search products by name"
-                style={{
-                  flex: 1,
-                  height: 40,
-                  padding: '0 12px',
-                  border: '1px solid var(--color-light)',
-                  fontSize: 'var(--font-size-sm)',
-                  fontFamily: 'var(--font-family-body)',
-                  outline: 'none',
-                }}
               />
-              <button
-                type="submit"
-                style={{
-                  height: 40,
-                  padding: '0 16px',
-                  background: 'var(--color-near-black)',
-                  color: 'var(--color-white)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 'var(--font-size-sm)',
-                  fontFamily: 'var(--font-family-body)',
-                  letterSpacing: '0.04em',
-                }}
-              >
+              <button type="submit" className="storefront-controls__submit">
                 Search
               </button>
             </div>
           </form>
 
           <select
+            className="storefront-controls__sort"
             value={currentSortValue}
             onChange={handleSort}
             aria-label="Sort products"
-            style={{
-              height: 40,
-              padding: '0 12px',
-              border: '1px solid var(--color-light)',
-              fontSize: 'var(--font-size-sm)',
-              fontFamily: 'var(--font-family-body)',
-              background: 'var(--color-white)',
-              cursor: 'pointer',
-            }}
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={`${opt.sort}:${opt.order}`} value={`${opt.sort}:${opt.order}`}>
