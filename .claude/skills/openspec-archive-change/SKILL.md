@@ -72,7 +72,7 @@ Archive a completed change in the experimental workflow.
 
    **Sync is MANDATORY when delta specs exist. Do NOT ask the user — always sync automatically.**
 
-   Use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). If the sync task fails or reports errors, abort the archive immediately and report the sync error to the user — do NOT proceed to archive with unsynced specs.
+   Use Task tool (subagent_type: "general-purpose", prompt: "Read and apply ai-specs/skills/openspec-sync-specs/SKILL.md in full (the canonical, ecommerce-aware sync — NOT the thinner CLI-generated openspec-sync-specs skill) for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). If the sync task fails or reports errors, abort the archive immediately and report the sync error to the user — do NOT proceed to archive with unsynced specs.
 
 5. **Perform the archive (validated CLI move)**
 
