@@ -1031,19 +1031,26 @@ SUPPLIER_COST_EXPOSURE_BLOCKED
 
 ### CORS Configuration
 
-- **Enable CORS**: Configure CORS to allow frontend origin
-- **Secure Configuration**: Only allow specific origins in production
-- **Credentials**: Configure credentials handling appropriately
+- **Enable CORS**: Configure CORS to allow frontend origin(s) listed in `FRONTEND_URL` (comma-separated).
+- **Development**: When `NODE_ENV=development`, allow all origins so CRA dev-server proxy requests succeed during local E2E.
+- **Production**: Restrict to explicit origins only; never use wildcard with credentials.
+- **Credentials**: Configure credentials handling appropriately.
 
 ```typescript
-import cors from 'cors';
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const isDev = process.env.NODE_ENV === 'development';
 
-const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-    credentials: true
-};
-
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (isDev) return callback(null, true);
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 ```
 
 ## Database Patterns

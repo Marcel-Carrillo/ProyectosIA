@@ -7,6 +7,7 @@ export { default as categoryRoutes } from './categoryRoutes';
 // internal data (supplier costs, fulfillment status, etc.).
 // ─────────────────────────────────────────────────────────────────────────────
 export { default as productAdminRoutes } from './admin/productRoutes';
+export { default as supplierAdminRoutes } from './admin/supplierRoutes';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // /api/public routes

@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { healthRoutes, categoryRoutes } from './routes';
 import productAdminRoutes from './routes/admin/productRoutes';
+import supplierAdminRoutes from './routes/admin/supplierRoutes';
 import productPublicRoutes from './routes/public/productRoutes';
 import categoryPublicRoutes from './routes/public/categoryRoutes';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
@@ -17,9 +18,14 @@ for (const key of requiredEnvVars) {
 
 export const app = express();
 
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002').split(',').map((s) => s.trim());
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const isDev = process.env.NODE_ENV === 'development';
 app.use(cors({
   origin: (origin, callback) => {
+    if (isDev) return callback(null, true);
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
@@ -31,6 +37,9 @@ app.use('/health', healthRoutes);
 app.use('/categories', categoryRoutes);
 
 app.use('/api/admin/products', productAdminRoutes);
+app.use('/api/admin/suppliers', supplierAdminRoutes);
+// NOTE: No /api/public/suppliers route exists — suppliers are admin-only and must
+// never be exposed on customer-facing surfaces.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // /api/public routes

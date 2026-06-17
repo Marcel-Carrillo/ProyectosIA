@@ -12,6 +12,7 @@ import {
   VariantComparePriceInvalidError,
 } from '../infrastructure/repositories/productVariantRepository';
 import { ImageNotFoundError } from '../infrastructure/repositories/productImageRepository';
+import { SupplierNotFoundError } from '../infrastructure/repositories/supplierRepository';
 
 interface AppError {
   message: string;
@@ -51,6 +52,8 @@ export function globalErrorHandler(
   } else if (err instanceof VariantNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof ImageNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof SupplierNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof ProductSlugConflictError) {
     statusCode = 409; code = err.code; message = err.message;

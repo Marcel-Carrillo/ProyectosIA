@@ -8,6 +8,7 @@ describe('StatusBadge', () => {
     ['Active', 'bg-success'],
     ['Inactive', 'bg-warning'],
     ['Archived', 'bg-dark'],
+    ['Blocked', 'bg-danger'],
   ] as const)('renders %s with the %s variant', (status, cssClass) => {
     render(<StatusBadge status={status} data-testid="badge" />);
     const badge = screen.getByTestId('badge');

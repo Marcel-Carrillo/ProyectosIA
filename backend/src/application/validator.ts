@@ -87,3 +87,73 @@ export function validateCategoryData(data: Record<string, unknown>): void {
     }
   }
 }
+
+const SUPPLIER_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateSupplierOptionalFields(data: Record<string, unknown>): void {
+  const contactName = data['contactName'];
+  if (contactName !== undefined && contactName !== null && contactName !== '') {
+    if (typeof contactName === 'string' && contactName.length > 150) {
+      throw new ValidationError("Field 'contactName' must not exceed 150 characters");
+    }
+  }
+
+  const contactEmail = data['contactEmail'];
+  if (contactEmail !== undefined && contactEmail !== null && contactEmail !== '') {
+    if (typeof contactEmail === 'string') {
+      if (!SUPPLIER_EMAIL_REGEX.test(contactEmail)) {
+        throw new ValidationError("Field 'contactEmail' must be a valid email address");
+      }
+      if (contactEmail.length > 255) {
+        throw new ValidationError("Field 'contactEmail' must not exceed 255 characters");
+      }
+    }
+  }
+
+  const contactPhone = data['contactPhone'];
+  if (contactPhone !== undefined && contactPhone !== null && contactPhone !== '') {
+    if (typeof contactPhone === 'string' && contactPhone.length > 30) {
+      throw new ValidationError("Field 'contactPhone' must not exceed 30 characters");
+    }
+  }
+
+  const website = data['website'];
+  if (website !== undefined && website !== null && website !== '') {
+    if (typeof website === 'string' && website.length > 500) {
+      throw new ValidationError("Field 'website' must not exceed 500 characters");
+    }
+  }
+
+  const notes = data['notes'];
+  if (notes !== undefined && notes !== null && notes !== '') {
+    if (typeof notes === 'string' && notes.length > 2000) {
+      throw new ValidationError("Field 'notes' must not exceed 2000 characters");
+    }
+  }
+
+  const status = data['status'];
+  if (status !== undefined && status !== null && status !== '') {
+    const validStatuses = ['Active', 'Inactive', 'Blocked'];
+    if (!validStatuses.includes(status as string)) {
+      throw new ValidationError(`Field 'status' must be one of: ${validStatuses.join(', ')}`);
+    }
+  }
+}
+
+export function validateSupplierData(
+  data: Record<string, unknown>,
+  options: { requireName?: boolean } = { requireName: true }
+): void {
+  const name = data['name'];
+  if (options.requireName !== false) {
+    if (name === undefined || name === null || name === '') {
+      throw new ValidationError("Field 'name' is required");
+    }
+  }
+  if (name !== undefined && name !== null && name !== '') {
+    if (typeof name === 'string' && name.length > 150) {
+      throw new ValidationError("Field 'name' must not exceed 150 characters");
+    }
+  }
+  validateSupplierOptionalFields(data);
+}

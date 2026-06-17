@@ -12,6 +12,13 @@ export type {
   ProductImageCreateData,
   ProductImageUpdateData,
 } from './productRepository';
+export { ISupplierRepository } from './supplierRepository';
+export type {
+  SupplierCreateData,
+  SupplierUpdateData,
+  SupplierListFilters,
+  SupplierListResult,
+} from './supplierRepository';
 
 import { Category } from '../models';
 
