@@ -84,6 +84,7 @@ Implement tasks from an OpenSpec change.
    - Make the code changes required, implementing from the `.claude/doc/<change-name>/{backend,frontend}.md` plan plus `design.md`
    - Keep changes minimal and focused
    - **Execute the mandatory verification yourself** (per `docs/openspec-tasks-mandatory-steps.md`): run unit tests + verify DB state; run curl for backend endpoints; run Playwright E2E for frontend workflows; write reports under `openspec/changes/<change-name>/reports/`. NEVER delegate testing to the user.
+   - For the "Update Technical Documentation" task, apply `ai-specs/skills/update-docs/SKILL.md` to identify and update the affected docs (`docs/data-model.md`, `docs/api-spec.yml`, backend/frontend standards) — do not update docs ad-hoc.
    - Mark a task complete (`- [ ]` → `- [x]`) **only with evidence** (tests pass, DB restored for CREATE/UPDATE/DELETE, report created)
    - Continue to next task
 
@@ -100,6 +101,10 @@ Implement tasks from an OpenSpec change.
    - Overall progress: "N/M tasks complete"
    - If all done: suggest archive
    - If paused: explain why and wait for guidance
+
+7b. **Offer an adversarial review before committing (recommended)**
+
+   When all tasks are complete and verified, offer to run a red-team pass: read and apply `ai-specs/skills/adversarial-review/SKILL.md` for this change (ideally from a fresh subagent/session for independence). Do NOT commit if it surfaces blockers or majors — fix them first. Skip only if the user declines.
 
 8. **Commit and open the Pull Request (MANDATORY — last step)**
 
