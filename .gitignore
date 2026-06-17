@@ -39,3 +39,5 @@ verify-*.png
 # OS noise
 .DS_Store
 Thumbs.db
+# git worktrees
+.worktrees/

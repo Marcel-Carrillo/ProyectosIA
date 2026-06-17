@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import { healthRoutes, categoryRoutes } from './routes';
 import productAdminRoutes from './routes/admin/productRoutes';
+import productPublicRoutes from './routes/public/productRoutes';
+import categoryPublicRoutes from './routes/public/categoryRoutes';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
 import { logger } from './infrastructure/logger';
 
@@ -31,13 +33,13 @@ app.use('/categories', categoryRoutes);
 app.use('/api/admin/products', productAdminRoutes);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUTURE: /api/public routes
-// Register customer-facing routers here. These endpoints MUST NEVER expose
-// supplier costs, supplier references, internal notes, or fulfillment data.
-// Example:
-//   import productPublicRoutes from './routes/public/productRoutes';
-//   app.use('/api/public/products', productPublicRoutes);
+// /api/public routes
+// Customer-facing endpoints for the storefront. These endpoints MUST NEVER expose
+// supplier costs, supplier references, internal notes, or fulfillment data; the
+// public serializer enforces a customer-safe allow-list.
 // ─────────────────────────────────────────────────────────────────────────────
+app.use('/api/public/products', productPublicRoutes);
+app.use('/api/public/categories', categoryPublicRoutes);
 
 app.use(notFoundHandler);
 app.use(globalErrorHandler);

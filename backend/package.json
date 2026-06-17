@@ -12,7 +12,9 @@
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "import:products": "npx ts-node prisma/importEscuelaJs.ts",
+    "db:seed": "npx prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -43,5 +45,8 @@
     "@prisma/client@5.22.0": true,
     "@prisma/engines@5.22.0": true,
     "prisma@5.22.0": true
+  },
+  "prisma": {
+    "seed": "npx ts-node prisma/seed.ts"
   }
 }
