@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import './styles/tokens.css';
 import './styles/storefront.css';
+import './styles/admin.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

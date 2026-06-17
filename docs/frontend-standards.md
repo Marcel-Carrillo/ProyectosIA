@@ -461,6 +461,32 @@ Recommended frontend routes:
 />
 ```
 
+### Responsive breakpoints and tap targets
+
+The storefront and admin catalog surfaces target three widths:
+
+| Breakpoint | Width | Usage |
+|------------|-------|--------|
+| Mobile baseline | 360px (CSS `max-width: 575.98px`) | Phone-first layout, full-width controls |
+| Tablet | 768px (Bootstrap `md`) | Two-column PDP, multi-column admin filters |
+| Desktop | ≥992px (Bootstrap `lg`) | Full admin tables, 4-column storefront grid |
+
+**Storefront** (`frontend/src/styles/storefront.css`):
+
+* Product grid: 2 / 3 / 4 columns at default / 768px / 1200px.
+* Catalog search and sort stack full-width on mobile; controls use 44px height on small viewports.
+* Header icon buttons use `.storefront-header__icon-btn` (min 44×44px hit area).
+* Product detail uses `.storefront-pdp-grid` (1 column below 768px, 2 columns at ≥768px).
+
+**Admin** (`frontend/src/styles/admin.css` + Bootstrap grid):
+
+* Below `md`, product and variant lists render as **stacked cards** (`.admin-card-list` / `.admin-card-row`); full tables use `d-none d-md-table`.
+* Filters use mobile-first columns (`xs={12}` for primary fields).
+* Modals use React Bootstrap `fullscreen="sm-down"` for create/edit/delete flows on phones.
+* Action buttons on mobile use `.admin-touch-btn` (min-height 44px).
+
+**Testing:** Cypress specs in `frontend/cypress/e2e/responsive.cy.ts` assert no horizontal document overflow at 360, 768, and 1280px viewports.
+
 ## Testing Standards
 
 ### End-to-End Testing with Cypress

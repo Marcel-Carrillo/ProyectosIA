@@ -63,7 +63,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
   };
 
   return (
-    <Modal show={show} onHide={onHide} data-testid="modal-create-product">
+    <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-create-product">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
           <Modal.Title>New product</Modal.Title>

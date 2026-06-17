@@ -73,7 +73,7 @@ Implement tasks from an OpenSpec change.
    - Show which task is being worked on
    - Make the code changes required
    - Keep changes minimal and focused
-   - Mark task complete in the tasks file: `- [ ]` → `- [x]`
+   - **Update `tasks.md` on disk immediately** after each sub-task: `- [ ]` → `- [x]` in `openspec/changes/<name>/tasks.md` as soon as that sub-task is done. On the fly every step; never batch at session end; never wait for the user to ask. Verification steps only after tests/reports pass (see `docs/openspec-tasks-mandatory-steps.md` §7.2).
    - Continue to next task
 
    **Pause if:**
@@ -147,7 +147,7 @@ What would you like to do?
 - If task is ambiguous, pause and ask before implementing
 - If implementation reveals issues, pause and suggest artifact updates
 - Keep code changes minimal and scoped to each task
-- Update task checkbox immediately after completing each task
+- Update `tasks.md` checkbox immediately after completing each sub-task (on the fly; user must not need to ask)
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
 

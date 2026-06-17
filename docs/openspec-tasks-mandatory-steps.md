@@ -411,15 +411,26 @@ This rule applies when:
    * Verify all responses and outcomes.
    * Restore database state after tests.
 
-2. **Mark Tasks as Completed**
+2. **Mark Tasks as Completed (incrementally, in `tasks.md` on disk)**
 
-   Tasks can ONLY be marked as completed (`[x]`) in `tasks.md` AFTER:
+   The agent MUST update `openspec/changes/<change-name>/tasks.md` **immediately** after
+   each sub-task is finished — on the fly, without the user having to request it.
+   Do not defer checkbox updates to the end of a session or only summarize progress
+   in chat.
 
-   * The agent has successfully executed all required tests.
+   * **Implementation sub-tasks** (code, CSS, components, docs edits): mark `- [x]`
+     as soon as that sub-task is done and verified locally (e.g. lint/tsc for that
+     scope if applicable).
+   * **Mandatory verification sub-tasks** (unit tests, curl, E2E, commit/PR): mark
+     `- [x]` only AFTER the criteria below are met for that step.
+
+   Tasks can ONLY be marked as completed (`[x]`) for verification steps AFTER:
+
+   * The agent has successfully executed all required tests for that step.
    * All test results have been verified.
    * Database state has been restored for CREATE, UPDATE, and DELETE operations.
    * All test outcomes have been documented.
-   * Required report files have been created.
+   * Required report files have been created (when the step requires a report).
 
 3. **Never Delegate Testing**
 

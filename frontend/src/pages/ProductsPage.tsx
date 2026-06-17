@@ -148,62 +148,114 @@ const ProductsPage: React.FC = () => {
       )}
 
       {!loading && !error && products.length > 0 && (
-        <Table hover responsive data-testid="products-table">
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Slug</th>
-              <th>Status</th>
-              <th>Category</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          <div className="d-md-none admin-card-list" data-testid="products-card-list">
             {products.map((product) => (
-              <tr key={product.id} data-testid={`product-row-${product.id}`}>
-                <td>
+              <div
+                key={product.id}
+                className="admin-card-row"
+                data-testid={`product-card-row-${product.id}`}
+              >
+                <div className="admin-card-row__header">
                   {product.mainImageUrl ? (
                     <img
                       src={product.mainImageUrl}
                       alt={product.name}
-                      style={{ width: 32, height: 32, objectFit: 'cover' }}
+                      className="admin-card-row__thumb"
                     />
                   ) : (
-                    <span className="text-muted">—</span>
+                    <span className="admin-card-row__thumb d-flex align-items-center justify-content-center bg-light text-muted">
+                      —
+                    </span>
                   )}
-                </td>
-                <td>
-                  <Link to={`/products/${product.id}`}>{product.name}</Link>
-                </td>
-                <td>
-                  <code>{product.slug}</code>
-                </td>
-                <td>
-                  <StatusBadge status={product.status} />
-                </td>
-                <td>{categories.find((c) => c.id === product.categoryId)?.name ?? '—'}</td>
-                <td>
+                  <div className="flex-grow-1">
+                    <div className="fw-semibold">
+                      <Link to={`/products/${product.id}`}>{product.name}</Link>
+                    </div>
+                    <div className="admin-card-row__meta">
+                      {categories.find((c) => c.id === product.categoryId)?.name ?? '—'}
+                    </div>
+                    <StatusBadge status={product.status} />
+                  </div>
+                </div>
+                <div className="admin-card-row__actions">
                   <Link
                     to={`/products/${product.id}`}
-                    className="btn btn-sm btn-outline-primary me-2"
+                    className="btn btn-outline-primary admin-touch-btn"
                     data-testid={`btn-edit-${product.id}`}
                   >
                     Edit
                   </Link>
                   <Button
-                    size="sm"
                     variant="outline-danger"
+                    className="admin-touch-btn"
                     onClick={() => setToDelete(product)}
                     data-testid={`btn-delete-${product.id}`}
                   >
                     Delete
                   </Button>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </Table>
+          </div>
+
+          <Table hover responsive className="d-none d-md-table" data-testid="products-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Slug</th>
+                <th>Status</th>
+                <th>Category</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id} data-testid={`product-row-${product.id}`}>
+                  <td>
+                    {product.mainImageUrl ? (
+                      <img
+                        src={product.mainImageUrl}
+                        alt={product.name}
+                        style={{ width: 32, height: 32, objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    <Link to={`/products/${product.id}`}>{product.name}</Link>
+                  </td>
+                  <td>
+                    <code>{product.slug}</code>
+                  </td>
+                  <td>
+                    <StatusBadge status={product.status} />
+                  </td>
+                  <td>{categories.find((c) => c.id === product.categoryId)?.name ?? '—'}</td>
+                  <td>
+                    <Link
+                      to={`/products/${product.id}`}
+                      className="btn btn-sm btn-outline-primary me-2"
+                      data-testid={`btn-edit-${product.id}`}
+                    >
+                      Edit
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant="outline-danger"
+                      onClick={() => setToDelete(product)}
+                      data-testid={`btn-delete-${product.id}`}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </>
       )}
 
       {!loading && !error && (
@@ -220,7 +272,7 @@ const ProductsPage: React.FC = () => {
         }}
       />
 
-      <Modal show={toDelete !== null} onHide={() => setToDelete(null)}>
+      <Modal show={toDelete !== null} onHide={() => setToDelete(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
           <Modal.Title>Delete product</Modal.Title>
         </Modal.Header>

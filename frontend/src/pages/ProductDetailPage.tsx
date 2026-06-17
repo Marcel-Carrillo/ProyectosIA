@@ -174,6 +174,7 @@ const ProductDetailPage: React.FC = () => {
         {(status === 'Draft' || status === 'Inactive') && (
           <Button
             variant="success"
+            className="admin-touch-btn"
             disabled={!canActivate || statusSaving}
             onClick={() => handleStatusChange('Active')}
             data-testid="btn-activate"
@@ -186,6 +187,7 @@ const ProductDetailPage: React.FC = () => {
         {status === 'Draft' && (
           <Button
             variant="outline-secondary"
+            className="admin-touch-btn"
             disabled={statusSaving}
             onClick={() => handleStatusChange('Inactive')}
             data-testid="btn-deactivate"
@@ -197,6 +199,7 @@ const ProductDetailPage: React.FC = () => {
         {status === 'Active' && (
           <Button
             variant="outline-warning"
+            className="admin-touch-btn"
             disabled={statusSaving}
             onClick={() => handleStatusChange('Inactive')}
             data-testid="btn-deactivate"
@@ -208,6 +211,7 @@ const ProductDetailPage: React.FC = () => {
         {(status === 'Draft' || status === 'Active' || status === 'Inactive') && (
           <Button
             variant="outline-danger"
+            className="admin-touch-btn"
             disabled={statusSaving}
             onClick={() => handleStatusChange('Archived')}
             data-testid="btn-archive"

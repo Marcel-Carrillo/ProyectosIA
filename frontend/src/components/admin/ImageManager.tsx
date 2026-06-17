@@ -122,7 +122,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                     <Button
                       size="sm"
                       variant="outline-primary"
-                      className="w-100 mb-1"
+                      className="w-100 mb-1 admin-touch-btn"
                       disabled={isMain}
                       onClick={() => handleSetMain(image)}
                       data-testid={`btn-set-main-${image.id}`}
@@ -132,7 +132,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                     <Button
                       size="sm"
                       variant="outline-danger"
-                      className="w-100"
+                      className="w-100 admin-touch-btn"
                       onClick={() => setDeleting(image)}
                       data-testid={`btn-delete-image-${image.id}`}
                     >
@@ -154,7 +154,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
           {addError && <Alert variant="danger">{addError}</Alert>}
           <Form onSubmit={handleAdd}>
             <Row className="g-2 align-items-end">
-              <Col md={6}>
+              <Col xs={12} md={6}>
                 <Form.Label className="small mb-1">URL *</Form.Label>
                 <Form.Control
                   type="text"
@@ -163,7 +163,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                   data-testid="input-image-url"
                 />
               </Col>
-              <Col md={3}>
+              <Col xs={12} md={3}>
                 <Form.Label className="small mb-1">Alt text</Form.Label>
                 <Form.Control
                   type="text"
@@ -172,7 +172,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                   data-testid="input-image-alt"
                 />
               </Col>
-              <Col md={2}>
+              <Col xs={12} md={2}>
                 <Form.Label className="small mb-1">Order</Form.Label>
                 <Form.Control
                   type="number"
@@ -181,11 +181,11 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                   data-testid="input-image-sort"
                 />
               </Col>
-              <Col md={1}>
+              <Col xs={12} md={1}>
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-100"
+                  className="w-100 admin-touch-btn"
                   disabled={adding}
                   data-testid="btn-add-image"
                 >
@@ -197,7 +197,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
         </Card.Body>
       </Card>
 
-      <Modal show={deleting !== null} onHide={() => setDeleting(null)}>
+      <Modal show={deleting !== null} onHide={() => setDeleting(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
           <Modal.Title>Delete image</Modal.Title>
         </Modal.Header>

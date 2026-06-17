@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import VariantTable from '../VariantTable';
 import { ProductVariant } from '../../../types/product';
 
@@ -29,8 +29,8 @@ describe('VariantTable', () => {
     const { container } = render(
       <VariantTable productId={1} variants={[variant]} onVariantsChange={jest.fn()} />,
     );
-    expect(screen.getByTestId('variant-row-5')).toBeInTheDocument();
-    expect(screen.getByText('EJS-5')).toBeInTheDocument();
+    expect(screen.getByTestId('variant-card-5')).toBeInTheDocument();
+    expect(within(screen.getByTestId('variant-card-5')).getByText('EJS-5')).toBeInTheDocument();
     const html = container.innerHTML;
     expect(html).not.toMatch(/supplierId|supplierReference|supplierCost/i);
   });
@@ -46,7 +46,7 @@ describe('VariantTable', () => {
     mocked.deleteVariant.mockResolvedValue(undefined);
     const onVariantsChange = jest.fn();
     render(<VariantTable productId={1} variants={[variant]} onVariantsChange={onVariantsChange} />);
-    fireEvent.click(screen.getByTestId('btn-delete-variant-5'));
+    fireEvent.click(within(screen.getByTestId('variant-card-5')).getByTestId('btn-delete-variant-5'));
     fireEvent.click(await screen.findByTestId('btn-confirm-delete-variant'));
     await waitFor(() => expect(mocked.deleteVariant).toHaveBeenCalledWith(1, 5));
     expect(onVariantsChange).toHaveBeenCalled();

@@ -117,7 +117,7 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
   };
 
   return (
-    <Modal show={show} onHide={onHide} data-testid="modal-variant">
+    <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-variant">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
           <Modal.Title>{mode === 'create' ? 'Add variant' : 'Edit variant'}</Modal.Title>
@@ -250,56 +250,110 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
           No variants yet. Add at least one active variant to activate the product.
         </Alert>
       ) : (
-        <Table size="sm" hover responsive data-testid="variants-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Size</th>
-              <th>Color</th>
-              <th>Public price</th>
-              <th>Compare-at</th>
-              <th>Stock policy</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          <div className="d-md-none admin-card-list" data-testid="variants-card-list">
             {variants.map((v) => (
-              <tr key={v.id} data-testid={`variant-row-${v.id}`}>
-                <td>
+              <div key={v.id} className="admin-card-row" data-testid={`variant-card-${v.id}`}>
+                <div className="fw-semibold mb-2">
                   <code>{v.sku}</code>
-                </td>
-                <td>{v.size ?? '—'}</td>
-                <td>{v.color ?? '—'}</td>
-                <td>{formatPrice(v.publicPrice)}</td>
-                <td>{formatPrice(v.compareAtPrice)}</td>
-                <td>{v.stockPolicy}</td>
-                <td>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Size</span>
+                  <span>{v.size ?? '—'}</span>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Color</span>
+                  <span>{v.color ?? '—'}</span>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Public price</span>
+                  <span>{formatPrice(v.publicPrice)}</span>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Compare-at</span>
+                  <span>{formatPrice(v.compareAtPrice)}</span>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Stock policy</span>
+                  <span>{v.stockPolicy}</span>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Status</span>
                   <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
-                </td>
-                <td>
+                </div>
+                <div className="admin-card-row__actions">
                   <Button
-                    size="sm"
                     variant="outline-primary"
-                    className="me-2"
+                    className="admin-touch-btn"
                     onClick={() => openEdit(v)}
                     data-testid={`btn-edit-variant-${v.id}`}
                   >
                     Edit
                   </Button>
                   <Button
-                    size="sm"
                     variant="outline-danger"
+                    className="admin-touch-btn"
                     onClick={() => setDeleting(v)}
                     data-testid={`btn-delete-variant-${v.id}`}
                   >
                     Delete
                   </Button>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </Table>
+          </div>
+
+          <Table size="sm" hover responsive className="d-none d-md-table" data-testid="variants-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Size</th>
+                <th>Color</th>
+                <th>Public price</th>
+                <th>Compare-at</th>
+                <th>Stock policy</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {variants.map((v) => (
+                <tr key={v.id} data-testid={`variant-row-${v.id}`}>
+                  <td>
+                    <code>{v.sku}</code>
+                  </td>
+                  <td>{v.size ?? '—'}</td>
+                  <td>{v.color ?? '—'}</td>
+                  <td>{formatPrice(v.publicPrice)}</td>
+                  <td>{formatPrice(v.compareAtPrice)}</td>
+                  <td>{v.stockPolicy}</td>
+                  <td>
+                    <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
+                  </td>
+                  <td>
+                    <Button
+                      size="sm"
+                      variant="outline-primary"
+                      className="me-2"
+                      onClick={() => openEdit(v)}
+                      data-testid={`btn-edit-variant-${v.id}`}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline-danger"
+                      onClick={() => setDeleting(v)}
+                      data-testid={`btn-delete-variant-${v.id}`}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </>
       )}
 
       <VariantFormModal
@@ -311,7 +365,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
         onSuccess={onVariantsChange}
       />
 
-      <Modal show={deleting !== null} onHide={() => setDeleting(null)}>
+      <Modal show={deleting !== null} onHide={() => setDeleting(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
           <Modal.Title>Delete variant</Modal.Title>
         </Modal.Header>

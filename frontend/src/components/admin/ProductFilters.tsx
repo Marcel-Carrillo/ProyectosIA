@@ -3,8 +3,8 @@ import { Row, Col, Form, Button } from 'react-bootstrap';
 import { Category } from '../../types/category';
 
 export type FiltersState = {
-  status: string; // '' = all
-  categoryId: string; // '' = all
+  status: string;
+  categoryId: string;
   search: string;
   sort: 'name' | 'createdAt';
   order: 'asc' | 'desc';
@@ -24,7 +24,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   onReset,
 }) => (
   <Row className="g-2 mb-3 align-items-end">
-    <Col xs={6} md={3}>
+    <Col xs={12} md={3}>
       <Form.Label className="small mb-1">Search</Form.Label>
       <Form.Control
         type="search"
@@ -35,7 +35,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         data-testid="filter-search"
       />
     </Col>
-    <Col xs={6} md={2}>
+    <Col xs={12} md={2}>
       <Form.Label className="small mb-1">Status</Form.Label>
       <Form.Select
         value={filters.status}
@@ -50,7 +50,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         <option value="Archived">Archived</option>
       </Form.Select>
     </Col>
-    <Col xs={6} md={3}>
+    <Col xs={12} md={3}>
       <Form.Label className="small mb-1">Category</Form.Label>
       <Form.Select
         value={filters.categoryId}
@@ -66,7 +66,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         ))}
       </Form.Select>
     </Col>
-    <Col xs={4} md={2}>
+    <Col xs={6} md={2}>
       <Form.Label className="small mb-1">Sort by</Form.Label>
       <Form.Select
         value={filters.sort}
@@ -78,7 +78,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         <option value="name">Name</option>
       </Form.Select>
     </Col>
-    <Col xs={4} md={1}>
+    <Col xs={6} md={1}>
       <Form.Label className="small mb-1">Order</Form.Label>
       <Form.Select
         value={filters.order}
@@ -90,10 +90,10 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         <option value="asc">Asc</option>
       </Form.Select>
     </Col>
-    <Col xs={4} md={1}>
+    <Col xs={12} md={1}>
       <Button
         variant="outline-secondary"
-        className="w-100"
+        className="w-100 admin-touch-btn"
         onClick={onReset}
         data-testid="btn-filter-reset"
       >

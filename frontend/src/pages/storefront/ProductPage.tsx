@@ -7,7 +7,7 @@ import VariantSelector from '../../components/storefront/VariantSelector';
 import PriceTag from '../../components/storefront/PriceTag';
 
 const ProductPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // route: /catalog/:id
+  const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -43,7 +43,7 @@ const ProductPage: React.FC = () => {
     return (
       <div className="storefront-section">
         <div className="storefront-container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
+          <div className="storefront-pdp-skeleton">
             <div className="storefront-skeleton" style={{ aspectRatio: '3/4', width: '100%' }} />
             <div>
               <div className="storefront-skeleton" style={{ height: 16, width: '70%', marginBottom: 12 }} />
@@ -112,20 +112,7 @@ const ProductPage: React.FC = () => {
   return (
     <div className="storefront-section">
       <div className="storefront-container">
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: 32,
-          }}
-          className="product-detail-grid"
-        >
-          <style>{`
-            @media (min-width: 768px) {
-              .product-detail-grid { grid-template-columns: 1fr 1fr !important; }
-            }
-          `}</style>
-
+        <div className="storefront-pdp-grid">
           <ProductGallery images={product.images ?? []} productName={product.name} />
 
           <div style={{ paddingTop: 8 }}>
@@ -190,7 +177,7 @@ const ProductPage: React.FC = () => {
               aria-label="Add to cart (not yet available)"
               style={{
                 width: '100%',
-                height: 48,
+                minHeight: 48,
                 background: 'var(--color-near-black)',
                 color: 'var(--color-white)',
                 border: 'none',
