@@ -3,12 +3,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import axios from 'axios';
 import ProductFormModal from '../ProductFormModal';
 import { Product } from '../../../types/product';
+import { adminProductService } from '../../../services/adminProductService';
 
 jest.mock('../../../services/adminProductService', () => {
   const actual = jest.requireActual('../../../services/adminProductService');
   return { __esModule: true, ...actual, adminProductService: { create: jest.fn() } };
 });
-import { adminProductService } from '../../../services/adminProductService';
 const mocked = adminProductService as jest.Mocked<typeof adminProductService>;
 
 const created: Product = {

@@ -3,11 +3,11 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProductsPage from '../ProductsPage';
 import { Product } from '../../types/product';
+import { adminProductService } from '../../services/adminProductService';
+import { categoryService } from '../../services/categoryService';
 
 jest.mock('../../services/adminProductService');
 jest.mock('../../services/categoryService');
-import { adminProductService } from '../../services/adminProductService';
-import { categoryService } from '../../services/categoryService';
 
 const mockedAdmin = adminProductService as jest.Mocked<typeof adminProductService>;
 const mockedCategory = categoryService as jest.Mocked<typeof categoryService>;

@@ -2,9 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import VariantTable from '../VariantTable';
 import { ProductVariant } from '../../../types/product';
+import { adminProductService } from '../../../services/adminProductService';
 
 jest.mock('../../../services/adminProductService');
-import { adminProductService } from '../../../services/adminProductService';
 const mocked = adminProductService as jest.Mocked<typeof adminProductService>;
 
 const variant: ProductVariant = {

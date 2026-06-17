@@ -4,6 +4,8 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import ProductDetailPage from '../ProductDetailPage';
 import { Product, ProductVariant } from '../../types/product';
+import { adminProductService } from '../../services/adminProductService';
+import { categoryService } from '../../services/categoryService';
 
 jest.mock('../../services/adminProductService', () => {
   const actual = jest.requireActual('../../services/adminProductService');
@@ -19,8 +21,6 @@ jest.mock('../../services/adminProductService', () => {
   };
 });
 jest.mock('../../services/categoryService');
-import { adminProductService } from '../../services/adminProductService';
-import { categoryService } from '../../services/categoryService';
 
 const mockedAdmin = adminProductService as jest.Mocked<typeof adminProductService>;
 const mockedCategory = categoryService as jest.Mocked<typeof categoryService>;

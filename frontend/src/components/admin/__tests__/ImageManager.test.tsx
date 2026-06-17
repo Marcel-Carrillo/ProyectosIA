@@ -2,9 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImageManager from '../ImageManager';
 import { ProductImage } from '../../../types/product';
+import { adminProductService } from '../../../services/adminProductService';
 
 jest.mock('../../../services/adminProductService');
-import { adminProductService } from '../../../services/adminProductService';
 const mocked = adminProductService as jest.Mocked<typeof adminProductService>;
 
 const image: ProductImage = {
