@@ -11,7 +11,7 @@ export const productService = {
   getAll: async (params?: ProductQueryParams): Promise<ProductListResponse> => {
     try {
       const response = await axios.get<ProductListResponse>(
-        `${API_BASE_URL}/api/admin/products`,
+        `${API_BASE_URL}/api/public/products`,
         { params }
       );
       return response.data;
@@ -24,7 +24,7 @@ export const productService = {
   getById: async (id: number): Promise<ProductResponse> => {
     try {
       const response = await axios.get<ProductResponse>(
-        `${API_BASE_URL}/api/admin/products/${id}`
+        `${API_BASE_URL}/api/public/products/${id}`
       );
       return response.data;
     } catch (error) {

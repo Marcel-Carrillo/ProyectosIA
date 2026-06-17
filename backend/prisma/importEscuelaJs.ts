@@ -6,12 +6,8 @@ const prisma = new PrismaClient();
 async function main() {
   const limit = Number(process.env.ESCUELAJS_IMPORT_LIMIT ?? '40');
 
-  console.log(`Importing products from EscuelaJS (limit=${limit})...`);
   const result = await importEscuelaJsProducts(prisma, { limit });
-
-  console.log(
-    `Seed complete. Fetched=${result.fetched}, imported=${result.imported}, skipped=${result.skipped}`,
-  );
+  console.log(JSON.stringify(result, null, 2));
 }
 
 main()

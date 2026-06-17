@@ -738,6 +738,103 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/public/products:
+    get:
+      summary: List products (public storefront)
+      description: >
+        Customer-facing product listing for the storefront. Results are always
+        restricted to Active products (any client-supplied `status` is ignored).
+        Responses are serialized with a customer-safe allow-list and NEVER include
+        supplier data (`supplierId`, `supplierReference`, `supplierCost`),
+        `deletedAt`, or internal notes. Only Active variants are returned.
+      tags:
+        - Public — Catalog
+      parameters:
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          description: Number of items per page. Clamped to a maximum of 100.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [name, createdAt]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProductListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/public/products/{id}:
+    get:
+      summary: Get product by ID (public storefront)
+      description: >
+        Returns a single Active product with its Active variants and images
+        ordered by sortOrder, serialized with the customer-safe allow-list.
+        Non-existent or non-Active products return 404.
+      tags:
+        - Public — Catalog
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProductResponse'
+        '404':
+          description: Product not found or not Active (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/public/categories:
+    get:
+      summary: List categories (public storefront)
+      description: >
+        Returns the active categories available to the storefront navigation.
+        The Category model holds no supplier or internal data.
+      tags:
+        - Public — Catalog
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /suppliers:
     get:
       summary: Get all suppliers
@@ -1903,6 +2000,122 @@ components:
           example: true
         data:
           $ref: '#/components/schemas/ProductListResult'
+        message:
+          type: string
+          example: Products retrieved successfully
+
+    PublicProductVariant:
+      type: object
+      description: >
+        Customer-safe variant. Supplier fields (supplierId, supplierReference,
+        supplierCost) and deletedAt are never included.
+      properties:
+        id:
+          type: integer
+          example: 12
+        sku:
+          type: string
+          example: EJS-3
+        size:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        publicPrice:
+          type: number
+          example: 29.9
+        compareAtPrice:
+          type: number
+          nullable: true
+        status:
+          type: string
+          example: Active
+
+    PublicProduct:
+      type: object
+      description: >
+        Customer-safe product as returned by the public catalog API. Uses an
+        explicit allow-list; supplier and internal fields are never present.
+        Only Active variants are included.
+      properties:
+        id:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: Classic Red Pullover Hoodie
+        slug:
+          type: string
+          example: classic-red-pullover-hoodie
+        description:
+          type: string
+          nullable: true
+        brand:
+          type: string
+          nullable: true
+        status:
+          type: string
+          example: Active
+        mainImageUrl:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+          nullable: true
+          example: 4
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProductVariant'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PublicProductResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/PublicProduct'
+        message:
+          type: string
+          example: Product retrieved successfully
+
+    PublicProductListResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProduct'
+        total:
+          type: integer
+          example: 35
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+
+    PublicProductListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/PublicProductListResult'
         message:
           type: string
           example: Products retrieved successfully

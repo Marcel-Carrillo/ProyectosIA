@@ -7,7 +7,7 @@ export const categoryService = {
   getAll: async (): Promise<Category[]> => {
     try {
       const response = await axios.get<CategoryListResponse>(
-        `${API_BASE_URL}/categories`
+        `${API_BASE_URL}/api/public/categories`
       );
       return response.data.data;
     } catch (error) {
