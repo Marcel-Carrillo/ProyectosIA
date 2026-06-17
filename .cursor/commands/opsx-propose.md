@@ -83,6 +83,8 @@ When ready to implement, switch to Sonnet 4.6 and run /opsx:apply
         - `resolvedOutputPath`: Resolved path or pattern to write the artifact
         - `dependencies`: Completed artifacts to read for context
       - Read any completed dependency files for context
+      - **Before writing the first artifact**, read `docs/base-standards.md` and apply the "Global authoring rules" delivered in the `context` field — they govern EVERY artifact. Honor both `rules` AND `context` from the instructions as mandatory constraints (not just the `template`).
+      - **When the artifact is `tasks`**: first read `docs/openspec-tasks-mandatory-steps.md`, then expand the generic template into the project's MANDATORY structure — Step 0 "Create Feature Branch" (apply `ai-specs/skills/using-git-worktrees/SKILL.md`) as the FIRST step, then the implementation groups, then the mandatory steps: Review unit tests; Run unit tests + verify DB + report; Manual curl testing (AGENT MUST EXECUTE) for backend endpoints + report; E2E Playwright for frontend workflows + report; Update technical documentation; Commit + create PR as the LAST step. Reports go under `openspec/changes/<name>/reports/`.
       - Create the artifact file using `template` as the structure and write it to `resolvedOutputPath`
       - Apply `context` and `rules` as constraints - but do NOT copy them into the file
       - Show brief progress: "Created <artifact-id>"
@@ -125,3 +127,5 @@ After completing all artifacts, summarize:
 - If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
 - If a change with that name already exists, ask if user wants to continue it or create a new one
 - Verify each artifact file exists after writing before proceeding to next
+- Before writing artifacts, read `docs/base-standards.md` and apply the global rules delivered via the instructions `context`
+- `tasks.md` MUST follow `docs/openspec-tasks-mandatory-steps.md`: Step 0 (feature branch / worktree) first and Commit + PR last, including curl, E2E, and report steps. Never emit a bare generic task list
