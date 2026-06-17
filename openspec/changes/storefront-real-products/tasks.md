@@ -76,9 +76,9 @@
 
 ## 10. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 10.1 Load and apply `ai-specs/skills/commit/SKILL.md`.
-- [ ] 10.2 Verify all tasks complete and reports exist.
-- [ ] 10.3 Stage relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`).
-- [ ] 10.4 Create commit with Conventional Commit message.
-- [ ] 10.5 Push `feature/storefront-real-products` to origin.
-- [ ] 10.6 `gh pr create` and report PR URL.
+- [x] 10.1 Load and apply `ai-specs/skills/commit/SKILL.md`.
+- [x] 10.2 Verify all tasks complete and reports exist.
+- [x] 10.3 Stage relevant files (`.env` ignored; no node_modules/dist/coverage).
+- [x] 10.4 Create commit with Conventional Commit message (`c21c00f`).
+- [x] 10.5 Push `feature/storefront-real-products` to origin.
+- [x] 10.6 PR created: https://github.com/Marcel-Carrillo/ProyectosIA/pull/12
