@@ -353,7 +353,8 @@ export const productService = {
 Recommended ecommerce service files:
 
 ```text
-productService.ts
+productService.ts          # public storefront → /api/public/products
+adminProductService.ts     # admin panel CRUD → /api/admin/products (+ variants/images)
 categoryService.ts
 supplierService.ts
 customerService.ts
@@ -363,6 +364,16 @@ shipmentService.ts
 returnRequestService.ts
 refundService.ts
 ```
+
+#### Admin product panel patterns
+
+* **Separate services**: Storefront uses `productService.ts` (`/api/public/*`). Admin uses `adminProductService.ts` (`/api/admin/*`). Never call admin endpoints from storefront pages.
+* **Admin components** live under `frontend/src/components/admin/` (`ProductFilters`, `VariantTable`, `ImageManager`, `ProductFormModal`, `StatusBadge`).
+* **Pages**: `ProductsPage` (list + filters + URL sync + pagination) and `ProductDetailPage` (general form, status lifecycle, variants, images).
+* **Error mapping**: Use `mapProductError()` for backend codes (`PRODUCT_REQUIRES_ACTIVE_VARIANT`, `PRODUCT_SLUG_CONFLICT`, etc.).
+* **Supplier fields**: Admin UI must never render `supplierId`, `supplierReference`, or `supplierCost` on variants (even if backend stores them).
+* **Shared UI**: Re-export storefront `Pagination` from `frontend/src/components/Pagination.tsx` for admin list pages.
+* **Testing**: RTL tests mock `adminProductService`; Cypress spec at `frontend/cypress/e2e/products.cy.ts`.
 
 ## UI/UX Standards
 

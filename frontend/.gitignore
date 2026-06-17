@@ -13,6 +13,7 @@
 
 # misc
 .DS_Store
+.cypress-cache
 .env.local
 .env.development
 .env.development.local
