@@ -105,4 +105,4 @@
 - [x] 16.2 Verify all tasks `[x]` and required reports exist under `openspec/changes/supplier-management/reports/`.
 - [x] 16.3 Stage relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`).
 - [x] 16.4 Create commit with a Conventional Commit message referencing `supplier-management`.
-- [ ] 16.5 Push `feature/supplier-management`; `gh pr create`; report the PR URL in chat.
+- [x] 16.5 Push `feature/supplier-management`; `gh pr create`; report the PR URL in chat.
