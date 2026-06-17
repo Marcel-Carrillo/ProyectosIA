@@ -99,14 +99,18 @@ function validateSupplierOptionalFields(data: Record<string, unknown>): void {
   }
 
   const contactEmail = data['contactEmail'];
+  
   if (contactEmail !== undefined && contactEmail !== null && contactEmail !== '') {
-    if (typeof contactEmail === 'string') {
-      if (!SUPPLIER_EMAIL_REGEX.test(contactEmail)) {
-        throw new ValidationError("Field 'contactEmail' must be a valid email address");
-      }
-      if (contactEmail.length > 255) {
-        throw new ValidationError("Field 'contactEmail' must not exceed 255 characters");
-      }
+    if (typeof contactEmail !== 'string') {
+      throw new ValidationError("Field 'contactEmail' must be a string");
+    }
+  
+    if (contactEmail.length > 255) {
+      throw new ValidationError("Field 'contactEmail' must not exceed 255 characters");
+    }
+  
+    if (!SUPPLIER_EMAIL_REGEX.test(contactEmail)) {
+      throw new ValidationError("Field 'contactEmail' must be a valid email address");
     }
   }
 
