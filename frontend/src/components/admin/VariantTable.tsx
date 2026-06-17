@@ -251,7 +251,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
         </Alert>
       ) : (
         <>
-          <div className="d-md-none admin-card-list" data-testid="variants-card-list">
+          <div className="d-lg-none admin-card-list" data-testid="variants-card-list">
             {variants.map((v) => (
               <div key={v.id} className="admin-card-row" data-testid={`variant-card-${v.id}`}>
                 <div className="fw-semibold mb-2">
@@ -303,7 +303,8 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
             ))}
           </div>
 
-          <Table size="sm" hover responsive className="d-none d-md-table" data-testid="variants-table">
+          <div className="d-none d-lg-block admin-table-wrap">
+            <Table size="sm" hover data-testid="variants-table">
             <thead>
               <tr>
                 <th>SKU</th>
@@ -352,7 +353,8 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                 </tr>
               ))}
             </tbody>
-          </Table>
+            </Table>
+          </div>
         </>
       )}
 

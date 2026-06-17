@@ -49,7 +49,15 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   return (
     <nav
       aria-label="Pagination"
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 40 }}
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        marginTop: 40,
+        maxWidth: '100%',
+      }}
     >
       <button
         onClick={() => onPageChange(currentPage - 1)}
