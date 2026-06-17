@@ -84,14 +84,14 @@ describe('SupplierFormModal', () => {
     render(<SupplierFormModal show onHide={noop} onSuccess={noop} />);
     fireEvent.change(screen.getByTestId('input-supplier-name'), { target: { value: 'Acme' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    await waitFor(() => expect(screen.getByText(/check the form fields/i)).toBeInTheDocument());
+    expect(await screen.findByText(/check the form fields/i)).toBeInTheDocument();
   });
 
   it('shows SUPPLIER_NOT_FOUND in edit mode', async () => {
     mocked.update.mockRejectedValue(makeAxiosError('SUPPLIER_NOT_FOUND', 404));
     render(<SupplierFormModal show onHide={noop} onSuccess={noop} initial={existing} />);
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    await waitFor(() => expect(screen.getByText(/supplier not found/i)).toBeInTheDocument());
+    expect(await screen.findByText(/supplier not found/i)).toBeInTheDocument();
   });
 
   it('pre-populates fields from the initial supplier in edit mode', () => {

@@ -60,20 +60,20 @@ describe('SuppliersPage', () => {
   it('renders suppliers from the admin API', async () => {
     mockedService.list.mockResolvedValue(listResult([mockSupplier]));
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('supplier-card-row-1')).toBeInTheDocument());
+    expect(await screen.findByTestId('supplier-card-row-1')).toBeInTheDocument();
     expect(screen.getByTestId('suppliers-table')).toHaveTextContent('Acme Textiles');
   });
 
   it('shows the empty state when there are no suppliers', async () => {
     mockedService.list.mockResolvedValue(listResult([]));
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('empty-state')).toBeInTheDocument());
+    expect(await screen.findByTestId('empty-state')).toBeInTheDocument();
   });
 
   it('shows an error message when the request fails', async () => {
     mockedService.list.mockRejectedValue(new Error('boom'));
     renderPage();
-    await waitFor(() => expect(screen.getByText(/unable to load suppliers/i)).toBeInTheDocument());
+    expect(await screen.findByText(/unable to load suppliers/i)).toBeInTheDocument();
   });
 
   it('re-queries with the selected status filter', async () => {
@@ -120,7 +120,7 @@ describe('SuppliersPage', () => {
   it('opens the create modal when New supplier is clicked', async () => {
     mockedService.list.mockResolvedValue(listResult([mockSupplier]));
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('supplier-card-row-1')).toBeInTheDocument());
+    expect(await screen.findByTestId('supplier-card-row-1')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('btn-new-supplier'));
     expect(screen.getByTestId('mock-supplier-form-modal')).toBeInTheDocument();
   });
@@ -129,7 +129,7 @@ describe('SuppliersPage', () => {
     mockedService.list.mockResolvedValue(listResult([mockSupplier]));
     mockedService.softDelete.mockResolvedValue({ success: true, data: { ...mockSupplier, status: 'Inactive' }, message: '' });
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('supplier-row-1')).toBeInTheDocument());
+    expect(await screen.findByTestId('supplier-row-1')).toBeInTheDocument();
     // table + card both render a deactivate button; click the first
     fireEvent.click(screen.getAllByTestId('btn-deactivate-1')[0]);
     fireEvent.click(screen.getByTestId('btn-confirm-deactivate'));
@@ -140,7 +140,7 @@ describe('SuppliersPage', () => {
     mockedService.list.mockResolvedValue(listResult([mockSupplier]));
     mockedService.softDelete.mockRejectedValue(new Error('fail'));
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('supplier-row-1')).toBeInTheDocument());
+    expect(await screen.findByTestId('supplier-row-1')).toBeInTheDocument();
     fireEvent.click(screen.getAllByTestId('btn-deactivate-1')[0]);
     fireEvent.click(screen.getByTestId('btn-confirm-deactivate'));
     expect(await screen.findByText(/unexpected error/i)).toBeInTheDocument();
