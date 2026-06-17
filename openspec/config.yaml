@@ -64,23 +64,23 @@ context: |
   * The first version should prioritize manual supplier order processing over premature automation.
   * The system must remain flexible enough to support future internal stock, hybrid fulfillment, multiple suppliers, and supplier automation.
 
+  Global authoring rules (apply to EVERY artifact — proposal, specs, design, tasks):
+
+  * Before creating any artifact, read and apply docs/base-standards.md.
+  * Keep all technical artifacts in English.
+  * Keep changes small, focused, and incremental.
+  * Do not change the technology stack, architecture, folder structure, database engine, API style, testing framework, deployment model, business model, supplier fulfillment assumptions, documentation rules, AI agent rules, or OpenSpec workflow rules without explicit user approval.
+  * Use selective context loading to reduce token usage. Do not read all documentation by default.
+  * Use docs/data-model.md and docs/api-spec.yml as the source of truth for entities, relationships, API contracts, schemas, and business rules, but only load them when the task affects data models, APIs, persistence, or business rules.
+  * Update technical documentation when changes affect data models, APIs, backend behavior, frontend behavior, setup, testing, or business rules.
+  * For backend-only work, read only docs/base-standards.md, docs/backend-standards.md, docs/data-model.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md, and ai-specs/agents/backend-developer.md.
+  * For frontend-only work, read only docs/base-standards.md, docs/frontend-standards.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md, and ai-specs/agents/frontend-developer.md.
+  * For documentation-only work, read only docs/base-standards.md, docs/documentation-standards.md, and the documents being updated.
+  * For product strategy or requirement refinement, read only docs/base-standards.md, docs/data-model.md, docs/api-spec.yml, and ai-specs/agents/product-strategy-analyst.md.
+  * Only load cross-area documentation when the requested change explicitly affects multiple areas.
+  * Do not load frontend standards for backend-only tasks unless the API change requires frontend impact analysis; and do not load backend standards for frontend-only tasks unless the frontend change requires backend or API changes.
+
 rules:
-  _global:
-    - Before creating any artifact, read and apply docs/base-standards.md.
-    - Keep all technical artifacts in English.
-    - Keep changes small, focused, and incremental.
-    - Do not change the technology stack, architecture, folder structure, database engine, API style, testing framework, deployment model, business model, supplier fulfillment assumptions, documentation rules, AI agent rules, or OpenSpec workflow rules without explicit user approval.
-    - Use selective context loading to reduce token usage.
-    - Do not read all documentation by default.
-    - Use docs/data-model.md and docs/api-spec.yml as the source of truth for entities, relationships, API contracts, schemas, and business rules, but only load them when the task affects data models, APIs, persistence, or business rules.
-    - Update technical documentation when changes affect data models, APIs, backend behavior, frontend behavior, setup, testing, or business rules.
-    - For backend-only work, read only docs/base-standards.md, docs/backend-standards.md, docs/data-model.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md, and ai-specs/agents/backend-developer.md.
-    - For frontend-only work, read only docs/base-standards.md, docs/frontend-standards.md, docs/api-spec.yml, docs/openspec-tasks-mandatory-steps.md, and ai-specs/agents/frontend-developer.md.
-    - For documentation-only work, read only docs/base-standards.md, docs/documentation-standards.md, and the documents being updated.
-    - For product strategy or requirement refinement, read only docs/base-standards.md, docs/data-model.md, docs/api-spec.yml, and ai-specs/agents/product-strategy-analyst.md.
-    - Only load cross-area documentation when the requested change explicitly affects multiple areas.
-    - Do not load frontend standards for backend-only tasks unless the API change requires frontend impact analysis.
-    - Do not load backend standards for frontend-only tasks unless the frontend change requires backend or API changes.
 
   proposal:
     - Clearly describe the business problem and the expected ecommerce outcome.
@@ -90,21 +90,13 @@ rules:
     - Explicitly mention any impact on supplier data exposure, order lifecycle, fulfillment status, payment status, returns, or refunds.
     - Keep scope focused and avoid premature automation unless explicitly requested.
 
-  requirements:
-    - Use clear acceptance criteria.
-    - Include business rules before implementation details.
-    - Include edge cases and error scenarios.
-    - Separate customer-facing requirements from internal administration or supplier fulfillment requirements.
-    - Reference docs/data-model.md when requirements affect entities, fields, relationships, or validation rules.
-    - Reference docs/api-spec.yml when requirements affect endpoints, request bodies, response bodies, status codes, or error formats.
-
   design:
     - Use selective context loading before reading documentation.
     - For backend-related changes, read docs/backend-standards.md and ai-specs/agents/backend-developer.md.
     - For frontend-related changes, read docs/frontend-standards.md and ai-specs/agents/frontend-developer.md.
     - For product or business strategy changes, read ai-specs/agents/product-strategy-analyst.md.
-    - Identify affected layers only when backend is in scope: Presentation, Application, Domain, and Infrastructure.
-    - Identify affected frontend areas only when frontend is in scope: routes, components, services, forms, loading states, error states, and E2E workflows.
+    - "Identify affected layers only when backend is in scope: Presentation, Application, Domain, and Infrastructure."
+    - "Identify affected frontend areas only when frontend is in scope: routes, components, services, forms, loading states, error states, and E2E workflows."
     - Identify whether Prisma schema, migrations, repositories, services, controllers, routes, frontend services, or React components need changes.
     - Explicitly define how supplier costs and internal supplier data remain protected when supplier-related data is affected.
 
@@ -124,7 +116,11 @@ rules:
     - Tasks must not end without a commit and Pull Request. A change without a PR is not complete.
 
   specs:
+    - Use clear acceptance criteria, and state business rules before implementation details.
+    - Include edge cases and error scenarios.
+    - Separate customer-facing requirements from internal administration or supplier fulfillment requirements.
     - Keep specs aligned with docs/data-model.md and docs/api-spec.yml when the change affects entities, relationships, endpoints, schemas, or business rules.
+    - Reference docs/data-model.md when requirements affect entities, fields, relationships, or validation rules, and docs/api-spec.yml when they affect endpoints, request bodies, response bodies, status codes, or error formats.
     - Use ecommerce domain language consistently.
     - Do not mix customer order status, payment status, fulfillment status, supplier order status, shipment status, return status, or refund status.
     - Preserve the distinction between customer-facing ecommerce behavior and internal supplier fulfillment behavior.
