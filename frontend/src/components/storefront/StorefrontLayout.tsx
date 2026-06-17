@@ -7,7 +7,7 @@ const StorefrontLayout: React.FC = () => {
   return (
     <div className="storefront-root">
       <StorefrontHeader />
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, minWidth: 0, width: '100%' }}>
         <Outlet />
       </main>
       <StorefrontFooter />

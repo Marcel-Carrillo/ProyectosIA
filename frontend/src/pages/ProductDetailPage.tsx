@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiosError } from 'axios';
-import { Container, Card, Row, Col, Form, Button, Alert } from 'react-bootstrap';
+import { Card, Row, Col, Form, Button, Alert } from 'react-bootstrap';
 import { adminProductService, mapProductError } from '../services/adminProductService';
 import { categoryService } from '../services/categoryService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -228,7 +228,7 @@ const ProductDetailPage: React.FC = () => {
   };
 
   return (
-    <Container className="py-4">
+    <div className="admin-page">
       <Button variant="link" className="mb-3 ps-0" onClick={() => navigate('/products')}>
         ← Back to Products
       </Button>
@@ -238,8 +238,8 @@ const ProductDetailPage: React.FC = () => {
 
       {!loading && product && (
         <>
-          <div className="d-flex align-items-center gap-3 mb-4">
-            <h1 className="h3 mb-0">{product.name}</h1>
+          <div className="admin-detail-title">
+            <h1 className="h3">{product.name}</h1>
             <StatusBadge status={product.status} data-testid="status-badge" />
           </div>
 
@@ -365,7 +365,7 @@ const ProductDetailPage: React.FC = () => {
           </Card>
         </>
       )}
-    </Container>
+    </div>
   );
 };
 

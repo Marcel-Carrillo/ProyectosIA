@@ -4,9 +4,9 @@ import { Navbar, Nav, Container } from 'react-bootstrap';
 
 const Layout: React.FC = () => {
   return (
-    <>
+    <div className="admin-shell">
       <Navbar bg="dark" variant="dark" expand="lg">
-        <Container>
+        <Container fluid className="px-3 px-md-4">
           <Navbar.Brand href="/products">Admin</Navbar.Brand>
           <Navbar.Toggle aria-controls="main-nav" />
           <Navbar.Collapse id="main-nav" className="admin-navbar-collapse">
@@ -24,10 +24,10 @@ const Layout: React.FC = () => {
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      <Container className="mt-4">
+      <main className="admin-main">
         <Outlet />
-      </Container>
-    </>
+      </main>
+    </div>
   );
 };
 

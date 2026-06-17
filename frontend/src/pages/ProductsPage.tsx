@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Container, Table, Button, Alert, Modal } from 'react-bootstrap';
+import { Table, Button, Alert, Modal } from 'react-bootstrap';
 import { adminProductService, extractErrorMessage } from '../services/adminProductService';
 import { categoryService } from '../services/categoryService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -120,8 +120,8 @@ const ProductsPage: React.FC = () => {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <Container fluid className="py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div className="admin-page">
+      <div className="admin-page-header">
         <h1 className="h3 mb-0">Products</h1>
         <Button variant="primary" onClick={() => setShowCreate(true)} data-testid="btn-new-product">
           New product
@@ -149,7 +149,7 @@ const ProductsPage: React.FC = () => {
 
       {!loading && !error && products.length > 0 && (
         <>
-          <div className="d-md-none admin-card-list" data-testid="products-card-list">
+          <div className="d-lg-none admin-card-list" data-testid="products-card-list">
             {products.map((product) => (
               <div
                 key={product.id}
@@ -199,7 +199,8 @@ const ProductsPage: React.FC = () => {
             ))}
           </div>
 
-          <Table hover responsive className="d-none d-md-table" data-testid="products-table">
+          <div className="d-none d-lg-block admin-table-wrap">
+            <Table hover data-testid="products-table">
             <thead>
               <tr>
                 <th>Image</th>
@@ -254,7 +255,8 @@ const ProductsPage: React.FC = () => {
                 </tr>
               ))}
             </tbody>
-          </Table>
+            </Table>
+          </div>
         </>
       )}
 
@@ -294,7 +296,7 @@ const ProductsPage: React.FC = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-    </Container>
+    </div>
   );
 };
 
