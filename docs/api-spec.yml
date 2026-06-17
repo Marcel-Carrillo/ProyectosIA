@@ -738,6 +738,168 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/suppliers:
+    get:
+      summary: List suppliers (admin)
+      description: >
+        Returns a paginated list of suppliers with optional search (case-insensitive
+        name match) and status filter. Admin-only; no `/api/public/suppliers` route exists.
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Case-insensitive filter on supplier name
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/SupplierStatus'
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          description: Number of items per page. Clamped to a maximum of 100.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Suppliers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create supplier (admin)
+      description: Creates a new supplier. Default status is Active when omitted.
+      tags:
+        - Admin — Suppliers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierRequest'
+      responses:
+        '201':
+          description: Supplier created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{id}:
+    get:
+      summary: Get supplier by ID (admin)
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Supplier retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Invalid id parameter (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update supplier (admin)
+      description: Partial update including status transitions (Active, Inactive, Blocked).
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierRequest'
+      responses:
+        '200':
+          description: Supplier updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Soft-delete supplier (admin)
+      description: >
+        Sets status to Inactive. The supplier row is preserved (no hard-delete).
+        Returns 200 with the updated supplier, not 204.
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Supplier deactivated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Invalid id parameter (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/public/products:
     get:
       summary: List products (public storefront)
@@ -832,111 +994,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CategoryListResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /suppliers:
-    get:
-      summary: Get all suppliers
-      description: Retrieve a paginated list of suppliers
-      tags:
-        - Suppliers
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/LimitParam'
-        - in: query
-          name: search
-          schema:
-            type: string
-          description: Search term to filter suppliers by name, contact name, or email
-        - in: query
-          name: status
-          schema:
-            $ref: '#/components/schemas/SupplierStatus'
-          description: Filter suppliers by status
-      responses:
-        '200':
-          description: Successfully retrieved suppliers
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-    post:
-      summary: Create a new supplier
-      description: Create a new supplier
-      tags:
-        - Suppliers
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateSupplierRequest'
-      responses:
-        '201':
-          description: Supplier created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /suppliers/{id}:
-    get:
-      summary: Get supplier by ID
-      description: Retrieve detailed information about a specific supplier
-      tags:
-        - Suppliers
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Successfully retrieved supplier
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-    put:
-      summary: Update supplier
-      description: Update an existing supplier
-      tags:
-        - Suppliers
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateSupplierRequest'
-      responses:
-        '200':
-          description: Supplier updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -2162,7 +2219,6 @@ components:
       type: object
       required:
         - name
-        - status
       properties:
         name:
           type: string
@@ -2197,8 +2253,51 @@ components:
           $ref: '#/components/schemas/SupplierStatus'
 
     UpdateSupplierRequest:
-      allOf:
-        - $ref: '#/components/schemas/CreateSupplierRequest'
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        contactName:
+          type: string
+          maxLength: 150
+          nullable: true
+        contactEmail:
+          type: string
+          maxLength: 255
+          nullable: true
+        contactPhone:
+          type: string
+          maxLength: 30
+          nullable: true
+        website:
+          type: string
+          maxLength: 500
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+        status:
+          $ref: '#/components/schemas/SupplierStatus'
+
+    SupplierListResult:
+      type: object
+      description: Paginated supplier list result as returned by GET /api/admin/suppliers
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Supplier'
+        total:
+          type: integer
+          example: 10
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
 
     SupplierResponse:
       type: object
@@ -2219,11 +2318,10 @@ components:
           type: boolean
           example: true
         data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Supplier'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: '#/components/schemas/SupplierListResult'
+        message:
+          type: string
+          example: Suppliers retrieved successfully
 
     Customer:
       type: object
