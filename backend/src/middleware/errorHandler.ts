@@ -41,6 +41,10 @@ import {
   RefundTransitionInvalidError,
 } from '../infrastructure/repositories/refundRepository';
 import {
+  ShipmentNotFoundError,
+  ShipmentStatusTransitionInvalidError,
+} from '../infrastructure/repositories/shipmentRepository';
+import {
   AdminDisabledError,
   AdminRefreshTokenInvalidError,
   InvalidAdminCredentialsError,
@@ -147,6 +151,10 @@ export function globalErrorHandler(
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof RefundTransitionInvalidError) {
     statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof ShipmentNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof ShipmentStatusTransitionInvalidError) {
+    statusCode = 400; code = err.code; message = err.message;
   } else if (err instanceof InvalidAdminCredentialsError) {
     statusCode = 401; code = err.code; message = err.message;
   } else if (err instanceof AdminDisabledError) {

@@ -668,3 +668,65 @@ export function validateRefundStatusUpdate(data: Record<string, unknown>): void 
     }
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shipment validators
+// ─────────────────────────────────────────────────────────────────────────────
+const SHIPMENT_STATUSES = [
+  'Pending',
+  'Shipped',
+  'InTransit',
+  'Delivered',
+  'Failed',
+  'Returned',
+] as const;
+
+export function validateShipmentCreateData(data: Record<string, unknown>): void {
+  const customerOrderId = data['customerOrderId'];
+  if (customerOrderId === undefined || customerOrderId === null) {
+    throw new ValidationError("Field 'customerOrderId' is required");
+  }
+  if (!Number.isInteger(customerOrderId) || (customerOrderId as number) < 1) {
+    throw new ValidationError("Field 'customerOrderId' must be a positive integer");
+  }
+
+  const supplierOrderId = data['supplierOrderId'];
+  if (supplierOrderId !== undefined && supplierOrderId !== null) {
+    if (!Number.isInteger(supplierOrderId) || (supplierOrderId as number) < 1) {
+      throw new ValidationError("Field 'supplierOrderId' must be a positive integer");
+    }
+  }
+
+  const carrier = data['carrier'];
+  if (carrier !== undefined && carrier !== null && carrier !== '') {
+    if (typeof carrier === 'string' && carrier.length > 100) {
+      throw new ValidationError("Field 'carrier' must not exceed 100 characters");
+    }
+  }
+
+  const trackingNumber = data['trackingNumber'];
+  if (trackingNumber !== undefined && trackingNumber !== null && trackingNumber !== '') {
+    if (typeof trackingNumber === 'string' && trackingNumber.length > 100) {
+      throw new ValidationError("Field 'trackingNumber' must not exceed 100 characters");
+    }
+  }
+
+  const trackingUrl = data['trackingUrl'];
+  if (trackingUrl !== undefined && trackingUrl !== null && trackingUrl !== '') {
+    if (typeof trackingUrl === 'string' && trackingUrl.length > 500) {
+      throw new ValidationError("Field 'trackingUrl' must not exceed 500 characters");
+    }
+  }
+}
+
+export function validateShipmentStatusUpdate(data: Record<string, unknown>): void {
+  const status = data['status'];
+  if (status === undefined || status === null || status === '') {
+    throw new ValidationError("Field 'status' is required");
+  }
+  if (!SHIPMENT_STATUSES.includes(status as (typeof SHIPMENT_STATUSES)[number])) {
+    throw new ValidationError(
+      `Field 'status' must be one of: ${SHIPMENT_STATUSES.join(', ')}`
+    );
+  }
+}
