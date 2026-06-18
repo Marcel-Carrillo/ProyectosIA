@@ -375,6 +375,18 @@ refundService.ts
 * **Shared UI**: Re-export storefront `Pagination` from `frontend/src/components/Pagination.tsx` for admin list pages.
 * **Testing**: RTL tests mock `adminProductService`; Cypress spec at `frontend/cypress/e2e/products.cy.ts`.
 
+#### Admin customer panel patterns
+
+* **Service**: `frontend/src/services/customerService.ts` calls `/api/admin/customers`. Exports `customerService` object plus `mapCustomerError`, `extractCustomerErrorMessage`, `extractCustomerErrorCode`.
+* **Types**: `frontend/src/types/customer.ts` — `Customer`, `CustomerAddress`, `AddressType = 'Shipping' | 'Billing'`, input/response types, `CustomerAdminApiError`.
+* **Admin components** under `frontend/src/components/admin/`: `CustomerFormModal`, `CustomerAddressesSection`, `CustomerAddressFormModal`.
+* **Page**: `CustomersPage` — debounced search (400 ms via `useRef` + `setTimeout`), URL search-param sync (`useSearchParams`), dual render (mobile `<Card>` list + desktop `<Table>`).
+* **Debounced search pattern**: clear previous timer with `useRef<ReturnType<typeof setTimeout>>`, fire after 400 ms, cancel on component unmount.
+* **Address ownership guard**: address endpoints always include `:customerId` in the URL (`/api/admin/customers/:customerId/addresses/:addressId`); backend enforces ownership via `findFirst({ id, customerId })`.
+* **Delete guard (409 CUSTOMER_HAS_ORDERS)**: delete confirmation modal hides the "Confirm delete" button when backend returns `CUSTOMER_HAS_ORDERS`; only "Close" remains.
+* **PII rule**: never log or display `email`/`phone` in error messages or console; use only `customerId` and operation name in any debug output.
+* **Testing**: RTL tests mock `customerService` and child modals; use `findBy*` queries for all async assertions.
+
 ## UI/UX Standards
 
 ### Bootstrap Integration

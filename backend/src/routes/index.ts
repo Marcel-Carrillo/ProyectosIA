@@ -8,6 +8,7 @@ export { default as categoryRoutes } from './categoryRoutes';
 // ─────────────────────────────────────────────────────────────────────────────
 export { default as productAdminRoutes } from './admin/productRoutes';
 export { default as supplierAdminRoutes } from './admin/supplierRoutes';
+export { default as customerAdminRoutes } from './admin/customerRoutes';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // /api/public routes
