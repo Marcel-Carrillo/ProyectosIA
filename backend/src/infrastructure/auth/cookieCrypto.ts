@@ -21,7 +21,7 @@ export function decryptCookieValue(ciphertext: string): string | null {
     const parts = ciphertext.split('.');
     if (parts.length !== 3) return null;
     const [ivHex, dataHex, tagHex] = parts;
-    const decipher = createDecipheriv(ALGO, getKey(), Buffer.from(ivHex, 'hex'));
+    const decipher = createDecipheriv(ALGO, getKey(), Buffer.from(ivHex, 'hex'), { authTagLength: 16 });
     decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
     const decrypted = Buffer.concat([
       decipher.update(Buffer.from(dataHex, 'hex')),
