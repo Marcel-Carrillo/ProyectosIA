@@ -36,6 +36,7 @@ model Supplier {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   productVariants ProductVariant[]
+  supplierOrders  SupplierOrder[]
 }
 
 model Product {
@@ -73,7 +74,8 @@ model ProductVariant {
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  customerOrderItems CustomerOrderItem[]
+  customerOrderItems  CustomerOrderItem[]
+  supplierOrderItems  SupplierOrderItem[]
 }
 
 model ProductImage {
@@ -135,6 +137,7 @@ model CustomerOrder {
   paidAt                  DateTime?
   cancelledAt             DateTime?
   items                   CustomerOrderItem[]
+  supplierOrders          SupplierOrder[]
 
   @@index([customerId])
   @@index([status])
@@ -155,10 +158,56 @@ model CustomerOrderItem {
   quantity            Int
   unitPrice           Decimal        @db.Decimal(10, 2)
   totalPrice          Decimal        @db.Decimal(10, 2)
-  fulfillmentStatus   String         @default("NotStarted")
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  fulfillmentStatus   String              @default("NotStarted")
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  supplierOrderItems  SupplierOrderItem[]
 
   @@index([customerOrderId])
+  @@index([productVariantId])
+}
+
+model SupplierOrder {
+  id                  Int                 @id @default(autoincrement())
+  supplierOrderNumber String              @unique @db.VarChar(50)
+  customerOrderId     Int
+  customerOrder       CustomerOrder       @relation(fields: [customerOrderId], references: [id])
+  supplierId          Int
+  supplier            Supplier            @relation(fields: [supplierId], references: [id])
+  status              String              @default("Draft")
+  requestedAt         DateTime?
+  confirmedAt         DateTime?
+  shippedAt           DateTime?
+  deliveredAt         DateTime?
+  trackingNumber      String?             @db.VarChar(100)
+  trackingUrl         String?             @db.VarChar(500)
+  internalNotes       String?             @db.VarChar(2000)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  items               SupplierOrderItem[]
+
+  @@index([customerOrderId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SupplierOrderItem {
+  id                        Int               @id @default(autoincrement())
+  supplierOrderId           Int
+  supplierOrder             SupplierOrder     @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  customerOrderItemId       Int
+  customerOrderItem         CustomerOrderItem @relation(fields: [customerOrderItemId], references: [id])
+  productVariantId          Int
+  productVariant            ProductVariant    @relation(fields: [productVariantId], references: [id])
+  supplierReferenceSnapshot String?           @db.VarChar(150)
+  quantity                  Int
+  supplierCost              Decimal           @db.Decimal(10, 2)
+  status                    String            @default("Draft")
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+
+  @@index([supplierOrderId])
+  @@index([customerOrderItemId])
   @@index([productVariantId])
 }

@@ -3,6 +3,12 @@ import {
   PaymentStatusTransitionInvalidError,
   FulfillmentStatusTransitionInvalidError,
 } from '../infrastructure/repositories/customerOrderRepository';
+import {
+  SupplierOrderStatusTransitionInvalidError,
+  CustomerOrderNotEligibleError,
+  VariantSupplierMissingError,
+  SupplierBlockedError,
+} from '../infrastructure/repositories/supplierOrderRepository';
 
 export class ValidationError extends Error {
   readonly code = 'VALIDATION_ERROR' as const;
@@ -378,6 +384,126 @@ export {
   PaymentStatusTransitionInvalidError,
   FulfillmentStatusTransitionInvalidError,
 };
+
+const SUPPLIER_ORDER_STATUSES = [
+  'Draft',
+  'Requested',
+  'Confirmed',
+  'OutOfStock',
+  'Shipped',
+  'Delivered',
+  'Cancelled',
+] as const;
+
+const ELIGIBLE_SUPPLIER_ORDER_CUSTOMER_STATUSES = new Set(['Paid', 'Processing']);
+
+const SUPPLIER_ORDER_TRANSITIONS: Record<string, Set<string>> = {
+  Draft: new Set(['Requested', 'Cancelled']),
+  Requested: new Set(['Confirmed', 'OutOfStock', 'Cancelled']),
+  Confirmed: new Set(['Shipped', 'OutOfStock', 'Cancelled']),
+  OutOfStock: new Set(['Cancelled']),
+  Shipped: new Set(['Delivered']),
+  Delivered: new Set(),
+  Cancelled: new Set(),
+};
+
+export function validateSupplierOrderCreateData(data: Record<string, unknown>): void {
+  const customerOrderId = data['customerOrderId'];
+  if (!Number.isInteger(customerOrderId) || (customerOrderId as number) < 1) {
+    throw new ValidationError("Field 'customerOrderId' must be a positive integer");
+  }
+
+  const supplierId = data['supplierId'];
+  if (!Number.isInteger(supplierId) || (supplierId as number) < 1) {
+    throw new ValidationError("Field 'supplierId' must be a positive integer");
+  }
+
+  const items = data['items'];
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ValidationError("Field 'items' must be a non-empty array");
+  }
+
+  for (const item of items) {
+    if (typeof item !== 'object' || item === null) {
+      throw new ValidationError('Each item must be an object');
+    }
+    const record = item as Record<string, unknown>;
+    if (!Number.isInteger(record['customerOrderItemId']) || (record['customerOrderItemId'] as number) < 1) {
+      throw new ValidationError("Each item's 'customerOrderItemId' must be a positive integer");
+    }
+    if (!Number.isInteger(record['productVariantId']) || (record['productVariantId'] as number) < 1) {
+      throw new ValidationError("Each item's 'productVariantId' must be a positive integer");
+    }
+    if (!Number.isInteger(record['quantity']) || (record['quantity'] as number) < 1) {
+      throw new ValidationError("Each item's 'quantity' must be a positive integer");
+    }
+    const cost = Number(record['supplierCost']);
+    if (!Number.isFinite(cost) || cost < 0) {
+      throw new ValidationError("Each item's 'supplierCost' must be >= 0");
+    }
+  }
+
+  const internalNotes = data['internalNotes'];
+  if (internalNotes !== undefined && internalNotes !== null && typeof internalNotes === 'string') {
+    if (internalNotes.length > 2000) {
+      throw new ValidationError("Field 'internalNotes' must not exceed 2000 characters");
+    }
+  }
+}
+
+export function validateCustomerOrderEligibleForSupplierOrder(status: string): void {
+  if (status === 'Cancelled') {
+    throw new CustomerOrderNotEligibleError('Cancelled customer orders cannot generate supplier orders');
+  }
+  if (!ELIGIBLE_SUPPLIER_ORDER_CUSTOMER_STATUSES.has(status)) {
+    throw new CustomerOrderNotEligibleError(
+      'Supplier orders can only be created from paid or processing customer orders'
+    );
+  }
+}
+
+export function validateSupplierOrderStatusUpdate(
+  currentStatus: string,
+  update: Record<string, unknown>
+): void {
+  const status = update['status'];
+  if (status === undefined || status === null || status === '') {
+    throw new ValidationError("Field 'status' is required");
+  }
+  if (!SUPPLIER_ORDER_STATUSES.includes(status as (typeof SUPPLIER_ORDER_STATUSES)[number])) {
+    throw new ValidationError(
+      `Field 'status' must be one of: ${SUPPLIER_ORDER_STATUSES.join(', ')}`
+    );
+  }
+
+  const allowed = SUPPLIER_ORDER_TRANSITIONS[currentStatus];
+  if (!allowed || !allowed.has(status as string)) {
+    throw new SupplierOrderStatusTransitionInvalidError(
+      `Cannot transition supplier order from ${currentStatus} to ${status}`
+    );
+  }
+
+  const trackingNumber = update['trackingNumber'];
+  if (trackingNumber !== undefined && trackingNumber !== null && typeof trackingNumber === 'string') {
+    if (trackingNumber.length > 100) {
+      throw new ValidationError("Field 'trackingNumber' must not exceed 100 characters");
+    }
+  }
+
+  const trackingUrl = update['trackingUrl'];
+  if (trackingUrl !== undefined && trackingUrl !== null && typeof trackingUrl === 'string') {
+    if (trackingUrl.length > 500) {
+      throw new ValidationError("Field 'trackingUrl' must not exceed 500 characters");
+    }
+  }
+}
+
+export {
+  SupplierOrderStatusTransitionInvalidError,
+  CustomerOrderNotEligibleError,
+  VariantSupplierMissingError,
+  SupplierBlockedError,
+} from '../infrastructure/repositories/supplierOrderRepository';
 
 export function validateCustomerAddressData(
   data: Record<string, unknown>,

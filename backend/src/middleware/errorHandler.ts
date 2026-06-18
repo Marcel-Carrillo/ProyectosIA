@@ -26,6 +26,14 @@ import {
   PaymentStatusTransitionInvalidError,
   FulfillmentStatusTransitionInvalidError,
 } from '../infrastructure/repositories/customerOrderRepository';
+import {
+  SupplierOrderNotFoundError,
+  SupplierOrderNumberConflictError,
+  CustomerOrderNotEligibleError,
+  VariantSupplierMissingError,
+  SupplierBlockedError,
+  SupplierOrderStatusTransitionInvalidError,
+} from '../infrastructure/repositories/supplierOrderRepository';
 
 interface AppError {
   message: string;
@@ -85,6 +93,18 @@ export function globalErrorHandler(
   } else if (err instanceof PaymentStatusTransitionInvalidError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof FulfillmentStatusTransitionInvalidError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof SupplierOrderNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof SupplierOrderNumberConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof CustomerOrderNotEligibleError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof VariantSupplierMissingError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof SupplierBlockedError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof SupplierOrderStatusTransitionInvalidError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof ProductSlugConflictError) {
     statusCode = 409; code = err.code; message = err.message;

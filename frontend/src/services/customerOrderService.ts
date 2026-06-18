@@ -7,6 +7,7 @@ import {
   UpdateCustomerOrderStatusInput,
   CustomerOrderAdminApiError,
 } from '../types/customerOrder';
+import { SupplierOrder, SupplierOrderListGenerateResponse } from '../types/supplierOrder';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
 const ADMIN_BASE = `${API_BASE_URL}/api/admin/customer-orders`;
@@ -23,6 +24,8 @@ export function mapCustomerOrderError(code: string): string {
     case 'PAYMENT_STATUS_TRANSITION_INVALID':
     case 'FULFILLMENT_STATUS_TRANSITION_INVALID':
       return 'This status change is not allowed.';
+    case 'CUSTOMER_ORDER_NOT_ELIGIBLE':
+      return 'This customer order is not eligible for supplier orders.';
     case 'VALIDATION_ERROR':
       return 'Please check the form fields and try again.';
     default:
@@ -57,5 +60,18 @@ export const customerOrderService = {
   ): Promise<CustomerOrderResponse> => {
     const response = await axios.patch<CustomerOrderResponse>(`${ADMIN_BASE}/${id}/status`, data);
     return response.data;
+  },
+
+  generateSupplierOrders: async (
+    id: number
+  ): Promise<{ data: SupplierOrder[]; status: number; message: string }> => {
+    const response = await axios.post<SupplierOrderListGenerateResponse>(
+      `${ADMIN_BASE}/${id}/supplier-orders`
+    );
+    return {
+      data: response.data.data,
+      status: response.status,
+      message: response.data.message,
+    };
   },
 };

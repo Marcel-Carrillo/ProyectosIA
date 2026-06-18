@@ -6,6 +6,7 @@ import productAdminRoutes from './routes/admin/productRoutes';
 import supplierAdminRoutes from './routes/admin/supplierRoutes';
 import customerAdminRoutes from './routes/admin/customerRoutes';
 import customerOrderAdminRoutes from './routes/admin/customerOrderRoutes';
+import supplierOrderAdminRoutes from './routes/admin/supplierOrderRoutes';
 import productPublicRoutes from './routes/public/productRoutes';
 import categoryPublicRoutes from './routes/public/categoryRoutes';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
@@ -42,6 +43,7 @@ app.use('/api/admin/products', productAdminRoutes);
 app.use('/api/admin/suppliers', supplierAdminRoutes);
 app.use('/api/admin/customers', customerAdminRoutes);
 app.use('/api/admin/customer-orders', customerOrderAdminRoutes);
+app.use('/api/admin/supplier-orders', supplierOrderAdminRoutes);
 // NOTE: No /api/public/suppliers route exists — suppliers are admin-only and must
 // never be exposed on customer-facing surfaces.
 
