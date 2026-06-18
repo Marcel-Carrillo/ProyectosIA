@@ -137,6 +137,6 @@
 
 ## J. Commit and Create Pull Request (MANDATORY - LAST)
 
-- [ ] J.1 Apply `ai-specs/skills/commit/SKILL.md`
-- [ ] J.2 All tasks `[x]` + reports exist
-- [ ] J.3 Commit, push, `gh pr create` — reference KAN-51, KAN-21, KAN-23 in PR body
+- [x] J.1 Apply `ai-specs/skills/commit/SKILL.md`
+- [x] J.2 All tasks `[x]` + reports exist
+- [x] J.3 Commit, push, `gh pr create` — reference KAN-51, KAN-21, KAN-23 in PR body
