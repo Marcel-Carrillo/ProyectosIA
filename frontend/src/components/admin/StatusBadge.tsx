@@ -3,7 +3,7 @@ import { Badge } from 'react-bootstrap';
 import { ProductStatus } from '../../types/product';
 import { SupplierStatus } from '../../types/supplier';
 
-export type StatusValue = ProductStatus | SupplierStatus;
+export type StatusValue = ProductStatus | SupplierStatus | string;
 
 type StatusBadgeProps = {
   status: StatusValue;

@@ -73,6 +73,7 @@ model ProductVariant {
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  customerOrderItems CustomerOrderItem[]
 }
 
 model ProductImage {
@@ -93,7 +94,8 @@ model Customer {
   phone     String?           @db.VarChar(30)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
-  addresses CustomerAddress[]
+  addresses      CustomerAddress[]
+  customerOrders CustomerOrder[]
 }
 
 model CustomerAddress {
@@ -111,4 +113,52 @@ model CustomerAddress {
   country     String   @db.VarChar(100)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model CustomerOrder {
+  id                      Int                 @id @default(autoincrement())
+  orderNumber             String              @unique @db.VarChar(50)
+  customerId              Int
+  customer                Customer            @relation(fields: [customerId], references: [id])
+  status                  String              @default("PendingPayment")
+  paymentStatus           String              @default("Pending")
+  fulfillmentStatus       String              @default("NotStarted")
+  subtotalAmount          Decimal             @db.Decimal(10, 2)
+  shippingAmount          Decimal             @default(0) @db.Decimal(10, 2)
+  discountAmount          Decimal             @default(0) @db.Decimal(10, 2)
+  totalAmount             Decimal             @db.Decimal(10, 2)
+  currency                String              @default("EUR") @db.VarChar(3)
+  shippingAddressSnapshot Json
+  billingAddressSnapshot  Json
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  paidAt                  DateTime?
+  cancelledAt             DateTime?
+  items                   CustomerOrderItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([fulfillmentStatus])
+  @@index([createdAt])
+}
+
+model CustomerOrderItem {
+  id                  Int            @id @default(autoincrement())
+  customerOrderId     Int
+  customerOrder       CustomerOrder  @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
+  productVariantId    Int
+  productVariant      ProductVariant @relation(fields: [productVariantId], references: [id])
+  productNameSnapshot String         @db.VarChar(150)
+  variantSnapshot     Json
+  skuSnapshot         String         @db.VarChar(100)
+  quantity            Int
+  unitPrice           Decimal        @db.Decimal(10, 2)
+  totalPrice          Decimal        @db.Decimal(10, 2)
+  fulfillmentStatus   String         @default("NotStarted")
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([customerOrderId])
+  @@index([productVariantId])
 }

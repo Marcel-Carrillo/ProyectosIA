@@ -19,6 +19,13 @@ import {
   CustomerHasOrdersError,
   AddressNotFoundError,
 } from '../infrastructure/repositories/customerRepository';
+import {
+  CustomerOrderNotFoundError,
+  OrderNumberConflictError,
+  OrderStatusTransitionInvalidError,
+  PaymentStatusTransitionInvalidError,
+  FulfillmentStatusTransitionInvalidError,
+} from '../infrastructure/repositories/customerOrderRepository';
 
 interface AppError {
   message: string;
@@ -69,6 +76,16 @@ export function globalErrorHandler(
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof CustomerHasOrdersError) {
     statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof CustomerOrderNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof OrderNumberConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof OrderStatusTransitionInvalidError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof PaymentStatusTransitionInvalidError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof FulfillmentStatusTransitionInvalidError) {
+    statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof ProductSlugConflictError) {
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof VariantSkuConflictError) {

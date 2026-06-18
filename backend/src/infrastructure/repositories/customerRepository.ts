@@ -140,10 +140,7 @@ export class CustomerRepository implements ICustomerRepository {
   }
 
   async countOrders(customerId: number): Promise<number> {
-    // TODO: Replace with `prisma.customerOrder.count({ where: { customerId } })`
-    // once the CustomerOrder model is added to the schema in a future feature.
-    void customerId;
-    return 0;
+    return prisma.customerOrder.count({ where: { customerId } });
   }
 
   async delete(id: number): Promise<void> {
