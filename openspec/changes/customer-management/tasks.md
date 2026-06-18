@@ -98,6 +98,6 @@
 
 ## 14. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 14.2 Verify all tasks `[x]` and reports exist
-- [ ] 14.3 Commit, push `feature/KAN-17`, `gh pr create`; report PR URL
+- [x] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 14.2 Verify all tasks `[x]` and reports exist
+- [x] 14.3 Commit, push `feature/KAN-17`, `gh pr create`; report PR URL — https://github.com/Marcel-Carrillo/ProyectosIA/pull/19
