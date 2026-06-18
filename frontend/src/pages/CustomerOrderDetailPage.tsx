@@ -5,11 +5,13 @@ import {
   customerOrderService,
   extractCustomerOrderErrorMessage,
 } from '../services/customerOrderService';
+import { supplierOrderService } from '../services/supplierOrderService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import StatusBadge from '../components/admin/StatusBadge';
 import OrderStatusControl from '../components/admin/OrderStatusControl';
 import { CustomerOrder, UpdateCustomerOrderStatusInput } from '../types/customerOrder';
+import { SupplierOrder } from '../types/supplierOrder';
 
 const formatAddress = (addr: CustomerOrder['shippingAddressSnapshot']) =>
   [addr.streetLine1, addr.streetLine2, addr.city, addr.province, addr.postalCode, addr.country]
@@ -21,10 +23,14 @@ const CustomerOrderDetailPage: React.FC = () => {
   const orderId = Number(id);
 
   const [order, setOrder] = useState<CustomerOrder | null>(null);
+  const [supplierOrders, setSupplierOrders] = useState<SupplierOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusError, setStatusError] = useState('');
+  const [generateError, setGenerateError] = useState('');
+  const [generateMessage, setGenerateMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const loadOrder = useCallback(async () => {
     if (!orderId || Number.isNaN(orderId)) {
@@ -37,6 +43,8 @@ const CustomerOrderDetailPage: React.FC = () => {
     try {
       const res = await customerOrderService.getById(orderId);
       setOrder(res.data);
+      const supplierRes = await supplierOrderService.listByCustomerOrder(orderId);
+      setSupplierOrders(supplierRes.data.items);
     } catch {
       setError('Unable to load customer order.');
     } finally {
@@ -47,6 +55,28 @@ const CustomerOrderDetailPage: React.FC = () => {
   useEffect(() => {
     void loadOrder();
   }, [loadOrder]);
+
+  const handleGenerateSupplierOrders = async () => {
+    if (!order) return;
+    setGenerating(true);
+    setGenerateError('');
+    setGenerateMessage('');
+    try {
+      const result = await customerOrderService.generateSupplierOrders(order.id);
+      setSupplierOrders(result.data);
+      setGenerateMessage(result.message);
+      const refreshed = await customerOrderService.getById(order.id);
+      setOrder(refreshed.data);
+    } catch (err) {
+      setGenerateError(extractCustomerOrderErrorMessage(err));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const isEligibleForGeneration =
+    order != null &&
+    (order.status === 'Paid' || order.status === 'Processing');
 
   const handleStatusSave = async (update: UpdateCustomerOrderStatusInput) => {
     if (!order) return;
@@ -155,6 +185,40 @@ const CustomerOrderDetailPage: React.FC = () => {
               ))}
             </tbody>
           </Table>
+        </Card.Body>
+      </Card>
+
+      <Card className="mb-4">
+        <Card.Body>
+          <Card.Title className="h6">Supplier orders</Card.Title>
+          {isEligibleForGeneration && (
+            <div className="mb-3">
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={() => void handleGenerateSupplierOrders()}
+                disabled={generating}
+                data-testid="btn-generate-supplier-orders"
+              >
+                {generating ? 'Generating…' : 'Generate supplier orders'}
+              </button>
+            </div>
+          )}
+          {generateMessage && <div className="text-success small mb-2">{generateMessage}</div>}
+          {generateError && <div className="text-danger small mb-2">{generateError}</div>}
+          {supplierOrders.length === 0 ? (
+            <p className="text-muted small mb-0">No supplier orders yet.</p>
+          ) : (
+            <ul className="mb-0">
+              {supplierOrders.map((so) => (
+                <li key={so.id}>
+                  <Link to={`/supplier-orders/${so.id}`}>{so.supplierOrderNumber}</Link>
+                  {' '}
+                  <StatusBadge status={so.status} />
+                </li>
+              ))}
+            </ul>
+          )}
         </Card.Body>
       </Card>
 

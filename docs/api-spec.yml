@@ -1376,6 +1376,163 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/customer-orders/{id}/supplier-orders:
+    post:
+      summary: Generate supplier orders from customer order (admin)
+      description: Auto-generate one supplier order per supplier from a paid or processing customer order. Idempotent when all items are already covered.
+      tags:
+        - Admin Customer Orders
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Existing supplier orders returned (idempotent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '201':
+          description: Supplier orders created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '404':
+          description: CUSTOMER_ORDER_NOT_FOUND
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: CUSTOMER_ORDER_NOT_ELIGIBLE, VARIANT_SUPPLIER_MISSING, SUPPLIER_BLOCKED
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders:
+    get:
+      summary: List supplier orders (admin)
+      tags:
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: customerOrderId
+          schema:
+            type: integer
+        - in: query
+          name: supplierId
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/SupplierOrderStatus'
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [createdAt, supplierOrderNumber]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Supplier orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create supplier order manually (admin)
+      tags:
+        - Admin Supplier Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierOrderRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: CUSTOMER_ORDER_NOT_ELIGIBLE, SUPPLIER_BLOCKED
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}:
+    get:
+      summary: Get supplier order by ID (admin)
+      tags:
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Supplier order retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          description: SUPPLIER_ORDER_NOT_FOUND
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/status:
+    patch:
+      summary: Update supplier order status (admin)
+      tags:
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierOrderStatusRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: SUPPLIER_ORDER_STATUS_TRANSITION_INVALID
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   # Legacy paths below — superseded by /api/admin/customer-orders* (KAN-18)
   /customer-orders:
     get:
