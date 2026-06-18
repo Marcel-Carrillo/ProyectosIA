@@ -84,3 +84,31 @@ model ProductImage {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 }
+
+model Customer {
+  id        Int               @id @default(autoincrement())
+  firstName String            @db.VarChar(100)
+  lastName  String            @db.VarChar(100)
+  email     String            @unique @db.VarChar(255)
+  phone     String?           @db.VarChar(30)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  addresses CustomerAddress[]
+}
+
+model CustomerAddress {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type        String   @db.VarChar(20)
+  fullName    String   @db.VarChar(150)
+  phone       String?  @db.VarChar(30)
+  streetLine1 String   @db.VarChar(150)
+  streetLine2 String?  @db.VarChar(150)
+  city        String   @db.VarChar(100)
+  province    String   @db.VarChar(100)
+  postalCode  String   @db.VarChar(20)
+  country     String   @db.VarChar(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

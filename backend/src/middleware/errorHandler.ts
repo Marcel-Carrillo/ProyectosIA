@@ -13,6 +13,12 @@ import {
 } from '../infrastructure/repositories/productVariantRepository';
 import { ImageNotFoundError } from '../infrastructure/repositories/productImageRepository';
 import { SupplierNotFoundError } from '../infrastructure/repositories/supplierRepository';
+import {
+  CustomerNotFoundError,
+  CustomerEmailConflictError,
+  CustomerHasOrdersError,
+  AddressNotFoundError,
+} from '../infrastructure/repositories/customerRepository';
 
 interface AppError {
   message: string;
@@ -55,6 +61,14 @@ export function globalErrorHandler(
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof SupplierNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof CustomerNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof AddressNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof CustomerEmailConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof CustomerHasOrdersError) {
+    statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof ProductSlugConflictError) {
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof VariantSkuConflictError) {

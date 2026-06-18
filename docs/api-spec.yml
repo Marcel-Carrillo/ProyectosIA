@@ -997,10 +997,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /customers:
+  /api/admin/customers:
     get:
-      summary: Get all customers
-      description: Retrieve a paginated list of customers
+      summary: List customers (admin)
+      description: Retrieve a paginated list of customers with optional search by name or email
       tags:
         - Customers
       parameters:
@@ -1010,10 +1010,10 @@ paths:
           name: search
           schema:
             type: string
-          description: Search term to filter customers by first name, last name, or email
+          description: Filter customers by first name, last name, or email (case-insensitive)
       responses:
         '200':
-          description: Successfully retrieved customers
+          description: Customers retrieved successfully
           content:
             application/json:
               schema:
@@ -1024,8 +1024,8 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
     post:
-      summary: Create a new customer
-      description: Create a new customer account
+      summary: Create customer (admin)
+      description: Create a new customer. Email is normalized to lowercase before persistence. Returns 409 on duplicate email.
       tags:
         - Customers
       requestBody:
@@ -1048,21 +1048,198 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /customers/{id}:
+  /api/admin/customers/{id}:
     get:
-      summary: Get customer by ID
-      description: Retrieve detailed information about a specific customer
+      summary: Get customer by ID (admin)
+      description: Retrieve a customer with their addresses array included
       tags:
         - Customers
       parameters:
         - $ref: '#/components/parameters/IdPathParam'
       responses:
         '200':
-          description: Successfully retrieved customer
+          description: Customer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerWithAddressesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update customer (admin)
+      description: Partially update a customer. Only provided fields are updated. Email uniqueness is re-validated if changed.
+      tags:
+        - Customers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete customer (admin)
+      description: Hard-delete a customer and all their addresses (cascade). Returns 409 if the customer has any orders.
+      tags:
+        - Customers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Customer deleted successfully (no body)
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cannot delete — customer has existing orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: CUSTOMER_HAS_ORDERS
+                  message: Customer has existing orders and cannot be deleted
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customers/{customerId}/addresses:
+    get:
+      summary: List customer addresses (admin)
+      description: Retrieve all addresses for a customer
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+      responses:
+        '200':
+          description: Addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create customer address (admin)
+      description: Add a new address to a customer
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerAddressRequest'
+      responses:
+        '201':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customers/{customerId}/addresses/{addressId}:
+    patch:
+      summary: Update customer address (admin)
+      description: Partially update an address. Ownership is enforced — address must belong to customerId.
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+        - in: path
+          name: addressId
+          required: true
+          schema:
+            type: integer
+          description: Address ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerAddressRequest'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete customer address (admin)
+      description: Hard-delete an address. Ownership is enforced — address must belong to customerId.
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+        - in: path
+          name: addressId
+          required: true
+          schema:
+            type: integer
+          description: Address ID
+      responses:
+        '204':
+          description: Address deleted successfully (no body)
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -2349,6 +2526,60 @@ components:
           type: string
           format: date-time
 
+    CustomerAddress:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerId:
+          type: integer
+          example: 1
+        type:
+          type: string
+          enum: [Shipping, Billing]
+          example: Shipping
+        fullName:
+          type: string
+          maxLength: 150
+          example: Jane Doe
+        phone:
+          type: string
+          nullable: true
+          maxLength: 30
+          example: '+34600000000'
+        streetLine1:
+          type: string
+          maxLength: 150
+          example: Calle Gran Vía 28
+        streetLine2:
+          type: string
+          nullable: true
+          maxLength: 150
+          example: Piso 3
+        city:
+          type: string
+          maxLength: 100
+          example: Madrid
+        province:
+          type: string
+          maxLength: 100
+          example: Madrid
+        postalCode:
+          type: string
+          maxLength: 20
+          example: '28013'
+        country:
+          type: string
+          maxLength: 100
+          example: Spain
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
     CreateCustomerRequest:
       type: object
       required:
@@ -2374,6 +2605,112 @@ components:
           nullable: true
           example: '+34600000000'
 
+    UpdateCustomerRequest:
+      type: object
+      description: All fields are optional. Only provided fields are updated.
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+          example: Jane
+        lastName:
+          type: string
+          maxLength: 100
+          example: Doe
+        email:
+          type: string
+          maxLength: 255
+          example: jane@example.com
+        phone:
+          type: string
+          maxLength: 30
+          nullable: true
+          example: '+34600000000'
+
+    CreateCustomerAddressRequest:
+      type: object
+      required:
+        - type
+        - fullName
+        - streetLine1
+        - city
+        - province
+        - postalCode
+        - country
+      properties:
+        type:
+          type: string
+          enum: [Shipping, Billing]
+          example: Shipping
+        fullName:
+          type: string
+          maxLength: 150
+          example: Jane Doe
+        phone:
+          type: string
+          nullable: true
+          maxLength: 30
+          example: '+34600000000'
+        streetLine1:
+          type: string
+          maxLength: 150
+          example: Calle Gran Vía 28
+        streetLine2:
+          type: string
+          nullable: true
+          maxLength: 150
+          example: Piso 3
+        city:
+          type: string
+          maxLength: 100
+          example: Madrid
+        province:
+          type: string
+          maxLength: 100
+          example: Madrid
+        postalCode:
+          type: string
+          maxLength: 20
+          example: '28013'
+        country:
+          type: string
+          maxLength: 100
+          example: Spain
+
+    UpdateCustomerAddressRequest:
+      type: object
+      description: All fields are optional. Only provided fields are updated.
+      properties:
+        type:
+          type: string
+          enum: [Shipping, Billing]
+        fullName:
+          type: string
+          maxLength: 150
+        phone:
+          type: string
+          nullable: true
+          maxLength: 30
+        streetLine1:
+          type: string
+          maxLength: 150
+        streetLine2:
+          type: string
+          nullable: true
+          maxLength: 150
+        city:
+          type: string
+          maxLength: 100
+        province:
+          type: string
+          maxLength: 100
+        postalCode:
+          type: string
+          maxLength: 20
+        country:
+          type: string
+          maxLength: 100
+
     CustomerResponse:
       type: object
       properties:
@@ -2384,7 +2721,26 @@ components:
           $ref: '#/components/schemas/Customer'
         message:
           type: string
-          example: Operation completed successfully
+          example: Customer retrieved successfully
+
+    CustomerWithAddressesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          allOf:
+            - $ref: '#/components/schemas/Customer'
+            - type: object
+              properties:
+                addresses:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CustomerAddress'
+        message:
+          type: string
+          example: Customer retrieved successfully
 
     CustomerListResponse:
       type: object
@@ -2393,11 +2749,50 @@ components:
           type: boolean
           example: true
         data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Customer'
+            total:
+              type: integer
+              example: 42
+            page:
+              type: integer
+              example: 1
+            pageSize:
+              type: integer
+              example: 20
+        message:
+          type: string
+          example: Customers retrieved successfully
+
+    CustomerAddressResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CustomerAddress'
+        message:
+          type: string
+          example: Address saved successfully
+
+    CustomerAddressListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
           type: array
           items:
-            $ref: '#/components/schemas/Customer'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
+            $ref: '#/components/schemas/CustomerAddress'
+        message:
+          type: string
+          example: Addresses retrieved successfully
 
     AddressSnapshot:
       type: object

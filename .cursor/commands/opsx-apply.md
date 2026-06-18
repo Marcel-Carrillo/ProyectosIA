@@ -85,7 +85,8 @@ Implement tasks from an OpenSpec change.
    - Keep changes minimal and focused
    - **Execute the mandatory verification yourself** (per `docs/openspec-tasks-mandatory-steps.md`): run unit tests + verify DB state; run curl for backend endpoints; run Playwright E2E for frontend workflows; write reports under `openspec/changes/<change-name>/reports/`. NEVER delegate testing to the user.
    - For the "Update Technical Documentation" task, apply `ai-specs/skills/update-docs/SKILL.md` to identify and update the affected docs (`docs/data-model.md`, `docs/api-spec.yml`, backend/frontend standards) — do not update docs ad-hoc.
-   - Mark a task complete (`- [ ]` → `- [x]`) **only with evidence** (tests pass, DB restored for CREATE/UPDATE/DELETE, report created)
+   - **Update `tasks.md` on disk immediately** after each sub-task: change `- [ ]` → `- [x]` in `openspec/changes/<name>/tasks.md` as soon as that sub-task is done. On the fly every step; never batch at session end; never wait for the user to ask. Verification steps only after tests/reports pass (see `docs/openspec-tasks-mandatory-steps.md` §7.2).
+   - Mark verification sub-tasks complete **only with evidence** (tests pass, DB restored for CREATE/UPDATE/DELETE, report created)
    - Continue to next task
 
    **Pause if:**
@@ -167,7 +168,7 @@ What would you like to do?
 - If task is ambiguous, pause and ask before implementing
 - If implementation reveals issues, pause and suggest artifact updates
 - Keep code changes minimal and scoped to each task
-- Update task checkbox immediately after completing each task
+- Update `tasks.md` on disk immediately after each sub-task (`openspec/changes/<name>/tasks.md`); never batch checkbox updates at session end; user must not need to ask
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
 - Isolate on a feature branch / worktree (Step 0) BEFORE editing any file; never implement on `master`/`main`

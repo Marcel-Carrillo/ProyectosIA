@@ -41,3 +41,6 @@ verify-*.png
 Thumbs.db
 # git worktrees
 .worktrees/
+
+# mcp servers
+.mcp.json   
