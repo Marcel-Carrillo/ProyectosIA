@@ -607,3 +607,64 @@ export function validateCustomerAddressData(
     }
   }
 }
+
+const REFUND_STATUSES = ['Pending', 'Processing', 'Completed', 'Failed', 'Cancelled'] as const;
+
+export function validateRefundCreateData(data: Record<string, unknown>): void {
+  const customerOrderId = data['customerOrderId'];
+  if (customerOrderId === undefined || customerOrderId === null) {
+    throw new ValidationError("Field 'customerOrderId' is required");
+  }
+  if (!Number.isInteger(customerOrderId) || (customerOrderId as number) < 1) {
+    throw new ValidationError("Field 'customerOrderId' must be a positive integer");
+  }
+
+  const amount = data['amount'];
+  if (amount === undefined || amount === null || amount === '') {
+    throw new ValidationError("Field 'amount' is required");
+  }
+  const amountNum = Number(amount);
+  if (!Number.isFinite(amountNum) || amountNum <= 0) {
+    throw new ValidationError("Field 'amount' must be a positive number");
+  }
+
+  const returnRequestId = data['returnRequestId'];
+  if (returnRequestId !== undefined && returnRequestId !== null) {
+    if (!Number.isInteger(returnRequestId) || (returnRequestId as number) < 1) {
+      throw new ValidationError("Field 'returnRequestId' must be a positive integer");
+    }
+  }
+
+  const reason = data['reason'];
+  if (reason !== undefined && reason !== null && reason !== '') {
+    if (typeof reason === 'string' && reason.length > 500) {
+      throw new ValidationError("Field 'reason' must not exceed 500 characters");
+    }
+  }
+
+  const refundPaymentRef = data['paymentProviderReference'];
+  if (refundPaymentRef !== undefined && refundPaymentRef !== null && refundPaymentRef !== '') {
+    if (typeof refundPaymentRef === 'string' && refundPaymentRef.length > 150) {
+      throw new ValidationError("Field 'paymentProviderReference' must not exceed 150 characters");
+    }
+  }
+}
+
+export function validateRefundStatusUpdate(data: Record<string, unknown>): void {
+  const status = data['status'];
+  if (status === undefined || status === null || status === '') {
+    throw new ValidationError("Field 'status' is required");
+  }
+  if (!REFUND_STATUSES.includes(status as (typeof REFUND_STATUSES)[number])) {
+    throw new ValidationError(
+      `Field 'status' must be one of: ${REFUND_STATUSES.join(', ')}`
+    );
+  }
+
+  const statusPaymentRef = data['paymentProviderReference'];
+  if (statusPaymentRef !== undefined && statusPaymentRef !== null && statusPaymentRef !== '') {
+    if (typeof statusPaymentRef === 'string' && statusPaymentRef.length > 150) {
+      throw new ValidationError("Field 'paymentProviderReference' must not exceed 150 characters");
+    }
+  }
+}

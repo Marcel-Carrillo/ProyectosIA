@@ -1,17 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Table, Card, Row, Col } from 'react-bootstrap';
+import { Table, Card, Row, Col, Modal, Button, Form } from 'react-bootstrap';
 import {
   customerOrderService,
   extractCustomerOrderErrorMessage,
 } from '../services/customerOrderService';
 import { supplierOrderService } from '../services/supplierOrderService';
+import { refundService } from '../services/refundService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import StatusBadge from '../components/admin/StatusBadge';
 import OrderStatusControl from '../components/admin/OrderStatusControl';
 import { CustomerOrder, UpdateCustomerOrderStatusInput } from '../types/customerOrder';
 import { SupplierOrder } from '../types/supplierOrder';
+import { Refund } from '../types/refund';
 
 const formatAddress = (addr: CustomerOrder['shippingAddressSnapshot']) =>
   [addr.streetLine1, addr.streetLine2, addr.city, addr.province, addr.postalCode, addr.country]
@@ -24,6 +26,7 @@ const CustomerOrderDetailPage: React.FC = () => {
 
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [supplierOrders, setSupplierOrders] = useState<SupplierOrder[]>([]);
+  const [refunds, setRefunds] = useState<Refund[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusError, setStatusError] = useState('');
@@ -31,6 +34,13 @@ const CustomerOrderDetailPage: React.FC = () => {
   const [generateMessage, setGenerateMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundPayRef, setRefundPayRef] = useState('');
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [refundError, setRefundError] = useState('');
 
   const loadOrder = useCallback(async () => {
     if (!orderId || Number.isNaN(orderId)) {
@@ -45,6 +55,8 @@ const CustomerOrderDetailPage: React.FC = () => {
       setOrder(res.data);
       const supplierRes = await supplierOrderService.listByCustomerOrder(orderId);
       setSupplierOrders(supplierRes.data.items);
+      const refundRes = await refundService.getAll({ customerOrderId: orderId });
+      setRefunds(refundRes.items);
     } catch {
       setError('Unable to load customer order.');
     } finally {
@@ -77,6 +89,36 @@ const CustomerOrderDetailPage: React.FC = () => {
   const isEligibleForGeneration =
     order != null &&
     (order.status === 'Paid' || order.status === 'Processing');
+
+  const canCreateRefund =
+    order != null &&
+    (order.paymentStatus === 'Paid' || order.paymentStatus === 'PartiallyRefunded');
+
+  const handleCreateRefund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    setRefundSubmitting(true);
+    setRefundError('');
+    try {
+      const created = await refundService.create({
+        customerOrderId: order.id,
+        amount: refundAmount,
+        reason: refundReason.trim() || null,
+        paymentProviderReference: refundPayRef.trim() || null,
+      });
+      setRefunds((prev) => [created, ...prev]);
+      const refreshed = await customerOrderService.getById(order.id);
+      setOrder(refreshed.data);
+      setShowRefundModal(false);
+      setRefundAmount('');
+      setRefundReason('');
+      setRefundPayRef('');
+    } catch (err) {
+      setRefundError(err instanceof Error ? err.message : 'Failed to create refund.');
+    } finally {
+      setRefundSubmitting(false);
+    }
+  };
 
   const handleStatusSave = async (update: UpdateCustomerOrderStatusInput) => {
     if (!order) return;
@@ -222,6 +264,56 @@ const CustomerOrderDetailPage: React.FC = () => {
         </Card.Body>
       </Card>
 
+      <Card className="mb-4">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <Card.Title className="h6 mb-0">Refunds</Card.Title>
+            {canCreateRefund && (
+              <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={() => setShowRefundModal(true)}
+                data-testid="btn-create-refund"
+              >
+                Create refund
+              </Button>
+            )}
+          </div>
+          {refunds.length === 0 ? (
+            <p className="text-muted small mb-0">No refunds yet.</p>
+          ) : (
+            <Table responsive size="sm" className="mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Created</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {refunds.map((r) => (
+                  <tr key={r.id}>
+                    <td>#{r.id}</td>
+                    <td>€{parseFloat(r.amount).toFixed(2)}</td>
+                    <td><StatusBadge status={r.status} /></td>
+                    <td>{r.reason ?? '—'}</td>
+                    <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <Link to={`/refunds/${r.id}`} className="btn btn-sm btn-outline-secondary">
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card.Body>
+      </Card>
+
       <Card>
         <Card.Body>
           <Card.Title className="h6">Update statuses</Card.Title>
@@ -233,6 +325,64 @@ const CustomerOrderDetailPage: React.FC = () => {
           />
         </Card.Body>
       </Card>
+
+      <Modal show={showRefundModal} onHide={() => setShowRefundModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create Refund</Modal.Title>
+        </Modal.Header>
+        <form onSubmit={(e) => void handleCreateRefund(e)}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Amount (€) <span className="text-danger">*</span></Form.Label>
+              <Form.Control
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                required
+                data-testid="input-refund-amount"
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Reason</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                maxLength={500}
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                data-testid="input-refund-reason"
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Payment Provider Reference</Form.Label>
+              <Form.Control
+                type="text"
+                maxLength={150}
+                value={refundPayRef}
+                onChange={(e) => setRefundPayRef(e.target.value)}
+                placeholder="e.g. PAY-123456"
+                data-testid="input-refund-pay-ref"
+              />
+            </Form.Group>
+            {refundError && <div className="text-danger small">{refundError}</div>}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowRefundModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={refundSubmitting}
+              data-testid="btn-submit-refund"
+            >
+              {refundSubmitting ? 'Creating…' : 'Create refund'}
+            </Button>
+          </Modal.Footer>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -140,6 +140,7 @@ model CustomerOrder {
   cancelledAt             DateTime?
   items                   CustomerOrderItem[]
   supplierOrders          SupplierOrder[]
+  refunds                 Refund[]
   couponRedemption        CouponRedemption?
 
   @@index([customerId])
@@ -213,6 +214,25 @@ model SupplierOrderItem {
   @@index([supplierOrderId])
   @@index([customerOrderItemId])
   @@index([productVariantId])
+}
+
+model Refund {
+  id                       Int           @id @default(autoincrement())
+  customerOrderId          Int
+  customerOrder            CustomerOrder @relation(fields: [customerOrderId], references: [id])
+  returnRequestId          Int?
+  amount                   Decimal       @db.Decimal(10, 2)
+  reason                   String?       @db.VarChar(500)
+  status                   String        @default("Pending")
+  paymentProviderReference String?       @db.VarChar(150)
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  processedAt              DateTime?
+
+  @@index([customerOrderId])
+  @@index([returnRequestId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model AdminUser {
