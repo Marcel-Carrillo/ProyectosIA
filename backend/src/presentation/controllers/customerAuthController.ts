@@ -21,6 +21,7 @@ import {
   getAppleAuthorizationUrl,
   parseAppleUserField,
 } from '../../infrastructure/auth/appleOAuth';
+import { encryptCookieValue, decryptCookieValue } from '../../infrastructure/auth/cookieCrypto';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -32,7 +33,7 @@ const COOKIE_OPTIONS = {
 };
 
 function setRefreshCookie(res: Response, raw: string): void {
-  res.cookie(CUSTOMER_REFRESH_COOKIE, raw, COOKIE_OPTIONS);
+  res.cookie(CUSTOMER_REFRESH_COOKIE, encryptCookieValue(raw), COOKIE_OPTIONS);
 }
 
 function clearRefreshCookie(res: Response): void {
@@ -110,7 +111,8 @@ export async function verify2fa(req: CustomerAuthRequest, res: Response, next: N
 
 export async function refresh(req: CustomerAuthRequest, res: Response, next: NextFunction) {
   try {
-    const raw = req.signedCookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
+    const encrypted = req.signedCookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
+    const raw = encrypted ? decryptCookieValue(encrypted) : null;
     if (!raw) {
       res.status(401).json({
         success: false,
@@ -132,7 +134,8 @@ export async function refresh(req: CustomerAuthRequest, res: Response, next: Nex
 
 export async function logout(req: CustomerAuthRequest, res: Response, next: NextFunction) {
   try {
-    const raw = req.signedCookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
+    const encrypted = req.signedCookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
+    const raw = encrypted ? decryptCookieValue(encrypted) ?? undefined : undefined;
     await customerAuthService.logout(raw);
     clearRefreshCookie(res);
     res.json({ success: true, data: null, message: 'Logged out' });
@@ -217,7 +220,7 @@ function oauthNotConfigured(res: Response, provider: string): void {
 }
 
 function setOAuthStateCookie(res: Response, provider: string, state: string): void {
-  res.cookie(OAUTH_STATE_COOKIE, `${provider}:${state}`, {
+  res.cookie(OAUTH_STATE_COOKIE, encryptCookieValue(`${provider}:${state}`), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -228,8 +231,9 @@ function setOAuthStateCookie(res: Response, provider: string, state: string): vo
 }
 
 function readOAuthState(req: CustomerAuthRequest, provider: string, state?: string): boolean {
-  const expected = req.signedCookies?.[OAUTH_STATE_COOKIE] as string | undefined;
-  if (!state || !expected) return false;
+  const encrypted = req.signedCookies?.[OAUTH_STATE_COOKIE] as string | undefined;
+  if (!state || !encrypted) return false;
+  const expected = decryptCookieValue(encrypted);
   return expected === `${provider}:${state}`;
 }
 
