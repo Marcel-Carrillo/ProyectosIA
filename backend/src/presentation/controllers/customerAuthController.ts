@@ -5,6 +5,22 @@ import {
 } from '../../application/services/customerAuthService';
 import { CustomerAuthRequest } from '../../middleware/requireCustomerAuth';
 import { OAuth2Client } from 'google-auth-library';
+import {
+  createOAuthState,
+  getFrontendUrl,
+  getOAuthCallbackUrl,
+  getOAuthProviderStatus,
+  isAppleOAuthConfigured,
+  isFacebookOAuthConfigured,
+  isGoogleOAuthConfigured,
+  OAUTH_STATE_COOKIE,
+} from '../../infrastructure/auth/oauthConfig';
+import { getFacebookAuthorizationUrl, exchangeFacebookCode } from '../../infrastructure/auth/facebookOAuth';
+import {
+  exchangeAppleCode,
+  getAppleAuthorizationUrl,
+  parseAppleUserField,
+} from '../../infrastructure/auth/appleOAuth';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -189,32 +205,95 @@ export async function resetPassword(req: CustomerAuthRequest, res: Response, nex
   }
 }
 
+function oauthNotConfigured(res: Response, provider: string): void {
+  res.status(501).json({
+    success: false,
+    error: {
+      message: `${provider} OAuth not configured — add credentials to backend/.env`,
+      code: 'OAUTH_NOT_CONFIGURED',
+    },
+  });
+}
+
+function setOAuthStateCookie(res: Response, provider: string, state: string): void {
+  res.cookie(OAUTH_STATE_COOKIE, `${provider}:${state}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 10 * 60 * 1000,
+    path: '/',
+  });
+}
+
+function readOAuthState(req: CustomerAuthRequest, provider: string, state?: string): boolean {
+  const expected = req.cookies?.[OAUTH_STATE_COOKIE] as string | undefined;
+  if (!state || !expected) return false;
+  return expected === `${provider}:${state}`;
+}
+
+function clearOAuthStateCookie(res: Response): void {
+  res.clearCookie(OAUTH_STATE_COOKIE, { path: '/' });
+}
+
+async function completeOAuthLogin(
+  res: Response,
+  provider: 'google' | 'apple' | 'facebook',
+  providerId: string,
+  email: string,
+  profile: { firstName: string; lastName: string },
+): Promise<void> {
+  const result = await customerAuthService.oauthLogin(provider, providerId, email, profile);
+  setRefreshCookie(res, result.refreshTokenRaw);
+  const frontend = getFrontendUrl();
+  res.redirect(`${frontend}/account?token=${result.accessToken}`);
+}
+
+export async function oauthProviders(_req: CustomerAuthRequest, res: Response) {
+  res.json({
+    success: true,
+    data: getOAuthProviderStatus(),
+    message: 'OAuth providers',
+  });
+}
+
 export async function googleAuthStart(_req: CustomerAuthRequest, res: Response) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirect = `${process.env.FRONTEND_URL ?? 'http://localhost:3001'}/oauth/google/callback`;
-  if (!clientId) {
-    res.status(501).json({
-      success: false,
-      error: { message: 'Google OAuth not configured', code: 'OAUTH_NOT_CONFIGURED' },
-    });
+  if (!isGoogleOAuthConfigured()) {
+    oauthNotConfigured(res, 'Google');
     return;
   }
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=code&scope=openid%20email%20profile`;
-  res.redirect(url);
+  const clientId = process.env.GOOGLE_CLIENT_ID!;
+  const redirect = getOAuthCallbackUrl('google');
+  const state = createOAuthState();
+  setOAuthStateCookie(res, 'google', state);
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirect,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state,
+  });
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
 }
 
 export async function googleAuthCallback(req: CustomerAuthRequest, res: Response, next: NextFunction) {
   try {
     const code = req.query.code as string | undefined;
+    const state = req.query.state as string | undefined;
     if (!code) {
       res.status(400).json({ success: false, error: { message: 'Missing code', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
+    if (!readOAuthState(req, 'google', state)) {
+      clearOAuthStateCookie(res);
+      res.status(400).json({ success: false, error: { message: 'Invalid OAuth state', code: 'OAUTH_VERIFICATION_FAILED' } });
+      return;
+    }
+    clearOAuthStateCookie(res);
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirect = `${process.env.FRONTEND_URL ?? 'http://localhost:3001'}/oauth/google/callback`;
+    const redirect = getOAuthCallbackUrl('google');
     if (!clientId || !clientSecret) {
-      res.status(501).json({ success: false, error: { message: 'Google OAuth not configured', code: 'OAUTH_NOT_CONFIGURED' } });
+      oauthNotConfigured(res, 'Google');
       return;
     }
     const client = new OAuth2Client(clientId, clientSecret, redirect);
@@ -225,30 +304,91 @@ export async function googleAuthCallback(req: CustomerAuthRequest, res: Response
       res.status(401).json({ success: false, error: { message: 'OAuth verification failed', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
-    const result = await customerAuthService.oauthLogin('google', payload.sub, payload.email, {
+    await completeOAuthLogin(res, 'google', payload.sub, payload.email, {
       firstName: payload.given_name ?? 'User',
       lastName: payload.family_name ?? '',
     });
-    setRefreshCookie(res, result.refreshTokenRaw);
-    const frontend = process.env.FRONTEND_URL ?? 'http://localhost:3001';
-    res.redirect(`${frontend}/account?token=${result.accessToken}`);
   } catch (err) {
     next(err);
   }
 }
 
 export async function appleAuthStart(_req: CustomerAuthRequest, res: Response) {
-  res.status(501).json({
-    success: false,
-    error: { message: 'Apple OAuth requires production credentials', code: 'OAUTH_NOT_CONFIGURED' },
-  });
+  if (!isAppleOAuthConfigured()) {
+    oauthNotConfigured(res, 'Apple');
+    return;
+  }
+  const state = createOAuthState();
+  setOAuthStateCookie(res, 'apple', state);
+  res.redirect(getAppleAuthorizationUrl(state));
+}
+
+export async function appleAuthCallback(req: CustomerAuthRequest, res: Response, next: NextFunction) {
+  try {
+    const code = req.body?.code as string | undefined;
+    const state = req.body?.state as string | undefined;
+    const userField = req.body?.user as string | undefined;
+    if (!code) {
+      res.status(400).json({ success: false, error: { message: 'Missing code', code: 'OAUTH_VERIFICATION_FAILED' } });
+      return;
+    }
+    if (!readOAuthState(req, 'apple', state)) {
+      clearOAuthStateCookie(res);
+      res.status(400).json({ success: false, error: { message: 'Invalid OAuth state', code: 'OAUTH_VERIFICATION_FAILED' } });
+      return;
+    }
+    clearOAuthStateCookie(res);
+    if (!isAppleOAuthConfigured()) {
+      oauthNotConfigured(res, 'Apple');
+      return;
+    }
+    const profile = await exchangeAppleCode(code);
+    const names = parseAppleUserField(userField);
+    await completeOAuthLogin(res, 'apple', profile.id, profile.email, {
+      firstName: names.firstName,
+      lastName: names.lastName,
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function facebookAuthStart(_req: CustomerAuthRequest, res: Response) {
-  res.status(501).json({
-    success: false,
-    error: { message: 'Facebook OAuth requires production credentials', code: 'OAUTH_NOT_CONFIGURED' },
-  });
+  if (!isFacebookOAuthConfigured()) {
+    oauthNotConfigured(res, 'Facebook');
+    return;
+  }
+  const state = createOAuthState();
+  setOAuthStateCookie(res, 'facebook', state);
+  res.redirect(getFacebookAuthorizationUrl(state));
+}
+
+export async function facebookAuthCallback(req: CustomerAuthRequest, res: Response, next: NextFunction) {
+  try {
+    const code = req.query.code as string | undefined;
+    const state = req.query.state as string | undefined;
+    if (!code) {
+      res.status(400).json({ success: false, error: { message: 'Missing code', code: 'OAUTH_VERIFICATION_FAILED' } });
+      return;
+    }
+    if (!readOAuthState(req, 'facebook', state)) {
+      clearOAuthStateCookie(res);
+      res.status(400).json({ success: false, error: { message: 'Invalid OAuth state', code: 'OAUTH_VERIFICATION_FAILED' } });
+      return;
+    }
+    clearOAuthStateCookie(res);
+    if (!isFacebookOAuthConfigured()) {
+      oauthNotConfigured(res, 'Facebook');
+      return;
+    }
+    const profile = await exchangeFacebookCode(code);
+    await completeOAuthLogin(res, 'facebook', profile.id, profile.email, {
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function oauthMockLogin(req: CustomerAuthRequest, res: Response, next: NextFunction) {

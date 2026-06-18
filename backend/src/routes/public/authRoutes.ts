@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
 import {
   register,
@@ -9,10 +10,13 @@ import {
   verify2fa,
   forgotPassword,
   resetPassword,
+  oauthProviders,
   googleAuthStart,
   googleAuthCallback,
   appleAuthStart,
+  appleAuthCallback,
   facebookAuthStart,
+  facebookAuthCallback,
   oauthMockLogin,
 } from '../../presentation/controllers/customerAuthController';
 import { requireCustomerAuth } from '../../middleware/requireCustomerAuth';
@@ -37,10 +41,14 @@ router.post('/2fa/verify', verify2fa);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
+router.get('/oauth/providers', oauthProviders);
+
 router.get('/google', googleAuthStart);
 router.get('/google/callback', googleAuthCallback);
 router.get('/apple', appleAuthStart);
+router.post('/apple/callback', express.urlencoded({ extended: true }), appleAuthCallback);
 router.get('/facebook', facebookAuthStart);
+router.get('/facebook/callback', facebookAuthCallback);
 
 if (process.env.NODE_ENV !== 'production') {
   router.post('/oauth/mock', oauthMockLogin);
