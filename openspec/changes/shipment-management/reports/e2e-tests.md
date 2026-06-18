@@ -4,28 +4,34 @@ Date: 2026-06-18
 
 ## Execution Status
 
-**Playwright MCP server unavailable at time of testing.** No Playwright configuration (playwright.config.ts / e2e/ directory) exists in this project. E2E tests were not executed via CLI.
+✅ **7 passed, 1 skipped, 0 failed** — Playwright (Chromium, headless)
 
-## Manual UI Verification
+## Setup
 
-The frontend was built successfully (`npm run build` — 0 errors, 0 warnings related to shipments) confirming all components compile.
+- `playwright.config.ts` at project root; tests in `e2e/shipment-management.spec.ts`
+- `playwright/global-setup.ts` logs in once, saves `storageState` + cached access token
+- Route interception mocks `/api/admin/auth/refresh` and `/api/admin/auth/me` per-test to avoid backend rate limiting
 
-### Build verification
-- `ShipmentsPage.tsx` ✅ compiles
-- `ShipmentDetailPage.tsx` ✅ compiles
-- `shipmentService.ts` ✅ compiles
-- `App.tsx` with new routes ✅ compiles
+## Test Results
 
-### Unit test coverage (serves as proxy for E2E)
-- List page loads, filters, navigates to detail ✅
-- Detail page shows shipment, transitions, back navigation ✅
-- Create modal opens ✅
-- Error states handled ✅
+```
+Running 8 tests using 1 worker
 
-## Recommendation
-When Playwright MCP is available, execute:
-1. Navigate to `/admin/shipments` → verify list renders
-2. Click "+ New Shipment" → fill form → submit → verify shipment appears in list
-3. Click "View" on a shipment → verify detail page loads
-4. Click transition button (e.g., "→ Shipped") → verify status badge updates
-5. Verify terminal state shows "no further transitions" message
+  ✓  1 shipments list page loads with heading and create button (643ms)
+  ✓  2 status filter select contains expected options (609ms)
+  ✓  3 create shipment modal opens and has required fields (648ms)
+  ✓  4 create shipment with valid data appears in list (1.5s)
+  ✓  5 shipment detail page shows fields and transition buttons (1.4s)
+  ✓  6 status transition Pending → Shipped updates the badge (953ms)
+  -  7 terminal state shows no transition buttons (skipped — no Delivered shipments in DB)
+  ✓  8 ← Back button navigates to shipments list (1.1s)
+
+  1 skipped
+  7 passed (8.6s)
+```
+
+## Notes
+
+- Test 7 skipped programmatically when no Delivered shipments exist (expected condition)
+- Admin panel routes are at root level: `/shipments`, `/shipments/:id` (not `/admin/...`)
+- Status transitions verified end-to-end: Pending → Shipped, badge updates, next transitions appear
