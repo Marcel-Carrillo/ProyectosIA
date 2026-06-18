@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import {
   getProfile,
   updateProfile,
@@ -15,8 +16,16 @@ import {
 } from '../../presentation/controllers/wishlistController';
 import { requireCustomerAuth } from '../../middleware/requireCustomerAuth';
 
+const accountLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const router = Router();
 
+router.use(accountLimiter);
 router.use(requireCustomerAuth);
 
 router.get('/profile', getProfile);

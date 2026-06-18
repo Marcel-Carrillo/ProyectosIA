@@ -42,7 +42,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET || 'change-me-in-production'));
 
 app.use('/health', healthRoutes);
 app.use('/categories', categoryRoutes);

@@ -8,7 +8,8 @@ const adminAuthService = new AdminAuthService(new AdminUserRepository());
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const,
+  signed: true,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/',
 };
@@ -53,7 +54,7 @@ export async function adminRefresh(
   next: NextFunction
 ): Promise<void> {
   try {
-    const raw = req.cookies?.[ADMIN_REFRESH_COOKIE] as string | undefined;
+    const raw = req.signedCookies?.[ADMIN_REFRESH_COOKIE] as string | undefined;
     if (!raw) {
       res.status(401).json({
         success: false,
@@ -79,7 +80,7 @@ export async function adminLogout(
   next: NextFunction
 ): Promise<void> {
   try {
-    const raw = req.cookies?.[ADMIN_REFRESH_COOKIE] as string | undefined;
+    const raw = req.signedCookies?.[ADMIN_REFRESH_COOKIE] as string | undefined;
     await adminAuthService.logout(raw);
     clearRefreshCookie(res);
     res.json({ success: true, data: null, message: 'Logged out successfully' });

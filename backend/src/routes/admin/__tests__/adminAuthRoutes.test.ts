@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../../../index';
-import { getAdminAccessToken, withAdminAuth } from '../../../test-utils/adminAuthHelper';
+import { withAdminAuth } from '../../../test-utils/adminAuthHelper';
 
 describe('adminAuthRoutes', () => {
   it('rejects unauthenticated access to customers API', async () => {

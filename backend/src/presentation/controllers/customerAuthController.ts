@@ -25,7 +25,8 @@ import {
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const,
+  signed: true,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/',
 };
@@ -109,7 +110,7 @@ export async function verify2fa(req: CustomerAuthRequest, res: Response, next: N
 
 export async function refresh(req: CustomerAuthRequest, res: Response, next: NextFunction) {
   try {
-    const raw = req.cookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
+    const raw = req.signedCookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
     if (!raw) {
       res.status(401).json({
         success: false,
@@ -131,7 +132,7 @@ export async function refresh(req: CustomerAuthRequest, res: Response, next: Nex
 
 export async function logout(req: CustomerAuthRequest, res: Response, next: NextFunction) {
   try {
-    const raw = req.cookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
+    const raw = req.signedCookies?.[CUSTOMER_REFRESH_COOKIE] as string | undefined;
     await customerAuthService.logout(raw);
     clearRefreshCookie(res);
     res.json({ success: true, data: null, message: 'Logged out' });
@@ -220,13 +221,14 @@ function setOAuthStateCookie(res: Response, provider: string, state: string): vo
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
+    signed: true,
     maxAge: 10 * 60 * 1000,
     path: '/',
   });
 }
 
 function readOAuthState(req: CustomerAuthRequest, provider: string, state?: string): boolean {
-  const expected = req.cookies?.[OAUTH_STATE_COOKIE] as string | undefined;
+  const expected = req.signedCookies?.[OAUTH_STATE_COOKIE] as string | undefined;
   if (!state || !expected) return false;
   return expected === `${provider}:${state}`;
 }

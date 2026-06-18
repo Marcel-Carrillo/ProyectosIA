@@ -158,7 +158,7 @@ describe('unified integration smoke', () => {
     const reg = await request(app)
       .post('/api/public/auth/register')
       .send({ email, password, firstName: 'W', lastName: 'User' });
-    let token = reg.body.data.accessToken;
+    const token = reg.body.data.accessToken;
 
     const profile = await request(app)
       .get('/api/public/account/profile')
