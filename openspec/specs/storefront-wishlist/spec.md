@@ -4,7 +4,7 @@
 
 Authenticated buyers can save product variants to a personal wishlist from the storefront. Wishlist is scoped strictly to the logged-in `customerId`.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Authenticated buyer can manage wishlist items
 

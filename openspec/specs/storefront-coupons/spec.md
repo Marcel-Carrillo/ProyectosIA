@@ -4,7 +4,7 @@
 
 Buyers can validate and apply coupon codes during checkout. Discount calculation is server-authoritative; supplier-internal data is never exposed.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Buyer can validate a coupon code
 

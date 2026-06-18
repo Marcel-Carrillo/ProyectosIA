@@ -4,7 +4,7 @@
 
 Public storefront cart and checkout flow. Buyers add variants to a cart, complete shipping/billing, optionally apply a coupon, and create a `CustomerOrder` with snapshotted line items. Supports guest and authenticated paths. MVP payment remains `Pending` (no payment gateway). Supplier-internal data must never appear in responses.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Buyer can manage a shopping cart in the storefront
 

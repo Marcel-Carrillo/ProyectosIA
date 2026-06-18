@@ -127,9 +127,9 @@
 
 ## 14. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 14.2 Verify all tasks in `tasks.md` are marked `[x]` and all reports exist under `openspec/changes/refund-management/reports/`
-- [ ] 14.3 Stage all relevant files: schema, migration, domain model, repository, service, controller, routes, frontend types, services, hooks, pages, components, App.tsx, docs updates, OpenSpec artifacts (exclude `.env`, `node_modules/`, `dist/`, `coverage/`)
-- [ ] 14.4 Create commit: `feat(refund-management): add admin refund CRUD with state machine and paymentStatus sync`
-- [ ] 14.5 Push branch to remote origin: `git push -u origin feature/KAN-20-refund-management`
-- [ ] 14.6 Create Pull Request with `gh pr create` and report PR URL in chat
+- [x] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 14.2 Verify all tasks in `tasks.md` are marked `[x]` and all reports exist under `openspec/changes/refund-management/reports/`
+- [x] 14.3 Stage all relevant files: schema, migration, domain model, repository, service, controller, routes, frontend types, services, hooks, pages, components, App.tsx, docs updates, OpenSpec artifacts (exclude `.env`, `node_modules/`, `dist/`, `coverage/`)
+- [x] 14.4 Create commit: `feat(refund-management): add admin refund CRUD with state machine and paymentStatus sync`
+- [x] 14.5 Push branch to remote origin: `git push -u origin feature/KAN-20-refund-management`
+- [x] 14.6 Create Pull Request with `gh pr create` — PR #24 merged 2026-06-18T17:00:54Z

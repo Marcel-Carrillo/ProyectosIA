@@ -4,7 +4,7 @@
 
 Public storefront authentication and self-service account area for buyers. Enables registration and login (email/password, Google, Apple, Facebook OAuth), optional TOTP 2FA, password recovery, customer-scoped sessions, profile access, and own order history. Distinct from admin authentication (KAN-23). Supplier-internal data must never appear in customer-facing responses.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Buyer can register with email and password
 

@@ -4,7 +4,7 @@
 
 Protect the admin panel and `/api/admin/*` APIs with credential-based login and JWT sessions (`aud: "admin"`). Distinct from customer storefront auth (KAN-51). Required before safe production exposure of customer PII and supplier data.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Admin can log in with email and password
 
