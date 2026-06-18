@@ -1,0 +1,16 @@
+---
+description: During OpenSpec implementation, update tasks.md checkboxes on disk immediately after each sub-task — never defer to session end.
+alwaysApply: true
+---
+
+# OpenSpec: Live `tasks.md` checkbox updates
+
+When implementing any change under `openspec/changes/<change-name>/`:
+
+1. **Read** `openspec/changes/<change-name>/tasks.md` at the start of the session and after any pause.
+2. **After every completed sub-task** (code, test file, doc edit), edit `tasks.md` on disk immediately: `- [ ]` → `- [x]`.
+3. **Do not** rely on chat summaries, TodoWrite, or end-of-session batch updates as a substitute.
+4. **Verification sub-tasks** (unit suite, curl, E2E, commit/PR): mark `[x]` only after tests pass, DB restored, and required report exists under `openspec/changes/<change-name>/reports/`.
+5. If work was done in a prior session but checkboxes were not updated, reconcile `tasks.md` against the codebase and reports **before** continuing new implementation.
+
+Reference: `docs/openspec-tasks-mandatory-steps.md` §7.2, `openspec/config.yaml` rules.tasks, `/opsx:apply` skill.

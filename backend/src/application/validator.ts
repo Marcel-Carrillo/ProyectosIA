@@ -161,3 +161,164 @@ export function validateSupplierData(
   }
   validateSupplierOptionalFields(data);
 }
+
+const CUSTOMER_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function validateCustomerData(
+  data: Record<string, unknown>,
+  options: { requireFields?: boolean } = { requireFields: true }
+): void {
+  const firstName = data['firstName'];
+  if (options.requireFields !== false) {
+    if (firstName === undefined || firstName === null || firstName === '') {
+      throw new ValidationError("Field 'firstName' is required");
+    }
+  }
+  if (firstName !== undefined && firstName !== null && firstName !== '') {
+    if (typeof firstName === 'string' && firstName.length > 100) {
+      throw new ValidationError("Field 'firstName' must not exceed 100 characters");
+    }
+  }
+
+  const lastName = data['lastName'];
+  if (options.requireFields !== false) {
+    if (lastName === undefined || lastName === null || lastName === '') {
+      throw new ValidationError("Field 'lastName' is required");
+    }
+  }
+  if (lastName !== undefined && lastName !== null && lastName !== '') {
+    if (typeof lastName === 'string' && lastName.length > 100) {
+      throw new ValidationError("Field 'lastName' must not exceed 100 characters");
+    }
+  }
+
+  const email = data['email'];
+  if (options.requireFields !== false) {
+    if (email === undefined || email === null || email === '') {
+      throw new ValidationError("Field 'email' is required");
+    }
+  }
+  if (email !== undefined && email !== null && email !== '') {
+    if (typeof email !== 'string') {
+      throw new ValidationError("Field 'email' must be a string");
+    }
+    if (email.length > 255) {
+      throw new ValidationError("Field 'email' must not exceed 255 characters");
+    }
+    if (!CUSTOMER_EMAIL_REGEX.test(email)) {
+      throw new ValidationError("Field 'email' must be a valid email address");
+    }
+  }
+
+  const phone = data['phone'];
+  if (phone !== undefined && phone !== null && phone !== '') {
+    if (typeof phone === 'string' && phone.length > 30) {
+      throw new ValidationError("Field 'phone' must not exceed 30 characters");
+    }
+  }
+}
+
+export function validateCustomerAddressData(
+  data: Record<string, unknown>,
+  options: { requireAll?: boolean } = { requireAll: true }
+): void {
+  const VALID_TYPES = ['Shipping', 'Billing'];
+
+  const type = data['type'];
+  if (options.requireAll !== false) {
+    if (type === undefined || type === null || type === '') {
+      throw new ValidationError("Field 'type' is required");
+    }
+  }
+  if (type !== undefined && type !== null && type !== '') {
+    if (!VALID_TYPES.includes(type as string)) {
+      throw new ValidationError(`Field 'type' must be one of: ${VALID_TYPES.join(', ')}`);
+    }
+  }
+
+  const fullName = data['fullName'];
+  if (options.requireAll !== false) {
+    if (fullName === undefined || fullName === null || fullName === '') {
+      throw new ValidationError("Field 'fullName' is required");
+    }
+  }
+  if (fullName !== undefined && fullName !== null && fullName !== '') {
+    if (typeof fullName === 'string' && fullName.length > 150) {
+      throw new ValidationError("Field 'fullName' must not exceed 150 characters");
+    }
+  }
+
+  const streetLine1 = data['streetLine1'];
+  if (options.requireAll !== false) {
+    if (streetLine1 === undefined || streetLine1 === null || streetLine1 === '') {
+      throw new ValidationError("Field 'streetLine1' is required");
+    }
+  }
+  if (streetLine1 !== undefined && streetLine1 !== null && streetLine1 !== '') {
+    if (typeof streetLine1 === 'string' && streetLine1.length > 150) {
+      throw new ValidationError("Field 'streetLine1' must not exceed 150 characters");
+    }
+  }
+
+  const streetLine2 = data['streetLine2'];
+  if (streetLine2 !== undefined && streetLine2 !== null && streetLine2 !== '') {
+    if (typeof streetLine2 === 'string' && streetLine2.length > 150) {
+      throw new ValidationError("Field 'streetLine2' must not exceed 150 characters");
+    }
+  }
+
+  const city = data['city'];
+  if (options.requireAll !== false) {
+    if (city === undefined || city === null || city === '') {
+      throw new ValidationError("Field 'city' is required");
+    }
+  }
+  if (city !== undefined && city !== null && city !== '') {
+    if (typeof city === 'string' && city.length > 100) {
+      throw new ValidationError("Field 'city' must not exceed 100 characters");
+    }
+  }
+
+  const province = data['province'];
+  if (options.requireAll !== false) {
+    if (province === undefined || province === null || province === '') {
+      throw new ValidationError("Field 'province' is required");
+    }
+  }
+  if (province !== undefined && province !== null && province !== '') {
+    if (typeof province === 'string' && province.length > 100) {
+      throw new ValidationError("Field 'province' must not exceed 100 characters");
+    }
+  }
+
+  const postalCode = data['postalCode'];
+  if (options.requireAll !== false) {
+    if (postalCode === undefined || postalCode === null || postalCode === '') {
+      throw new ValidationError("Field 'postalCode' is required");
+    }
+  }
+  if (postalCode !== undefined && postalCode !== null && postalCode !== '') {
+    if (typeof postalCode === 'string' && postalCode.length > 20) {
+      throw new ValidationError("Field 'postalCode' must not exceed 20 characters");
+    }
+  }
+
+  const country = data['country'];
+  if (options.requireAll !== false) {
+    if (country === undefined || country === null || country === '') {
+      throw new ValidationError("Field 'country' is required");
+    }
+  }
+  if (country !== undefined && country !== null && country !== '') {
+    if (typeof country === 'string' && country.length > 100) {
+      throw new ValidationError("Field 'country' must not exceed 100 characters");
+    }
+  }
+
+  const phone = data['phone'];
+  if (phone !== undefined && phone !== null && phone !== '') {
+    if (typeof phone === 'string' && phone.length > 30) {
+      throw new ValidationError("Field 'phone' must not exceed 30 characters");
+    }
+  }
+}
