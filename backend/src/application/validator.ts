@@ -1,3 +1,9 @@
+import {
+  OrderStatusTransitionInvalidError,
+  PaymentStatusTransitionInvalidError,
+  FulfillmentStatusTransitionInvalidError,
+} from '../infrastructure/repositories/customerOrderRepository';
+
 export class ValidationError extends Error {
   readonly code = 'VALIDATION_ERROR' as const;
 
@@ -217,6 +223,161 @@ export function validateCustomerData(
     }
   }
 }
+
+const CUSTOMER_ORDER_STATUSES = [
+  'PendingPayment',
+  'Paid',
+  'Processing',
+  'Completed',
+  'Cancelled',
+  'Refunded',
+] as const;
+
+const PAYMENT_STATUSES = [
+  'Pending',
+  'Authorized',
+  'Paid',
+  'Failed',
+  'Refunded',
+  'PartiallyRefunded',
+] as const;
+
+const FULFILLMENT_STATUSES = [
+  'NotStarted',
+  'PendingSupplierOrder',
+  'SupplierOrderPlaced',
+  'PartiallyFulfilled',
+  'Fulfilled',
+  'Blocked',
+  'Cancelled',
+] as const;
+
+const PAID_ORDER_STATUSES = new Set(['Paid', 'Processing', 'Completed', 'Refunded']);
+
+function validateAddressSnapshotField(
+  data: unknown,
+  fieldName: string,
+  requireAll = true
+): void {
+  if (data === undefined || data === null) {
+    if (requireAll) throw new ValidationError(`Field '${fieldName}' is required`);
+    return;
+  }
+  if (typeof data !== 'object' || Array.isArray(data)) {
+    throw new ValidationError(`Field '${fieldName}' must be an object`);
+  }
+  validateCustomerAddressData(
+    { ...(data as Record<string, unknown>), type: 'Shipping' },
+    { requireAll }
+  );
+}
+
+export function validateCustomerOrderCreateData(data: Record<string, unknown>): void {
+  const customerId = data['customerId'];
+  if (customerId === undefined || customerId === null) {
+    throw new ValidationError("Field 'customerId' is required");
+  }
+  if (!Number.isInteger(customerId) || (customerId as number) < 1) {
+    throw new ValidationError("Field 'customerId' must be a positive integer");
+  }
+
+  const items = data['items'];
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ValidationError("Field 'items' must be a non-empty array");
+  }
+  for (const item of items) {
+    if (typeof item !== 'object' || item === null) {
+      throw new ValidationError('Each item must be an object');
+    }
+    const record = item as Record<string, unknown>;
+    const productVariantId = record['productVariantId'];
+    if (!Number.isInteger(productVariantId) || (productVariantId as number) < 1) {
+      throw new ValidationError("Each item's 'productVariantId' must be a positive integer");
+    }
+    const quantity = record['quantity'];
+    if (!Number.isInteger(quantity) || (quantity as number) < 1) {
+      throw new ValidationError("Each item's 'quantity' must be a positive integer");
+    }
+  }
+
+  validateAddressSnapshotField(data['shippingAddressSnapshot'], 'shippingAddressSnapshot');
+  validateAddressSnapshotField(data['billingAddressSnapshot'], 'billingAddressSnapshot');
+
+  const shippingAmount = data['shippingAmount'];
+  if (shippingAmount !== undefined && shippingAmount !== null) {
+    const num = Number(shippingAmount);
+    if (!Number.isFinite(num) || num < 0) {
+      throw new ValidationError("Field 'shippingAmount' must be >= 0");
+    }
+  }
+
+  const discountAmount = data['discountAmount'];
+  if (discountAmount !== undefined && discountAmount !== null) {
+    const num = Number(discountAmount);
+    if (!Number.isFinite(num) || num < 0) {
+      throw new ValidationError("Field 'discountAmount' must be >= 0");
+    }
+  }
+}
+
+export function validateCustomerOrderStatusUpdate(
+  current: {
+    status: string;
+    paymentStatus: string;
+    fulfillmentStatus: string;
+  },
+  update: Record<string, unknown>
+): void {
+  const status = update['status'];
+  if (status !== undefined && status !== null && status !== '') {
+    if (!CUSTOMER_ORDER_STATUSES.includes(status as (typeof CUSTOMER_ORDER_STATUSES)[number])) {
+      throw new ValidationError(`Field 'status' must be one of: ${CUSTOMER_ORDER_STATUSES.join(', ')}`);
+    }
+    if (
+      status === 'PendingPayment' &&
+      (PAID_ORDER_STATUSES.has(current.status) || current.paymentStatus === 'Paid')
+    ) {
+      throw new OrderStatusTransitionInvalidError(
+        'A paid order cannot move back to PendingPayment'
+      );
+    }
+  }
+
+  const paymentStatus = update['paymentStatus'];
+  if (paymentStatus !== undefined && paymentStatus !== null && paymentStatus !== '') {
+    if (!PAYMENT_STATUSES.includes(paymentStatus as (typeof PAYMENT_STATUSES)[number])) {
+      throw new ValidationError(
+        `Field 'paymentStatus' must be one of: ${PAYMENT_STATUSES.join(', ')}`
+      );
+    }
+  }
+
+  const fulfillmentStatus = update['fulfillmentStatus'];
+  if (fulfillmentStatus !== undefined && fulfillmentStatus !== null && fulfillmentStatus !== '') {
+    if (
+      !FULFILLMENT_STATUSES.includes(fulfillmentStatus as (typeof FULFILLMENT_STATUSES)[number])
+    ) {
+      throw new ValidationError(
+        `Field 'fulfillmentStatus' must be one of: ${FULFILLMENT_STATUSES.join(', ')}`
+      );
+    }
+    if (
+      current.status === 'Cancelled' &&
+      fulfillmentStatus !== current.fulfillmentStatus &&
+      fulfillmentStatus !== 'Cancelled'
+    ) {
+      throw new FulfillmentStatusTransitionInvalidError(
+        'A cancelled order cannot advance fulfillment status'
+      );
+    }
+  }
+}
+
+export {
+  OrderStatusTransitionInvalidError,
+  PaymentStatusTransitionInvalidError,
+  FulfillmentStatusTransitionInvalidError,
+};
 
 export function validateCustomerAddressData(
   data: Record<string, unknown>,

@@ -1245,6 +1245,138 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/customer-orders:
+    get:
+      summary: List customer orders (admin)
+      description: Paginated admin list with filters and search. Supplier-internal fields are never returned.
+      tags:
+        - Admin Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: customerId
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/CustomerOrderStatus'
+        - in: query
+          name: paymentStatus
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - in: query
+          name: fulfillmentStatus
+          schema:
+            $ref: '#/components/schemas/FulfillmentStatus'
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [createdAt, totalAmount, orderNumber]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Customer orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create customer order (admin)
+      tags:
+        - Admin Customer Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerOrderRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customer-orders/{id}:
+    get:
+      summary: Get customer order by ID (admin)
+      tags:
+        - Admin Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Customer order retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '404':
+          description: CUSTOMER_ORDER_NOT_FOUND
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customer-orders/{id}/status:
+    patch:
+      summary: Update customer order statuses (admin)
+      description: Update any combination of order, payment, and fulfillment status with transition validation.
+      tags:
+        - Admin Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerOrderStatusRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid status transition (ORDER_STATUS_TRANSITION_INVALID, PAYMENT_STATUS_TRANSITION_INVALID, FULFILLMENT_STATUS_TRANSITION_INVALID)
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Legacy paths below — superseded by /api/admin/customer-orders* (KAN-18)
   /customer-orders:
     get:
       summary: Get all customer orders
