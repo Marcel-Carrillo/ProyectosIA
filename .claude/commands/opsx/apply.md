@@ -69,6 +69,27 @@ Implement tasks from an OpenSpec change.
       - Frontend → same with `ai-specs/agents/frontend-developer.md` → `.claude/doc/<change-name>/frontend.md`
       Then read `.claude/doc/<change-name>/{backend,frontend}.md` and implement from those file-level plans together with `design.md`. The agents ONLY plan; you (the parent) do the building and run tests/servers. For small single-file or non-code changes you may skip the subagent and implement directly — state why.
 
+4c. **Jira integration — transition to "En curso"**
+
+   Read `{changeRoot}/.jira`. If the file exists and contains a ticket key:
+
+   Transition to **"En curso"** (transition ID `21`) — try in order:
+
+   **Option 1 — curl:**
+   ```bash
+   JIRA_KEY=$(cat {changeRoot}/.jira)
+   curl -s -o /dev/null -w "%{http_code}" -X POST \
+     "https://mcarhueti.atlassian.net/rest/api/3/issue/${JIRA_KEY}/transitions" \
+     -H "Authorization: Basic $(echo -n "${ATLASSIAN_EMAIL}:${ATLASSIAN_API_TOKEN}" | base64 -w 0)" \
+     -H "Content-Type: application/json" \
+     -d '{"transition":{"id":"21"}}'
+   ```
+
+   **Option 2 — MCP comment fallback:**
+   `mcp__atlassian__add_jira_comment`: `"Implementation started for OpenSpec change \`<name>\`. Agent working — En curso."`
+
+   Skip silently if `.jira` does not exist.
+
 5. **Show current progress**
 
    Display:
@@ -109,6 +130,27 @@ Implement tasks from an OpenSpec change.
 8. **Commit and open the Pull Request (MANDATORY — last step)**
 
    When all tasks are complete, load and apply `ai-specs/skills/commit/SKILL.md`: stage the change (exclude `.env`, `node_modules`, build artifacts), commit with a Conventional Commit message, push the feature branch, and run `gh pr create`. Report the PR URL. A change is not complete without a PR.
+
+8b. **Jira integration — transition to "En revisión"**
+
+   After the PR URL is reported, read `{changeRoot}/.jira`. If found:
+
+   Transition to **"En revisión"** (transition ID `31`) — try in order:
+
+   **Option 1 — curl:**
+   ```bash
+   JIRA_KEY=$(cat {changeRoot}/.jira)
+   curl -s -o /dev/null -w "%{http_code}" -X POST \
+     "https://mcarhueti.atlassian.net/rest/api/3/issue/${JIRA_KEY}/transitions" \
+     -H "Authorization: Basic $(echo -n "${ATLASSIAN_EMAIL}:${ATLASSIAN_API_TOKEN}" | base64 -w 0)" \
+     -H "Content-Type: application/json" \
+     -d '{"transition":{"id":"31"}}'
+   ```
+
+   **Option 2 — MCP comment fallback:**
+   `mcp__atlassian__add_jira_comment`: `"PR open for OpenSpec change \`<name>\` — moving to En revisión. PR: <pr-url>"`
+
+   Skip silently if `.jira` does not exist.
 
 **Output During Implementation**
 
