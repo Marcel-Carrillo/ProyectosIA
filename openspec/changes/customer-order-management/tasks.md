@@ -107,5 +107,5 @@
 - [x] 17.1 Load and apply `ai-specs/skills/commit/SKILL.md`.
 - [x] 17.2 Verify all tasks `[x]` and required reports exist under `openspec/changes/customer-order-management/reports/`.
 - [x] 17.3 Stage relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`).
-- [ ] 17.4 Create commit with Conventional Commit message referencing `customer-order-management` / KAN-18.
-- [ ] 17.5 Push feature branch; `gh pr create`; report the PR URL in chat.
+- [x] 17.4 Create commit with Conventional Commit message referencing `customer-order-management` / KAN-18.
+- [x] 17.5 Push feature branch; `gh pr create`; report the PR URL in chat. _(PR #21)_
