@@ -40,6 +40,23 @@ import {
   RefundAmountExceedsBalanceError,
   RefundTransitionInvalidError,
 } from '../infrastructure/repositories/refundRepository';
+import {
+  AdminDisabledError,
+  AdminRefreshTokenInvalidError,
+  InvalidAdminCredentialsError,
+} from '../infrastructure/repositories/adminUserRepository';
+import {
+  AccountEmailConflictError,
+  InvalidCustomerCredentialsError,
+  AccountDisabledError,
+  CustomerRefreshTokenInvalidError,
+  ResetTokenInvalidError,
+  InvalidTotpCodeError,
+} from '../application/services/customerAuthService';
+import {
+  CouponExhaustedError,
+  CouponNotFoundError,
+} from '../application/services/wishlistCouponService';
 
 interface AppError {
   message: string;
@@ -130,6 +147,28 @@ export function globalErrorHandler(
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof RefundTransitionInvalidError) {
     statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof InvalidAdminCredentialsError) {
+    statusCode = 401; code = err.code; message = err.message;
+  } else if (err instanceof AdminDisabledError) {
+    statusCode = 403; code = err.code; message = err.message;
+  } else if (err instanceof AdminRefreshTokenInvalidError) {
+    statusCode = 401; code = err.code; message = err.message;
+  } else if (err instanceof AccountEmailConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof InvalidCustomerCredentialsError) {
+    statusCode = 401; code = err.code; message = err.message;
+  } else if (err instanceof AccountDisabledError) {
+    statusCode = 403; code = err.code; message = err.message;
+  } else if (err instanceof CustomerRefreshTokenInvalidError) {
+    statusCode = 401; code = err.code; message = err.message;
+  } else if (err instanceof ResetTokenInvalidError) {
+    statusCode = 400; code = err.code; message = err.message;
+  } else if (err instanceof InvalidTotpCodeError) {
+    statusCode = 401; code = err.code; message = err.message;
+  } else if (err instanceof CouponExhaustedError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof CouponNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
   } else if ('status' in err && typeof err.status === 'number') {
     statusCode = err.status;
     code = (err as AppError).code ?? 'ERROR';

@@ -5,9 +5,12 @@ import { Product, ProductVariant } from '../../types/product';
 import ProductGallery from '../../components/storefront/ProductGallery';
 import VariantSelector from '../../components/storefront/VariantSelector';
 import PriceTag from '../../components/storefront/PriceTag';
+import { useCart } from '../../contexts/CartContext';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -174,7 +177,22 @@ const ProductPage: React.FC = () => {
 
             <button
               type="button"
-              aria-label="Add to cart (not yet available)"
+              aria-label="Add to cart"
+              disabled={!priceVariant}
+              onClick={() => {
+                if (!priceVariant || !product) return;
+                addItem({
+                  productVariantId: priceVariant.id,
+                  quantity: 1,
+                  productName: product.name,
+                  size: priceVariant.size,
+                  color: priceVariant.color,
+                  publicPrice: String(priceVariant.publicPrice),
+                  imageUrl: product.mainImageUrl,
+                });
+                setAdded(true);
+                setTimeout(() => setAdded(false), 2000);
+              }}
               style={{
                 width: '100%',
                 minHeight: 48,
@@ -185,10 +203,11 @@ const ProductPage: React.FC = () => {
                 fontFamily: 'var(--font-family-body)',
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                cursor: 'pointer',
+                cursor: priceVariant ? 'pointer' : 'not-allowed',
+                opacity: priceVariant ? 1 : 0.6,
               }}
             >
-              Add to Cart
+              {added ? 'Added to cart' : 'Add to Cart'}
             </button>
           </div>
         </div>

@@ -1,8 +1,17 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { Navbar, Nav, Container } from 'react-bootstrap';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { useAdminAuth } from '../contexts/AdminAuthContext';
 
 const Layout: React.FC = () => {
+  const { admin, logout } = useAdminAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/admin/login');
+  };
+
   return (
     <div className="admin-shell">
       <Navbar bg="dark" variant="dark" expand="lg">
@@ -21,6 +30,12 @@ const Layout: React.FC = () => {
               <Nav.Link as={NavLink} to="/return-requests">Return Requests</Nav.Link>
               <Nav.Link as={NavLink} to="/refunds">Refunds</Nav.Link>
             </Nav>
+            <div className="d-flex align-items-center gap-2 text-white-50 small">
+              {admin?.email && <span>{admin.email}</span>}
+              <Button variant="outline-light" size="sm" onClick={handleLogout}>
+                Log out
+              </Button>
+            </div>
           </Navbar.Collapse>
         </Container>
       </Navbar>
