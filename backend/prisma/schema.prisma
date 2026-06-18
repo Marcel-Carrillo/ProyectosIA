@@ -141,6 +141,7 @@ model CustomerOrder {
   items                   CustomerOrderItem[]
   supplierOrders          SupplierOrder[]
   refunds                 Refund[]
+  shipments               Shipment[]
   couponRedemption        CouponRedemption?
 
   @@index([customerId])
@@ -189,6 +190,7 @@ model SupplierOrder {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   items               SupplierOrderItem[]
+  shipments           Shipment[]
 
   @@index([customerOrderId])
   @@index([supplierId])
@@ -231,6 +233,27 @@ model Refund {
 
   @@index([customerOrderId])
   @@index([returnRequestId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Shipment {
+  id              Int            @id @default(autoincrement())
+  customerOrderId Int
+  customerOrder   CustomerOrder  @relation(fields: [customerOrderId], references: [id])
+  supplierOrderId Int?
+  supplierOrder   SupplierOrder? @relation(fields: [supplierOrderId], references: [id])
+  carrier         String?        @db.VarChar(100)
+  trackingNumber  String?        @db.VarChar(100)
+  trackingUrl     String?        @db.VarChar(500)
+  status          String         @default("Pending")
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([customerOrderId])
+  @@index([supplierOrderId])
   @@index([status])
   @@index([createdAt])
 }

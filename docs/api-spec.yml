@@ -1785,15 +1785,23 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /shipments:
+  /api/admin/shipments:
     get:
       summary: Get all shipments
-      description: Retrieve a paginated list of shipments
+      description: Retrieve a paginated list of shipments. Requires admin authentication.
       tags:
         - Shipments
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Number of items per page
         - in: query
           name: customerOrderId
           schema:
@@ -1818,14 +1826,18 @@ paths:
                 $ref: '#/components/schemas/ShipmentListResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
     post:
       summary: Create shipment
-      description: Create shipment information for a customer order or supplier order
+      description: Create shipment information for a customer order. Optionally link to a supplier order. Requires admin authentication.
       tags:
         - Shipments
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -1841,6 +1853,91 @@ paths:
                 $ref: '#/components/schemas/ShipmentResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/shipments/{id}:
+    get:
+      summary: Get shipment by ID
+      description: Retrieve a single shipment with related customer order and supplier order info. Requires admin authentication.
+      tags:
+        - Shipments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shipment ID
+      responses:
+        '200':
+          description: Shipment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/shipments/{id}/status:
+    patch:
+      summary: Update shipment status
+      description: |
+        Transition a shipment to a new status following the state machine:
+        Pending → Shipped | Failed | Returned
+        Shipped → InTransit | Delivered | Failed | Returned
+        InTransit → Delivered | Failed | Returned
+        Delivered, Failed, Returned are terminal states.
+        Requires admin authentication.
+      tags:
+        - Shipments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shipment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  $ref: '#/components/schemas/ShipmentStatus'
+      responses:
+        '200':
+          description: Shipment status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '400':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
