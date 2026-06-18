@@ -179,7 +179,7 @@ const CustomerOrdersPage: React.FC = () => {
             ))}
           </div>
 
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
     </div>
