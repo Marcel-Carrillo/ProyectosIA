@@ -76,8 +76,7 @@ const CustomerOrderDetailPage: React.FC = () => {
 
   const isEligibleForGeneration =
     order != null &&
-    (order.status === 'Paid' || order.status === 'Processing') &&
-    order.status !== 'Cancelled';
+    (order.status === 'Paid' || order.status === 'Processing');
 
   const handleStatusSave = async (update: UpdateCustomerOrderStatusInput) => {
     if (!order) return;
