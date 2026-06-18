@@ -59,6 +59,36 @@ When ready to implement, switch to Sonnet 4.6 and run /opsx:apply
    ```
    This creates a scaffolded change in the planning home resolved by the CLI with `.openspec.yaml`.
 
+3b. **Jira integration — link ticket and transition to "En curso" (optional)**
+
+   Check if the user's request or conversation context contains a Jira ticket key matching `KAN-\d+` (e.g., `KAN-18`).
+
+   **If a ticket key is found:**
+
+   a. Read `openspec/changes/<name>/` path from `openspec status --change "<name>" --json` (`changeRoot`).
+
+   b. Save the ticket key as plain text to `{changeRoot}/.jira` (single line, e.g., `KAN-18`).
+
+   c. Transition the ticket to **"En curso"** (transition ID `21`) — try in order:
+
+      **Option 1 — curl (if `ATLASSIAN_EMAIL` and `ATLASSIAN_API_TOKEN` are set as env vars):**
+      ```bash
+      JIRA_KEY=$(cat {changeRoot}/.jira)
+      curl -s -o /dev/null -w "%{http_code}" -X POST \
+        "https://mcarhueti.atlassian.net/rest/api/3/issue/${JIRA_KEY}/transitions" \
+        -H "Authorization: Basic $(echo -n "${ATLASSIAN_EMAIL}:${ATLASSIAN_API_TOKEN}" | base64 -w 0)" \
+        -H "Content-Type: application/json" \
+        -d '{"transition":{"id":"21"}}'
+      ```
+      A `204` response means success.
+
+      **Option 2 — MCP comment fallback (if curl fails or env vars are missing):**
+      Use `mcp__atlassian__add_jira_comment` with:
+      - `issueKey`: the ticket key
+      - `comment`: `"OpenSpec change \`<name>\` started — moving to En curso. Implement with /opsx:apply."`
+
+   d. If no ticket key is found in context, skip silently — Jira integration is optional.
+
 4. **Get the artifact build order**
    ```bash
    openspec status --change "<name>" --json

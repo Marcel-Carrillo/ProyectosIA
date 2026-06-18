@@ -1,6 +1,6 @@
 # Jira ↔ OpenSpec ↔ Parallel Agents
 
-This project uses **Jira** as the product backlog and **OpenSpec** as the execution spec. Agents read Jira tickets via the Atlassian MCP in Cursor.
+This project uses **Jira** as the product backlog and **OpenSpec** as the execution spec. Agents read and update Jira tickets via the Atlassian MCP and the Jira REST API.
 
 ## Connection
 
@@ -12,6 +12,58 @@ This project uses **Jira** as the product backlog and **OpenSpec** as the execut
 | Cloud ID | `30bcdef3-10b4-462a-9399-72bb3415f042` |
 
 Authenticate in Cursor: **Settings → MCP → Atlassian → Connect**.
+
+## Automated status transitions
+
+The `/opsx:propose`, `/opsx:apply`, and `/opsx:archive` skills automatically transition Jira tickets as work progresses.
+
+### How it works
+
+Each OpenSpec change directory stores its linked Jira ticket in a `.jira` file (e.g., `openspec/changes/customer-order-management/.jira` contains `KAN-18`). The skills read this file to know which ticket to transition.
+
+### Transition mapping
+
+| Skill event | Jira transition | Transition ID |
+|-------------|----------------|---------------|
+| `/opsx:propose` — change created | → **En curso** | `21` |
+| `/opsx:apply` — implementation starts | → **En curso** | `21` |
+| `/opsx:apply` — PR created | → **En revisión** | `31` |
+| `/opsx:archive` — change archived | → **Finalizado** | `41` |
+
+### Transition mechanism (two options, tried in order)
+
+**Option 1 — Jira REST API via curl (preferred)**
+
+Set these environment variables so agents can call the Jira API directly:
+
+```bash
+# Add to your shell profile (.bashrc, .zshrc) or system env vars (Windows)
+export ATLASSIAN_EMAIL="komabones@gmail.com"
+export ATLASSIAN_API_TOKEN="your-api-token-here"
+```
+
+Generate an API token at: https://id.atlassian.com/manage-profile/security/api-tokens
+
+The agent will call:
+```
+POST https://mcarhueti.atlassian.net/rest/api/3/issue/{KEY}/transitions
+Authorization: Basic base64(ATLASSIAN_EMAIL:ATLASSIAN_API_TOKEN)
+{"transition":{"id":"<id>"}}
+```
+
+**Option 2 — MCP comment fallback (automatic)**
+
+If the env vars are not set or the curl fails, the agent adds a comment to the Jira ticket via `mcp__atlassian__add_jira_comment` noting the state change. The ticket status must then be updated manually in the Jira board.
+
+### Linking a ticket to a change
+
+Pass the Jira ticket key in the propose request:
+
+```text
+/opsx:propose customer-order-management for KAN-18
+```
+
+The agent extracts `KAN-18` from the context, saves it to `.jira`, and transitions the ticket.
 
 ## Issue hierarchy
 
@@ -71,44 +123,58 @@ Move Feature to Done when PR is merged. Run `/opsx:archive <change-name>`.
 
 ### Milestones (Epics)
 
-| Key | Milestone |
-|-----|-----------|
-| KAN-9 | M0 – Foundation (done in repo) |
-| KAN-1 | M1 – Admin Catalog |
-| KAN-5 | M2 – Admin Operations |
-| KAN-6 | M3 – Fulfillment & Shipments |
-| KAN-8 | M4 – Returns & Refunds |
-| KAN-7 | M5 – Public Storefront |
-| KAN-10 | M6 – Production Hardening |
+| Key | Milestone | Status |
+|-----|-----------|--------|
+| KAN-9 | M0 – Foundation | Finalizado |
+| KAN-1 | M1 – Admin Catalog | Finalizado |
+| KAN-5 | M2 – Admin Operations | Por hacer |
+| KAN-6 | M3 – Fulfillment & Shipments | Por hacer |
+| KAN-8 | M4 – Returns & Refunds | Por hacer |
+| KAN-7 | M5 – Public Storefront | Por hacer |
+| KAN-10 | M6 – Production Hardening | Por hacer |
 
-### M1 – Admin Catalog
+### M1 – Admin Catalog (Finalizado)
 
-| Key | Feature | OpenSpec change | Parallel subtasks |
-|-----|---------|-----------------|-------------------|
+| Key | Feature | OpenSpec change | Subtasks |
+|-----|---------|-----------------|----------|
 | KAN-2 | Product catalog management | `product-catalog-management` | KAN-3 Backend, KAN-4 Frontend, KAN-13 Integration |
-| KAN-11 | Admin category UI | `admin-category-management-ui` | KAN-12 Frontend only (API exists) |
+| KAN-11 | Admin category UI | `admin-category-management-ui` | KAN-12 Frontend |
+| KAN-14 | Supplier management | `supplier-management` | KAN-16 Backend, KAN-15 Frontend, KAN-27 Integration |
+| KAN-17 | Customer management | `customer-management` | — |
+| KAN-24 | Public storefront catalog | `storefront-real-products` | — |
 
 ### M2 – Admin Operations
 
-| Key | Feature | OpenSpec change |
-|-----|---------|-----------------|
-| KAN-14 | Supplier management | `supplier-management` | KAN-16 Backend, KAN-15 Frontend |
-| KAN-17 | Customer management | `customer-management` |
-| KAN-18 | Customer order management | `customer-order-management` |
-| KAN-19 | Supplier order management | `supplier-order-management` |
+| Key | Feature | OpenSpec change | Subtasks |
+|-----|---------|-----------------|----------|
+| KAN-18 | Customer order management | `customer-order-management` | KAN-28 Backend, KAN-29 Frontend, KAN-30 Integration |
+| KAN-19 | Supplier order management | `supplier-order-management` | KAN-31 Backend, KAN-32 Frontend, KAN-33 Integration |
 
-Add `[Backend]` / `[Frontend]` subtasks to KAN-17–KAN-19 before parallel work (same pattern as KAN-14).
+### M3 – Fulfillment & Shipments
 
-### M3–M6 (Features created; add subtasks when starting)
+| Key | Feature | OpenSpec change | Subtasks |
+|-----|---------|-----------------|----------|
+| KAN-22 | Shipment management | `shipment-management` | KAN-34 Backend, KAN-35 Frontend, KAN-36 Integration |
 
-| Key | Feature | OpenSpec |
-|-----|---------|----------|
-| KAN-22 | Shipment management | `shipment-management` |
-| KAN-20 | Refund management | `refund-management` |
-| KAN-21 | Checkout MVP | `checkout-mvp` |
-| KAN-23 | Admin authentication | `admin-authentication` |
+### M4 – Returns & Refunds
 
-**To add manually in Jira:** Return request management (`return-request-management`), Public catalog (`public-catalog`), Production deployment (`production-deployment`).
+| Key | Feature | OpenSpec change | Subtasks |
+|-----|---------|-----------------|----------|
+| KAN-25 | Return request management | `return-request-management` | KAN-37 Backend, KAN-38 Frontend, KAN-39 Integration |
+| KAN-20 | Refund management | `refund-management` | KAN-40 Backend, KAN-41 Frontend, KAN-42 Integration |
+
+### M5 – Public Storefront
+
+| Key | Feature | OpenSpec change | Subtasks |
+|-----|---------|-----------------|----------|
+| KAN-21 | Checkout MVP | `checkout-mvp` | KAN-43 Backend, KAN-44 Frontend, KAN-45 Integration |
+
+### M6 – Production Hardening
+
+| Key | Feature | OpenSpec change | Subtasks |
+|-----|---------|-----------------|----------|
+| KAN-23 | Admin authentication | `admin-authentication` | KAN-46 Backend, KAN-47 Frontend, KAN-48 Integration |
+| KAN-26 | Production deployment | `production-deployment` | KAN-49 Infra, KAN-50 CI/CD |
 
 ## Labels
 

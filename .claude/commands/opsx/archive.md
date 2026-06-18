@@ -93,6 +93,27 @@ Archive a completed change in the experimental workflow.
    - Stage and commit them (e.g. `chore(openspec): archive <name> and sync main specs`), excluding `.env`/secrets. If review is wanted, push and open a PR via `ai-specs/skills/commit/SKILL.md`.
    - Per `ai-specs/skills/using-git-worktrees/SKILL.md`, if the change used a Git worktree, OFFER to clean it up now — explicit, only after the PR is merged: verify no uncommitted/unpushed work, then `git worktree remove` and delete the merged branch. NEVER auto-remove a worktree with unsaved work.
 
+8. **Jira integration — transition to "Finalizado"**
+
+   Check `{archivePath}/.jira` (the directory was moved there in step 5). If the file exists and contains a ticket key:
+
+   Transition to **"Finalizado"** (transition ID `41`) — try in order:
+
+   **Option 1 — curl:**
+   ```bash
+   JIRA_KEY=$(cat {archivePath}/.jira)
+   curl -s -o /dev/null -w "%{http_code}" -X POST \
+     "https://mcarhueti.atlassian.net/rest/api/3/issue/${JIRA_KEY}/transitions" \
+     -H "Authorization: Basic $(echo -n "${ATLASSIAN_EMAIL}:${ATLASSIAN_API_TOKEN}" | base64 -w 0)" \
+     -H "Content-Type: application/json" \
+     -d '{"transition":{"id":"41"}}'
+   ```
+
+   **Option 2 — MCP comment fallback:**
+   `mcp__atlassian__add_jira_comment`: `"OpenSpec change \`<name>\` archived and merged — moving to Finalizado."`
+
+   **Note:** Read `.jira` from the archive path AFTER step 5 moves the directory. If not found, skip silently.
+
 **Output On Success**
 
 ```
