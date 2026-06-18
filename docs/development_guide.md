@@ -35,7 +35,31 @@ DATABASE_URL="postgresql://ecommerceUser:ecommercePassword@localhost:5432/ecomme
 PORT=3000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3001
+API_PUBLIC_URL=http://localhost:3000
 ```
+
+OAuth redirect URIs must point at the **backend** callback routes (not the React app):
+
+| Provider | Callback URL (local) |
+|----------|----------------------|
+| Google | `http://localhost:3000/api/public/auth/google/callback` |
+| Facebook | `http://localhost:3000/api/public/auth/facebook/callback` |
+| Apple | `http://localhost:3000/api/public/auth/apple/callback` |
+
+Add provider secrets to `backend/.env` when available:
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+FACEBOOK_APP_ID=
+FACEBOOK_APP_SECRET=
+APPLE_CLIENT_ID=
+APPLE_TEAM_ID=
+APPLE_KEY_ID=
+APPLE_PRIVATE_KEY=
+```
+
+Until credentials are set, social login buttons stay hidden on the storefront (`GET /api/public/auth/oauth/providers`). Non-production builds can still use `POST /api/public/auth/oauth/mock` for manual OAuth testing.
 
 **Frontend Environment** (`frontend/.env.development`):
 
@@ -48,14 +72,14 @@ PORT=3001
 
 ### 3. Database Setup (PostgreSQL with Docker)
 
-Start the PostgreSQL database using Docker Compose:
+Start the PostgreSQL database and Mailpit (local SMTP + inbox UI) using Docker Compose:
 
 ```bash
-# Start PostgreSQL container
-docker-compose up -d
+# Start PostgreSQL and Mailpit
+docker compose up -d
 
-# Verify the database is running
-docker-compose ps
+# Verify containers are running
+docker compose ps
 ```
 
 The PostgreSQL database will be available at:
@@ -65,6 +89,13 @@ The PostgreSQL database will be available at:
 * **Database**: `ecommerceDb`
 * **Username**: `ecommerceUser`
 * **Password**: `ecommercePassword`
+
+**Mailpit** (password reset emails in local dev):
+
+* **SMTP**: `localhost:1025` (configure `SMTP_HOST` / `SMTP_PORT` in `backend/.env`)
+* **Web UI**: [http://localhost:8025](http://localhost:8025) — inspect reset links after `POST /api/public/auth/forgot-password`
+
+Integration test `passwordResetEmail.test.ts` exercises this flow when Mailpit is running.
 
 ### 4. Backend Setup
 

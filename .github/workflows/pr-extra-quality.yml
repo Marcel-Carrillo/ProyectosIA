@@ -17,6 +17,38 @@ jobs:
     name: backend-quality
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ecommerceDb_test
+          POSTGRES_USER: ecommerceUser
+          POSTGRES_PASSWORD: ecommercePassword
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://ecommerceUser:ecommercePassword@localhost:5432/ecommerceDb_test
+      PORT: "3000"
+      FRONTEND_URL: http://localhost:3001
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: AdminPass1
+      ADMIN_JWT_SECRET: ci-admin-jwt-secret-minimum-32-characters-long
+      ADMIN_JWT_EXPIRES_IN: 15m
+      CUSTOMER_JWT_SECRET: ci-customer-jwt-secret-minimum-32-chars-long
+      CUSTOMER_JWT_EXPIRES_IN: 15m
+      COOKIE_SECRET: ci-cookie-secret-minimum-32-characters-long-x
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      SMTP_FROM: noreply@example.com
+      SMTP_STRICT: "false"
+
     defaults:
       run:
         working-directory: backend
@@ -33,6 +65,12 @@ jobs:
         run: npm ci
       - name: Run ESLint
         run: npm run lint
+      - name: Apply DB migrations
+        run: npx prisma migrate deploy
+      - name: Seed admin user and coupons
+        run: |
+          npx ts-node prisma/seedAdmin.ts
+          npx ts-node prisma/seedCoupons.ts
       - name: Run unit tests
         run: npm test -- --runInBand
       - name: Run TypeScript build check

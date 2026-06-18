@@ -1956,6 +1956,88 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  # ─── Admin authentication (required for all other /api/admin/* routes) ───
+  /api/admin/auth/login:
+    post:
+      summary: Admin login
+      tags: [Admin Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: Returns admin profile and accessToken; sets admin_refresh cookie }
+        '401': { description: INVALID_CREDENTIALS }
+
+  /api/admin/auth/me:
+    get:
+      summary: Current admin profile
+      tags: [Admin Auth]
+      security: [{ AdminBearer: [] }]
+      responses:
+        '200': { description: Admin profile without passwordHash }
+        '401': { description: Unauthorized }
+
+  # ─── Public storefront auth & account ───
+  /api/public/auth/register:
+    post:
+      summary: Register customer account
+      tags: [Customer Auth]
+      responses:
+        '201': { description: Account created with accessToken and refresh cookie }
+
+  /api/public/auth/login:
+    post:
+      summary: Customer login
+      tags: [Customer Auth]
+      responses:
+        '200': { description: Session or mfaRequired + mfaToken when 2FA enabled }
+
+  /api/public/account/profile:
+    get:
+      summary: Get own customer profile
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      responses:
+        '200': { description: Customer profile }
+        '401': { description: Unauthorized }
+
+  /api/public/account/wishlist:
+    get:
+      summary: List wishlist
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      responses:
+        '200': { description: Wishlist items }
+
+  /api/public/checkout/guest:
+    post:
+      summary: Guest checkout
+      tags: [Checkout]
+      responses:
+        '201': { description: CustomerOrder created with snapshots }
+
+  /api/public/checkout:
+    post:
+      summary: Authenticated checkout
+      tags: [Checkout]
+      security: [{ CustomerBearer: [] }]
+      responses:
+        '201': { description: Order for token customerId }
+
+  /api/public/coupons/validate:
+    post:
+      summary: Validate coupon code
+      tags: [Coupons]
+      responses:
+        '200': { description: valid true/false with discountAmount or reason }
+
 components:
   parameters:
     IdPathParam:

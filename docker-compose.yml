@@ -11,5 +11,12 @@ services:
     volumes:
       - ecommerce-db-data:/var/lib/postgresql/data
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ecommerce-mailpit
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+
 volumes:
   ecommerce-db-data:

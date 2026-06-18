@@ -236,6 +236,31 @@ Represents a customer who buys from the online store.
 
 * `addresses`: One-to-many relationship with CustomerAddress model
 * `customerOrders`: One-to-many relationship with CustomerOrder model
+* `account`: Optional one-to-one relationship with CustomerAccount model
+
+### 6b. AdminUser
+
+Store administrator credentials for the admin panel (MVP: single seeded admin).
+
+**Fields:** `id`, `email` (unique), `passwordHash`, `status` (Active | Disabled), `createdAt`, `updatedAt`
+
+**Relationships:** `refreshTokens` → AdminRefreshToken
+
+### 6c. CustomerAccount
+
+Buyer login identity linked 1:1 to Customer. Supports local password, OAuth (Google/Apple/Facebook), and optional TOTP 2FA.
+
+**Fields:** `id`, `customerId` (unique FK), `email` (unique), `passwordHash?`, `authProvider`, OAuth ids, `status`, `totpSecret?`, `totpEnabled`, `lastLoginAt`, timestamps
+
+**Relationships:** `customer`, `refreshTokens`, `resetTokens`, `wishlistItems`
+
+### 6d. WishlistItem
+
+Authenticated buyer saved variant. Unique per (`customerAccountId`, `productVariantId`).
+
+### 6e. Coupon / CouponRedemption
+
+Promotional codes validated at checkout. `CouponRedemption` links a coupon to a `CustomerOrder` with `discountAmount`.
 
 ### 7. CustomerAddress
 

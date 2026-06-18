@@ -76,6 +76,7 @@ model ProductVariant {
   updatedAt         DateTime  @updatedAt
   customerOrderItems  CustomerOrderItem[]
   supplierOrderItems  SupplierOrderItem[]
+  wishlistItems       WishlistItem[]
 }
 
 model ProductImage {
@@ -98,6 +99,7 @@ model Customer {
   updatedAt DateTime          @updatedAt
   addresses      CustomerAddress[]
   customerOrders CustomerOrder[]
+  account        CustomerAccount?
 }
 
 model CustomerAddress {
@@ -138,6 +140,7 @@ model CustomerOrder {
   cancelledAt             DateTime?
   items                   CustomerOrderItem[]
   supplierOrders          SupplierOrder[]
+  couponRedemption        CouponRedemption?
 
   @@index([customerId])
   @@index([status])
@@ -210,4 +213,114 @@ model SupplierOrderItem {
   @@index([supplierOrderId])
   @@index([customerOrderItemId])
   @@index([productVariantId])
+}
+
+model AdminUser {
+  id            Int                 @id @default(autoincrement())
+  email         String              @unique @db.VarChar(255)
+  passwordHash  String              @db.VarChar(255)
+  status        String              @default("Active")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  refreshTokens AdminRefreshToken[]
+}
+
+model AdminRefreshToken {
+  id          Int       @id @default(autoincrement())
+  adminUserId Int
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique @db.VarChar(255)
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId])
+  @@index([tokenHash])
+}
+
+model CustomerAccount {
+  id            Int                     @id @default(autoincrement())
+  customerId    Int                     @unique
+  customer      Customer                @relation(fields: [customerId], references: [id])
+  email         String                  @unique @db.VarChar(255)
+  passwordHash  String?                 @db.VarChar(255)
+  authProvider  String                  @default("local") @db.VarChar(20)
+  googleId      String?                 @unique @db.VarChar(255)
+  appleId       String?                 @unique @db.VarChar(255)
+  facebookId    String?                 @unique @db.VarChar(255)
+  status        String                  @default("Active")
+  totpSecret    String?                 @db.VarChar(255)
+  totpEnabled   Boolean                 @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  refreshTokens CustomerRefreshToken[]
+  resetTokens   PasswordResetToken[]
+  wishlistItems WishlistItem[]
+}
+
+model CustomerRefreshToken {
+  id                Int             @id @default(autoincrement())
+  customerAccountId Int
+  customerAccount   CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Cascade)
+  tokenHash         String          @unique @db.VarChar(255)
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  createdAt         DateTime        @default(now())
+
+  @@index([customerAccountId])
+  @@index([tokenHash])
+}
+
+model PasswordResetToken {
+  id                Int             @id @default(autoincrement())
+  customerAccountId Int
+  customerAccount   CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Cascade)
+  tokenHash         String          @unique @db.VarChar(255)
+  expiresAt         DateTime
+  usedAt            DateTime?
+  createdAt         DateTime        @default(now())
+
+  @@index([customerAccountId])
+  @@index([tokenHash])
+}
+
+model WishlistItem {
+  id               Int             @id @default(autoincrement())
+  customerAccountId Int
+  customerAccount  CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Cascade)
+  productVariantId Int
+  productVariant   ProductVariant  @relation(fields: [productVariantId], references: [id])
+  createdAt        DateTime        @default(now())
+
+  @@unique([customerAccountId, productVariantId])
+  @@index([customerAccountId])
+}
+
+model Coupon {
+  id             Int                @id @default(autoincrement())
+  code           String             @unique @db.VarChar(50)
+  type           String             @db.VarChar(20)
+  value          Decimal            @db.Decimal(10, 2)
+  minOrderAmount Decimal            @default(0) @db.Decimal(10, 2)
+  maxUses        Int?
+  usedCount      Int                @default(0)
+  active         Boolean            @default(true)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  redemptions    CouponRedemption[]
+}
+
+model CouponRedemption {
+  id              Int           @id @default(autoincrement())
+  couponId        Int
+  coupon          Coupon        @relation(fields: [couponId], references: [id])
+  customerOrderId Int           @unique
+  customerOrder   CustomerOrder @relation(fields: [customerOrderId], references: [id])
+  discountAmount  Decimal       @db.Decimal(10, 2)
+  createdAt       DateTime      @default(now())
+
+  @@index([couponId])
 }
