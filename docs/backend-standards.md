@@ -1510,6 +1510,26 @@ npx prisma db seed       # Seed database
 - **Build Command**: Use `npm run build:lambda` for Lambda builds
 - **Deployment**: Deploy using Serverless Framework CLI
 
+## Authentication (Admin vs Customer)
+
+The API uses **dual JWT namespaces**:
+
+| Audience | Secret env | Cookie | Middleware |
+|----------|------------|--------|------------|
+| Admin | `ADMIN_JWT_SECRET` | `admin_refresh` | `requireAdminAuth` |
+| Customer | `CUSTOMER_JWT_SECRET` | `customer_refresh` | `requireCustomerAuth` |
+
+- All `/api/admin/*` routes except `POST /api/admin/auth/login` and `POST /api/admin/auth/refresh` require a Bearer token with `aud: "admin"`.
+- Customer account routes under `/api/public/account/*` and authenticated checkout require `aud: "customer"`.
+- Tokens with the wrong audience are rejected with `401`.
+- `passwordHash`, refresh token values, and `totpSecret` must never appear in API responses or logs.
+- Seed admin via `npx ts-node prisma/seedAdmin.ts` using `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+
+```typescript
+// middleware/requireAdminAuth.ts — rejects missing or non-admin tokens
+// middleware/requireCustomerAuth.ts — rejects missing or non-customer tokens
+```
+
 ```typescript
 // lambda.ts
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
