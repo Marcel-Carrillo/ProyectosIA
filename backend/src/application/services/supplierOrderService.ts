@@ -19,7 +19,6 @@ import { CustomerOrderNotFoundError } from '../../infrastructure/repositories/cu
 import {
   SupplierOrderNotFoundError,
   SupplierBlockedError,
-  VariantSupplierMissingError,
 } from '../../infrastructure/repositories/supplierOrderRepository';
 import { SupplierNotFoundError } from '../../infrastructure/repositories/supplierRepository';
 

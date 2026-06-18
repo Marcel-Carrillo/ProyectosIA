@@ -37,7 +37,6 @@ jest.mock('../../../infrastructure/prismaClient', () => ({
   },
 }));
 
-import { prisma } from '../../../infrastructure/prismaClient';
 import { SupplierOrderService } from '../supplierOrderService';
 import { SupplierOrderRepository } from '../../../infrastructure/repositories/supplierOrderRepository';
 

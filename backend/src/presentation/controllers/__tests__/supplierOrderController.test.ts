@@ -24,9 +24,7 @@ jest.mock('../../../infrastructure/repositories/supplierOrderRepository', () => 
 
 import {
   listSupplierOrders,
-  getSupplierOrderById,
   createSupplierOrder,
-  updateSupplierOrderStatus,
   generateSupplierOrdersFromCustomerOrder,
 } from '../supplierOrderController';
 

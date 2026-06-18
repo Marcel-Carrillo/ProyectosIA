@@ -6,8 +6,6 @@ import {
 import {
   SupplierOrderStatusTransitionInvalidError,
   CustomerOrderNotEligibleError,
-  VariantSupplierMissingError,
-  SupplierBlockedError,
 } from '../infrastructure/repositories/supplierOrderRepository';
 
 export class ValidationError extends Error {
