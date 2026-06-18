@@ -65,12 +65,12 @@ The system SHALL expose `POST /api/public/auth/refresh` reading the httpOnly ref
 
 ### Requirement: Buyer can sign in with Google, Apple, or Facebook OAuth
 
-The system SHALL expose `GET /api/public/auth/{google|apple|facebook}` and matching callback routes. Each callback SHALL verify identity server-side, require a verified email from the provider, apply the same email merge rule as registration, store the provider id (`googleId`, `appleId`, or `facebookId`), set `authProvider`, issue tokens, and redirect to the storefront. OAuth verification failure SHALL return `401` with code `OAUTH_VERIFICATION_FAILED`.
+The system SHALL expose `GET /api/public/auth/{google|apple|facebook}` to initiate each OAuth flow and matching callback routes to complete it. `GET /api/public/auth/google/callback` and `GET /api/public/auth/facebook/callback` receive provider redirects via query params. `POST /api/public/auth/apple/callback` receives Apple's redirect as `application/x-www-form-urlencoded` body (Apple's protocol requirement). Each start handler SHALL generate a cryptographically random `state` token, store it encrypted in a short-lived httpOnly cookie (`oauth_state`, max 10 min), and redirect to the provider's authorization URL. Each callback SHALL verify the `state` cookie before processing the code; a missing or mismatched state SHALL return `400` with code `OAUTH_VERIFICATION_FAILED`. Each callback SHALL verify identity server-side, require a verified email from the provider, apply the same email merge rule as registration, store the provider id (`googleId`, `appleId`, or `facebookId`) and `authProvider` (one of `local` | `google` | `apple` | `facebook`) on the account, issue tokens, and redirect to `${FRONTEND_URL}/account?token=${accessToken}`. OAuth verification failure SHALL return `401` with code `OAUTH_VERIFICATION_FAILED`. If provider credentials are not configured, the system SHALL return `501` with code `OAUTH_NOT_CONFIGURED`. Apple SHALL send name/email data only on the first authorization; subsequent logins will not include the `user` field — the system SHALL handle this gracefully using the stored profile.
 
 #### Scenario: Google login for new buyer
 
 - **WHEN** a buyer completes Google OAuth with a new email
-- **THEN** the system creates `Customer` + `CustomerAccount` and redirects with an active session
+- **THEN** the system creates `Customer` + `CustomerAccount` with `authProvider = google`, sets refresh cookie, and redirects to `${FRONTEND_URL}/account?token=…`
 
 #### Scenario: Google login merges existing customer
 
@@ -81,6 +81,66 @@ The system SHALL expose `GET /api/public/auth/{google|apple|facebook}` and match
 
 - **WHEN** a buyer completes Google OAuth and `googleId` already exists
 - **THEN** the system logs in that account and issues new tokens
+
+#### Scenario: Apple login for new buyer
+
+- **WHEN** a buyer completes Apple OAuth (`POST /apple/callback`) with a new email
+- **THEN** the system creates `Customer` + `CustomerAccount` with `authProvider = apple`, sets refresh cookie, and redirects to the storefront
+
+#### Scenario: Apple first login includes name; subsequent logins do not
+
+- **WHEN** a buyer logs in with Apple for the first time, Apple sends `{ user: "{\"name\":{\"firstName\":\"…\",\"lastName\":\"…\"}}" }` in the POST body
+- **THEN** the system saves those names on the `Customer` record
+- **WHEN** the same buyer logs in again, the `user` field is absent
+- **THEN** the system uses the already-stored name and logs in without error
+
+#### Scenario: Apple login for existing Apple account
+
+- **WHEN** a buyer completes Apple OAuth and `appleId` already exists
+- **THEN** the system logs in that account and issues new tokens
+
+#### Scenario: Facebook login for new buyer
+
+- **WHEN** a buyer completes Facebook OAuth (`GET /facebook/callback`) with a new email
+- **THEN** the system creates `Customer` + `CustomerAccount` with `authProvider = facebook`, sets refresh cookie, and redirects to the storefront
+
+#### Scenario: Facebook login merges existing customer
+
+- **WHEN** a buyer completes Facebook OAuth with an email matching an existing `Customer` without an account
+- **THEN** the system links the new `CustomerAccount` to that customer
+
+#### Scenario: Facebook login for existing Facebook account
+
+- **WHEN** a buyer completes Facebook OAuth and `facebookId` already exists
+- **THEN** the system logs in that account and issues new tokens
+
+#### Scenario: OAuth state mismatch is rejected
+
+- **WHEN** a callback arrives without the `oauth_state` cookie or with a non-matching state
+- **THEN** the system clears the cookie and returns `400` with code `OAUTH_VERIFICATION_FAILED`
+
+#### Scenario: Provider not configured returns 501
+
+- **WHEN** a buyer initiates an OAuth flow for a provider whose credentials are not set in the environment
+- **THEN** the system returns `501` with code `OAUTH_NOT_CONFIGURED`
+
+### Requirement: Frontend can discover which OAuth providers are available
+
+The system SHALL expose `GET /api/public/auth/oauth/providers` (no auth required) returning `{ google: boolean, apple: boolean, facebook: boolean }` indicating which providers have credentials configured. The frontend SHALL use this to conditionally render social login buttons.
+
+#### Scenario: Providers endpoint reflects configuration
+
+- **WHEN** only `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are set in the environment
+- **THEN** the endpoint returns `{ google: true, apple: false, facebook: false }`
+
+### Requirement: OAuth mock endpoint available in non-production environments
+
+The system SHALL expose `POST /api/public/auth/oauth/mock` accepting `{ provider, providerId, email, firstName?, lastName? }` that bypasses real provider verification and issues a full session. This endpoint SHALL return `404` when `NODE_ENV === production`. It is intended for automated integration tests only.
+
+#### Scenario: Mock login issues session in test/dev
+
+- **WHEN** a non-production environment receives a valid mock OAuth payload
+- **THEN** the system returns `200` with `{ account, customer, accessToken }` and sets refresh cookie
 
 ### Requirement: Buyer can read current session
 
