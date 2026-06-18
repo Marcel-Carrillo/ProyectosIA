@@ -13,6 +13,7 @@ import SupplierOrderDetailPage from './pages/SupplierOrderDetailPage';
 import ShipmentsPage from './pages/ShipmentsPage';
 import ReturnRequestsPage from './pages/ReturnRequestsPage';
 import RefundsPage from './pages/RefundsPage';
+import RefundDetailPage from './pages/RefundDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import StorefrontLayout from './components/storefront/StorefrontLayout';
 
@@ -58,6 +59,7 @@ const App: React.FC = () => {
           <Route path="shipments" element={<ShipmentsPage />} />
           <Route path="return-requests" element={<ReturnRequestsPage />} />
           <Route path="refunds" element={<RefundsPage />} />
+          <Route path="refunds/:id" element={<RefundDetailPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

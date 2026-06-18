@@ -1900,10 +1900,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /refunds:
+  /api/admin/refunds:
     get:
-      summary: Get all refunds
-      description: Retrieve a paginated list of refunds
+      summary: Get all refunds (admin)
+      description: Retrieve a paginated list of refunds. Requires admin authentication.
       tags:
         - Refunds
       parameters:
@@ -1928,12 +1928,14 @@ paths:
                 $ref: '#/components/schemas/RefundListResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Unauthorized — missing or invalid admin token
         '500':
           $ref: '#/components/responses/InternalServerError'
 
     post:
-      summary: Create refund
-      description: Create a refund for a customer order or return request
+      summary: Create refund (admin)
+      description: Create a total or partial refund for a customer order. Requires admin authentication.
       tags:
         - Refunds
       requestBody:
@@ -1951,6 +1953,69 @@ paths:
                 $ref: '#/components/schemas/RefundResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Unauthorized — missing or invalid admin token
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/refunds/{id}:
+    get:
+      summary: Get refund by ID (admin)
+      description: Retrieve a single refund by its ID. Requires admin authentication.
+      tags:
+        - Refunds
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Successfully retrieved refund
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '401':
+          description: Unauthorized — missing or invalid admin token
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/refunds/{id}/status:
+    patch:
+      summary: Update refund status (admin)
+      description: |
+        Advance a refund through its state machine. Requires admin authentication.
+        Allowed transitions: Pending → Processing, Pending → Cancelled,
+        Processing → Completed, Processing → Failed, Processing → Cancelled.
+        Terminal states (Completed, Failed, Cancelled) do not allow further transitions.
+        When transitioning to Completed, processedAt is set and CustomerOrder.paymentStatus is recalculated.
+      tags:
+        - Refunds
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRefundStatusRequest'
+      responses:
+        '200':
+          description: Refund status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Unauthorized — missing or invalid admin token
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
         '500':
@@ -3693,13 +3758,31 @@ components:
         amount:
           type: number
           format: decimal
-          minimum: 0
+          minimum: 0.01
           example: 49.99
         reason:
           type: string
           maxLength: 500
           nullable: true
           example: Refund for returned item
+        paymentProviderReference:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: PAY-123456
+
+    UpdateRefundStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/RefundStatus'
+        paymentProviderReference:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: PAY-123456
 
     RefundResponse:
       type: object

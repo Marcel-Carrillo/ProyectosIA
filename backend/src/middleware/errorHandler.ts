@@ -34,6 +34,12 @@ import {
   SupplierBlockedError,
   SupplierOrderStatusTransitionInvalidError,
 } from '../infrastructure/repositories/supplierOrderRepository';
+import {
+  RefundNotFoundError,
+  RefundOrderNotPaidError,
+  RefundAmountExceedsBalanceError,
+  RefundTransitionInvalidError,
+} from '../infrastructure/repositories/refundRepository';
 
 interface AppError {
   message: string;
@@ -115,6 +121,14 @@ export function globalErrorHandler(
   } else if (err instanceof ProductArchivedCannotReactivateError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof VariantComparePriceInvalidError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof RefundNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof RefundOrderNotPaidError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof RefundAmountExceedsBalanceError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof RefundTransitionInvalidError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if ('status' in err && typeof err.status === 'number') {
     statusCode = err.status;

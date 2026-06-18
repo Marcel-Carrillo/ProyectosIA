@@ -512,30 +512,51 @@ Represents a full or partial refund associated with a customer order.
 **Fields:**
 
 * `id`: Unique identifier for the refund (Primary Key)
-* `customerOrderId`: Foreign key referencing the CustomerOrder
-* `returnRequestId`: Foreign key referencing the ReturnRequest (optional)
-* `amount`: Refunded amount
+* `customerOrderId`: Foreign key referencing the CustomerOrder (required)
+* `returnRequestId`: Optional nullable integer referencing a ReturnRequest — stored without a DB-level FK constraint until KAN-25 delivers the `ReturnRequest` model
+* `amount`: Refunded amount (Decimal 10,2 — stored as string in domain/API)
 * `reason`: Refund reason (optional, max 500 characters)
 * `status`: Refund status (valid values: Pending, Processing, Completed, Failed, Cancelled)
-* `paymentProviderReference`: External payment provider reference (optional, max 150 characters)
+* `paymentProviderReference`: External payment provider reference set manually by admin (optional, max 150 characters)
 * `createdAt`: Date and time when the refund was created
 * `updatedAt`: Date and time when the refund was last updated
-* `processedAt`: Date and time when the refund was processed (optional)
+* `processedAt`: Date and time when the refund was processed — set automatically when transitioning to `Completed` (optional)
+
+**State Machine:**
+
+```
+Pending → Processing
+Pending → Cancelled
+Processing → Completed  (sets processedAt; triggers paymentStatus recalculation)
+Processing → Failed     (triggers paymentStatus recalculation)
+Processing → Cancelled  (triggers paymentStatus recalculation)
+
+Terminal states: Completed, Failed, Cancelled (no further transitions allowed)
+```
 
 **Validation Rules:**
 
 * Customer order reference is required and must exist in the database
-* Return request reference is optional but must exist in the database if provided
+* Order `paymentStatus` must be `Paid` or `PartiallyRefunded` to create a refund (`REFUND_ORDER_NOT_PAID`)
 * Amount is required and must be greater than 0
-* Refund amount cannot exceed the paid amount minus previous refunds
+* Amount must not exceed `CustomerOrder.totalAmount − Σ refunds[status IN (Completed, Processing)]` — validated inside a Prisma transaction (`REFUND_AMOUNT_EXCEEDS_BALANCE`)
 * Reason is optional but cannot exceed 500 characters
 * Status must be one of: Pending, Processing, Completed, Failed, Cancelled
+* Status transitions must follow the state machine above (`REFUND_TRANSITION_INVALID`)
 * Payment provider reference is optional and cannot exceed 150 characters
+* `returnRequestId` is accepted as nullable; no DB FK constraint until KAN-25
+
+**paymentStatus Synchronization:**
+
+`CustomerOrder.paymentStatus` is recalculated inside the same Prisma transaction on every refund create or status change:
+- `Σ Completed refunds == totalAmount` → `Refunded`
+- `0 < Σ Completed refunds < totalAmount` → `PartiallyRefunded`
+- `Σ Completed refunds == 0` → no change (e.g., after a cancellation)
 
 **Relationships:**
 
 * `customerOrder`: Many-to-one relationship with CustomerOrder model
-* `returnRequest`: Many-to-one relationship with ReturnRequest model
+* `returnRequest`: Logical relationship with ReturnRequest model (no DB FK until KAN-25)
 
 ## Entity Relationship Diagram
 
