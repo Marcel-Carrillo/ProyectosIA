@@ -65,7 +65,7 @@ describe('CustomerOrdersPage', () => {
 
   it('renders orders from list service', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('order-link-1')).toBeInTheDocument());
+    expect(await screen.findByTestId('order-link-1')).toBeInTheDocument();
     expect(mockedList).toHaveBeenCalled();
   });
 
@@ -92,14 +92,12 @@ describe('CustomerOrdersPage', () => {
   it('shows empty state', async () => {
     mockedList.mockResolvedValue(listResult([]));
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('orders-empty')).toBeInTheDocument());
+    expect(await screen.findByTestId('orders-empty')).toBeInTheDocument();
   });
 
   it('shows error state', async () => {
     mockedList.mockRejectedValue(new Error('fail'));
     renderPage();
-    await waitFor(() =>
-      expect(screen.getByText(/Unable to load customer orders/i)).toBeInTheDocument()
-    );
+    expect(await screen.findByText(/Unable to load customer orders/i)).toBeInTheDocument();
   });
 });

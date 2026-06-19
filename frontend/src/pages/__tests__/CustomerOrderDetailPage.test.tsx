@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CustomerOrderDetailPage from '../CustomerOrderDetailPage';
 import { CustomerOrder } from '../../types/customerOrder';
@@ -98,20 +98,20 @@ describe('CustomerOrderDetailPage', () => {
 
   it('renders line items and addresses', async () => {
     renderDetail();
-    await waitFor(() => expect(screen.getByText('ORD-000042')).toBeInTheDocument());
+    expect(await screen.findByText('ORD-000042')).toBeInTheDocument();
     expect(screen.getByText('Black Midi Dress')).toBeInTheDocument();
     expect(screen.getAllByText(/Main St/).length).toBeGreaterThan(0);
   });
 
   it('renders status timeline with paid milestone', async () => {
     renderDetail();
-    await waitFor(() => expect(screen.getByTestId('order-status-timeline')).toBeInTheDocument());
+    expect(await screen.findByTestId('order-status-timeline')).toBeInTheDocument();
     expect(screen.getByText('Last updated')).toBeInTheDocument();
   });
 
   it('does not render supplier cost fields', async () => {
     renderDetail();
-    await waitFor(() => expect(screen.getByText('ORD-000042')).toBeInTheDocument());
+    await screen.findByText('ORD-000042');
     expect(document.body.textContent).not.toMatch(/supplierCost/i);
     expect(document.body.textContent).not.toMatch(/supplierReference/i);
   });

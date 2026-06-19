@@ -1282,6 +1282,24 @@ Assertion pattern:
 ### Async Testing
 - Always use `async/await` for asynchronous operations
 - Use `Promise.allSettled()` for testing concurrent operations
+
+### ESLint / CI requirements (MANDATORY before PR)
+
+CI job **`backend-quality`** runs `npm run lint` (`eslint src --ext .ts`). All new and touched files must pass.
+
+| Rule | Practice |
+|------|----------|
+| `@typescript-eslint/no-unused-vars` | Prefix intentionally unused params with `_` |
+| `@typescript-eslint/no-explicit-any` | Avoid `any`; use proper types or `unknown` |
+| General | Match import style and patterns in neighbouring test files |
+
+Run locally after implementing tests:
+
+```bash
+cd backend
+npm run lint
+npm test -- --watchAll=false --testPathPattern=<feature>
+```
 - Properly handle promise rejections in tests
 - Test timeout scenarios where applicable
 

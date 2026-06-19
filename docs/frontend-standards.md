@@ -604,10 +604,29 @@ create refund
 
 ### ESLint Configuration
 
-* Extend **React App** configuration
-* Include **Jest rules** for testing
-* **Automatic code formatting** and error detection
-* **Consistent code style** across the project
+* Extend **React App** configuration (`react-app`, `react-app/jest`)
+* CI job **`frontend-quality`** runs: `npx eslint src --ext .ts,.tsx` — must pass before merge
+* Include **Jest / Testing Library rules** for test files
+
+#### Testing Library rules (test files)
+
+The project enforces `testing-library/prefer-find-by`. When asserting async UI:
+
+```typescript
+// ✅ Use findBy* (returns a Promise)
+expect(await screen.findByTestId('order-link-1')).toBeInTheDocument();
+expect(await screen.findByText(/unable to load/i)).toBeInTheDocument();
+fireEvent.click(await screen.findByTestId('btn-save'));
+
+// ❌ Do NOT combine waitFor + getBy* for the same assertion
+await waitFor(() => expect(screen.getByTestId('order-link-1')).toBeInTheDocument());
+```
+
+* Reserve `waitFor` for non-query assertions (e.g. mock call counts after debounce + `jest.advanceTimersByTime`).
+* Reference passing tests: `src/pages/__tests__/ProductsPage.test.tsx`, `ShipmentDetailPage.test.tsx`.
+* Run locally before commit: `cd frontend && npx eslint src --ext .ts,.tsx`
+
+Test-file overrides in `package.json` disable `no-container` and `no-node-access` for supplier-field DOM checks.
 
 ### Environment Configuration
 
