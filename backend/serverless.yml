@@ -3,7 +3,7 @@ service: ecommerce-backend
 provider:
   name: aws
   runtime: nodejs20.x
-  region: eu-west-1
+  region: eu-north-1
   environment:
     NODE_ENV: production
     DATABASE_URL: ${ssm:/ecommerce/prod/DATABASE_URL}
@@ -22,7 +22,7 @@ provider:
 
 functions:
   app:
-    handler: dist/lambda.handler
+    handler: src/lambda.handler
     events:
       - http:
           path: /
@@ -34,7 +34,19 @@ functions:
           cors: true
 
 plugins:
+  - serverless-esbuild
   - serverless-offline
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: false
+    external:
+      - '@prisma/client'
+      - '.prisma'
+    packager: npm
+    packagePath: package.json
 
 # resources:
 #   Resources:

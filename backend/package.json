@@ -53,6 +53,7 @@
     "jest": "^29.7.0",
     "prisma": "^5.22.0",
     "serverless": "^3.40.0",
+    "serverless-esbuild": "^1.52.1",
     "serverless-offline": "^13.10.1",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.3",

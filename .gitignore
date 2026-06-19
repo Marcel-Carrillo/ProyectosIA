@@ -39,6 +39,13 @@ playwright/.auth/
 
 # verification screenshots
 verify-*.png
+e2e-*.png
+
+# serverless build artifacts
+backend/.serverless/
+
+# codex cli config
+.codex/
 
 # logs
 *.log
