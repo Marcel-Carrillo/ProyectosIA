@@ -15,7 +15,8 @@
     "prisma:generate": "prisma generate",
     "import:products": "npx ts-node prisma/importEscuelaJs.ts",
     "db:seed": "npx prisma db seed",
-    "deploy:lambda": "serverless deploy"
+    "deploy:lambda": "serverless deploy",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
