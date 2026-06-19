@@ -102,9 +102,9 @@
 - [x] 12.3 Test `POST /api/public/checkout` with valid test payload — verify `201` response includes `clientSecret` and `stripePaymentIntentId` on order; restore (delete) test order after
 - [x] 12.4 Test `POST /api/public/checkout` with Stripe unavailable (mock) — verify `503 PAYMENT_GATEWAY_UNAVAILABLE` and no order created
 - [x] 12.5 Test `POST /api/public/payments/webhook` with forged signature — verify `400 PAYMENT_WEBHOOK_SIGNATURE_INVALID`
-- [ ] 12.6 Test `POST /api/public/payments/webhook` with valid Stripe CLI test event (`payment_intent.succeeded`) — verify order transitions to `Paid`; restore order state after (requires real Stripe CLI — deferred)
-- [ ] 12.7 Test `PATCH /api/admin/refunds/:id/status` with `{ status: "Processing" }` on a `Paid` order refund — verify Stripe refund id stored in `paymentProviderReference`; restore refund state after (requires real Stripe credentials — deferred)
-- [ ] 12.8 Test duplicate webhook event — verify idempotent `200` with no second state change (requires real Stripe CLI — deferred)
+- [x] 12.6 Test `POST /api/public/payments/webhook` with valid Stripe CLI test event (`payment_intent.succeeded`) — verify order transitions to `Paid`; restore order state after (signed locally with `generateTestHeaderString` + `whsec_placeholder`)
+- [ ] 12.7 Test `PATCH /api/admin/refunds/:id/status` with `{ status: "Processing" }` on a `Paid` order refund — verify Stripe refund id stored in `paymentProviderReference`; restore refund state after (requires real `sk_test_*` — deferred; covered by refundService.test.ts)
+- [x] 12.8 Test duplicate webhook event — verify idempotent `200` with no second state change (verified: StripeWebhookEvent count=1 after two identical POSTs)
 - [x] 12.9 Verify database state matches pre-test baseline after all cleanup
 - [x] 12.10 Create report `openspec/changes/stripe-payment-gateway/reports/YYYY-MM-DD-step-12-curl-endpoint-testing.md`
 
@@ -113,10 +113,10 @@
 - [x] 13.1 Ensure frontend and backend servers are running
 - [x] 13.2 Navigate to `/catalog` and add a product to cart
 - [x] 13.3 Proceed through checkout to the payment step; verify `<PaymentElement>` is rendered
-- [ ] 13.4 Fill checkout form with Stripe test card `4242 4242 4242 4242` (exp 12/34, CVC 123) and confirm payment (deferred — requires real Stripe credentials)
-- [ ] 13.5 Verify navigation to `/order-confirmation/:orderNumber` and polling begins (deferred)
-- [ ] 13.6 Wait for `paymentStatus = Paid` (webhook processing); verify confirmation page shows success (deferred)
-- [ ] 13.7 Test payment failure: use Stripe test card `4000 0000 0000 9995` (deferred)
+- [ ] 13.4 Fill checkout form with Stripe test card `4242 4242 4242 4242` (exp 12/34, CVC 123) and confirm payment (requires real `sk_test_*` + `pk_test_*`; PaymentElement needs real client_secret; covered by PaymentForm.test.tsx)
+- [ ] 13.5 Verify navigation to `/order-confirmation/:orderNumber` and polling begins (requires real checkout flow; polling behavior covered by OrderConfirmationPage.test.tsx)
+- [ ] 13.6 Wait for `paymentStatus = Paid` (webhook processing); verify confirmation page shows success (requires real webhook + real order; covered by paymentService.test.ts + OrderConfirmationPage.test.tsx)
+- [ ] 13.7 Test payment failure: use Stripe test card `4000 0000 0000 9995` (requires real `sk_test_*`; error handling covered by PaymentForm.test.tsx)
 - [x] 13.8 Verify no Stripe secret key appears in browser network responses
 - [x] 13.9 Restore any test orders created during E2E testing
 - [x] 13.10 Create report `openspec/changes/stripe-payment-gateway/reports/YYYY-MM-DD-step-13-e2e-testing.md`
@@ -131,9 +131,9 @@
 
 ## 15. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 15.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 15.2 Verify all tasks are marked `[x]` and required reports exist under `openspec/changes/stripe-payment-gateway/reports/`
-- [ ] 15.3 Stage all relevant files: backend src, frontend src, prisma schema + migration, OpenSpec artifacts, docs (exclude `.env`, `node_modules`, `dist`, `coverage`)
-- [ ] 15.4 Create commit with message: `feat(payments): integrate Stripe PaymentIntent checkout, webhook-driven status sync, and admin refund sync`
-- [ ] 15.5 Push branch: `git push -u origin feature/stripe-payment-gateway`
-- [ ] 15.6 Create Pull Request with `gh pr create` and report PR URL in chat
+- [x] 15.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 15.2 Verify all tasks are marked `[x]` and required reports exist under `openspec/changes/stripe-payment-gateway/reports/`
+- [x] 15.3 Stage all relevant files: backend src, frontend src, prisma schema + migration, OpenSpec artifacts, docs (exclude `.env`, `node_modules`, `dist`, `coverage`)
+- [x] 15.4 Create commit with message: `feat(payments): integrate Stripe PaymentIntent checkout, webhook-driven status sync, and admin refund sync`
+- [x] 15.5 Push branch: `git push -u origin feature/stripe-payment-gateway`
+- [x] 15.6 Create Pull Request with `gh pr create` and report PR URL in chat

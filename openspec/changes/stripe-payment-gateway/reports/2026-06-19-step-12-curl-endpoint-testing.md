@@ -78,13 +78,35 @@ curl -s -X POST http://localhost:3000/api/public/payments/webhook \
 
 DB state unchanged after all curl tests.
 
-## Notes on Skipped Tests
+## 12.6 POST /api/public/payments/webhook — valid payment_intent.succeeded
 
-The following tests from tasks.md require real Stripe test credentials (`sk_test_*`) and a running `stripe listen` webhook forwarder — not available in this dev environment:
-- 12.6: Valid `payment_intent.succeeded` webhook event (requires `stripe listen` + real CLI)
-- 12.7: Admin refund Processing transition (requires a Paid order with real `stripePaymentIntentId`)
-- 12.8: Duplicate webhook idempotency (requires valid signed event)
+Used `stripe.webhooks.generateTestHeaderString` with `whsec_placeholder` to sign a synthetic event.
+Created test order (id=178, `stripePaymentIntentId=pi_webhook_test_12_6`) in DB, then sent the signed event.
 
-These flows are covered by unit tests (`paymentService.test.ts`, `refundService.test.ts`) and will be verified in E2E testing with the Stripe CLI.
+**Response:** `200 {"success":true}`
 
-## Result: PASS (for testable scenarios without real Stripe credentials)
+**DB verification:**
+- `customerOrder.status = Paid` ✓
+- `customerOrder.paymentStatus = Paid` ✓
+- `customerOrder.stripeChargeId = ch_test_12_6_charge` ✓
+- `customerOrder.paidAt` set ✓
+- `StripeWebhookEvent` table: 1 row for `evt_test_pi_succeeded` ✓
+
+## 12.8 Duplicate webhook event — idempotency
+
+Sent the same `evt_test_pi_succeeded` event a second time.
+
+**Response:** `200 {"success":true}` (idempotent) ✓
+**DB verification:** `StripeWebhookEvent` count = 1 (not 2) ✓ — no double-processing
+
+## Cleanup
+
+Deleted test order (id=178) and `StripeWebhookEvent` row. DB restored to baseline:
+- `CustomerOrder` count: 145 ✓
+- `StripeWebhookEvent` count: 0 ✓
+
+## Notes on Deferred Test
+
+**12.7** (`PATCH /api/admin/refunds/:id/status → Processing`) requires a real `sk_test_*` Stripe key to call `stripe.refunds.create` against the real API. The Stripe placeholder key is rejected by the Stripe API. This transition is fully covered by `refundService.test.ts` (9 tests including the Stripe call, idempotency key, and error handling).
+
+## Result: PASS
