@@ -821,3 +821,92 @@ Rationale:
 - No performance bottleneck has been identified that justifies the migration risk at this stage.
 
 If Vite is reconsidered, create a dedicated change proposal through the OpenSpec workflow before proceeding.
+
+## Stripe.js / Elements Integration
+
+### Package Installation
+
+```bash
+npm install @stripe/stripe-js @stripe/react-stripe-js --legacy-peer-deps
+```
+
+The `--legacy-peer-deps` flag is required due to React 19 peer dependency constraints in the current CRA setup.
+
+### Loading Stripe
+
+Always load Stripe via `loadStripe` from `@stripe/stripe-js` — never instantiate directly. Load only once per checkout session, using the publishable key returned by `GET /api/public/payments/config`:
+
+```typescript
+import { loadStripe } from '@stripe/stripe-js';
+import { getStripeConfig } from '../services/paymentService';
+
+const { publishableKey } = await getStripeConfig();
+const stripePromise = loadStripe(publishableKey);
+```
+
+Store `stripePromise` in component state — do not recreate it on every render.
+
+### Elements Provider
+
+Wrap the payment step in `<Elements>` with `clientSecret` from the checkout API response:
+
+```tsx
+<Elements stripe={stripePromise} options={{ clientSecret: order.clientSecret }}>
+  <PaymentForm orderNumber={order.orderNumber} onSuccess={...} onError={...} />
+</Elements>
+```
+
+`clientSecret` comes from the backend's `POST /api/public/checkout` response. It must not be logged or stored beyond the current session.
+
+### Two-Step Checkout
+
+Checkout is split into two sequential steps:
+
+1. **Details step** — address + guest info + coupon → calls `POST /api/public/checkout` → receives `clientSecret`
+2. **Payment step** — renders `<PaymentElement>` → calls `stripe.confirmPayment` with `redirect: 'if_required'`
+
+Never merge these steps or call `stripe.confirmPayment` in the same handler that creates the order.
+
+### Payment Confirmation Pattern
+
+```typescript
+const { error, paymentIntent } = await stripe.confirmPayment({
+  elements,
+  confirmParams: {
+    return_url: `${window.location.origin}/order-confirmation/${orderNumber}`,
+  },
+  redirect: 'if_required',
+});
+```
+
+- If `error` is set → display `error.message`, allow retry
+- If `paymentIntent.status === 'succeeded'` → navigate to confirmation
+- If redirect occurred → Stripe.js handles it automatically (3DS)
+
+### Payment Status Polling
+
+After confirmation, navigate to the order confirmation page with `state: { paymentStatus: 'processing' }`. The confirmation page polls `GET /api/public/account/orders` every 2 seconds (max 30 seconds) for `paymentStatus === 'Paid'`:
+
+- On `Paid` → show success alert, stop polling
+- On `Failed` → show error alert, stop polling
+- On timeout (15 attempts × 2s = 30s) → show fallback warning with link to order history
+
+### Security Constraints
+
+- `STRIPE_SECRET_KEY` must **never** appear in frontend code, environment variables, or API responses
+- Only `publishableKey` from `GET /api/public/payments/config` may be used on the frontend
+- `stripePaymentIntentId` and `stripeChargeId` are backend-internal — they must not appear in any API response consumed by the frontend
+
+### Testing Stripe Components
+
+Mock `@stripe/react-stripe-js` in unit tests — never use real Stripe.js in Jest:
+
+```typescript
+jest.mock('@stripe/react-stripe-js', () => ({
+  PaymentElement: () => <div data-testid="payment-element" />,
+  useStripe: () => mockUseStripe(),
+  useElements: () => mockUseElements(),
+}));
+```
+
+Mock `confirmPayment` to test success, error, and network-failure paths independently.

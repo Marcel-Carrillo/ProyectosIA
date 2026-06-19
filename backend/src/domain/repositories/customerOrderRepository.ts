@@ -70,5 +70,10 @@ export interface ICustomerOrderRepository {
     amounts: { subtotal: string; shipping: string; discount: string; total: string }
   ): Promise<CustomerOrder>;
   updateStatus(id: number, data: CustomerOrderStatusUpdateData): Promise<CustomerOrder>;
+  findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<CustomerOrder | null>;
+  updateStripeFields(
+    id: number,
+    data: { stripePaymentIntentId?: string | null; stripeChargeId?: string | null }
+  ): Promise<CustomerOrder>;
   generateNextOrderNumber(): Promise<string>;
 }

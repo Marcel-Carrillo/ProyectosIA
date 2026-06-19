@@ -781,3 +781,40 @@ export function validateReturnRequestStatusUpdate(data: Record<string, unknown>)
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stripe / Payment error classes
+// ─────────────────────────────────────────────────────────────────────────────
+
+export class PaymentGatewayUnavailableError extends Error {
+  readonly code = 'PAYMENT_GATEWAY_UNAVAILABLE' as const;
+  readonly status = 503;
+
+  constructor(message = 'Payment gateway is unavailable') {
+    super(message);
+    this.name = 'PaymentGatewayUnavailableError';
+    Object.setPrototypeOf(this, PaymentGatewayUnavailableError.prototype);
+  }
+}
+
+export class PaymentWebhookSignatureInvalidError extends Error {
+  readonly code = 'PAYMENT_WEBHOOK_SIGNATURE_INVALID' as const;
+  readonly status = 400;
+
+  constructor(message = 'Webhook signature verification failed') {
+    super(message);
+    this.name = 'PaymentWebhookSignatureInvalidError';
+    Object.setPrototypeOf(this, PaymentWebhookSignatureInvalidError.prototype);
+  }
+}
+
+export class RefundStripeError extends Error {
+  readonly code = 'REFUND_STRIPE_ERROR' as const;
+  readonly status = 409;
+
+  constructor(message = 'Stripe refund creation failed') {
+    super(message);
+    this.name = 'RefundStripeError';
+    Object.setPrototypeOf(this, RefundStripeError.prototype);
+  }
+}

@@ -1566,4 +1566,82 @@ export const handler = async (
 };
 ```
 
+## Stripe Payment Integration Standards
+
+### Stripe Client Singleton
+
+The Stripe client lives at `backend/src/infrastructure/stripe/stripeClient.ts` and is a module-level singleton:
+
+```typescript
+import Stripe from 'stripe';
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? 'sk_test_placeholder', {
+  apiVersion: '2026-05-27.dahlia',
+});
+```
+
+The `sk_test_placeholder` fallback allows Jest to import this module without a real key. Tests that exercise Stripe must mock this module with `jest.mock('../../../infrastructure/stripe/stripeClient', ...)`.
+
+### Secret Key Protection (CRITICAL)
+
+- `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` **MUST NEVER** appear in any API response, log line, or be exposed to clients
+- Only `STRIPE_PUBLISHABLE_KEY` may be returned via `GET /api/public/payments/config`
+- `stripePaymentIntentId` and `stripeChargeId` on `CustomerOrder` are **INTERNAL ONLY** — exclude them from all public API serializers
+
+### Webhook raw-body Middleware Ordering (CRITICAL)
+
+Stripe webhook signature verification requires the raw request body as a `Buffer`. In `index.ts`, `express.raw()` **must be registered before** `express.json()` on the webhook path:
+
+```typescript
+// MUST come before express.json()
+app.use('/api/public/payments/webhook', express.raw({ type: 'application/json' }));
+app.use(express.json());
+```
+
+Reversing this order breaks `stripe.webhooks.constructEvent` signature verification.
+
+### Webhook Idempotency
+
+All processed Stripe events are logged in `StripeWebhookEvent` by `stripeEventId`. Before processing, check for an existing record — duplicate events are silently ignored. This prevents double-payment on Stripe retries.
+
+### Amount Conversion
+
+Always use the `toStripeAmount(amount: Decimal, currency: string): number` helper (`backend/src/infrastructure/stripe/toStripeAmount.ts`) to convert `Decimal` amounts to Stripe's integer minor-unit format:
+
+```typescript
+// 29.99 EUR → 2999
+Math.round(amount.times(100).toNumber())
+```
+
+Never perform inline conversion — rounding errors from floating-point arithmetic corrupt charge amounts.
+
+### Idempotency Keys
+
+Always pass idempotency keys to Stripe calls to prevent duplicate charges on retries:
+
+| Operation | Key format |
+|-----------|-----------|
+| `paymentIntents.create` | `order:{orderNumber}:pi` |
+| `refunds.create` | `refund:{refundId}` |
+
+### Stripe SDK Version
+
+The installed SDK version may differ from what is documented in the plan. Always use the installed SDK's `API_VERSION` constant:
+
+```bash
+node -e "const Stripe = require('stripe'); console.log(Stripe.API_VERSION)"
+```
+
+### Environment Variables
+
+Required in non-test environments (validated at startup in `index.ts`):
+
+| Variable | Description |
+|----------|-------------|
+| `STRIPE_SECRET_KEY` | Server-side API key — never expose to clients |
+| `STRIPE_PUBLISHABLE_KEY` | Browser-safe key returned by `/api/public/payments/config` |
+| `STRIPE_WEBHOOK_SECRET` | Used by `stripe.webhooks.constructEvent` for signature verification |
+| `STRIPE_MODE` | `test` or `live` — returned alongside publishable key for client-side Stripe.js initialization |
+
+---
+
 This document serves as the foundation for maintaining code quality and consistency across the women's fashion ecommerce backend application. All team members should follow these practices to ensure a maintainable, scalable, and testable codebase.

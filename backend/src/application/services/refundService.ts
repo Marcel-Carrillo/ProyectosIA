@@ -15,7 +15,10 @@ import {
 } from '../../infrastructure/repositories/refundRepository';
 import { CustomerOrderNotFoundError } from '../../infrastructure/repositories/customerOrderRepository';
 import { ReturnRequestNotFoundError } from '../../infrastructure/repositories/returnRequestRepository';
-import { validateRefundCreateData, validateRefundStatusUpdate } from '../validator';
+import { validateRefundCreateData, validateRefundStatusUpdate, RefundStripeError } from '../validator';
+import { stripe } from '../../infrastructure/stripe/stripeClient';
+import { toStripeAmount } from '../../infrastructure/stripe/toStripeAmount';
+import { logger } from '../../infrastructure/logger';
 
 const ELIGIBLE_ORDER_PAYMENT_STATUSES = new Set(['Paid', 'PartiallyRefunded']);
 
@@ -112,7 +115,7 @@ export class RefundService {
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existing = await tx.refund.findUnique({
         where: { id },
-        select: { id: true, status: true, customerOrderId: true },
+        select: { id: true, status: true, customerOrderId: true, amount: true },
       });
 
       if (!existing) throw new RefundNotFoundError();
@@ -123,6 +126,43 @@ export class RefundService {
         );
       }
 
+      let resolvedPaymentProviderReference = paymentProviderReference;
+
+      if (existing.status === 'Pending' && newStatus === 'Processing') {
+        const order = await tx.customerOrder.findUnique({
+          where: { id: existing.customerOrderId },
+          select: { stripePaymentIntentId: true, currency: true },
+        });
+
+        if (!order?.stripePaymentIntentId) {
+          throw new RefundStripeError(
+            'Cannot create Stripe refund: order has no stripePaymentIntentId'
+          );
+        }
+
+        const amountDecimal = new Decimal(existing.amount.toString());
+        const currency = order.currency ?? 'EUR';
+
+        let stripeRefundObj: { id: string };
+        try {
+          stripeRefundObj = await stripe.refunds.create(
+            {
+              payment_intent: order.stripePaymentIntentId,
+              amount: toStripeAmount(amountDecimal, currency),
+            },
+            { idempotencyKey: `refund:${existing.id}` }
+          );
+        } catch (err) {
+          logger.error('Stripe refund creation failed', {
+            refundId: existing.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          throw new RefundStripeError();
+        }
+
+        resolvedPaymentProviderReference = stripeRefundObj.id;
+      }
+
       const processedAt = newStatus === 'Completed' ? new Date() : undefined;
 
       const updated = await tx.refund.update({
@@ -130,7 +170,9 @@ export class RefundService {
         data: {
           status: newStatus,
           ...(processedAt !== undefined && { processedAt }),
-          ...(paymentProviderReference !== undefined && { paymentProviderReference }),
+          ...(resolvedPaymentProviderReference !== undefined && {
+            paymentProviderReference: resolvedPaymentProviderReference,
+          }),
         },
       });
 

@@ -62,6 +62,8 @@ const mockRepo: jest.Mocked<ICustomerOrderRepository> = {
   findById: jest.fn(),
   create: jest.fn(),
   updateStatus: jest.fn(),
+  findByStripePaymentIntentId: jest.fn(),
+  updateStripeFields: jest.fn(),
   generateNextOrderNumber: jest.fn(),
 };
 
