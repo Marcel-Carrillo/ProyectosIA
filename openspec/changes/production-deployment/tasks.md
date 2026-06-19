@@ -123,9 +123,9 @@
 
 ## 11. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 11.2 Verify all tasks are marked `[x]` and reports exist under `openspec/changes/production-deployment/reports/`
-- [ ] 11.3 Stage all relevant files (exclude `.env`, `node_modules`, `dist/`, `coverage/`); include: `backend/package.json`, `backend/package-lock.json`, `backend/serverless.yml`, `backend/.env.example`, `backend/src/routes/healthRoutes.ts`, `backend/src/routes/__tests__/healthRoutes.test.ts`, `backend/src/index.ts`, `.github/workflows/deploy.yml`, `scripts/smoke.sh`, `docs/development_guide.md`, `docs/backend-standards.md`, `docs/api-spec.yml`, `openspec/changes/production-deployment/`
-- [ ] 11.4 Create commit with message: `feat(KAN-26): add production deployment pipeline, DB health check, and smoke tests`
-- [ ] 11.5 Push branch `feature/KAN-26-production-deployment` to remote origin
-- [ ] 11.6 Run `gh pr create` and report the PR URL in chat
+- [x] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 11.2 Verify all tasks are marked `[x]` and reports exist under `openspec/changes/production-deployment/reports/`
+- [x] 11.3 Stage all relevant files (exclude `.env`, `node_modules`, `dist/`, `coverage/`); include: `backend/package.json`, `backend/package-lock.json`, `backend/serverless.yml`, `backend/.env.example`, `backend/src/routes/healthRoutes.ts`, `backend/src/routes/__tests__/healthRoutes.test.ts`, `backend/src/index.ts`, `.github/workflows/deploy.yml`, `scripts/smoke.sh`, `docs/development_guide.md`, `docs/backend-standards.md`, `docs/api-spec.yml`, `openspec/changes/production-deployment/`
+- [x] 11.4 Create commit with message: `feat(KAN-26): add production deployment pipeline, DB health check, and smoke tests`
+- [x] 11.5 Push branch `feature/KAN-26-production-deployment` to remote origin
+- [x] 11.6 Run `gh pr create` and report the PR URL in chat
