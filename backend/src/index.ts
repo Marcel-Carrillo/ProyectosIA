@@ -29,6 +29,24 @@ for (const key of requiredEnvVars) {
   }
 }
 
+if (process.env.NODE_ENV === 'production') {
+  const productionRequiredVars = [
+    'ADMIN_JWT_SECRET',
+    'CUSTOMER_JWT_SECRET',
+    'COOKIE_SECRET',
+    'SMTP_HOST',
+    'SMTP_USER',
+    'SMTP_PASS',
+    'SMTP_FROM',
+  ];
+  const missingProdVars = productionRequiredVars.filter((key) => !process.env[key]);
+  if (missingProdVars.length > 0) {
+    throw new Error(
+      `Missing required production environment variables: ${missingProdVars.join(', ')}`
+    );
+  }
+}
+
 export const app = express();
 
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002')

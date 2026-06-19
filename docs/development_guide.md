@@ -10,7 +10,7 @@ The project uses a React frontend, a Node.js/TypeScript/Express backend, Prisma,
 
 Ensure you have the following installed:
 
-* **Node.js** (v24.16.0 or higher)
+* **Node.js** (v20.0.0 or higher — aligns with AWS Lambda `nodejs20.x` runtime)
 * **npm** (v8 or higher)
 * **Docker** and **Docker Compose**
 * **Git**
@@ -296,10 +296,18 @@ npm start
 After starting the project, verify:
 
 ```text
-Backend health:  http://localhost:3000/health  → 200 {"status":"ok"}
+Backend health:  http://localhost:3000/health  → 200 {"status":"ok","db":"up"}
 Backend API:     http://localhost:3000
 Frontend app:    http://localhost:3001
 PostgreSQL:      localhost:5432
+```
+
+When the database is unreachable, `GET /health` returns HTTP 503 with `{"status":"error","db":"down"}`.
+
+Run the post-deploy smoke script against a running API:
+
+```bash
+bash scripts/smoke.sh http://localhost:3000
 ```
 
 If the backend cannot connect to the database, verify:
@@ -324,3 +332,105 @@ After setup, validate the basic ecommerce flow:
 8. Update supplier order status.
 9. Register shipment information.
 10. Verify customer order fulfillment status.
+
+## 🚀 Production Deployment (AWS Serverless)
+
+This section documents the MVP production pipeline: backend on AWS Lambda (Serverless Framework), frontend on S3 + CloudFront, secrets in SSM Parameter Store, and CI deploy via GitHub Actions.
+
+### Prerequisites
+
+- **AWS CLI** configured with credentials for the deploy IAM user
+- **Node.js 20** (matches Lambda `nodejs20.x` runtime and CI)
+- **Serverless Framework**: `npm i -g serverless` (or use `npx serverless` from `backend/`)
+- **GitHub CLI** (`gh`) for PR workflow (optional locally)
+- **PostgreSQL** production database (RDS or equivalent)
+
+**Prerequisite gate:** KAN-23 (admin authentication) must be verified Done before exposing the admin API surface in production.
+
+### One-time AWS setup
+
+1. **SSM Parameter Store** — create SecureString parameters under `/ecommerce/prod/`:
+
+   | Parameter | Purpose |
+   |-----------|---------|
+   | `DATABASE_URL` | PostgreSQL connection string (append `?connection_limit=1` for Lambda) |
+   | `ADMIN_JWT_SECRET` | Admin JWT signing secret |
+   | `CUSTOMER_JWT_SECRET` | Customer JWT signing secret |
+   | `COOKIE_SECRET` | Cookie-parser secret (min 32 chars) |
+   | `ADMIN_JWT_EXPIRES_IN` | Admin access token TTL |
+   | `CUSTOMER_JWT_EXPIRES_IN` | Customer access token TTL |
+   | `SMTP_HOST` | SMTP server host |
+   | `SMTP_PORT` | SMTP port |
+   | `SMTP_SECURE` | `true` or `false` |
+   | `SMTP_USER` | SMTP username |
+   | `SMTP_PASS` | SMTP password |
+   | `SMTP_FROM` | From address for transactional email |
+   | `FRONTEND_URL` | Public storefront URL (CORS / redirects) |
+
+2. **S3 bucket** — create a bucket for the CRA `frontend/build/` artifacts (manual, one-time).
+
+3. **CloudFront distribution** — point origin at the S3 bucket (manual, one-time).
+
+4. **IAM user** — least-privilege policy for CI: Lambda deploy, SSM read, S3 sync, CloudFront invalidation.
+
+5. **CloudWatch alarm** (manual, one-time) — alarm name `ecommerce-api-5xx-high`:
+   - Metric: `AWS/ApiGateway` → `5XXError`
+   - Threshold: ≥ 5 errors in a 5-minute period
+   - Action: SNS notification (configure as needed)
+
+### GitHub Actions secrets
+
+Configure these repository secrets for `.github/workflows/deploy.yml`:
+
+| Secret | Purpose |
+|--------|---------|
+| `PROD_DATABASE_URL` | `prisma migrate deploy` in CI |
+| `AWS_ACCESS_KEY_ID` | AWS deploy credentials |
+| `AWS_SECRET_ACCESS_KEY` | AWS deploy credentials |
+| `PROD_API_BASE_URL` | Post-deploy smoke test base URL |
+| `REACT_APP_API_BASE_URL` | Baked into frontend production build |
+| `PROD_S3_BUCKET` | S3 bucket name for frontend sync |
+| `PROD_CF_DIST_ID` | CloudFront distribution ID for cache invalidation |
+
+### Deploy sequence (manual or CI)
+
+The `deploy` workflow on push to `master` runs the same steps:
+
+```bash
+# Backend
+cd backend
+npm ci
+npm run build
+npx prisma generate
+DATABASE_URL="$PROD_DATABASE_URL" npx prisma migrate deploy
+npx serverless deploy --stage prod
+
+# Frontend
+cd ../frontend
+npm ci
+REACT_APP_API_BASE_URL="$PROD_API_URL" npm run build
+aws s3 sync build/ s3://$PROD_S3_BUCKET --delete
+aws cloudfront create-invalidation --distribution-id $PROD_CF_DIST_ID --paths "/*"
+
+# Smoke test
+bash scripts/smoke.sh "$PROD_API_BASE_URL"
+```
+
+### Smoke tests
+
+`scripts/smoke.sh` accepts an optional base URL (default `http://localhost:4000`). For local dev use port **3000**:
+
+```bash
+bash scripts/smoke.sh http://localhost:3000
+```
+
+Assertions: `GET /health` → 200 with `"status"` in body; `GET /api/public/products` → 200; `GET /api/admin/products` (no token) → 401.
+
+### Rollback
+
+- **Backend:** `cd backend && npx serverless rollback --stage prod`
+- **Frontend:** Re-sync a previous `frontend/build/` artifact to S3 and invalidate CloudFront
+
+### Lambda database connections
+
+Append `?connection_limit=1` to `DATABASE_URL` in SSM for Lambda to avoid exhausting PostgreSQL connection limits.

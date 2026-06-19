@@ -1506,9 +1506,10 @@ npx prisma db seed       # Seed database
 
 ### Serverless Framework
 
-- **Configuration File**: `serverless.yml` defines Lambda configuration
-- **Build Command**: Use `npm run build:lambda` for Lambda builds
-- **Deployment**: Deploy using Serverless Framework CLI
+- **Configuration File**: `serverless.yml` defines Lambda configuration (`nodejs20.x` runtime)
+- **Build Command**: Use `npm run build` (`tsc` → `dist/`) before deploy; handler entry is `dist/lambda.handler`
+- **Deployment**: Deploy using `npm run deploy:lambda` or `npx serverless deploy` from `backend/`
+- **Secrets**: Production secrets are injected via SSM Parameter Store references in `serverless.yml` (`/ecommerce/prod/*`)
 
 ## Authentication (Admin vs Customer)
 

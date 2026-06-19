@@ -37,6 +37,28 @@ servers:
     description: Production server
 
 paths:
+  /health:
+    get:
+      summary: Health check
+      description: |
+        Unauthenticated endpoint for load balancers and monitoring. Probes database connectivity
+        with a lightweight `SELECT 1` query via Prisma.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server is running and database is reachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Server is running but database is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthErrorResponse'
+
   /categories:
     get:
       summary: Get all categories
@@ -2352,6 +2374,42 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
 
   schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - db
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+          example: ok
+        db:
+          type: string
+          enum:
+            - up
+          example: up
+      additionalProperties: false
+
+    HealthErrorResponse:
+      type: object
+      required:
+        - status
+        - db
+      properties:
+        status:
+          type: string
+          enum:
+            - error
+          example: error
+        db:
+          type: string
+          enum:
+            - down
+          example: down
+      additionalProperties: false
+
     ProductStatus:
       type: string
       enum:
