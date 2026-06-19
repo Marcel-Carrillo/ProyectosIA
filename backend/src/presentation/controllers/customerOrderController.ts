@@ -20,13 +20,26 @@ export async function listCustomerOrders(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { search, status, paymentStatus, fulfillmentStatus, customerId, page, pageSize, sort, order } =
-      req.query;
+    const {
+      search,
+      status,
+      paymentStatus,
+      fulfillmentStatus,
+      customerId,
+      createdFrom,
+      createdTo,
+      page,
+      pageSize,
+      sort,
+      order,
+    } = req.query;
     const result = await customerOrderService.findAll({
       search: search as string | undefined,
       status: status as string | undefined,
       paymentStatus: paymentStatus as string | undefined,
       fulfillmentStatus: fulfillmentStatus as string | undefined,
+      createdFrom: createdFrom as string | undefined,
+      createdTo: createdTo as string | undefined,
       customerId: customerId ? parseInt(String(customerId), 10) : undefined,
       page: page ? parseInt(String(page), 10) : undefined,
       pageSize: pageSize ? parseInt(String(pageSize), 10) : undefined,

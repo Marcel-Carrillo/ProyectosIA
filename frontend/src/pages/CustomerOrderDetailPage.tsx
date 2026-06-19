@@ -12,6 +12,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import StatusBadge from '../components/admin/StatusBadge';
 import OrderStatusControl from '../components/admin/OrderStatusControl';
+import OrderStatusTimeline from '../components/admin/OrderStatusTimeline';
 import { CustomerOrder, UpdateCustomerOrderStatusInput, CustomerOrderItem } from '../types/customerOrder';
 import { SupplierOrder } from '../types/supplierOrder';
 import { Refund } from '../types/refund';
@@ -188,6 +189,13 @@ const CustomerOrderDetailPage: React.FC = () => {
         </div>
       </div>
 
+      <Card className="mb-4">
+        <Card.Body>
+          <Card.Title className="h6">Status timeline</Card.Title>
+          <OrderStatusTimeline order={order} />
+        </Card.Body>
+      </Card>
+
       <Row className="g-3 mb-4">
         <Col md={6}>
           <Card className="h-100">
@@ -261,9 +269,9 @@ const CustomerOrderDetailPage: React.FC = () => {
                   <td>{item.totalPrice}</td>
                   {canCreateReturn && (
                     <td>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary admin-touch-btn"
                         onClick={() => { setSelectedReturnItem(item); setShowReturnModal(true); }}
                         data-testid={`btn-create-return-${item.id}`}
                       >
@@ -285,7 +293,7 @@ const CustomerOrderDetailPage: React.FC = () => {
             <div className="mb-3">
               <button
                 type="button"
-                className="btn btn-outline-primary"
+                className="btn btn-outline-primary admin-touch-btn"
                 onClick={() => void handleGenerateSupplierOrders()}
                 disabled={generating}
                 data-testid="btn-generate-supplier-orders"
@@ -320,6 +328,7 @@ const CustomerOrderDetailPage: React.FC = () => {
               <Button
                 size="sm"
                 variant="outline-primary"
+                className="admin-touch-btn"
                 onClick={() => setShowRefundModal(true)}
                 data-testid="btn-create-refund"
               >
@@ -424,7 +433,7 @@ const CustomerOrderDetailPage: React.FC = () => {
         </Card.Body>
       </Card>
 
-      <Modal show={showRefundModal} onHide={() => setShowRefundModal(false)}>
+      <Modal show={showRefundModal} onHide={() => setShowRefundModal(false)} fullscreen="sm-down">
         <Modal.Header closeButton>
           <Modal.Title>Create Refund</Modal.Title>
         </Modal.Header>
@@ -473,6 +482,7 @@ const CustomerOrderDetailPage: React.FC = () => {
             <Button
               type="submit"
               variant="primary"
+              className="admin-touch-btn"
               disabled={refundSubmitting}
               data-testid="btn-submit-refund"
             >
@@ -485,6 +495,7 @@ const CustomerOrderDetailPage: React.FC = () => {
       <Modal
         show={showReturnModal}
         onHide={() => { setShowReturnModal(false); setReturnReason(''); setReturnError(''); }}
+        fullscreen="sm-down"
       >
         <Modal.Header closeButton>
           <Modal.Title>Create Return Request</Modal.Title>
@@ -522,6 +533,7 @@ const CustomerOrderDetailPage: React.FC = () => {
             <Button
               type="submit"
               variant="primary"
+              className="admin-touch-btn"
               disabled={returnSubmitting || returnReason.trim().length === 0}
               data-testid="btn-submit-return"
             >

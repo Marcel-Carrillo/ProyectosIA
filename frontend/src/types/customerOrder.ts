@@ -84,6 +84,8 @@ export interface CustomerOrderQueryParams {
   paymentStatus?: PaymentStatus;
   fulfillmentStatus?: FulfillmentStatus;
   search?: string;
+  createdFrom?: string;
+  createdTo?: string;
   sort?: 'createdAt' | 'totalAmount' | 'orderNumber';
   order?: 'asc' | 'desc';
 }

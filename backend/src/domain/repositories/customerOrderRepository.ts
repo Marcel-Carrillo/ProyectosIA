@@ -38,6 +38,8 @@ export interface CustomerOrderListFilters {
   paymentStatus?: string;
   fulfillmentStatus?: string;
   search?: string;
+  createdFrom?: string;
+  createdTo?: string;
   sort?: 'createdAt' | 'totalAmount' | 'orderNumber';
   order?: 'asc' | 'desc';
 }

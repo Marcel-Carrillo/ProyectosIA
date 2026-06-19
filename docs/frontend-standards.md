@@ -387,6 +387,17 @@ refundService.ts
 * **PII rule**: never log or display `email`/`phone` in error messages or console; use only `customerId` and operation name in any debug output.
 * **Testing**: RTL tests mock `customerService` and child modals; use `findBy*` queries for all async assertions.
 
+#### Admin customer-order panel patterns
+
+* **Service**: `frontend/src/services/customerOrderService.ts` calls `/api/admin/customer-orders` (list, get, create, updateStatus, generateSupplierOrders).
+* **Types**: `frontend/src/types/customerOrder.ts` — three status dimensions, `AddressSnapshot`, `CustomerOrderQueryParams` (includes optional `createdFrom`/`createdTo`).
+* **Pages**: `CustomerOrdersPage` (debounced search, status filters, date-range inputs, URL sync, dual card/table render); `CustomerOrderDetailPage` (items, addresses, totals, linked supplier orders/refunds/returns).
+* **Components**: `OrderStatusControl` (three independent selects, PATCH only changed fields); `OrderStatusTimeline` (derived milestones from `createdAt`, `paidAt`, `cancelledAt`, `updatedAt`).
+* **Security**: never render `supplierCost`, `supplierReference`, or supplier notes in customer-order UI.
+* **Mobile**: refund/return modals use `fullscreen="sm-down"`; primary actions use `admin-touch-btn` (44px min tap target).
+* **Test IDs**: `order-search`, `order-date-from`, `order-date-to`, `order-link-{id}`, `order-status-timeline`, `order-status-control`, `btn-save-status`.
+* **Testing**: RTL page tests under `frontend/src/pages/__tests__/CustomerOrdersPage.test.tsx` and `CustomerOrderDetailPage.test.tsx`; Cypress `frontend/cypress/e2e/customer-orders.cy.ts`.
+
 ## UI/UX Standards
 
 ### Bootstrap Integration

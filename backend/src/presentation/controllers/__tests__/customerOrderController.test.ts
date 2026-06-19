@@ -79,6 +79,25 @@ describe('customerOrderController', () => {
     });
   });
 
+  it('listCustomerOrders passes createdFrom and createdTo filters', async () => {
+    const result = makeListResult();
+    mockFindAll.mockResolvedValue(result);
+    const res = mockRes();
+    await listCustomerOrders(
+      {
+        query: { createdFrom: '2026-06-01', createdTo: '2026-06-30' },
+      } as unknown as Request,
+      res,
+      mockNext
+    );
+    expect(mockFindAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        createdFrom: '2026-06-01',
+        createdTo: '2026-06-30',
+      })
+    );
+  });
+
   it('getCustomerOrderById returns 200', async () => {
     const order = makeOrder();
     mockFindById.mockResolvedValue(order);

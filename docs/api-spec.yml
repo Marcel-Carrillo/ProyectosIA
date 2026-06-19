@@ -1303,6 +1303,18 @@ paths:
           schema:
             type: string
         - in: query
+          name: createdFrom
+          schema:
+            type: string
+            format: date
+          description: Inclusive start date (UTC day bounds) for filtering by createdAt
+        - in: query
+          name: createdTo
+          schema:
+            type: string
+            format: date
+          description: Inclusive end date (UTC day bounds) for filtering by createdAt
+        - in: query
           name: sort
           schema:
             type: string
