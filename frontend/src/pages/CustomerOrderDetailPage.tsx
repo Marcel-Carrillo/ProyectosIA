@@ -7,13 +7,15 @@ import {
 } from '../services/customerOrderService';
 import { supplierOrderService } from '../services/supplierOrderService';
 import { refundService } from '../services/refundService';
+import { returnRequestService } from '../services/returnRequestService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import StatusBadge from '../components/admin/StatusBadge';
 import OrderStatusControl from '../components/admin/OrderStatusControl';
-import { CustomerOrder, UpdateCustomerOrderStatusInput } from '../types/customerOrder';
+import { CustomerOrder, UpdateCustomerOrderStatusInput, CustomerOrderItem } from '../types/customerOrder';
 import { SupplierOrder } from '../types/supplierOrder';
 import { Refund } from '../types/refund';
+import { ReturnRequest } from '../types/returnRequest';
 
 const formatAddress = (addr: CustomerOrder['shippingAddressSnapshot']) =>
   [addr.streetLine1, addr.streetLine2, addr.city, addr.province, addr.postalCode, addr.country]
@@ -42,6 +44,13 @@ const CustomerOrderDetailPage: React.FC = () => {
   const [refundSubmitting, setRefundSubmitting] = useState(false);
   const [refundError, setRefundError] = useState('');
 
+  const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [selectedReturnItem, setSelectedReturnItem] = useState<CustomerOrderItem | null>(null);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const [returnError, setReturnError] = useState('');
+
   const loadOrder = useCallback(async () => {
     if (!orderId || Number.isNaN(orderId)) {
       setError('Invalid order id.');
@@ -57,6 +66,8 @@ const CustomerOrderDetailPage: React.FC = () => {
       setSupplierOrders(supplierRes.data.items);
       const refundRes = await refundService.getAll({ customerOrderId: orderId });
       setRefunds(refundRes.items);
+      const returnRes = await returnRequestService.getAll({ customerOrderId: orderId });
+      setReturnRequests(returnRes.items);
     } catch {
       setError('Unable to load customer order.');
     } finally {
@@ -89,6 +100,30 @@ const CustomerOrderDetailPage: React.FC = () => {
   const isEligibleForGeneration =
     order != null &&
     (order.status === 'Paid' || order.status === 'Processing');
+
+  const canCreateReturn = order != null && order.status !== 'Cancelled';
+
+  const handleCreateReturn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order || !selectedReturnItem) return;
+    setReturnSubmitting(true);
+    setReturnError('');
+    try {
+      const created = await returnRequestService.create({
+        customerOrderId: order.id,
+        customerOrderItemId: selectedReturnItem.id,
+        reason: returnReason.trim(),
+      });
+      setReturnRequests((prev) => [created, ...prev]);
+      setShowReturnModal(false);
+      setReturnReason('');
+      setSelectedReturnItem(null);
+    } catch (err) {
+      setReturnError(err instanceof Error ? err.message : 'Failed to create return request.');
+    } finally {
+      setReturnSubmitting(false);
+    }
+  };
 
   const canCreateRefund =
     order != null &&
@@ -213,6 +248,7 @@ const CustomerOrderDetailPage: React.FC = () => {
                 <th>Qty</th>
                 <th>Unit</th>
                 <th>Total</th>
+                {canCreateReturn && <th></th>}
               </tr>
             </thead>
             <tbody>
@@ -223,6 +259,18 @@ const CustomerOrderDetailPage: React.FC = () => {
                   <td>{item.quantity}</td>
                   <td>{item.unitPrice}</td>
                   <td>{item.totalPrice}</td>
+                  {canCreateReturn && (
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => { setSelectedReturnItem(item); setShowReturnModal(true); }}
+                        data-testid={`btn-create-return-${item.id}`}
+                      >
+                        Create Return
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -314,6 +362,56 @@ const CustomerOrderDetailPage: React.FC = () => {
         </Card.Body>
       </Card>
 
+      <Card className="mb-4">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <Card.Title className="h6 mb-0">Return Requests</Card.Title>
+            <Link
+              to={`/return-requests?customerOrderId=${order.id}`}
+              className="small"
+              data-testid="link-return-requests-filter"
+            >
+              View all for this order
+            </Link>
+          </div>
+          {returnRequests.length === 0 ? (
+            <p className="text-muted small mb-0">No return requests yet.</p>
+          ) : (
+            <Table responsive size="sm" className="mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Item ID</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Requested</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {returnRequests.map((rr) => (
+                  <tr key={rr.id}>
+                    <td>#{rr.id}</td>
+                    <td>#{rr.customerOrderItemId}</td>
+                    <td><StatusBadge status={rr.status} /></td>
+                    <td className="text-truncate" style={{ maxWidth: 160 }}>{rr.reason}</td>
+                    <td>{new Date(rr.requestedAt).toLocaleDateString()}</td>
+                    <td>
+                      <Link
+                        to={`/return-requests/${rr.id}`}
+                        className="btn btn-sm btn-outline-secondary"
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card.Body>
+      </Card>
+
       <Card>
         <Card.Body>
           <Card.Title className="h6">Update statuses</Card.Title>
@@ -379,6 +477,55 @@ const CustomerOrderDetailPage: React.FC = () => {
               data-testid="btn-submit-refund"
             >
               {refundSubmitting ? 'Creating…' : 'Create refund'}
+            </Button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+
+      <Modal
+        show={showReturnModal}
+        onHide={() => { setShowReturnModal(false); setReturnReason(''); setReturnError(''); }}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Create Return Request</Modal.Title>
+        </Modal.Header>
+        <form onSubmit={(e) => void handleCreateReturn(e)}>
+          <Modal.Body>
+            {selectedReturnItem && (
+              <div className="mb-3 p-2 bg-light rounded small">
+                <div><strong>Item:</strong> {selectedReturnItem.productNameSnapshot}</div>
+                <div><strong>SKU:</strong> {selectedReturnItem.skuSnapshot}</div>
+              </div>
+            )}
+            <Form.Group className="mb-3">
+              <Form.Label>Reason <span className="text-danger">*</span></Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                maxLength={500}
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                required
+                data-testid="input-return-reason"
+              />
+              <Form.Text className="text-muted">{returnReason.length}/500</Form.Text>
+            </Form.Group>
+            {returnError && <div className="text-danger small">{returnError}</div>}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => { setShowReturnModal(false); setReturnReason(''); setReturnError(''); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={returnSubmitting || returnReason.trim().length === 0}
+              data-testid="btn-submit-return"
+            >
+              {returnSubmitting ? 'Creating…' : 'Create return request'}
             </Button>
           </Modal.Footer>
         </form>

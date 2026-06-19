@@ -142,6 +142,7 @@ model CustomerOrder {
   supplierOrders          SupplierOrder[]
   refunds                 Refund[]
   shipments               Shipment[]
+  returnRequests          ReturnRequest[]
   couponRedemption        CouponRedemption?
 
   @@index([customerId])
@@ -167,6 +168,7 @@ model CustomerOrderItem {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   supplierOrderItems  SupplierOrderItem[]
+  returnRequests      ReturnRequest[]
 
   @@index([customerOrderId])
   @@index([productVariantId])
@@ -223,6 +225,7 @@ model Refund {
   customerOrderId          Int
   customerOrder            CustomerOrder @relation(fields: [customerOrderId], references: [id])
   returnRequestId          Int?
+  returnRequest            ReturnRequest? @relation(fields: [returnRequestId], references: [id])
   amount                   Decimal       @db.Decimal(10, 2)
   reason                   String?       @db.VarChar(500)
   status                   String        @default("Pending")
@@ -254,6 +257,28 @@ model Shipment {
 
   @@index([customerOrderId])
   @@index([supplierOrderId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ReturnRequest {
+  id                  Int               @id @default(autoincrement())
+  customerOrderId     Int
+  customerOrder       CustomerOrder     @relation(fields: [customerOrderId], references: [id])
+  customerOrderItemId Int
+  customerOrderItem   CustomerOrderItem @relation(fields: [customerOrderItemId], references: [id])
+  reason              String            @db.VarChar(500)
+  status              String            @default("Requested")
+  requestedAt         DateTime
+  approvedAt          DateTime?
+  rejectedAt          DateTime?
+  receivedAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  refunds             Refund[]
+
+  @@index([customerOrderId])
+  @@index([customerOrderItemId])
   @@index([status])
   @@index([createdAt])
 }

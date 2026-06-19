@@ -730,3 +730,54 @@ export function validateShipmentStatusUpdate(data: Record<string, unknown>): voi
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ReturnRequest validators
+// ─────────────────────────────────────────────────────────────────────────────
+
+const RETURN_REQUEST_STATUSES = [
+  'Requested',
+  'Approved',
+  'Rejected',
+  'Received',
+  'Refunded',
+  'Cancelled',
+] as const;
+
+export function validateReturnRequestCreateData(data: Record<string, unknown>): void {
+  const customerOrderId = data['customerOrderId'];
+  if (customerOrderId === undefined || customerOrderId === null) {
+    throw new ValidationError("Field 'customerOrderId' is required");
+  }
+  if (!Number.isInteger(customerOrderId) || (customerOrderId as number) < 1) {
+    throw new ValidationError("Field 'customerOrderId' must be a positive integer");
+  }
+
+  const customerOrderItemId = data['customerOrderItemId'];
+  if (customerOrderItemId === undefined || customerOrderItemId === null) {
+    throw new ValidationError("Field 'customerOrderItemId' is required");
+  }
+  if (!Number.isInteger(customerOrderItemId) || (customerOrderItemId as number) < 1) {
+    throw new ValidationError("Field 'customerOrderItemId' must be a positive integer");
+  }
+
+  const reason = data['reason'];
+  if (reason === undefined || reason === null || reason === '') {
+    throw new ValidationError("Field 'reason' is required");
+  }
+  if (typeof reason === 'string' && reason.length > 500) {
+    throw new ValidationError("Field 'reason' must not exceed 500 characters");
+  }
+}
+
+export function validateReturnRequestStatusUpdate(data: Record<string, unknown>): void {
+  const status = data['status'];
+  if (status === undefined || status === null || status === '') {
+    throw new ValidationError("Field 'status' is required");
+  }
+  if (!RETURN_REQUEST_STATUSES.includes(status as (typeof RETURN_REQUEST_STATUSES)[number])) {
+    throw new ValidationError(
+      `Field 'status' must be one of: ${RETURN_REQUEST_STATUSES.join(', ')}`
+    );
+  }
+}

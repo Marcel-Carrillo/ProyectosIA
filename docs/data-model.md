@@ -515,14 +515,30 @@ Represents a customer's return request.
 * `createdAt`: Date and time when the return request was created
 * `updatedAt`: Date and time when the return request was last updated
 
+**State Machine:**
+
+```
+Requested → Approved | Rejected | Cancelled
+Approved  → Received | Cancelled
+Received  → Refunded | Cancelled
+
+Terminal states: Rejected, Refunded, Cancelled (no further transitions allowed)
+```
+
+Timestamps set automatically on transition:
+- `approvedAt` — set when transitioning to `Approved`
+- `rejectedAt` — set when transitioning to `Rejected`
+- `receivedAt` — set when transitioning to `Received`
+
 **Validation Rules:**
 
 * Customer order reference is required and must exist in the database
 * Customer order item reference is required and must exist in the database
 * Reason is required and cannot exceed 500 characters
 * Status must be one of: Requested, Approved, Rejected, Received, Refunded, Cancelled
-* A return request cannot be created for a cancelled customer order
-* A return request cannot be refunded before it is approved or received, depending on the business rule
+* A return request cannot be created for a cancelled customer order (`RETURN_REQUEST_ORDER_CANCELLED`)
+* The customer order item must belong to the specified customer order (`RETURN_REQUEST_ITEM_MISMATCH`)
+* Status transitions must follow the state machine above (`RETURN_REQUEST_TRANSITION_INVALID`)
 
 **Relationships:**
 
@@ -538,7 +554,7 @@ Represents a full or partial refund associated with a customer order.
 
 * `id`: Unique identifier for the refund (Primary Key)
 * `customerOrderId`: Foreign key referencing the CustomerOrder (required)
-* `returnRequestId`: Optional nullable integer referencing a ReturnRequest — stored without a DB-level FK constraint until KAN-25 delivers the `ReturnRequest` model
+* `returnRequestId`: Optional nullable FK referencing a ReturnRequest (ON DELETE SET NULL) — materialized in migration `20260619061633_add_return_request` (KAN-25)
 * `amount`: Refunded amount (Decimal 10,2 — stored as string in domain/API)
 * `reason`: Refund reason (optional, max 500 characters)
 * `status`: Refund status (valid values: Pending, Processing, Completed, Failed, Cancelled)
@@ -569,7 +585,7 @@ Terminal states: Completed, Failed, Cancelled (no further transitions allowed)
 * Status must be one of: Pending, Processing, Completed, Failed, Cancelled
 * Status transitions must follow the state machine above (`REFUND_TRANSITION_INVALID`)
 * Payment provider reference is optional and cannot exceed 150 characters
-* `returnRequestId` is accepted as nullable; no DB FK constraint until KAN-25
+* `returnRequestId` is nullable; when provided, the referenced ReturnRequest must exist (validated inside the Prisma transaction — `RETURN_REQUEST_NOT_FOUND`)
 
 **paymentStatus Synchronization:**
 
@@ -581,7 +597,7 @@ Terminal states: Completed, Failed, Cancelled (no further transitions allowed)
 **Relationships:**
 
 * `customerOrder`: Many-to-one relationship with CustomerOrder model
-* `returnRequest`: Logical relationship with ReturnRequest model (no DB FK until KAN-25)
+* `returnRequest`: Optional many-to-one relationship with ReturnRequest model (real DB FK — ON DELETE SET NULL)
 
 ## Entity Relationship Diagram
 
