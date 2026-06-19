@@ -6,8 +6,19 @@ provider:
   region: eu-west-1
   environment:
     NODE_ENV: production
-    DATABASE_URL: ${env:DATABASE_URL}
-    FRONTEND_URL: ${env:FRONTEND_URL}
+    DATABASE_URL: ${ssm:/ecommerce/prod/DATABASE_URL}
+    FRONTEND_URL: ${ssm:/ecommerce/prod/FRONTEND_URL}
+    ADMIN_JWT_SECRET: ${ssm:/ecommerce/prod/ADMIN_JWT_SECRET}
+    ADMIN_JWT_EXPIRES_IN: ${ssm:/ecommerce/prod/ADMIN_JWT_EXPIRES_IN}
+    CUSTOMER_JWT_SECRET: ${ssm:/ecommerce/prod/CUSTOMER_JWT_SECRET}
+    CUSTOMER_JWT_EXPIRES_IN: ${ssm:/ecommerce/prod/CUSTOMER_JWT_EXPIRES_IN}
+    COOKIE_SECRET: ${ssm:/ecommerce/prod/COOKIE_SECRET}
+    SMTP_HOST: ${ssm:/ecommerce/prod/SMTP_HOST}
+    SMTP_PORT: ${ssm:/ecommerce/prod/SMTP_PORT}
+    SMTP_SECURE: ${ssm:/ecommerce/prod/SMTP_SECURE}
+    SMTP_USER: ${ssm:/ecommerce/prod/SMTP_USER}
+    SMTP_PASS: ${ssm:/ecommerce/prod/SMTP_PASS}
+    SMTP_FROM: ${ssm:/ecommerce/prod/SMTP_FROM}
 
 functions:
   app:
@@ -24,3 +35,18 @@ functions:
 
 plugins:
   - serverless-offline
+
+# resources:
+#   Resources:
+#     # CloudWatch alarm — manual one-time setup (not deployed by serverless deploy):
+#     #   Alarm name:   ecommerce-api-5xx-high
+#     #   Namespace:    AWS/ApiGateway
+#     #   Metric:       5XXError
+#     #   Threshold:    >= 5 errors
+#     #   Period:       300 seconds (5 min)
+#     #   Evaluation:   1 period
+#     # Create via AWS Console → CloudWatch → Alarms, or via AWS CLI:
+#     #   aws cloudwatch put-metric-alarm --alarm-name ecommerce-api-5xx-high \
+#     #     --metric-name 5XXError --namespace AWS/ApiGateway \
+#     #     --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
+#     #     --comparison-operator GreaterThanOrEqualToThreshold
