@@ -59,6 +59,37 @@ When ready to implement, switch to Sonnet 4.6 and run /opsx:apply
    ```
    This creates a scaffolded change in the planning home resolved by the CLI with `.openspec.yaml`.
 
+3b. **Jira integration — link ticket and transition to "En curso" (optional)**
+
+   Check if the user's request or conversation context contains a Jira ticket key matching `KAN-\d+` (e.g., `KAN-18`).
+
+   **If a ticket key is found:**
+
+   a. Read `openspec/changes/<name>/` path from `openspec status --change "<name>" --json` (`changeRoot`).
+
+   b. Save the ticket key as plain text to `{changeRoot}/.jira` (single line, e.g., `KAN-18`).
+
+   c. Transition the ticket to **"En curso"** (transition ID `21`) — try in order:
+
+      **Option 1 — curl (if `ATLASSIAN_EMAIL` and `ATLASSIAN_API_TOKEN` are set as env vars):**
+      ```bash
+      JIRA_KEY=$(cat {changeRoot}/.jira)
+      curl -s -o /dev/null -w "%{http_code}" -X POST \
+        "https://mcarhueti.atlassian.net/rest/api/3/issue/${JIRA_KEY}/transitions" \
+        -H "Authorization: Basic $(echo -n "${ATLASSIAN_EMAIL}:${ATLASSIAN_API_TOKEN}" | base64 -w 0)" \
+        -H "Content-Type: application/json" \
+        -d '{"transition":{"id":"21"}}'
+      ```
+      A `204` response means success.
+
+      **Option 2 — MCP fallback (if curl fails or env vars are missing):**
+      Use `CallMcpTool` with server `plugin-atlassian-atlassian`, tool `transitionJiraIssue`:
+      `{ cloudId: "https://mcarhueti.atlassian.net", issueIdOrKey: "<key>", transition: { id: "21" } }`
+      If transition fails, use `addCommentToJiraIssue` with comment:
+      `"OpenSpec change \`<name>\` started — moving to En curso. Implement with /opsx:apply."`
+
+   d. If no ticket key is found in context, skip silently — Jira integration is optional.
+
 4. **Get the artifact build order**
    ```bash
    openspec status --change "<name>" --json
@@ -87,6 +118,8 @@ When ready to implement, switch to Sonnet 4.6 and run /opsx:apply
         - `resolvedOutputPath`: Resolved path or pattern to write the artifact
         - `dependencies`: Completed artifacts to read for context
       - Read any completed dependency files for context
+      - **Before writing the first artifact**, read `docs/base-standards.md` and apply the "Global authoring rules" delivered in the `context` field — they govern EVERY artifact. Honor both `rules` AND `context` from the instructions as mandatory constraints (not just the `template`).
+      - **When the artifact is `tasks`**: first read `docs/openspec-tasks-mandatory-steps.md`, then expand the generic template into the project's MANDATORY structure — Step 0 "Create Feature Branch" (apply `ai-specs/skills/using-git-worktrees/SKILL.md`) as the FIRST step, then the implementation groups, then the mandatory steps: Review unit tests; Run unit tests + verify DB + report; Manual curl testing (AGENT MUST EXECUTE) for backend endpoints + report; E2E Playwright for frontend workflows + report; Update technical documentation; Commit + create PR as the LAST step. Reports go under `openspec/changes/<name>/reports/`. **Use Express/DDD file paths** (mirror `supplier-management`: `backend/src/application/services/`, `presentation/controllers/`, `routes/admin/`, `frontend/src/pages/`, etc.) — never NestJS `*.module.ts` / `class-validator` DTO paths unless the stack changes. Include the **Agent workflow (MANDATORY)** header requiring live `- [x]` updates during `/opsx:apply`.
       - Create the artifact file using `template` as the structure and write it to `resolvedOutputPath`
       - Apply `context` and `rules` as constraints - but do NOT copy them into the file
       - Show brief progress: "Created <artifact-id>"
@@ -129,3 +162,5 @@ After completing all artifacts, summarize:
 - If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
 - If a change with that name already exists, ask if user wants to continue it or create a new one
 - Verify each artifact file exists after writing before proceeding to next
+- Before writing artifacts, read `docs/base-standards.md` and apply the global rules delivered via the instructions `context`
+- `tasks.md` MUST follow `docs/openspec-tasks-mandatory-steps.md`: Step 0 (feature branch / worktree) first and Commit + PR last, including curl, E2E, and report steps. Never emit a bare generic task list
