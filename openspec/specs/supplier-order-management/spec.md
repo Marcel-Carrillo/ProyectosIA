@@ -124,3 +124,17 @@ Supplier order endpoints SHALL exist only under `/api/admin/supplier-orders` and
 
 - **WHEN** an admin retrieves any customer order response
 - **THEN** the payload contains no `supplierCost` or `supplierReference` fields
+
+### Requirement: SupplierOrder shipments back-relation
+
+The `SupplierOrder` Prisma model SHALL expose a `shipments Shipment[]` back-relation, allowing the system to query all shipments associated with a given supplier order.
+
+#### Scenario: Query shipments for a supplier order
+
+- **WHEN** the system queries a supplier order with shipments included
+- **THEN** all linked shipment records are returned
+
+#### Scenario: New supplier orders start with empty shipments list
+
+- **WHEN** a supplier order is created
+- **THEN** its `shipments` relation is empty
