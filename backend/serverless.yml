@@ -36,6 +36,12 @@ functions:
           method: any
           cors: true
 
+package:
+  patterns:
+    - '!node_modules/**'
+    - 'node_modules/.prisma/client/**'
+    - 'node_modules/@prisma/client/**'
+
 plugins:
   - serverless-esbuild
   - serverless-offline
@@ -48,8 +54,6 @@ custom:
     external:
       - '@prisma/client'
       - '.prisma'
-    packager: npm
-    packagePath: package.json
 
 # resources:
 #   Resources:
