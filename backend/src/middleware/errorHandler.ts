@@ -45,6 +45,13 @@ import {
   ShipmentStatusTransitionInvalidError,
 } from '../infrastructure/repositories/shipmentRepository';
 import {
+  ReturnRequestNotFoundError,
+  ReturnRequestOrderCancelledError,
+  ReturnRequestItemMismatchError,
+  ReturnRequestTransitionInvalidError,
+} from '../infrastructure/repositories/returnRequestRepository';
+import { CustomerOrderItemNotFoundError } from '../infrastructure/repositories/customerOrderRepository';
+import {
   AdminDisabledError,
   AdminRefreshTokenInvalidError,
   InvalidAdminCredentialsError,
@@ -155,6 +162,16 @@ export function globalErrorHandler(
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof ShipmentStatusTransitionInvalidError) {
     statusCode = 400; code = err.code; message = err.message;
+  } else if (err instanceof ReturnRequestNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof ReturnRequestOrderCancelledError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof ReturnRequestItemMismatchError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof ReturnRequestTransitionInvalidError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof CustomerOrderItemNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof InvalidAdminCredentialsError) {
     statusCode = 401; code = err.code; message = err.message;
   } else if (err instanceof AdminDisabledError) {

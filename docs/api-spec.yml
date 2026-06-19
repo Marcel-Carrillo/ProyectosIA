@@ -1941,12 +1941,14 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /return-requests:
+  /api/admin/return-requests:
     get:
-      summary: Get all return requests
-      description: Retrieve a paginated list of return requests
+      summary: Get all return requests (admin)
+      description: Retrieve a paginated list of return requests. Requires admin authentication.
       tags:
         - Return Requests
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -1969,14 +1971,20 @@ paths:
                 $ref: '#/components/schemas/ReturnRequestListResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
     post:
-      summary: Create return request
-      description: Create a return request for a customer order item
+      summary: Create return request (admin)
+      description: |
+        Create a return request for a specific order item. Requires admin authentication.
+        Validations: order must exist, order must not be Cancelled, item must exist, item must belong to the order.
       tags:
         - Return Requests
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -1992,8 +2000,92 @@ paths:
                 $ref: '#/components/schemas/ReturnRequestResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/return-requests/{id}:
+    get:
+      summary: Get return request by ID (admin)
+      description: Retrieve a single return request. Requires admin authentication.
+      tags:
+        - Return Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Return Request ID
+      responses:
+        '200':
+          description: Return request retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRequestResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/return-requests/{id}/status:
+    patch:
+      summary: Update return request status (admin)
+      description: |
+        Transition a return request to a new status following the state machine:
+        Requested → Approved | Rejected | Cancelled
+        Approved → Received | Cancelled
+        Received → Refunded | Cancelled
+        Rejected, Refunded, Cancelled are terminal states.
+        Requires admin authentication.
+      tags:
+        - Return Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Return Request ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReturnRequestStatusRequest'
+      responses:
+        '200':
+          description: Return request status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -3858,6 +3950,14 @@ components:
           maxLength: 500
           example: Size does not fit
 
+    UpdateReturnRequestStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/ReturnRequestStatus'
+
     ReturnRequestResponse:
       type: object
       properties:
@@ -3877,11 +3977,21 @@ components:
           type: boolean
           example: true
         data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ReturnRequest'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReturnRequest'
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+        message:
+          type: string
+          example: Return requests retrieved successfully
 
     Refund:
       type: object

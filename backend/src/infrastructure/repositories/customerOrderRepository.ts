@@ -25,6 +25,17 @@ export class CustomerOrderNotFoundError extends Error {
   }
 }
 
+export class CustomerOrderItemNotFoundError extends Error {
+  readonly code = 'CUSTOMER_ORDER_ITEM_NOT_FOUND' as const;
+  readonly status = 404;
+
+  constructor() {
+    super('Customer order item not found');
+    this.name = 'CustomerOrderItemNotFoundError';
+    Object.setPrototypeOf(this, CustomerOrderItemNotFoundError.prototype);
+  }
+}
+
 export class OrderNumberConflictError extends Error {
   readonly code = 'ORDER_NUMBER_CONFLICT' as const;
   readonly status = 409;

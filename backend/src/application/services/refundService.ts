@@ -14,6 +14,7 @@ import {
   RefundTransitionInvalidError,
 } from '../../infrastructure/repositories/refundRepository';
 import { CustomerOrderNotFoundError } from '../../infrastructure/repositories/customerOrderRepository';
+import { ReturnRequestNotFoundError } from '../../infrastructure/repositories/returnRequestRepository';
 import { validateRefundCreateData, validateRefundStatusUpdate } from '../validator';
 
 const ELIGIBLE_ORDER_PAYMENT_STATUSES = new Set(['Paid', 'PartiallyRefunded']);
@@ -78,10 +79,19 @@ export class RefundService {
         throw new RefundAmountExceedsBalanceError();
       }
 
+      const returnRequestId = (input['returnRequestId'] as number | null) ?? null;
+      if (returnRequestId !== null) {
+        const rr = await tx.returnRequest.findUnique({
+          where: { id: returnRequestId },
+          select: { id: true },
+        });
+        if (!rr) throw new ReturnRequestNotFoundError();
+      }
+
       const refund = await tx.refund.create({
         data: {
           customerOrderId,
-          returnRequestId: (input['returnRequestId'] as number | null) ?? null,
+          returnRequestId,
           amount,
           reason: (input['reason'] as string | null) ?? null,
           paymentProviderReference: (input['paymentProviderReference'] as string | null) ?? null,
