@@ -1,9 +1,10 @@
 import { test, expect, Page } from '@playwright/test';
-import { readFileSync } from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
 
 const API = 'http://localhost:3000';
+const backendRequire = createRequire(path.resolve('backend/package.json'));
 
 function getCachedToken(): string {
   const tokenFile = path.resolve('playwright/.auth/token.json');
@@ -35,10 +36,18 @@ async function createTestOrder(page: Page): Promise<{ id: number; orderNumber: s
 }
 
 async function deleteOrder(_page: Page, id: number): Promise<void> {
-  execSync(`node scripts/delete-customer-order.js ${id}`, {
-    cwd: path.resolve('.'),
-    stdio: 'pipe',
-  });
+  const { PrismaClient } = backendRequire('@prisma/client') as {
+    PrismaClient: new () => {
+      customerOrder: { delete: (args: { where: { id: number } }) => Promise<unknown> };
+      $disconnect: () => Promise<void>;
+    };
+  };
+  const prisma = new PrismaClient();
+  try {
+    await prisma.customerOrder.delete({ where: { id } });
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 test.beforeEach(async ({ page }) => {
