@@ -19,6 +19,9 @@ provider:
     SMTP_USER: ${ssm:/ecommerce/prod/SMTP_USER}
     SMTP_PASS: ${ssm:/ecommerce/prod/SMTP_PASS}
     SMTP_FROM: ${ssm:/ecommerce/prod/SMTP_FROM}
+    STRIPE_SECRET_KEY: ${ssm:/ecommerce/prod/STRIPE_SECRET_KEY}
+    STRIPE_PUBLISHABLE_KEY: ${ssm:/ecommerce/prod/STRIPE_PUBLISHABLE_KEY}
+    STRIPE_WEBHOOK_SECRET: ${ssm:/ecommerce/prod/STRIPE_WEBHOOK_SECRET}
 
 functions:
   app:

@@ -23,7 +23,7 @@ import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
 import { requireAdminAuth } from './middleware/requireAdminAuth';
 import { logger } from './infrastructure/logger';
 
-const requiredEnvVars = ['DATABASE_URL', 'PORT'];
+const requiredEnvVars = ['DATABASE_URL'];
 for (const key of requiredEnvVars) {
   if (!process.env[key]) {
     throw new Error(`Missing required environment variable: ${key}`);
@@ -119,8 +119,9 @@ app.use('/api/public/payments', paymentPublicRoutes);
 app.use(notFoundHandler);
 app.use(globalErrorHandler);
 
-const PORT = parseInt(process.env.PORT as string, 10);
-if (process.env.NODE_ENV !== 'test') {
+const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+const PORT = parseInt(process.env.PORT as string, 10) || 3000;
+if (process.env.NODE_ENV !== 'test' && !isLambda) {
   app.listen(PORT, () => {
     logger.info('Server started', { port: PORT, env: process.env.NODE_ENV });
   });
