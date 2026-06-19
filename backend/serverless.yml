@@ -30,11 +30,9 @@ functions:
       - http:
           path: /
           method: any
-          cors: true
       - http:
           path: /{proxy+}
           method: any
-          cors: true
 
 package:
   patterns:
