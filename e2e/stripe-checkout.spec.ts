@@ -108,7 +108,10 @@ test.describe('Stripe checkout E2E', () => {
     await fillStripePaymentElement(page, '4242424242424242');
     await page.getByTestId('btn-pay').click();
 
-    await page.waitForURL(new RegExp(`/order-confirmation/${order.orderNumber}`), { timeout: 60000 });
+    await page.waitForURL(
+      (url) => url.pathname === `/order-confirmation/${order.orderNumber}`,
+      { timeout: 60000 }
+    );
     await expect(page.getByTestId('payment-polling')).toBeVisible();
 
     const Stripe = backendRequire('stripe') as typeof import('stripe').default;

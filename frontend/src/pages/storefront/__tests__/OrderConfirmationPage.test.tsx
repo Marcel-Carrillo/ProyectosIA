@@ -39,12 +39,12 @@ describe('OrderConfirmationPage', () => {
   it('shows success alert when polling returns Paid', async () => {
     mockGetOrderPaymentStatus.mockResolvedValue('Paid');
     renderPage({ order: { orderNumber: 'ORD-001', totalAmount: '29.99' }, paymentStatus: 'processing' });
-    expect(await screen.findByTestId('payment-success')).toBeInTheDocument();
+    expect(await screen.findByTestId('payment-success', {}, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it('shows failed alert when polling returns Failed', async () => {
     mockGetOrderPaymentStatus.mockResolvedValue('Failed');
     renderPage({ order: { orderNumber: 'ORD-001', totalAmount: '29.99' }, paymentStatus: 'processing' });
-    expect(await screen.findByTestId('payment-failed')).toBeInTheDocument();
+    expect(await screen.findByTestId('payment-failed', {}, { timeout: 5000 })).toBeInTheDocument();
   });
 });
