@@ -3,8 +3,11 @@ import { defineConfig } from 'cypress';
 export default defineConfig({
   e2e: {
     baseUrl: 'http://localhost:3001',
+    supportFile: 'cypress/support/e2e.ts',
     env: {
       API_URL: 'http://localhost:3000',
+      ADMIN_EMAIL: 'admin@example.com',
+      ADMIN_PASSWORD: 'AdminPass1',
     },
   },
 });
