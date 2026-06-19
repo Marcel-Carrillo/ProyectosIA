@@ -108,6 +108,14 @@ export async function listMyOrders() {
   return res.data.data.items;
 }
 
+export async function getMyOrder(id: number) {
+  const res = await axios.get<{ data: unknown }>(
+    `${API_BASE}/api/public/account/orders/${id}`,
+    { headers: authHeaders() }
+  );
+  return res.data.data;
+}
+
 export function extractCustomerAuthError(error: unknown): string {
   const code = (error as AxiosError<AuthApiError>).response?.data?.error?.code;
   if (code === 'INVALID_CREDENTIALS') return 'Invalid email or password.';

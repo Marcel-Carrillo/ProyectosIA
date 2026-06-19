@@ -33,6 +33,7 @@ import AccountPage from './pages/storefront/AccountPage';
 import AccountOrdersPage from './pages/storefront/AccountOrdersPage';
 import AccountProfilePage from './pages/storefront/AccountProfilePage';
 import AccountWishlistPage from './pages/storefront/AccountWishlistPage';
+import AccountOrderDetailPage from './pages/storefront/AccountOrderDetailPage';
 import ForgotPasswordPage from './pages/storefront/ForgotPasswordPage';
 import ResetPasswordPage from './pages/storefront/ResetPasswordPage';
 import TwoFactorSetupPage from './pages/storefront/TwoFactorSetupPage';
@@ -77,6 +78,7 @@ const App: React.FC = () => {
                 <Route path="/account" element={<RequireCustomerAuth><AccountPage /></RequireCustomerAuth>} />
                 <Route path="/account/profile" element={<RequireCustomerAuth><AccountProfilePage /></RequireCustomerAuth>} />
                 <Route path="/account/orders" element={<RequireCustomerAuth><AccountOrdersPage /></RequireCustomerAuth>} />
+                <Route path="/account/orders/:id" element={<RequireCustomerAuth><AccountOrderDetailPage /></RequireCustomerAuth>} />
                 <Route path="/account/wishlist" element={<RequireCustomerAuth><AccountWishlistPage /></RequireCustomerAuth>} />
                 <Route path="/account/security/2fa" element={<RequireCustomerAuth><TwoFactorSetupPage /></RequireCustomerAuth>} />
               </Route>
