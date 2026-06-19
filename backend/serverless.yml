@@ -30,9 +30,27 @@ functions:
       - http:
           path: /
           method: any
+          cors:
+            origins:
+              - 'https://d1p5rkpgizqh62.cloudfront.net'
+            headers:
+              - Content-Type
+              - Authorization
+              - Cookie
+              - X-Requested-With
+            allowCredentials: true
       - http:
           path: /{proxy+}
           method: any
+          cors:
+            origins:
+              - 'https://d1p5rkpgizqh62.cloudfront.net'
+            headers:
+              - Content-Type
+              - Authorization
+              - Cookie
+              - X-Requested-With
+            allowCredentials: true
 
 package:
   patterns:
