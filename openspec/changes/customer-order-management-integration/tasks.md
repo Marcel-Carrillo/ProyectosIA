@@ -80,10 +80,10 @@
 
 ## 8. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 8.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 8.2 Verify all tasks above are marked `[x]` and required reports exist under `openspec/changes/customer-order-management-integration/reports/`
-- [ ] 8.3 Stage relevant files; exclude `.env`, `node_modules/`, `dist/`, `coverage/`
-- [ ] 8.4 Create commit: `feat(KAN-30): certify customer order management integration`
-- [ ] 8.5 Push branch `feature/KAN-30-customer-order-management-integration` to origin
-- [ ] 8.6 Run `gh pr create` and report PR URL in chat
-- [ ] 8.7 Transition Jira KAN-30 to **En revisión** (transition `31`) after PR is open
+- [x] 8.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 8.2 Verify all tasks above are marked `[x]` and required reports exist under `openspec/changes/customer-order-management-integration/reports/`
+- [x] 8.3 Stage relevant files; exclude `.env`, `node_modules/`, `dist/`, `coverage/`
+- [x] 8.4 Create commit: `feat(KAN-30): certify customer order management integration`
+- [x] 8.5 Push branch `feature/KAN-30-customer-order-management-integration` to origin
+- [x] 8.6 Run `gh pr create` and report PR URL in chat — PR #31
+- [x] 8.7 Transition Jira KAN-30 to **En revisión** (transition `31`) after PR is open
