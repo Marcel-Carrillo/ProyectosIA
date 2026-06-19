@@ -10,6 +10,7 @@ jobs:
   deploy:
     name: Build, migrate, deploy and smoke test
     runs-on: ubuntu-latest
+    environment: "CI/CD MiProyectoIA"
 
     steps:
       - name: Checkout code
