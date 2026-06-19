@@ -124,9 +124,9 @@
 
 ## 17. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 17.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 17.2 Verify all tasks above are marked `[x]` and reports exist under `openspec/changes/return-request-management/reports/`
-- [ ] 17.3 Stage all relevant files (backend, frontend, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`
-- [ ] 17.4 Create commit with message: `feat(KAN-25): add admin return request (RMA) management`
-- [ ] 17.5 Push branch to remote: `git push -u origin feature/KAN-25-return-request-management`
-- [ ] 17.6 Create Pull Request with `gh pr create` and report URL in chat
+- [x] 17.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 17.2 Verify all tasks above are marked `[x]` and reports exist under `openspec/changes/return-request-management/reports/`
+- [x] 17.3 Stage all relevant files (backend, frontend, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`
+- [x] 17.4 Create commit with message: `feat(KAN-25): add admin return request (RMA) management`
+- [x] 17.5 Push branch to remote: `git push -u origin feature/KAN-25-return-request-management`
+- [x] 17.6 Create Pull Request with `gh pr create` and report URL in chat
