@@ -38,9 +38,9 @@ jobs:
 
       - name: Run database migrations
         working-directory: backend
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-        run: npx prisma migrate deploy
+        run: |
+          export DATABASE_URL="${{ secrets.PROD_DATABASE_URL }}"
+          npx prisma migrate deploy
 
       - name: Deploy backend (Serverless Framework)
         working-directory: backend
