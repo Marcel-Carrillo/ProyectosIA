@@ -27,6 +27,14 @@ export class PaymentService {
     };
   }
 
+  async getOrderPaymentStatus(orderNumber: string): Promise<string | null> {
+    const order = await prisma.customerOrder.findFirst({
+      where: { orderNumber },
+      select: { paymentStatus: true },
+    });
+    return order?.paymentStatus ?? null;
+  }
+
   async createPaymentIntent(
     order: CustomerOrder
   ): Promise<{ clientSecret: string; stripePaymentIntentId: string }> {
@@ -45,7 +53,7 @@ export class PaymentService {
           },
           automatic_payment_methods: { enabled: true },
         },
-        { idempotencyKey: `order:${order.orderNumber}:pi` }
+        { idempotencyKey: `order:${order.id}:pi` }
       );
     } catch (err) {
       logger.error('Stripe PaymentIntent creation failed', {

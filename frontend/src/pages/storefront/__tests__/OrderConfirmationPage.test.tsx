@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import OrderConfirmationPage from '../OrderConfirmationPage';
 
@@ -39,16 +39,12 @@ describe('OrderConfirmationPage', () => {
   it('shows success alert when polling returns Paid', async () => {
     mockGetOrderPaymentStatus.mockResolvedValue('Paid');
     renderPage({ order: { orderNumber: 'ORD-001', totalAmount: '29.99' }, paymentStatus: 'processing' });
-    await waitFor(() => expect(screen.getByTestId('payment-success')).toBeInTheDocument(), {
-      timeout: 3000,
-    });
+    expect(await screen.findByTestId('payment-success')).toBeInTheDocument();
   });
 
   it('shows failed alert when polling returns Failed', async () => {
     mockGetOrderPaymentStatus.mockResolvedValue('Failed');
     renderPage({ order: { orderNumber: 'ORD-001', totalAmount: '29.99' }, paymentStatus: 'processing' });
-    await waitFor(() => expect(screen.getByTestId('payment-failed')).toBeInTheDocument(), {
-      timeout: 3000,
-    });
+    expect(await screen.findByTestId('payment-failed')).toBeInTheDocument();
   });
 });

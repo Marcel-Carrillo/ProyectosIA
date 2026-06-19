@@ -139,10 +139,10 @@ describe('createPaymentIntent', () => {
 
   it('uses correct idempotency key format', async () => {
     mockCreatePI.mockResolvedValue({ id: 'pi_123', client_secret: 'secret' });
-    await service.createPaymentIntent(makeOrder({ orderNumber: 'ORD-000042' }));
+    await service.createPaymentIntent(makeOrder({ id: 42, orderNumber: 'ORD-000042' }));
     expect(mockCreatePI).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ idempotencyKey: 'order:ORD-000042:pi' })
+      expect.objectContaining({ idempotencyKey: 'order:42:pi' })
     );
   });
 

@@ -11,6 +11,27 @@ export async function getConfig(_req: Request, res: Response, next: NextFunction
   }
 }
 
+export async function getOrderPaymentStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const orderNumber = req.params['orderNumber'] as string;
+    const paymentStatus = await paymentService.getOrderPaymentStatus(orderNumber);
+    if (!paymentStatus) {
+      res.status(404).json({
+        success: false,
+        error: { message: 'Order not found', code: 'ORDER_NOT_FOUND' },
+      });
+      return;
+    }
+    res.json({ success: true, data: { paymentStatus } });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function handleWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const signature = req.headers['stripe-signature'];
