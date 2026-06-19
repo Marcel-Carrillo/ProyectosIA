@@ -18,6 +18,7 @@ import authPublicRoutes from './routes/public/authRoutes';
 import accountPublicRoutes from './routes/public/accountRoutes';
 import checkoutPublicRoutes from './routes/public/checkoutRoutes';
 import couponPublicRoutes from './routes/public/couponRoutes';
+import paymentPublicRoutes from './routes/public/paymentRoutes';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
 import { requireAdminAuth } from './middleware/requireAdminAuth';
 import { logger } from './infrastructure/logger';
@@ -47,6 +48,16 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+if (process.env.NODE_ENV !== 'test') {
+  const stripeRequiredVars = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PUBLISHABLE_KEY'];
+  const missingStripeVars = stripeRequiredVars.filter((key) => !process.env[key]);
+  if (missingStripeVars.length > 0) {
+    throw new Error(
+      `Missing required Stripe environment variables: ${missingStripeVars.join(', ')}`
+    );
+  }
+}
+
 export const app = express();
 
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002')
@@ -62,6 +73,14 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// IMPORTANT: express.raw() on webhook path BEFORE express.json().
+// Stripe signature verification requires the original raw body bytes.
+app.use(
+  '/api/public/payments/webhook',
+  express.raw({ type: 'application/json' })
+);
+
 app.use(express.json());
 app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET || 'change-me-in-production'));
 
@@ -95,6 +114,7 @@ app.use('/api/public/auth', authPublicRoutes);
 app.use('/api/public/account', accountPublicRoutes);
 app.use('/api/public/checkout', checkoutPublicRoutes);
 app.use('/api/public/coupons', couponPublicRoutes);
+app.use('/api/public/payments', paymentPublicRoutes);
 
 app.use(notFoundHandler);
 app.use(globalErrorHandler);

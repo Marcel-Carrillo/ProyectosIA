@@ -323,6 +323,8 @@ A customer order is different from a supplier order. The customer order represen
 * `updatedAt`: Date and time when the order was last updated
 * `paidAt`: Date and time when the order was paid (optional)
 * `cancelledAt`: Date and time when the order was cancelled (optional)
+* `stripePaymentIntentId`: Stripe PaymentIntent ID stored after checkout (optional, unique, max 255 characters) — **INTERNAL ONLY, never returned by public API**
+* `stripeChargeId`: Stripe Charge ID stored after payment succeeds (optional, max 255 characters) — **INTERNAL ONLY, never returned by public API**
 
 **Validation Rules:**
 
@@ -346,6 +348,19 @@ A customer order is different from a supplier order. The customer order represen
 * `shipments`: One-to-many relationship with Shipment model
 * `returnRequests`: One-to-many relationship with ReturnRequest model
 * `refunds`: One-to-many relationship with Refund model
+* `stripeWebhookEvents`: One-to-many relationship with StripeWebhookEvent model
+
+**paymentStatus Stripe Transition:**
+
+```
+Pending         → Paid               (via payment_intent.succeeded webhook)
+Pending         → Failed             (via payment_intent.payment_failed webhook)
+Paid            → PartiallyRefunded  (via charge.refunded webhook — partial)
+Paid            → Refunded           (via charge.refunded webhook — full)
+PartiallyRefunded → Refunded         (via charge.refunded webhook — balance reaches 0)
+```
+
+`paymentStatus` is set exclusively from Stripe webhook events. The `POST /api/public/checkout` response includes a `clientSecret` for the frontend to confirm payment. `Paid` is never set from the checkout API call itself.
 
 ### 9. CustomerOrderItem
 
@@ -599,6 +614,35 @@ Terminal states: Completed, Failed, Cancelled (no further transitions allowed)
 * `customerOrder`: Many-to-one relationship with CustomerOrder model
 * `returnRequest`: Optional many-to-one relationship with ReturnRequest model (real DB FK — ON DELETE SET NULL)
 
+### 15. StripeWebhookEvent
+
+Idempotency log for Stripe webhook events received at `POST /api/public/payments/webhook`.
+
+Prevents double-processing of the same webhook if Stripe retries delivery.
+
+**Fields:**
+
+* `id`: Auto-incremented integer primary key
+* `stripeEventId`: Stripe event ID from `event.id` — unique constraint enforces idempotency
+* `type`: Stripe event type string (e.g., `payment_intent.succeeded`, `charge.refunded`)
+* `customerOrderId`: Optional FK referencing CustomerOrder — set when the event relates to a known order
+* `createdAt`: Timestamp when the event was first processed
+
+**Validation Rules:**
+
+* `stripeEventId` must be unique — duplicate events are silently ignored (idempotent)
+* `customerOrderId` is nullable; the order may not yet be found at event processing time
+
+**Security:**
+
+* This table is only written to by the backend webhook handler after signature verification
+* Raw event payloads are NOT stored — only the event ID and type
+* Never exposed through any API response
+
+**Relationships:**
+
+* `customerOrder`: Optional many-to-one relationship with CustomerOrder model
+
 ## Entity Relationship Diagram
 
 ```mermaid
@@ -712,6 +756,8 @@ erDiagram
         DateTime updatedAt
         DateTime paidAt
         DateTime cancelledAt
+        String stripePaymentIntentId UK
+        String stripeChargeId
     }
 
     CustomerOrderItem {
@@ -828,6 +874,16 @@ erDiagram
 
     CustomerOrder ||--o{ Refund : "has"
     ReturnRequest ||--o{ Refund : "may_generate"
+
+    StripeWebhookEvent {
+        Int id PK
+        String stripeEventId UK
+        String type
+        Int customerOrderId FK
+        DateTime createdAt
+    }
+
+    CustomerOrder ||--o{ StripeWebhookEvent : "tracked_by"
 ```
 
 ## Key Design Principles

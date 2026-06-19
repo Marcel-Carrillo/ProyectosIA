@@ -1,9 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Col, Container, Form, Row } from 'react-bootstrap';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import { useCart } from '../../contexts/CartContext';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { authenticatedCheckout, guestCheckout, validateCoupon } from '../../services/checkoutService';
+import { getStripeConfig } from '../../services/paymentService';
+import { PublicOrder } from '../../types/auth';
+import PaymentForm from '../../components/storefront/PaymentForm';
 
 const emptyAddress = {
   fullName: '',
@@ -14,10 +19,16 @@ const emptyAddress = {
   country: 'Spain',
 };
 
+type Step = 'details' | 'payment';
+
 const CheckoutPage: React.FC = () => {
   const { items, clearCart } = useCart();
   const { isAuthenticated, customer } = useCustomerAuth();
   const navigate = useNavigate();
+
+  const [step, setStep] = useState<Step>('details');
+  const [pendingOrder, setPendingOrder] = useState<PublicOrder | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
 
   const [guest, setGuest] = useState({ email: '', firstName: '', lastName: '', phone: '' });
   const [shipping, setShipping] = useState(emptyAddress);
@@ -32,7 +43,13 @@ const CheckoutPage: React.FC = () => {
     [items]
   );
 
-  if (!items.length) return <Navigate to="/cart" replace />;
+  useEffect(() => {
+    getStripeConfig()
+      .then(({ publishableKey }) => setStripePromise(loadStripe(publishableKey)))
+      .catch(() => setError('Payment provider unavailable. Please try again later.'));
+  }, []);
+
+  if (!items.length && step === 'details') return <Navigate to="/cart" replace />;
 
   const applyCoupon = async () => {
     if (!couponCode) return;
@@ -45,7 +62,7 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
@@ -57,7 +74,7 @@ const CheckoutPage: React.FC = () => {
       couponCode: couponCode || undefined,
     };
     try {
-      const order = isAuthenticated
+      const result = isAuthenticated
         ? await authenticatedCheckout(payload)
         : await guestCheckout({
             ...payload,
@@ -66,20 +83,54 @@ const CheckoutPage: React.FC = () => {
             lastName: guest.lastName,
             phone: guest.phone || undefined,
           });
-      clearCart();
-      navigate(`/order-confirmation/${order.orderNumber}`, { state: { order } });
+      setPendingOrder(result);
+      setStep('payment');
     } catch {
-      setError('Checkout failed. Please try again.');
+      setError('Order creation failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handlePaymentSuccess = () => {
+    clearCart();
+    navigate(`/order-confirmation/${pendingOrder!.orderNumber}`, {
+      state: { order: pendingOrder, paymentStatus: 'processing' },
+    });
+  };
+
+  const handlePaymentError = (message: string) => {
+    setError(message);
+  };
+
+  if (step === 'payment' && pendingOrder?.clientSecret && stripePromise) {
+    return (
+      <Container className="py-4" style={{ maxWidth: 560 }}>
+        <h1 className="h4 mb-3">Payment</h1>
+        {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+        <Elements stripe={stripePromise} options={{ clientSecret: pendingOrder.clientSecret }}>
+          <PaymentForm
+            orderNumber={pendingOrder.orderNumber}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+          />
+        </Elements>
+        <Button
+          variant="link"
+          className="mt-2 p-0 text-secondary"
+          onClick={() => { setStep('details'); setError(''); }}
+        >
+          Back to details
+        </Button>
+      </Container>
+    );
+  }
+
   return (
     <Container className="py-4" style={{ maxWidth: 720 }}>
       <h1 className="h4 mb-3">Checkout</h1>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Form onSubmit={handleSubmit}>
+      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+      <Form onSubmit={handleDetailsSubmit}>
         {!isAuthenticated && (
           <Row className="mb-3">
             <Col md={6}><Form.Control placeholder="Email" value={guest.email} onChange={(e) => setGuest({ ...guest, email: e.target.value })} required /></Col>
@@ -121,7 +172,9 @@ const CheckoutPage: React.FC = () => {
           <Col xs="auto"><Button type="button" variant="outline-secondary" onClick={applyCoupon}>Apply</Button></Col>
         </Row>
         <p>Subtotal: €{subtotal.toFixed(2)} · Discount: €{discount.toFixed(2)} · Total: €{(subtotal - discount).toFixed(2)}</p>
-        <Button type="submit" disabled={submitting}>{submitting ? 'Placing order…' : 'Place order'}</Button>
+        <Button type="submit" disabled={submitting} data-testid="btn-continue-to-payment">
+          {submitting ? 'Preparing order…' : 'Continue to payment'}
+        </Button>
       </Form>
     </Container>
   );

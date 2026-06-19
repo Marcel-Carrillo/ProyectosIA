@@ -61,6 +61,39 @@ APPLE_PRIVATE_KEY=
 
 Until credentials are set, social login buttons stay hidden on the storefront (`GET /api/public/auth/oauth/providers`). Non-production builds can still use `POST /api/public/auth/oauth/mock` for manual OAuth testing.
 
+**Stripe Payment Variables** (`backend/.env`):
+
+| Variable | Description | Mode |
+|----------|-------------|------|
+| `STRIPE_MODE` | `test` or `live` | Both |
+| `STRIPE_SECRET_KEY` | Server-side API key — **never expose to clients** | Both |
+| `STRIPE_PUBLISHABLE_KEY` | Browser-safe key — returned by `/api/public/payments/config` | Both |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret for `stripe.webhooks.constructEvent` | Both |
+
+**Test mode** (no charges):
+```env
+STRIPE_MODE=test
+STRIPE_SECRET_KEY=sk_test_...    # from Stripe Dashboard → Developers → API keys
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...  # from `stripe listen` output (see below)
+```
+
+**Local webhook forwarding** with the Stripe CLI:
+```bash
+# Install: https://stripe.com/docs/stripe-cli
+stripe login
+stripe listen --forward-to http://localhost:3000/api/public/payments/webhook
+# Copy the whsec_... value shown and set it as STRIPE_WEBHOOK_SECRET
+```
+
+**Stripe test cards**:
+
+| Card number | Behavior |
+|-------------|----------|
+| `4242 4242 4242 4242` | Success |
+| `4000 0000 0000 9995` | Declined |
+| `4000 0025 0000 3155` | 3DS required |
+
 **Frontend Environment** (`frontend/.env.development`):
 
 ```env

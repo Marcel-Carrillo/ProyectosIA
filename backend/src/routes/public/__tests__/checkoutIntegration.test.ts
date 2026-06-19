@@ -1,4 +1,18 @@
 import request from 'supertest';
+
+jest.mock('../../../infrastructure/stripe/stripeClient', () => ({
+  stripe: {
+    paymentIntents: {
+      create: jest.fn().mockImplementation(() => {
+        const id = `pi_test_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        return Promise.resolve({ id, client_secret: `${id}_secret` });
+      }),
+    },
+    webhooks: { constructEvent: jest.fn() },
+    refunds: { create: jest.fn() },
+  },
+}));
+
 import { app } from '../../../index';
 import { getAdminAccessToken, withAdminAuth } from '../../../test-utils/adminAuthHelper';
 import { prisma } from '../../../infrastructure/prismaClient';

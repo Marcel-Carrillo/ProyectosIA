@@ -138,6 +138,8 @@ model CustomerOrder {
   updatedAt               DateTime            @updatedAt
   paidAt                  DateTime?
   cancelledAt             DateTime?
+  stripePaymentIntentId   String?             @unique @db.VarChar(255)
+  stripeChargeId          String?             @db.VarChar(255)
   items                   CustomerOrderItem[]
   supplierOrders          SupplierOrder[]
   refunds                 Refund[]
@@ -150,6 +152,8 @@ model CustomerOrder {
   @@index([paymentStatus])
   @@index([fulfillmentStatus])
   @@index([createdAt])
+  @@index([stripePaymentIntentId])
+  @@index([stripeChargeId])
 }
 
 model CustomerOrderItem {
@@ -391,4 +395,16 @@ model CouponRedemption {
   createdAt       DateTime      @default(now())
 
   @@index([couponId])
+}
+
+model StripeWebhookEvent {
+  id              Int      @id @default(autoincrement())
+  stripeEventId   String   @unique @db.VarChar(255)
+  type            String   @db.VarChar(100)
+  customerOrderId Int?
+  createdAt       DateTime @default(now())
+
+  @@index([stripeEventId])
+  @@index([customerOrderId])
+  @@index([createdAt])
 }

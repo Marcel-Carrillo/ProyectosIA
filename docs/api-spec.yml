@@ -2216,6 +2216,10 @@ paths:
         Processing → Completed, Processing → Failed, Processing → Cancelled.
         Terminal states (Completed, Failed, Cancelled) do not allow further transitions.
         When transitioning to Completed, processedAt is set and CustomerOrder.paymentStatus is recalculated.
+        **Stripe sync (Pending → Processing):** calls `stripe.refunds.create` with `payment_intent` and `amount`
+        using idempotency key `refund:{id}`. Stores Stripe refund id in `paymentProviderReference`.
+        If Stripe fails, the transition is aborted and 409 REFUND_STRIPE_ERROR is returned.
+        **charge.refunded webhook** advances Processing → Completed automatically when Stripe confirms.
       tags:
         - Refunds
       parameters:
@@ -2308,16 +2312,83 @@ paths:
     post:
       summary: Guest checkout
       tags: [Checkout]
+      description: |
+        Creates a CustomerOrder and a Stripe PaymentIntent atomically.
+        Returns `clientSecret` for the frontend to call `stripe.confirmPayment`.
+        If Stripe is unavailable, the order is rolled back and 503 is returned.
+        `stripePaymentIntentId` is NEVER included in the response.
       responses:
-        '201': { description: CustomerOrder created with snapshots }
+        '201':
+          description: Order created — includes clientSecret for Stripe.js
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      orderNumber: { type: string }
+                      status: { type: string }
+                      paymentStatus: { type: string }
+                      totalAmount: { type: string }
+                      currency: { type: string }
+                      clientSecret: { type: string, description: Stripe PaymentIntent client_secret for stripe.confirmPayment }
+        '503':
+          description: PAYMENT_GATEWAY_UNAVAILABLE — Stripe unreachable; order rolled back
 
   /api/public/checkout:
     post:
       summary: Authenticated checkout
       tags: [Checkout]
       security: [{ CustomerBearer: [] }]
+      description: Same as guest checkout but uses authenticated customer identity.
       responses:
-        '201': { description: Order for token customerId }
+        '201': { description: Order + clientSecret for token customerId }
+        '503': { description: PAYMENT_GATEWAY_UNAVAILABLE }
+
+  /api/public/payments/config:
+    get:
+      summary: Get Stripe publishable key and mode
+      tags: [Payments]
+      description: |
+        Returns the Stripe publishable key for initializing Stripe.js on the frontend.
+        The secret key is NEVER included.
+      responses:
+        '200':
+          description: Stripe configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      publishableKey: { type: string, description: Stripe publishable key (pk_test_* or pk_live_*) }
+                      mode: { type: string, enum: [test, live] }
+
+  /api/public/payments/webhook:
+    post:
+      summary: Stripe webhook receiver
+      tags: [Payments]
+      description: |
+        Receives Stripe events. Must be called with raw body (not JSON-parsed).
+        Verifies signature using `STRIPE_WEBHOOK_SECRET`.
+        Processed events are stored in `StripeWebhookEvent` for idempotency.
+        Handled event types: `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`.
+      parameters:
+        - in: header
+          name: stripe-signature
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Event processed or already processed (idempotent) }
+        '400':
+          description: PAYMENT_WEBHOOK_SIGNATURE_INVALID — missing or invalid Stripe-Signature header
 
   /api/public/coupons/validate:
     post:

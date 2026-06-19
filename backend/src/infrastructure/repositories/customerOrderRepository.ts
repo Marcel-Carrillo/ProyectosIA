@@ -120,6 +120,8 @@ const orderSelect = {
   updatedAt: true,
   paidAt: true,
   cancelledAt: true,
+  stripePaymentIntentId: true,
+  stripeChargeId: true,
   customer: { select: customerRefSelect },
   items: { select: itemSelect },
 } as const;
@@ -286,6 +288,40 @@ export class CustomerOrderRepository implements ICustomerOrderRepository {
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new OrderNumberConflictError();
+      }
+      throw err;
+    }
+  }
+
+  async findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<CustomerOrder | null> {
+    const row = await prisma.customerOrder.findUnique({
+      where: { stripePaymentIntentId },
+      select: orderSelect,
+    });
+    return row ? mapOrder(row) : null;
+  }
+
+  async updateStripeFields(
+    id: number,
+    data: { stripePaymentIntentId?: string | null; stripeChargeId?: string | null }
+  ): Promise<CustomerOrder> {
+    try {
+      const row = await prisma.customerOrder.update({
+        where: { id },
+        data: {
+          ...(data.stripePaymentIntentId !== undefined && {
+            stripePaymentIntentId: data.stripePaymentIntentId,
+          }),
+          ...(data.stripeChargeId !== undefined && {
+            stripeChargeId: data.stripeChargeId,
+          }),
+        },
+        select: orderSelect,
+      });
+      return mapOrder(row);
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+        throw new CustomerOrderNotFoundError();
       }
       throw err;
     }

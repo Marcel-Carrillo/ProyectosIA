@@ -52,4 +52,5 @@ export interface PublicOrder {
     unitPrice: string;
     totalPrice: string;
   }>;
+  clientSecret?: string;
 }

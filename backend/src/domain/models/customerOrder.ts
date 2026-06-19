@@ -102,6 +102,8 @@ export class CustomerOrder {
   updatedAt?: Date;
   paidAt?: Date | null;
   cancelledAt?: Date | null;
+  stripePaymentIntentId: string | null;
+  stripeChargeId: string | null;
   items?: CustomerOrderItem[];
   customer?: CustomerOrderCustomerRef;
 
@@ -123,6 +125,8 @@ export class CustomerOrder {
     updatedAt?: Date;
     paidAt?: Date | null;
     cancelledAt?: Date | null;
+    stripePaymentIntentId?: string | null;
+    stripeChargeId?: string | null;
     items?: CustomerOrderItem[];
     customer?: CustomerOrderCustomerRef;
   }) {
@@ -143,6 +147,8 @@ export class CustomerOrder {
     this.updatedAt = data.updatedAt;
     this.paidAt = data.paidAt ?? null;
     this.cancelledAt = data.cancelledAt ?? null;
+    this.stripePaymentIntentId = data.stripePaymentIntentId ?? null;
+    this.stripeChargeId = data.stripeChargeId ?? null;
     this.items = data.items;
     this.customer = data.customer;
   }

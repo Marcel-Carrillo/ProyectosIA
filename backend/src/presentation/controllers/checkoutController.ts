@@ -1,8 +1,9 @@
 import { Response, NextFunction } from 'express';
-import { checkoutService } from '../../application/services/checkoutService';
+import { checkoutService, CheckoutResult } from '../../application/services/checkoutService';
 import { CustomerAuthRequest } from '../../middleware/requireCustomerAuth';
 
-function toPublicOrder(order: NonNullable<Awaited<ReturnType<typeof checkoutService.createOrder>>>) {
+function toPublicOrder(result: CheckoutResult) {
+  const { order, clientSecret } = result;
   return {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -28,6 +29,7 @@ function toPublicOrder(order: NonNullable<Awaited<ReturnType<typeof checkoutServ
       unitPrice: item.unitPrice.toString(),
       totalPrice: item.totalPrice.toString(),
     })),
+    clientSecret,
   };
 }
 
@@ -48,7 +50,7 @@ export async function guestCheckout(req: CustomerAuthRequest, res: Response, nex
       res.status(400).json({ success: false, error: { message: 'Invalid checkout payload', code: 'VALIDATION_ERROR' } });
       return;
     }
-    const order = await checkoutService.guestCheckout({
+    const result = await checkoutService.guestCheckout({
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -60,7 +62,7 @@ export async function guestCheckout(req: CustomerAuthRequest, res: Response, nex
       shippingAmount: body.shippingAmount,
       couponCode: body.couponCode,
     });
-    res.status(201).json({ success: true, data: toPublicOrder(order), message: 'Order created' });
+    res.status(201).json({ success: true, data: toPublicOrder(result), message: 'Order created' });
   } catch (err) {
     next(err);
   }
@@ -79,7 +81,7 @@ export async function authenticatedCheckout(req: CustomerAuthRequest, res: Respo
       res.status(400).json({ success: false, error: { message: 'Invalid checkout payload', code: 'VALIDATION_ERROR' } });
       return;
     }
-    const order = await checkoutService.createOrder({
+    const result = await checkoutService.createOrder({
       customerId: req.customer!.customerId,
       items: body.items,
       shippingAddressSnapshot: body.shippingAddressSnapshot,
@@ -87,7 +89,7 @@ export async function authenticatedCheckout(req: CustomerAuthRequest, res: Respo
       shippingAmount: body.shippingAmount,
       couponCode: body.couponCode,
     });
-    res.status(201).json({ success: true, data: toPublicOrder(order), message: 'Order created' });
+    res.status(201).json({ success: true, data: toPublicOrder(result), message: 'Order created' });
   } catch (err) {
     next(err);
   }
