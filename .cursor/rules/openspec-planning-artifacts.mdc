@@ -1,0 +1,34 @@
+---
+description: Mandatory OpenSpec planning artifacts before /opsx:apply implementation
+globs:
+alwaysApply: true
+---
+
+# OpenSpec: Planning artifacts before implementation
+
+When running `/opsx:apply` or `openspec-apply-change` on a change that touches code:
+
+## Step 4b is NOT optional
+
+Before editing any source file:
+
+1. **Create** `.claude/sessions/context_session_<change-name>.md` with links to proposal, design, specs, tasks, Jira key, and scope summary.
+2. **Spawn planning subagents** (or write plans yourself if subagents unavailable — never skip silently):
+   - Backend scope → `.claude/doc/<change-name>/backend.md` via `ai-specs/agents/backend-developer.md`
+   - Frontend scope → `.claude/doc/<change-name>/frontend.md` via `ai-specs/agents/frontend-developer.md`
+3. **Read** those plan files, then implement from them plus `design.md`.
+
+Do NOT jump straight to implementation because the change is "small" or "audit-first". State explicitly if subagents were skipped and why.
+
+## ESLint gate before commit/PR
+
+| Layer | Command (must pass) |
+|-------|---------------------|
+| Frontend | `cd frontend && npx eslint src --ext .ts,.tsx` |
+| Backend | `cd backend && npm run lint` |
+
+New RTL tests: use `findBy*` queries, not `waitFor` + `getBy*` (`testing-library/prefer-find-by`). See `docs/frontend-standards.md`.
+
+## Retrospective
+
+If planning artifacts were missing mid-change, create them before the final commit so the next session has full context.

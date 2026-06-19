@@ -126,6 +126,18 @@ const orderSelect = {
 
 type OrderRow = Prisma.CustomerOrderGetPayload<{ select: typeof orderSelect }>;
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function startOfUtcDay(isoDate: string): Date | undefined {
+  if (!ISO_DATE_RE.test(isoDate)) return undefined;
+  return new Date(`${isoDate}T00:00:00.000Z`);
+}
+
+function endOfUtcDay(isoDate: string): Date | undefined {
+  if (!ISO_DATE_RE.test(isoDate)) return undefined;
+  return new Date(`${isoDate}T23:59:59.999Z`);
+}
+
 function mapOrder(row: OrderRow): CustomerOrder {
   return new CustomerOrder({
     ...row,
@@ -172,6 +184,15 @@ export class CustomerOrderRepository implements ICustomerOrderRepository {
           },
         },
       ];
+    }
+
+    const createdFrom = filters.createdFrom ? startOfUtcDay(filters.createdFrom) : undefined;
+    const createdTo = filters.createdTo ? endOfUtcDay(filters.createdTo) : undefined;
+    if (createdFrom || createdTo) {
+      where.createdAt = {
+        ...(createdFrom ? { gte: createdFrom } : {}),
+        ...(createdTo ? { lte: createdTo } : {}),
+      };
     }
 
     const sortField = filters.sort ?? 'createdAt';

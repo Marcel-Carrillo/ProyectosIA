@@ -64,10 +64,29 @@ Implement tasks from an OpenSpec change.
 
    a. **Workspace isolation (Step 0).** Apply `ai-specs/skills/using-git-worktrees/SKILL.md`: ensure you are on a feature branch / worktree (default `feature/<change-name>`), never on `master`/`main` or an unrelated branch. If `tasks.md` defines Step 0, execute it; otherwise create the branch/worktree now, before any code change.
 
-   b. **Per-layer planning subagents — they plan, the parent builds (complements `design.md`, does not replace it).** Decide whether the change touches backend, frontend, or both (from `design.md`, `specs`, `tasks.md`). For each affected layer: write `.claude/sessions/context_session_<change-name>.md` with the change context (links to proposal/design/specs/tasks), then spawn the matching planning agent and wait:
-      - Backend → `Agent(subagent_type: "general-purpose", model: "sonnet", prompt: "Read and apply ai-specs/agents/backend-developer.md in full. Feature: <change-name>. Read .claude/sessions/context_session_<change-name>.md plus the change's design.md / specs / tasks.md, then save a per-file implementation plan to .claude/doc/<change-name>/backend.md.")`
-      - Frontend → same with `ai-specs/agents/frontend-developer.md` → `.claude/doc/<change-name>/frontend.md`
-      Then read `.claude/doc/<change-name>/{backend,frontend}.md` and implement from those file-level plans together with `design.md`. The agents ONLY plan; you (the parent) do the building and run tests/servers. For small single-file or non-code changes you may skip the subagent and implement directly — state why.
+   b. **Per-layer planning subagents — they plan, the parent builds (MANDATORY — complements `design.md`, does not replace it).** Decide whether the change touches backend, frontend, or both (from `design.md`, `specs`, `tasks.md`).
+
+      **Planning gate — do NOT edit source until these exist:**
+
+      | Artifact | Path |
+      |----------|------|
+      | Session context | `.claude/sessions/context_session_<change-name>.md` |
+      | Backend plan (if backend touched) | `.claude/doc/<change-name>/backend.md` |
+      | Frontend plan (if frontend touched) | `.claude/doc/<change-name>/frontend.md` |
+
+      For each affected layer:
+      1. Write `.claude/sessions/context_session_<change-name>.md` (once) with change context and links to proposal/design/specs/tasks.
+      2. Spawn the matching planning subagent and **wait** for the plan file:
+         - Backend → `Task(subagent_type: "generalPurpose", prompt: "Read and apply ai-specs/agents/backend-developer.md in full. Feature: <change-name>. Read .claude/sessions/context_session_<change-name>.md plus the change's design.md / specs / tasks.md, then save a per-file implementation plan to .claude/doc/<change-name>/backend.md.")`
+         - Frontend → same with `ai-specs/agents/frontend-developer.md` → `.claude/doc/<change-name>/frontend.md`
+      3. Read `.claude/doc/<change-name>/{backend,frontend}.md` before writing code.
+
+      Subagents ONLY plan; you (the parent) build and run tests. **Skipping is forbidden** for any change that adds or modifies source/tests — including audit-first gap closure. If a subagent cannot run, write the plan files yourself following the agent prompts; never implement without them.
+
+   c. **Lint preflight (after implementation, before marking verification complete):**
+      - Frontend touched → `cd frontend && npx eslint src --ext .ts,.tsx` (CI: `frontend-quality`)
+      - Backend touched → `cd backend && npm run lint` (CI: `backend-quality`)
+      - New RTL tests must use `findBy*` not `waitFor`+`getBy*` — see `docs/frontend-standards.md`
 
 4c. **Jira integration — transition to "En curso"**
 
@@ -216,7 +235,8 @@ What would you like to do?
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
 - Isolate on a feature branch / worktree (Step 0) BEFORE editing any file; never implement on `master`/`main`
-- Plan backend/frontend work with `ai-specs/agents/{backend,frontend}-developer.md` (plan saved to `.claude/doc/<change-name>/`), then implement from the plan — agents plan, the parent builds
+- Plan backend/frontend work with `ai-specs/agents/{backend,frontend}-developer.md` (plan saved to `.claude/doc/<change-name>/`); **create** `.claude/sessions/context_session_<change-name>.md` first — agents plan, the parent builds; never skip for code changes
+- Run ESLint before verification/commit: `npx eslint src --ext .ts,.tsx` (frontend) or `npm run lint` (backend)
 - Execute all mandatory tests yourself (unit, curl, E2E) and create reports; mark tasks `[x]` only with evidence
 - Finish with Commit + PR via `ai-specs/skills/commit/SKILL.md`
 

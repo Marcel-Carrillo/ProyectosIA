@@ -123,7 +123,7 @@ const OrderStatusControl: React.FC<OrderStatusControlProps> = ({
         </Col>
       </Row>
       {error && <div className="text-danger small mb-2">{error}</div>}
-      <Button type="submit" variant="primary" disabled={saving} data-testid="btn-save-status">
+      <Button type="submit" variant="primary" disabled={saving} className="admin-touch-btn" data-testid="btn-save-status">
         {saving ? 'Saving…' : 'Update statuses'}
       </Button>
     </form>

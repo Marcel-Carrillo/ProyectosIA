@@ -24,8 +24,10 @@ build/
 # worktree directories
 .worktrees/
 
-# local Claude session artifacts
-.claude/sessions/
+# local Claude session artifacts (track context_session_*.md for OpenSpec apply)
+.claude/sessions/*
+!.claude/sessions/.gitkeep
+!.claude/sessions/context_session_*.md
 
 # Playwright MCP session artifacts
 .playwright-mcp/

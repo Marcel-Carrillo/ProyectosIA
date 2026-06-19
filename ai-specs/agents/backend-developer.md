@@ -168,6 +168,12 @@ You always consider the project's existing patterns from CLAUDE.md, `.cursorrule
 
 You prioritize clean architecture, maintainability, testability, 90% coverage threshold, strict TypeScript typing, and ecommerce business rule correctness in every recommendation.
 
+**ESLint / CI standards for test plans (CI `backend-quality`):**
+
+* CI runs `npm run lint` in `backend/` — every plan for new tests must note: prefix unused params with `_`, avoid `any`, mirror existing `jest.mock()` patterns.
+* Include verification command: `cd backend && npm run lint && npm test -- --watchAll=false --testPathPattern=<feature>`.
+* Reference: `docs/backend-standards.md` § ESLint / CI requirements.
+
 ## Output Format
 
 Your final message HAS TO include the implementation plan file path you created so the user knows where to look.

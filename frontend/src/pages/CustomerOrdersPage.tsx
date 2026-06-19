@@ -26,6 +26,8 @@ const CustomerOrdersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') ?? '');
   const [paymentFilter, setPaymentFilter] = useState(searchParams.get('paymentStatus') ?? '');
   const [fulfillmentFilter, setFulfillmentFilter] = useState(searchParams.get('fulfillmentStatus') ?? '');
+  const [createdFrom, setCreatedFrom] = useState(searchParams.get('createdFrom') ?? '');
+  const [createdTo, setCreatedTo] = useState(searchParams.get('createdTo') ?? '');
   const [page, setPage] = useState(Number(searchParams.get('page') ?? '1') || 1);
   const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
 
@@ -45,9 +47,11 @@ const CustomerOrdersPage: React.FC = () => {
     if (statusFilter) params.set('status', statusFilter);
     if (paymentFilter) params.set('paymentStatus', paymentFilter);
     if (fulfillmentFilter) params.set('fulfillmentStatus', fulfillmentFilter);
+    if (createdFrom) params.set('createdFrom', createdFrom);
+    if (createdTo) params.set('createdTo', createdTo);
     if (page > 1) params.set('page', String(page));
     setSearchParams(params, { replace: true });
-  }, [searchInput, statusFilter, paymentFilter, fulfillmentFilter, page, setSearchParams]);
+  }, [searchInput, statusFilter, paymentFilter, fulfillmentFilter, createdFrom, createdTo, page, setSearchParams]);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -58,6 +62,8 @@ const CustomerOrdersPage: React.FC = () => {
         status: (statusFilter as CustomerOrderStatus) || undefined,
         paymentStatus: (paymentFilter as PaymentStatus) || undefined,
         fulfillmentStatus: (fulfillmentFilter as FulfillmentStatus) || undefined,
+        createdFrom: createdFrom || undefined,
+        createdTo: createdTo || undefined,
         page,
         pageSize: PAGE_SIZE,
       });
@@ -68,7 +74,7 @@ const CustomerOrdersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, statusFilter, paymentFilter, fulfillmentFilter, page]);
+  }, [debouncedSearch, statusFilter, paymentFilter, fulfillmentFilter, createdFrom, createdTo, page]);
 
   useEffect(() => {
     void fetchOrders();
@@ -113,6 +119,26 @@ const CustomerOrdersPage: React.FC = () => {
             <option value="">All</option>
             {FULFILLMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </Form.Select>
+        </Col>
+        <Col xs={6} md={2}>
+          <Form.Label className="small mb-1">Created from</Form.Label>
+          <Form.Control
+            type="date"
+            value={createdFrom}
+            onChange={(e) => { setCreatedFrom(e.target.value); setPage(1); }}
+            aria-label="Created from date"
+            data-testid="order-date-from"
+          />
+        </Col>
+        <Col xs={6} md={2}>
+          <Form.Label className="small mb-1">Created to</Form.Label>
+          <Form.Control
+            type="date"
+            value={createdTo}
+            onChange={(e) => { setCreatedTo(e.target.value); setPage(1); }}
+            aria-label="Created to date"
+            data-testid="order-date-to"
+          />
         </Col>
       </Row>
 

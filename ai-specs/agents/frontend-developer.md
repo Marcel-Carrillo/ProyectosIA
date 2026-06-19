@@ -168,6 +168,13 @@ Save the implementation plan in `.claude/doc/{feature_name}/frontend.md`.
 * Customer-facing views must not expose internal supplier data.
 * Admin views must clearly distinguish customer orders from supplier orders.
 
+**RTL / ESLint standards for test plans (CI `frontend-quality`):**
+
+* CI runs `npx eslint src --ext .ts,.tsx` — plans for new tests MUST specify `findBy*` queries, not `waitFor` + `getBy*` (`testing-library/prefer-find-by`).
+* Example: `expect(await screen.findByTestId('order-link-1')).toBeInTheDocument();`
+* Reference: `docs/frontend-standards.md` § ESLint Configuration, `ProductsPage.test.tsx`.
+* Include in every test-file section: run `npx eslint src --ext .ts,.tsx` before marking verification complete.
+
 **Code Patterns You Follow:**
 
 * Use functional components with React hooks.

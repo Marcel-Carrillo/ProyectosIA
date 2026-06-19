@@ -387,6 +387,17 @@ refundService.ts
 * **PII rule**: never log or display `email`/`phone` in error messages or console; use only `customerId` and operation name in any debug output.
 * **Testing**: RTL tests mock `customerService` and child modals; use `findBy*` queries for all async assertions.
 
+#### Admin customer-order panel patterns
+
+* **Service**: `frontend/src/services/customerOrderService.ts` calls `/api/admin/customer-orders` (list, get, create, updateStatus, generateSupplierOrders).
+* **Types**: `frontend/src/types/customerOrder.ts` — three status dimensions, `AddressSnapshot`, `CustomerOrderQueryParams` (includes optional `createdFrom`/`createdTo`).
+* **Pages**: `CustomerOrdersPage` (debounced search, status filters, date-range inputs, URL sync, dual card/table render); `CustomerOrderDetailPage` (items, addresses, totals, linked supplier orders/refunds/returns).
+* **Components**: `OrderStatusControl` (three independent selects, PATCH only changed fields); `OrderStatusTimeline` (derived milestones from `createdAt`, `paidAt`, `cancelledAt`, `updatedAt`).
+* **Security**: never render `supplierCost`, `supplierReference`, or supplier notes in customer-order UI.
+* **Mobile**: refund/return modals use `fullscreen="sm-down"`; primary actions use `admin-touch-btn` (44px min tap target).
+* **Test IDs**: `order-search`, `order-date-from`, `order-date-to`, `order-link-{id}`, `order-status-timeline`, `order-status-control`, `btn-save-status`.
+* **Testing**: RTL page tests under `frontend/src/pages/__tests__/CustomerOrdersPage.test.tsx` and `CustomerOrderDetailPage.test.tsx`; Cypress `frontend/cypress/e2e/customer-orders.cy.ts`.
+
 ## UI/UX Standards
 
 ### Bootstrap Integration
@@ -593,10 +604,29 @@ create refund
 
 ### ESLint Configuration
 
-* Extend **React App** configuration
-* Include **Jest rules** for testing
-* **Automatic code formatting** and error detection
-* **Consistent code style** across the project
+* Extend **React App** configuration (`react-app`, `react-app/jest`)
+* CI job **`frontend-quality`** runs: `npx eslint src --ext .ts,.tsx` — must pass before merge
+* Include **Jest / Testing Library rules** for test files
+
+#### Testing Library rules (test files)
+
+The project enforces `testing-library/prefer-find-by`. When asserting async UI:
+
+```typescript
+// ✅ Use findBy* (returns a Promise)
+expect(await screen.findByTestId('order-link-1')).toBeInTheDocument();
+expect(await screen.findByText(/unable to load/i)).toBeInTheDocument();
+fireEvent.click(await screen.findByTestId('btn-save'));
+
+// ❌ Do NOT combine waitFor + getBy* for the same assertion
+await waitFor(() => expect(screen.getByTestId('order-link-1')).toBeInTheDocument());
+```
+
+* Reserve `waitFor` for non-query assertions (e.g. mock call counts after debounce + `jest.advanceTimersByTime`).
+* Reference passing tests: `src/pages/__tests__/ProductsPage.test.tsx`, `ShipmentDetailPage.test.tsx`.
+* Run locally before commit: `cd frontend && npx eslint src --ext .ts,.tsx`
+
+Test-file overrides in `package.json` disable `no-container` and `no-node-access` for supplier-field DOM checks.
 
 ### Environment Configuration
 
