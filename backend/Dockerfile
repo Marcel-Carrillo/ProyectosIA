@@ -20,6 +20,6 @@ COPY tsconfig.json ./
 # src/ is bind-mounted at runtime for hot-reload; copy here only as fallback
 COPY src ./src
 COPY entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+RUN tr -d '\r' < ./entrypoint.sh > /tmp/ep.sh && mv /tmp/ep.sh ./entrypoint.sh && chmod +x ./entrypoint.sh
 EXPOSE 3000
 ENTRYPOINT ["./entrypoint.sh"]

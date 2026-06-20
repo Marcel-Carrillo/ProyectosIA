@@ -1,8 +1,8 @@
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
-# src/ is bind-mounted at runtime; copy here only as fallback
+COPY tsconfig.json ./
+RUN npm ci --legacy-peer-deps
 COPY src ./src
 COPY public ./public
 EXPOSE 3001
