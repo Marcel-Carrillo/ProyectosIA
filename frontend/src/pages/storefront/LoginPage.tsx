@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { extractCustomerAuthError } from '../../services/customerAuthService';
 import OAuthButtons from '../../components/storefront/OAuthButtons';
+import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
 const LoginPage: React.FC = () => {
   const { login, verify2fa } = useCustomerAuth();
@@ -48,40 +48,77 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const title = mfaToken ? 'Two-factor authentication' : 'Sign in';
+  const subtitle = mfaToken
+    ? 'Enter the code from your authenticator app.'
+    : 'Access your orders and saved details.';
+
   return (
-    <Container className="py-4" style={{ maxWidth: 480 }}>
-      <Card>
-        <Card.Body>
-          <h1 className="h4 mb-3">{mfaToken ? 'Two-factor authentication' : 'Sign in'}</h1>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {mfaToken ? (
-            <Form onSubmit={handle2fa}>
-              <Form.Group className="mb-3">
-                <Form.Label>Authentication code</Form.Label>
-                <Form.Control value={totpCode} onChange={(e) => setTotpCode(e.target.value)} required />
-              </Form.Group>
-              <Button type="submit" disabled={submitting}>Verify</Button>
-            </Form>
-          ) : (
-            <Form onSubmit={handleLogin}>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Password</Form.Label>
-                <Form.Control type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              </Form.Group>
-              <Button type="submit" className="w-100 mb-2" disabled={submitting}>Sign in</Button>
-              <div className="small">
-                <Link to="/register">Create account</Link> · <Link to="/forgot-password">Forgot password?</Link>
-              </div>
-              <OAuthButtons />
-            </Form>
+    <StorefrontAuthPanel
+      title={title}
+      subtitle={subtitle}
+      footer={
+        <>
+          {!mfaToken && (
+            <div className="storefront-auth__links">
+              <Link to="/register">Create account</Link>
+              <Link to="/forgot-password">Forgot password?</Link>
+            </div>
           )}
-        </Card.Body>
-      </Card>
-    </Container>
+          <Link to="/catalog" className="storefront-auth__guest">
+            Continue as guest
+          </Link>
+        </>
+      }
+    >
+      {error && <p className="storefront-auth__error" role="alert">{error}</p>}
+      {mfaToken ? (
+        <form onSubmit={handle2fa} className="storefront-auth__form">
+          <label className="storefront-field">
+            <span className="storefront-field__label">Authentication code</span>
+            <input
+              className="storefront-field__input"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value)}
+              required
+              autoComplete="one-time-code"
+            />
+          </label>
+          <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
+            {submitting ? 'Verifying…' : 'Verify'}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleLogin} className="storefront-auth__form">
+          <label className="storefront-field">
+            <span className="storefront-field__label">Email</span>
+            <input
+              type="email"
+              className="storefront-field__input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </label>
+          <label className="storefront-field">
+            <span className="storefront-field__label">Password</span>
+            <input
+              type="password"
+              className="storefront-field__input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </label>
+          <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
+          <OAuthButtons />
+        </form>
+      )}
+    </StorefrontAuthPanel>
   );
 };
 

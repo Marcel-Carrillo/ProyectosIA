@@ -67,19 +67,7 @@ const ProductPage: React.FC = () => {
           <div className="storefront-empty">
             <p className="storefront-empty__title">Product not found</p>
             <p>This product may no longer be available.</p>
-            <Link
-              to="/catalog"
-              style={{
-                display: 'inline-block',
-                marginTop: 16,
-                padding: '10px 20px',
-                background: 'var(--color-near-black)',
-                color: 'var(--color-white)',
-                textDecoration: 'none',
-                fontSize: 'var(--font-size-sm)',
-                letterSpacing: '0.06em',
-              }}
-            >
+            <Link to="/catalog" className="storefront-btn storefront-btn--text">
               Back to catalog
             </Link>
           </div>
@@ -92,15 +80,7 @@ const ProductPage: React.FC = () => {
     return (
       <div className="storefront-section">
         <div className="storefront-container">
-          <div
-            role="alert"
-            style={{
-              padding: '12px 16px',
-              background: 'var(--color-error-bg)',
-              color: 'var(--color-error)',
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
+          <div className="storefront-alert" role="alert">
             {error}
           </div>
         </div>
@@ -115,37 +95,24 @@ const ProductPage: React.FC = () => {
   return (
     <div className="storefront-section">
       <div className="storefront-container">
+        <nav className="storefront-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/catalog">Shop</Link>
+          <span aria-hidden>›</span>
+          <span>{product.name}</span>
+        </nav>
+
         <div className="storefront-pdp-grid">
           <ProductGallery images={product.images ?? []} productName={product.name} />
 
-          <div style={{ paddingTop: 8 }}>
+          <div className="storefront-pdp-info">
             {product.brand && (
-              <p
-                style={{
-                  fontSize: 'var(--font-size-xs)',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-mid)',
-                  marginBottom: 8,
-                }}
-              >
-                {product.brand}
-              </p>
+              <p className="storefront-pdp-brand">{product.brand}</p>
             )}
 
-            <h1
-              style={{
-                fontSize: 'var(--font-size-2xl)',
-                fontWeight: 'var(--font-weight-regular)' as React.CSSProperties['fontWeight'],
-                letterSpacing: '-0.01em',
-                margin: '0 0 16px',
-              }}
-            >
-              {product.name}
-            </h1>
+            <h1 className="storefront-pdp-title">{product.name}</h1>
 
             {priceVariant && (
-              <div style={{ marginBottom: 24, fontSize: 'var(--font-size-md)' }}>
+              <div className="storefront-pdp-price">
                 <PriceTag
                   publicPrice={priceVariant.publicPrice}
                   compareAtPrice={priceVariant.compareAtPrice}
@@ -154,31 +121,21 @@ const ProductPage: React.FC = () => {
             )}
 
             {product.variants && product.variants.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <VariantSelector
-                  variants={product.variants}
-                  onVariantChange={setSelectedVariant}
-                />
-              </div>
+              <VariantSelector
+                variants={product.variants}
+                onVariantChange={setSelectedVariant}
+              />
             )}
 
             {product.description && (
-              <p
-                style={{
-                  fontSize: 'var(--font-size-base)',
-                  lineHeight: 1.7,
-                  color: 'var(--color-near-black)',
-                  marginBottom: 32,
-                }}
-              >
-                {product.description}
-              </p>
+              <p className="storefront-pdp-description">{product.description}</p>
             )}
 
             <button
               type="button"
               aria-label="Add to cart"
               disabled={!priceVariant}
+              className="storefront-btn storefront-btn--primary"
               onClick={() => {
                 if (!priceVariant || !product) return;
                 addItem({
@@ -193,22 +150,22 @@ const ProductPage: React.FC = () => {
                 setAdded(true);
                 setTimeout(() => setAdded(false), 2000);
               }}
-              style={{
-                width: '100%',
-                minHeight: 48,
-                background: 'var(--color-near-black)',
-                color: 'var(--color-white)',
-                border: 'none',
-                fontSize: 'var(--font-size-sm)',
-                fontFamily: 'var(--font-family-body)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                cursor: priceVariant ? 'pointer' : 'not-allowed',
-                opacity: priceVariant ? 1 : 0.6,
-              }}
             >
-              {added ? 'Added to cart' : 'Add to Cart'}
+              {added ? 'Added to cart' : 'Add to cart'}
             </button>
+
+            <div className="storefront-pdp-details">
+              <dl>
+                <div className="storefront-pdp-details-row">
+                  <dt>Shipping</dt>
+                  <dd>Free from €100</dd>
+                </div>
+                <div className="storefront-pdp-details-row">
+                  <dt>Returns</dt>
+                  <dd>30 days</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </div>
       </div>

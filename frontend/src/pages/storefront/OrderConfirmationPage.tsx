@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Container, Spinner } from 'react-bootstrap';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { PublicOrder } from '../../types/auth';
 import { getOrderPaymentStatus } from '../../services/paymentService';
 
 const POLL_INTERVAL_MS = 2000;
-const POLL_MAX_ATTEMPTS = 15; // 30 seconds
+const POLL_MAX_ATTEMPTS = 15;
 
 const OrderConfirmationPage: React.FC = () => {
   const { orderNumber } = useParams<{ orderNumber: string }>();
@@ -44,45 +43,52 @@ const OrderConfirmationPage: React.FC = () => {
   const stillWaiting = isPolling && !paid && !failed && !pollTimeout;
 
   return (
-    <Container className="py-4 text-center" style={{ maxWidth: 560 }}>
-      <h1 className="h4 mb-3">
-        {paid ? 'Payment confirmed!' : 'Thank you for your order'}
+    <div className="storefront-confirmation storefront-animate-fade-up">
+      <p className="storefront-confirmation__eyebrow">Mavile</p>
+      <h1 className="storefront-confirmation__title">
+        {paid ? 'Payment confirmed' : 'Thank you for your order'}
       </h1>
 
       {stillWaiting && (
-        <div className="d-flex align-items-center justify-content-center gap-2 mb-3" data-testid="payment-polling">
-          <Spinner animation="border" size="sm" />
+        <div className="storefront-confirmation__polling" data-testid="payment-polling">
+          <span className="storefront-confirmation__spinner" aria-hidden />
           <span>Confirming payment…</span>
         </div>
       )}
 
       {paid && (
-        <Alert variant="success" data-testid="payment-success">
+        <p className="storefront-confirmation__success" data-testid="payment-success">
           Your payment was received. We will ship your order shortly.
-        </Alert>
+        </p>
       )}
 
       {failed && (
-        <Alert variant="danger" data-testid="payment-failed">
+        <p className="storefront-auth__error" data-testid="payment-failed">
           Payment failed. Please <Link to="/cart">return to cart</Link> and try again.
-        </Alert>
+        </p>
       )}
 
       {pollTimeout && !paid && (
-        <Alert variant="warning" data-testid="payment-timeout">
+        <p className="storefront-confirmation__warning" data-testid="payment-timeout">
           Payment confirmation is taking longer than expected. Check your{' '}
           <Link to="/account/orders">order history</Link> for the latest status.
-        </Alert>
+        </p>
       )}
 
-      <p>Order number: <strong>{displayOrderNumber}</strong></p>
-      {order && <p>Total: €{order.totalAmount}</p>}
+      <p className="storefront-confirmation__meta">
+        Order number: <strong>{displayOrderNumber}</strong>
+      </p>
+      {order && (
+        <p className="storefront-confirmation__meta">
+          Total: €{order.totalAmount}
+        </p>
+      )}
 
-      <div className="d-flex gap-3 justify-content-center mt-4">
-        <Link to="/catalog">Continue shopping</Link>
-        <Link to="/account/orders">My orders</Link>
+      <div className="storefront-confirmation__links">
+        <Link to="/catalog" className="storefront-btn storefront-btn--text">Continue shopping</Link>
+        <Link to="/account/orders" className="storefront-btn storefront-btn--text">My orders</Link>
       </div>
-    </Container>
+    </div>
   );
 };
 

@@ -41,8 +41,14 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading, isEmpty 
 
   return (
     <div className="storefront-grid">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+      {products.map((product, index) => (
+        <div
+          key={product.id}
+          className="storefront-animate-fade-up"
+          style={{ animationDelay: `${Math.min(index * 60, 480)}ms` }}
+        >
+          <ProductCard product={product} />
+        </div>
       ))}
     </div>
   );

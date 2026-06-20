@@ -1,47 +1,49 @@
 :root {
-  /* Neutral color palette */
+  /* Warm neutral palette (Lovable-inspired) */
   --color-white: #ffffff;
-  --color-off-white: #f8f8f6;
-  --color-light: #ebebeb;
-  --color-mid: #9a9a9a;
-  --color-near-black: #1a1a1a;
+  --color-background: #faf9f7;
+  --color-off-white: #f5f4f1;
+  --color-surface: #f5f4f1;
+  --color-light: #e8e6e2;
+  --color-mid: #6b6a66;
+  --color-near-black: #1a1a18;
   --color-black: #000000;
   --color-error: #c0392b;
   --color-error-bg: #fdf2f1;
 
-  /* Editorial sans-serif type scale */
-  --font-family-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-size-xs: 0.6875rem;   /* 11px */
-  --font-size-sm: 0.75rem;     /* 12px */
-  --font-size-base: 0.875rem;  /* 14px */
-  --font-size-md: 1rem;        /* 16px */
-  --font-size-lg: 1.125rem;    /* 18px */
-  --font-size-xl: 1.25rem;     /* 20px */
-  --font-size-2xl: 1.5rem;     /* 24px */
-  --font-size-3xl: 2rem;       /* 32px */
+  /* Typography */
+  --font-family-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.6875rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 2.5rem;
+  --font-size-5xl: 3rem;
 
-  /* Font weights */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
 
-  /* Generous whitespace scale (4px base) */
-  --spacing-1: 0.25rem;   /* 4px */
-  --spacing-2: 0.5rem;    /* 8px */
-  --spacing-3: 0.75rem;   /* 12px */
-  --spacing-4: 1rem;      /* 16px */
-  --spacing-5: 1.25rem;   /* 20px */
-  --spacing-6: 1.5rem;    /* 24px */
-  --spacing-8: 2rem;      /* 32px */
-  --spacing-10: 2.5rem;   /* 40px */
-  --spacing-12: 3rem;     /* 48px */
-  --spacing-16: 4rem;     /* 64px */
+  /* Spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
 
-  /* Border radius */
   --radius-sm: 2px;
   --radius-md: 4px;
 
-  /* Shadows */
-  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --transition-hover: 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-image: 800ms cubic-bezier(0.22, 1, 0.36, 1);
 }

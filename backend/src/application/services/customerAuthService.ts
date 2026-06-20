@@ -246,7 +246,7 @@ export class CustomerAuthService {
   }
 
   async setup2fa(customerAccountId: number) {
-    const secret = speakeasy.generateSecret({ name: 'Fashion Store' });
+    const secret = speakeasy.generateSecret({ name: 'Mavile' });
     await prisma.customerAccount.update({
       where: { id: customerAccountId },
       data: { totpSecret: secret.base32, totpEnabled: false },

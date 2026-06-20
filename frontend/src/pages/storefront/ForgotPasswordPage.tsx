@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../../services/customerAuthService';
+import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -24,28 +24,39 @@ const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <Container className="py-4" style={{ maxWidth: 480 }}>
-      <Card>
-        <Card.Body>
-          <h1 className="h4 mb-3">Forgot password</h1>
-          {sent ? (
-            <Alert variant="success">
-              If an account exists for that email, we sent reset instructions.
-            </Alert>
-          ) : (
-            <Form onSubmit={handleSubmit}>
-              {error && <Alert variant="danger">{error}</Alert>}
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </Form.Group>
-              <Button type="submit" className="w-100" disabled={submitting}>Send reset link</Button>
-            </Form>
-          )}
-          <div className="small mt-3"><Link to="/login">Back to sign in</Link></div>
-        </Card.Body>
-      </Card>
-    </Container>
+    <StorefrontAuthPanel
+      title="Forgot password"
+      subtitle={sent ? undefined : 'We will email you a reset link.'}
+      footer={
+        <Link to="/login" className="storefront-auth__guest">
+          Back to sign in
+        </Link>
+      }
+    >
+      {sent ? (
+        <p className="storefront-auth__info">
+          If an account exists for that email, we sent reset instructions.
+        </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="storefront-auth__form">
+          {error && <p className="storefront-auth__error" role="alert">{error}</p>}
+          <label className="storefront-field">
+            <span className="storefront-field__label">Email</span>
+            <input
+              type="email"
+              className="storefront-field__input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </label>
+          <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
+            {submitting ? 'Sending…' : 'Send reset link'}
+          </button>
+        </form>
+      )}
+    </StorefrontAuthPanel>
   );
 };
 

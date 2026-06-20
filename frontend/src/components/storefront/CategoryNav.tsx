@@ -3,7 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { categoryService } from '../../services/categoryService';
 import { Category } from '../../types/category';
 
-const CategoryNav: React.FC = () => {
+interface CategoryNavProps {
+  variant: 'header' | 'mobile';
+}
+
+const CategoryNav: React.FC<CategoryNavProps> = ({ variant }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchParams] = useSearchParams();
   const activeCategoryId = searchParams.get('categoryId');
@@ -14,8 +18,13 @@ const CategoryNav: React.FC = () => {
       .catch(() => {});
   }, []);
 
+  const navClass =
+    variant === 'header'
+      ? 'storefront-nav storefront-nav--header'
+      : 'storefront-nav storefront-nav--mobile';
+
   return (
-    <nav className="storefront-nav" aria-label="Category navigation">
+    <nav className={navClass} aria-label="Category navigation">
       <ul className="storefront-nav__list">
         <li>
           <Link

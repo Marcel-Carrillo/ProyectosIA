@@ -1,0 +1,19 @@
+---
+description: Lovable iterate commands apply to local ProyectoPrueba, never Lovable cloud
+globs:
+alwaysApply: true
+---
+
+# Lovable commands → local implementation only
+
+When the user runs `/lovable-iterate`, `lovable-iterate`, or asks for changes "por Lovable" / "like Lovable":
+
+1. **Do NOT** call Lovable MCP (`send_message`, `create_project`, `enable_database`, etc.) unless the user explicitly asks to edit the Lovable cloud project.
+2. **Implement** the requested UI/UX in this repository:
+   - Frontend: `frontend/src/` (storefront CSS tokens, React components, pages)
+   - Backend/seed: `backend/prisma/`, `backend/src/` when data or API is needed
+3. Use **Mavile** as the brand name and match the existing minimalist storefront (`tokens.css`, `storefront.css`).
+4. Keep existing routes, API services, and auth flows; only restyle and enhance UX.
+5. After UI changes, run `cd frontend && npx eslint src --ext .ts,.tsx` when touching frontend code.
+
+The Lovable project in the cloud is a reference/prototype only. The source of truth is **ProyectoPrueba** (local).

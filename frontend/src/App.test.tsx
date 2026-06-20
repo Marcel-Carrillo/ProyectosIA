@@ -4,5 +4,5 @@ import App from './App';
 
 test('renders storefront header on root path', () => {
   render(<App />);
-  expect(screen.getByLabelText('Fashion Store home')).toBeInTheDocument();
+  expect(screen.getByLabelText('Mavile home')).toBeInTheDocument();
 });

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Col, Container, Form, Row } from 'react-bootstrap';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { useCart } from '../../contexts/CartContext';
@@ -9,6 +8,7 @@ import { authenticatedCheckout, guestCheckout, validateCoupon } from '../../serv
 import { getStripeConfig } from '../../services/paymentService';
 import { PublicOrder } from '../../types/auth';
 import PaymentForm from '../../components/storefront/PaymentForm';
+import PriceTag from '../../components/storefront/PriceTag';
 
 const emptyAddress = {
   fullName: '',
@@ -17,6 +17,15 @@ const emptyAddress = {
   province: '',
   postalCode: '',
   country: 'Spain',
+};
+
+const ADDRESS_LABELS: Record<keyof typeof emptyAddress, string> = {
+  fullName: 'Full name',
+  streetLine1: 'Street address',
+  city: 'City',
+  province: 'Province',
+  postalCode: 'Postal code',
+  country: 'Country',
 };
 
 type Step = 'details' | 'payment';
@@ -42,6 +51,7 @@ const CheckoutPage: React.FC = () => {
     () => items.reduce((sum, i) => sum + parseFloat(i.publicPrice) * i.quantity, 0),
     [items]
   );
+  const total = subtotal - discount;
 
   useEffect(() => {
     getStripeConfig()
@@ -56,6 +66,7 @@ const CheckoutPage: React.FC = () => {
     const result = await validateCoupon(couponCode, subtotal.toFixed(2));
     if (result.valid && result.discountAmount) {
       setDiscount(parseFloat(result.discountAmount));
+      setError('');
     } else {
       setDiscount(0);
       setError(result.reason ? `Coupon: ${result.reason}` : 'Invalid coupon');
@@ -99,84 +110,142 @@ const CheckoutPage: React.FC = () => {
     });
   };
 
-  const handlePaymentError = (message: string) => {
-    setError(message);
-  };
-
   if (step === 'payment' && pendingOrder?.clientSecret && stripePromise) {
     return (
-      <Container className="py-4" style={{ maxWidth: 560 }}>
-        <h1 className="h4 mb-3">Payment</h1>
-        {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-        <Elements stripe={stripePromise} options={{ clientSecret: pendingOrder.clientSecret }}>
-          <PaymentForm
-            orderNumber={pendingOrder.orderNumber}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-          />
-        </Elements>
-        <Button
-          variant="link"
-          className="mt-2 p-0 text-secondary"
+      <div className="storefront-checkout storefront-animate-fade-up">
+        <p className="storefront-checkout__eyebrow">Mavile</p>
+        <h1 className="storefront-checkout__title">Payment</h1>
+        {error && <p className="storefront-auth__error" role="alert">{error}</p>}
+        <div className="storefront-checkout__card">
+          <Elements stripe={stripePromise} options={{ clientSecret: pendingOrder.clientSecret }}>
+            <PaymentForm
+              orderNumber={pendingOrder.orderNumber}
+              onSuccess={handlePaymentSuccess}
+              onError={setError}
+            />
+          </Elements>
+        </div>
+        <button
+          type="button"
+          className="storefront-btn storefront-btn--text"
           onClick={() => { setStep('details'); setError(''); }}
         >
           Back to details
-        </Button>
-      </Container>
+        </button>
+      </div>
     );
   }
 
   return (
-    <Container className="py-4" style={{ maxWidth: 720 }}>
-      <h1 className="h4 mb-3">Checkout</h1>
-      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-      <Form onSubmit={handleDetailsSubmit}>
+    <div className="storefront-checkout storefront-animate-fade-up">
+      <p className="storefront-checkout__eyebrow">Mavile</p>
+      <h1 className="storefront-checkout__title">Checkout</h1>
+
+      {error && <p className="storefront-auth__error" role="alert">{error}</p>}
+
+      <form onSubmit={handleDetailsSubmit} className="storefront-checkout__form">
         {!isAuthenticated && (
-          <Row className="mb-3">
-            <Col md={6}><Form.Control placeholder="Email" value={guest.email} onChange={(e) => setGuest({ ...guest, email: e.target.value })} required /></Col>
-            <Col md={3}><Form.Control placeholder="First name" value={guest.firstName} onChange={(e) => setGuest({ ...guest, firstName: e.target.value })} required /></Col>
-            <Col md={3}><Form.Control placeholder="Last name" value={guest.lastName} onChange={(e) => setGuest({ ...guest, lastName: e.target.value })} required /></Col>
-          </Row>
+          <section className="storefront-checkout__section">
+            <h2 className="storefront-checkout__section-title">Contact</h2>
+            <div className="storefront-checkout__grid">
+              <label className="storefront-field storefront-field--wide">
+                <span className="storefront-field__label">Email</span>
+                <input className="storefront-field__input" value={guest.email} onChange={(e) => setGuest({ ...guest, email: e.target.value })} required />
+              </label>
+              <label className="storefront-field">
+                <span className="storefront-field__label">First name</span>
+                <input className="storefront-field__input" value={guest.firstName} onChange={(e) => setGuest({ ...guest, firstName: e.target.value })} required />
+              </label>
+              <label className="storefront-field">
+                <span className="storefront-field__label">Last name</span>
+                <input className="storefront-field__input" value={guest.lastName} onChange={(e) => setGuest({ ...guest, lastName: e.target.value })} required />
+              </label>
+            </div>
+          </section>
         )}
+
         {isAuthenticated && customer && (
-          <p className="text-muted small mb-3">Checking out as {customer.firstName} {customer.lastName} ({customer.email})</p>
+          <p className="storefront-checkout__note">
+            Checking out as {customer.firstName} {customer.lastName} ({customer.email})
+          </p>
         )}
-        <h2 className="h6">Shipping address</h2>
-        <Row className="g-2 mb-3">
-          {Object.keys(emptyAddress).map((key) => (
-            <Col md={6} key={key}>
-              <Form.Control
-                placeholder={key}
-                value={shipping[key as keyof typeof emptyAddress]}
-                onChange={(e) => setShipping({ ...shipping, [key]: e.target.value })}
-                required
-              />
-            </Col>
-          ))}
-        </Row>
-        <h2 className="h6">Billing address</h2>
-        <Row className="g-2 mb-3">
-          {Object.keys(emptyAddress).map((key) => (
-            <Col md={6} key={`bill-${key}`}>
-              <Form.Control
-                placeholder={key}
-                value={billing[key as keyof typeof emptyAddress]}
-                onChange={(e) => setBilling({ ...billing, [key]: e.target.value })}
-                required
-              />
-            </Col>
-          ))}
-        </Row>
-        <Row className="g-2 mb-3 align-items-end">
-          <Col><Form.Control placeholder="Coupon code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} /></Col>
-          <Col xs="auto"><Button type="button" variant="outline-secondary" onClick={applyCoupon}>Apply</Button></Col>
-        </Row>
-        <p>Subtotal: €{subtotal.toFixed(2)} · Discount: €{discount.toFixed(2)} · Total: €{(subtotal - discount).toFixed(2)}</p>
-        <Button type="submit" disabled={submitting} data-testid="btn-continue-to-payment">
+
+        <section className="storefront-checkout__section">
+          <h2 className="storefront-checkout__section-title">Shipping address</h2>
+          <div className="storefront-checkout__grid">
+            {(Object.keys(emptyAddress) as Array<keyof typeof emptyAddress>).map((key) => (
+              <label className="storefront-field" key={key}>
+                <span className="storefront-field__label">{ADDRESS_LABELS[key]}</span>
+                <input
+                  className="storefront-field__input"
+                  value={shipping[key]}
+                  onChange={(e) => setShipping({ ...shipping, [key]: e.target.value })}
+                  required
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <section className="storefront-checkout__section">
+          <h2 className="storefront-checkout__section-title">Billing address</h2>
+          <div className="storefront-checkout__grid">
+            {(Object.keys(emptyAddress) as Array<keyof typeof emptyAddress>).map((key) => (
+              <label className="storefront-field" key={`bill-${key}`}>
+                <span className="storefront-field__label">{ADDRESS_LABELS[key]}</span>
+                <input
+                  className="storefront-field__input"
+                  value={billing[key]}
+                  onChange={(e) => setBilling({ ...billing, [key]: e.target.value })}
+                  required
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <section className="storefront-checkout__section">
+          <h2 className="storefront-checkout__section-title">Coupon</h2>
+          <div className="storefront-checkout__coupon">
+            <label className="storefront-field storefront-field--grow">
+              <span className="storefront-field__label">Code</span>
+              <input className="storefront-field__input" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+            </label>
+            <button type="button" className="storefront-btn storefront-btn--secondary" onClick={applyCoupon}>
+              Apply
+            </button>
+          </div>
+        </section>
+
+        <aside className="storefront-checkout__summary">
+          <dl>
+            <div className="storefront-cart__summary-row">
+              <dt>Subtotal</dt>
+              <dd><PriceTag publicPrice={subtotal} /></dd>
+            </div>
+            <div className="storefront-cart__summary-row">
+              <dt>Discount</dt>
+              <dd><PriceTag publicPrice={discount} /></dd>
+            </div>
+          </dl>
+          <div className="storefront-cart__summary-total">
+            <dt>Total</dt>
+            <dd><PriceTag publicPrice={total} /></dd>
+          </div>
+        </aside>
+
+        <button
+          type="submit"
+          className="storefront-btn storefront-btn--primary storefront-btn--press"
+          disabled={submitting}
+          data-testid="btn-continue-to-payment"
+        >
           {submitting ? 'Preparing order…' : 'Continue to payment'}
-        </Button>
-      </Form>
-    </Container>
+        </button>
+
+        <Link to="/cart" className="storefront-btn storefront-btn--text">Back to cart</Link>
+      </form>
+    </div>
   );
 };
 

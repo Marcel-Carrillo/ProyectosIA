@@ -94,52 +94,65 @@ const CatalogPage: React.FC = () => {
   const currentSortValue = `${sort}:${order}`;
 
   return (
-    <div className="storefront-section">
-      <div className="storefront-container">
-        <div className="storefront-controls">
-          <form onSubmit={handleSearch} className="storefront-controls__search" role="search">
-            <div className="storefront-controls__search-row">
+    <div>
+      <section className="storefront-hero">
+        <div className="storefront-hero__inner">
+          <p className="storefront-hero__eyebrow storefront-animate-fade-in">Fall · Winter · 26</p>
+          <h1 className="storefront-hero__title storefront-animate-fade-in" style={{ animationDelay: '80ms' }}>
+            A discreet selection of pieces made to last.
+          </h1>
+          <p className="storefront-hero__subtitle storefront-animate-fade-in" style={{ animationDelay: '160ms' }}>
+            Noble materials, clean cuts, a neutral palette. Designed with care,
+            crafted for everyday wear.
+          </p>
+        </div>
+      </section>
+
+      <section className="storefront-toolbar">
+        <div className="storefront-toolbar__inner">
+          <div className="storefront-toolbar__filters" aria-hidden="true" />
+          <div className="storefront-toolbar__tools">
+            <form onSubmit={handleSearch} className="storefront-toolbar__search" role="search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3-3" />
+              </svg>
               <input
                 type="search"
-                className="storefront-controls__input"
+                className="storefront-toolbar__input"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search products…"
+                placeholder="Search"
                 aria-label="Search products by name"
               />
-              <button type="submit" className="storefront-controls__submit">
-                Search
-              </button>
-            </div>
-          </form>
-
-          <select
-            className="storefront-controls__sort"
-            value={currentSortValue}
-            onChange={handleSort}
-            aria-label="Sort products"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={`${opt.sort}:${opt.order}`} value={`${opt.sort}:${opt.order}`}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            </form>
+            <select
+              className="storefront-toolbar__sort"
+              value={currentSortValue}
+              onChange={handleSort}
+              aria-label="Sort products"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={`${opt.sort}:${opt.order}`} value={`${opt.sort}:${opt.order}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+      </section>
 
+      <section className="storefront-catalog">
         {error && (
-          <div
-            role="alert"
-            style={{
-              padding: '12px 16px',
-              background: 'var(--color-error-bg)',
-              color: 'var(--color-error)',
-              marginBottom: 24,
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
+          <div className="storefront-alert" role="alert">
             {error}
           </div>
+        )}
+
+        {!isLoading && !error && products.length > 0 && (
+          <p className="storefront-catalog__count">
+            {total} {total === 1 ? 'piece' : 'pieces'}
+          </p>
         )}
 
         <ProductGrid
@@ -155,7 +168,7 @@ const CatalogPage: React.FC = () => {
             onPageChange={handlePageChange}
           />
         )}
-      </div>
+      </section>
     </div>
   );
 };
