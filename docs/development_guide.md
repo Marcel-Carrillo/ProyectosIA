@@ -341,16 +341,18 @@ The recommended local setup runs the entire backend stack in Docker containers. 
    - Runs `prisma db seed` (skipped on subsequent runs if data exists)
    - Starts `ts-node-dev` with hot-reload
 
-3. **Start the frontend on the host** (hot-reload works best from the host on Windows):
+3. **Start the frontend** (included automatically in `docker compose up`):
+
+   The frontend container starts together with the backend. For faster hot-reload on Windows you can instead run it from the host:
 
    ```bash
    cd frontend && npm start
    ```
 
-   Or use the optional Docker profile for a fully containerized setup:
+   To skip the frontend container and run only the backend stack:
 
    ```bash
-   docker compose --profile frontend up -d
+   docker compose up -d db mailpit backend
    ```
 
 ### Daily workflow
@@ -388,8 +390,7 @@ docker compose down
 **Docker-based (default):**
 
 ```bash
-docker compose up -d          # starts db + mailpit + backend
-cd frontend && npm start      # start frontend on host
+docker compose up -d          # starts db + mailpit + backend + frontend
 ```
 
 **Host-based (alternative, requires local Postgres):**

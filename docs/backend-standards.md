@@ -1524,7 +1524,7 @@ The backend supports two deployment environments with distinct configurations. T
 - **Database**: Postgres 15 in the `db` Docker Compose service — `DATABASE_URL` points to `db:5432`
 - **SMTP**: Mailpit in the `mailpit` Compose service — `SMTP_HOST=mailpit`
 - **Config file**: `backend/.env.docker` (git-ignored; never commit)
-- **Startup**: `docker compose up -d` from project root — migrations and seed run automatically via `entrypoint.sh`
+- **Startup**: `docker compose up -d` from project root — starts db, mailpit, backend and frontend; migrations and seed run automatically via `entrypoint.sh`
 - **Prisma binary targets**: `schema.prisma` includes `linux-musl-openssl-3.0.x` for Alpine Linux compatibility
 
 ### Production (AWS Lambda)
