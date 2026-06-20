@@ -60,6 +60,10 @@ if (process.env.NODE_ENV !== 'test') {
 
 export const app = express();
 
+// Trust exactly one proxy hop in prod (API Gateway/CloudFront); loopback only in dev
+// (CRA dev proxy). Prevents express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
+
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001,http://localhost:3002')
   .split(',')
   .map((s) => s.trim())
