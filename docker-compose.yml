@@ -10,6 +10,11 @@ services:
       - '5432:5432'
     volumes:
       - ecommerce-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ecommerceUser -d ecommerceDb']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   mailpit:
     image: axllent/mailpit:latest
@@ -18,5 +23,38 @@ services:
       - '1025:1025'
       - '8025:8025'
 
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    container_name: ecommerce-backend
+    env_file: ./backend/.env.docker
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - backend_node_modules:/app/node_modules
+
+  frontend:
+    profiles:
+      - frontend
+    build:
+      context: ./frontend
+    container_name: ecommerce-frontend
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:3000
+      - PORT=3001
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./frontend/src:/app/src
+      - frontend_node_modules:/app/node_modules
+
 volumes:
   ecommerce-db-data:
+  backend_node_modules:
+  frontend_node_modules:
