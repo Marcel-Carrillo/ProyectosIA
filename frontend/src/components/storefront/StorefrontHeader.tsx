@@ -24,8 +24,8 @@ const StorefrontHeader: React.FC = () => {
       <div className="storefront-header__bar">
         <CategoryNav variant="header" />
 
-        <Link to="/catalog" className="storefront-header__wordmark" aria-label={t('header.home')}>
-          Mavile
+        <Link to="/catalog" className="storefront-header__logo-link" aria-label={t('header.home')}>
+          <img src="/mavile-logo.png" alt="Mavile" className="storefront-header__logo" />
         </Link>
 
         <div className="storefront-header__actions">
