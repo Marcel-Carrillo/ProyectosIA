@@ -2,7 +2,9 @@
   "header": {
     "home": "Inicio de Mavile",
     "account": "Mi cuenta",
-    "cart": "Carrito, {{count}} artículos"
+    "cart": "Carrito, {{count}} artículos",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
   },
   "nav": {
     "all": "Todo",

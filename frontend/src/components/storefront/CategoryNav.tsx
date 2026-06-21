@@ -6,9 +6,10 @@ import { Category } from '../../types/category';
 
 interface CategoryNavProps {
   variant: 'header' | 'mobile';
+  onNavClick?: () => void;
 }
 
-const CategoryNav: React.FC<CategoryNavProps> = ({ variant }) => {
+const CategoryNav: React.FC<CategoryNavProps> = ({ variant, onNavClick }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchParams] = useSearchParams();
   const activeCategoryId = searchParams.get('categoryId');
@@ -32,6 +33,7 @@ const CategoryNav: React.FC<CategoryNavProps> = ({ variant }) => {
           <Link
             to="/catalog"
             className={`storefront-nav__link${!activeCategoryId ? ' storefront-nav__link--active' : ''}`}
+            onClick={onNavClick}
           >
             {t('nav.all')}
           </Link>
@@ -41,6 +43,7 @@ const CategoryNav: React.FC<CategoryNavProps> = ({ variant }) => {
             <Link
               to={`/catalog?categoryId=${cat.id}`}
               className={`storefront-nav__link${activeCategoryId === String(cat.id) ? ' storefront-nav__link--active' : ''}`}
+              onClick={onNavClick}
             >
               {cat.name}
             </Link>

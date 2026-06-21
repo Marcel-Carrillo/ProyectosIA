@@ -8,25 +8,29 @@ const LanguageSwitcher: React.FC = () => {
     i18n.changeLanguage(lang);
   };
 
+  const isEs = i18n.language === 'es';
+  const isEn = i18n.language === 'en';
+
   return (
-    <div className="storefront-lang-switcher" aria-label="Language switcher">
+    <div className="storefront-lang-switcher" role="group" aria-label="Language switcher">
       <button
         type="button"
-        className={`storefront-lang-switcher__btn${i18n.language === 'es' ? ' storefront-lang-switcher__btn--active' : ''}`}
+        className={`storefront-lang-switcher__btn${isEs ? ' storefront-lang-switcher__btn--active' : ''}`}
         onClick={() => handleChange('es')}
         aria-label="Español"
-        aria-pressed={i18n.language === 'es'}
+        aria-pressed={isEs}
       >
-        🇪🇸
+        ES
       </button>
+      <span className="storefront-lang-switcher__divider" aria-hidden="true">|</span>
       <button
         type="button"
-        className={`storefront-lang-switcher__btn${i18n.language === 'en' ? ' storefront-lang-switcher__btn--active' : ''}`}
+        className={`storefront-lang-switcher__btn${isEn ? ' storefront-lang-switcher__btn--active' : ''}`}
         onClick={() => handleChange('en')}
         aria-label="English"
-        aria-pressed={i18n.language === 'en'}
+        aria-pressed={isEn}
       >
-        🇬🇧
+        EN
       </button>
     </div>
   );
