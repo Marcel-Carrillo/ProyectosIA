@@ -8,7 +8,16 @@
   },
   "nav": {
     "all": "All",
-    "categoryNavLabel": "Category navigation"
+    "categoryNavLabel": "Category navigation",
+    "category": {
+      "accessories": "Accessories",
+      "dresses": "Dresses",
+      "electronics": "Electronics",
+      "furniture": "Furniture",
+      "men": "Men",
+      "shoes": "Shoes",
+      "women": "Women"
+    }
   },
   "footer": {
     "brand": "Timeless pieces made in Europe with noble materials.",

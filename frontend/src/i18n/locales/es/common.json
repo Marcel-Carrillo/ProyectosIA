@@ -8,7 +8,16 @@
   },
   "nav": {
     "all": "Todo",
-    "categoryNavLabel": "Navegación por categorías"
+    "categoryNavLabel": "Navegación por categorías",
+    "category": {
+      "accessories": "Accesorios",
+      "dresses": "Vestidos",
+      "electronics": "Electrónica",
+      "furniture": "Muebles",
+      "men": "Hombre",
+      "shoes": "Zapatos",
+      "women": "Mujer"
+    }
   },
   "footer": {
     "brand": "Piezas atemporales fabricadas en Europa con materiales nobles.",

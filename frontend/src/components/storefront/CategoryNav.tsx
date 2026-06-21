@@ -38,17 +38,21 @@ const CategoryNav: React.FC<CategoryNavProps> = ({ variant, onNavClick }) => {
             {t('nav.all')}
           </Link>
         </li>
-        {categories.map((cat) => (
-          <li key={cat.id}>
-            <Link
-              to={`/catalog?categoryId=${cat.id}`}
-              className={`storefront-nav__link${activeCategoryId === String(cat.id) ? ' storefront-nav__link--active' : ''}`}
-              onClick={onNavClick}
-            >
-              {cat.name}
-            </Link>
-          </li>
-        ))}
+        {categories.map((cat) => {
+          const key = cat.name.toLowerCase().replace(/\s+/g, '_');
+          const label = t(`nav.category.${key}`, { defaultValue: cat.name });
+          return (
+            <li key={cat.id}>
+              <Link
+                to={`/catalog?categoryId=${cat.id}`}
+                className={`storefront-nav__link${activeCategoryId === String(cat.id) ? ' storefront-nav__link--active' : ''}`}
+                onClick={onNavClick}
+              >
+                {label}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
