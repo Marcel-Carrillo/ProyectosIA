@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
 
@@ -16,6 +17,7 @@ const defaultProviders: OAuthProviders = {
 
 const OAuthButtons: React.FC = () => {
   const [providers, setProviders] = useState<OAuthProviders>(defaultProviders);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +47,7 @@ const OAuthButtons: React.FC = () => {
           className="storefront-oauth__btn"
           onClick={() => { window.location.href = `${API_BASE}/api/public/auth/google`; }}
         >
-          Continue with Google
+          {t('oauth.google')}
         </button>
       )}
       {providers.apple && (
@@ -54,7 +56,7 @@ const OAuthButtons: React.FC = () => {
           className="storefront-oauth__btn"
           onClick={() => { window.location.href = `${API_BASE}/api/public/auth/apple`; }}
         >
-          Continue with Apple
+          {t('oauth.apple')}
         </button>
       )}
       {providers.facebook && (
@@ -63,7 +65,7 @@ const OAuthButtons: React.FC = () => {
           className="storefront-oauth__btn"
           onClick={() => { window.location.href = `${API_BASE}/api/public/auth/facebook`; }}
         >
-          Continue with Facebook
+          {t('oauth.facebook')}
         </button>
       )}
     </div>

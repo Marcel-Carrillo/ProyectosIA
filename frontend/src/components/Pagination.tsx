@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PaginationProps {
   currentPage: number;
@@ -7,6 +8,7 @@ interface PaginationProps {
 }
 
 const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
+  const { t } = useTranslation('common');
   if (totalPages <= 1) return null;
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -28,7 +30,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         key={p}
         type="button"
         onClick={() => onPageChange(p)}
-        aria-label={`Page ${p}`}
+        aria-label={t('pagination.page', { page: p })}
         aria-current={p === currentPage ? 'page' : undefined}
         className={`storefront-pagination__btn${p === currentPage ? ' storefront-pagination__btn--active' : ''}`}
       >
@@ -39,12 +41,12 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   };
 
   return (
-    <nav className="storefront-pagination" aria-label="Pagination">
+    <nav className="storefront-pagination" aria-label={t('pagination.label')}>
       <button
         type="button"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        aria-label="Previous page"
+        aria-label={t('pagination.previous')}
         className="storefront-pagination__btn"
       >
         ←
@@ -58,7 +60,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         type="button"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        aria-label="Next page"
+        aria-label={t('pagination.next')}
         className="storefront-pagination__btn"
       >
         →

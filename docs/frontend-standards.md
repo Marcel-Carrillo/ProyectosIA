@@ -809,6 +809,94 @@ Recommended scenarios:
 
 ---
 
+## Internationalisation (i18n) — Storefront Only
+
+### Scope
+
+i18n is enabled **only for the public storefront** (routes under `StorefrontLayout`). The admin panel remains hardcoded in Spanish. Admin components must never call `useTranslation`.
+
+### Library and Initialisation
+
+```bash
+npm install i18next@^23 react-i18next@^14 i18next-browser-languagedetector@^7 --legacy-peer-deps
+```
+
+Singleton initialised in `frontend/src/i18n/index.ts` and imported **once** at the top of `frontend/src/index.tsx` (before `<App />`):
+
+```typescript
+import './i18n/index';
+```
+
+Key settings:
+- `fallbackLng: 'es'` — Spanish is the default; UI renders Spanish if no stored preference.
+- `supportedLngs: ['es', 'en']`
+- `detection.lookupLocalStorage: 'mavile.lang'` — preference persisted across sessions.
+- `defaultNS: 'common'`, `keySeparator: '.'`
+
+### Locale File Structure
+
+```
+frontend/src/i18n/
+├── index.ts                 # init singleton
+└── locales/
+    ├── es/
+    │   ├── common.json      # header, nav, footer, pagination, oauth
+    │   ├── auth.json        # fields, login, register
+    │   ├── catalog.json     # hero, toolbar, sort, error, pieces count
+    │   ├── cart.json        # title, count, empty, item, summary
+    │   ├── product.json     # (placeholder — extend for ProductPage)
+    │   ├── checkout.json    # (placeholder — extend for CheckoutPage)
+    │   └── account.json     # (placeholder — extend for AccountPage)
+    └── en/
+        └── … (mirrors es/)
+```
+
+### Usage in Components
+
+Use the `useTranslation` hook with the relevant namespace:
+
+```typescript
+import { useTranslation } from 'react-i18next';
+
+const { t } = useTranslation('catalog');
+// ...
+<h1>{t('hero.title')}</h1>
+<p>{t('pieces', { count: total })}</p>   // pluralisation
+```
+
+Rules:
+- Always pass the **namespace** as first argument to `useTranslation` (omit only for `'common'`).
+- Never place UI strings in module-level constants — they cannot be reactive to language changes. Use `t()` inside the component body or compute a local object inside the component.
+- `PriceTag` uses `i18n.language` to select an `Intl.NumberFormat` locale (`'es-ES'` / `'en-IE'`) while always formatting in EUR.
+- `StorefrontLayout` syncs `document.documentElement.lang` via `useEffect` on `i18n.language`.
+
+### Language Switcher
+
+`LanguageSwitcher` lives in `frontend/src/components/storefront/LanguageSwitcher.tsx` and is rendered inside `StorefrontHeader`. It calls `i18n.changeLanguage('es'|'en')` and sets `aria-pressed` on the active flag button.
+
+CSS lives in `frontend/src/styles/storefront.css` under `.storefront-lang-switcher`.
+
+### Testing i18n-aware Components
+
+Use `renderWithI18n` from `frontend/src/test-utils/renderWithI18n.tsx`. It wraps the component with an isolated `I18nextProvider` and defaults to `lng: 'en'`:
+
+```typescript
+import { renderWithI18n } from '../../../test-utils/renderWithI18n';
+
+renderWithI18n(<CartPage />, { lng: 'en' });  // English assertions
+renderWithI18n(<CartPage />, { lng: 'es' });  // Spanish assertions
+```
+
+Do **not** render i18n-aware storefront components with plain `render()` from RTL — translations will be missing and tests will assert on key paths.
+
+### Adding New Strings
+
+1. Add the key to both `es/<namespace>.json` and `en/<namespace>.json`.
+2. If it's a new namespace, add the import and resource entry in `frontend/src/i18n/index.ts` and `renderWithI18n.tsx`.
+3. Use `t('key', { count })` for plural keys (i18next pluralisation: `key_one` / `key_other`).
+
+---
+
 ## Stack Decisions
 
 ### CRA vs. Vite

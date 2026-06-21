@@ -1,12 +1,13 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import CartPage from '../CartPage';
 import { CartProvider } from '../../../contexts/CartContext';
 
 describe('CartPage', () => {
   it('shows empty cart message', () => {
-    render(
+    renderWithI18n(
       <CartProvider>
         <MemoryRouter>
           <CartPage />

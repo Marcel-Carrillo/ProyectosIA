@@ -1,0 +1,43 @@
+{
+  "header": {
+    "home": "Inicio de Mavile",
+    "account": "Mi cuenta",
+    "cart": "Carrito, {{count}} artículos"
+  },
+  "nav": {
+    "all": "Todo",
+    "categoryNavLabel": "Navegación por categorías"
+  },
+  "footer": {
+    "brand": "Piezas atemporales fabricadas en Europa con materiales nobles.",
+    "cities": "Madrid · Lisboa · París",
+    "shop": "Tienda",
+    "help": "Ayuda",
+    "company": "Empresa",
+    "link": {
+      "women": "Mujer",
+      "men": "Hombre",
+      "accessories": "Accesorios",
+      "newArrivals": "Novedades",
+      "shipping": "Envíos",
+      "returns": "Devoluciones",
+      "sizeGuide": "Guía de tallas",
+      "contact": "Contacto",
+      "ourStory": "Nuestra historia",
+      "materials": "Materiales",
+      "sustainability": "Sostenibilidad",
+      "press": "Prensa"
+    }
+  },
+  "pagination": {
+    "label": "Paginación",
+    "page": "Página {{page}}",
+    "previous": "Página anterior",
+    "next": "Página siguiente"
+  },
+  "oauth": {
+    "google": "Continuar con Google",
+    "apple": "Continuar con Apple",
+    "facebook": "Continuar con Facebook"
+  }
+}

@@ -1606,3 +1606,32 @@
   gap: var(--spacing-6);
   margin-top: var(--spacing-10);
 }
+
+
+/* Language switcher */
+.storefront-lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.storefront-lang-switcher__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 4px;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.storefront-lang-switcher__btn--active,
+.storefront-lang-switcher__btn:hover {
+  opacity: 1;
+}

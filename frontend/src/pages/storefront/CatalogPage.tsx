@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/product';
 import ProductGrid from '../../components/storefront/ProductGrid';
@@ -7,12 +8,12 @@ import Pagination from '../../components/storefront/Pagination';
 
 const PAGE_SIZE = 20;
 
-const SORT_OPTIONS = [
-  { label: 'Newest', sort: 'createdAt', order: 'desc' },
-  { label: 'Oldest', sort: 'createdAt', order: 'asc' },
-  { label: 'Name A–Z', sort: 'name', order: 'asc' },
-  { label: 'Name Z–A', sort: 'name', order: 'desc' },
-];
+const SORT_KEYS = [
+  { key: 'newest', sort: 'createdAt', order: 'desc' },
+  { key: 'oldest', sort: 'createdAt', order: 'asc' },
+  { key: 'nameAZ', sort: 'name', order: 'asc' },
+  { key: 'nameZA', sort: 'name', order: 'desc' },
+] as const;
 
 const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,6 +22,7 @@ const CatalogPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  const { t } = useTranslation('catalog');
 
   useEffect(() => {
     setSearchInput(searchParams.get('search') || '');
@@ -54,11 +56,11 @@ const CatalogPage: React.FC = () => {
       setProducts(res.data.items);
       setTotal(res.data.total);
     } catch {
-      setError('Unable to load products. Please try again later.');
+      setError(t('error.loadFailed'));
     } finally {
       setIsLoading(false);
     }
-  }, [page, categoryId, search, sort, order]);
+  }, [page, categoryId, search, sort, order, t]);
 
   useEffect(() => {
     fetchProducts();
@@ -97,13 +99,12 @@ const CatalogPage: React.FC = () => {
     <div>
       <section className="storefront-hero">
         <div className="storefront-hero__inner">
-          <p className="storefront-hero__eyebrow storefront-animate-fade-in">Fall · Winter · 26</p>
+          <p className="storefront-hero__eyebrow storefront-animate-fade-in">{t('hero.eyebrow')}</p>
           <h1 className="storefront-hero__title storefront-animate-fade-in" style={{ animationDelay: '80ms' }}>
-            A discreet selection of pieces made to last.
+            {t('hero.title')}
           </h1>
           <p className="storefront-hero__subtitle storefront-animate-fade-in" style={{ animationDelay: '160ms' }}>
-            Noble materials, clean cuts, a neutral palette. Designed with care,
-            crafted for everyday wear.
+            {t('hero.subtitle')}
           </p>
         </div>
       </section>
@@ -122,19 +123,19 @@ const CatalogPage: React.FC = () => {
                 className="storefront-toolbar__input"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search"
-                aria-label="Search products by name"
+                placeholder={t('toolbar.searchPlaceholder')}
+                aria-label={t('toolbar.searchLabel')}
               />
             </form>
             <select
               className="storefront-toolbar__sort"
               value={currentSortValue}
               onChange={handleSort}
-              aria-label="Sort products"
+              aria-label={t('toolbar.sortLabel')}
             >
-              {SORT_OPTIONS.map((opt) => (
+              {SORT_KEYS.map((opt) => (
                 <option key={`${opt.sort}:${opt.order}`} value={`${opt.sort}:${opt.order}`}>
-                  {opt.label}
+                  {t(`sort.${opt.key}`)}
                 </option>
               ))}
             </select>
@@ -151,7 +152,7 @@ const CatalogPage: React.FC = () => {
 
         {!isLoading && !error && products.length > 0 && (
           <p className="storefront-catalog__count">
-            {total} {total === 1 ? 'piece' : 'pieces'}
+            {t('pieces', { count: total })}
           </p>
         )}
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../../contexts/CartContext';
 import PriceTag from '../../components/storefront/PriceTag';
 
@@ -8,6 +9,7 @@ const PLACEHOLDER_IMG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000
 const CartPage: React.FC = () => {
   const { items, updateQuantity, removeItem } = useCart();
   const navigate = useNavigate();
+  const { t } = useTranslation('cart');
 
   const subtotal = items.reduce(
     (sum, item) => sum + parseFloat(item.publicPrice) * item.quantity,
@@ -21,13 +23,11 @@ const CartPage: React.FC = () => {
   if (!items.length) {
     return (
       <div className="storefront-cart-empty storefront-animate-fade-up">
-        <p className="storefront-cart-empty__eyebrow">Your cart</p>
-        <h1 className="storefront-cart-empty__title">A pause before you choose.</h1>
-        <p className="storefront-cart-empty__text">
-          Your cart is empty. Return to the catalog to explore our latest selection.
-        </p>
+        <p className="storefront-cart-empty__eyebrow">{t('empty.eyebrow')}</p>
+        <h1 className="storefront-cart-empty__title">{t('empty.title')}</h1>
+        <p className="storefront-cart-empty__text">{t('empty.text')}</p>
         <Link to="/catalog" className="storefront-btn storefront-btn--text">
-          Browse catalog
+          {t('empty.browseCatalog')}
         </Link>
       </div>
     );
@@ -36,9 +36,9 @@ const CartPage: React.FC = () => {
   return (
     <div className="storefront-cart storefront-animate-fade-in">
       <div className="storefront-cart__header">
-        <h1 className="storefront-cart__title">Cart</h1>
+        <h1 className="storefront-cart__title">{t('title')}</h1>
         <span className="storefront-cart__count">
-          {itemCount} {itemCount === 1 ? 'item' : 'items'}
+          {t('count', { count: itemCount })}
         </span>
       </div>
 
@@ -67,7 +67,7 @@ const CartPage: React.FC = () => {
                   <div className="storefront-cart__qty">
                     <button
                       type="button"
-                      aria-label="Decrease quantity"
+                      aria-label={t('item.decreaseQty')}
                       onClick={() => updateQuantity(item.productVariantId, item.quantity - 1)}
                     >
                       −
@@ -75,7 +75,7 @@ const CartPage: React.FC = () => {
                     <span>{item.quantity}</span>
                     <button
                       type="button"
-                      aria-label="Increase quantity"
+                      aria-label={t('item.increaseQty')}
                       onClick={() => updateQuantity(item.productVariantId, item.quantity + 1)}
                     >
                       +
@@ -86,7 +86,7 @@ const CartPage: React.FC = () => {
                     className="storefront-cart__remove"
                     onClick={() => removeItem(item.productVariantId)}
                   >
-                    Remove
+                    {t('item.remove')}
                   </button>
                 </div>
               </div>
@@ -99,19 +99,19 @@ const CartPage: React.FC = () => {
         </ul>
 
         <aside className="storefront-cart__summary">
-          <h2 className="storefront-cart__summary-title">Summary</h2>
+          <h2 className="storefront-cart__summary-title">{t('summary.title')}</h2>
           <dl>
             <div className="storefront-cart__summary-row">
-              <dt>Subtotal</dt>
+              <dt>{t('summary.subtotal')}</dt>
               <dd><PriceTag publicPrice={subtotal} /></dd>
             </div>
             <div className="storefront-cart__summary-row">
-              <dt>Shipping</dt>
-              <dd>{shipping === 0 ? 'Free' : <PriceTag publicPrice={shipping} />}</dd>
+              <dt>{t('summary.shipping')}</dt>
+              <dd>{shipping === 0 ? t('summary.free') : <PriceTag publicPrice={shipping} />}</dd>
             </div>
           </dl>
           <div className="storefront-cart__summary-total">
-            <dt>Total</dt>
+            <dt>{t('summary.total')}</dt>
             <dd><PriceTag publicPrice={total} /></dd>
           </div>
 
@@ -121,16 +121,16 @@ const CartPage: React.FC = () => {
               className="storefront-btn storefront-btn--primary storefront-btn--press"
               onClick={() => navigate('/checkout')}
             >
-              Checkout
+              {t('summary.checkout')}
             </button>
           </div>
 
           <div className="storefront-cart__summary-links">
-            <Link to="/catalog">Continue shopping</Link>
+            <Link to="/catalog">{t('summary.continueShopping')}</Link>
           </div>
 
           <p className="storefront-cart__note">
-            Free shipping on orders over €100. Free returns within 30 days.
+            {t('summary.note')}
           </p>
         </aside>
       </div>
