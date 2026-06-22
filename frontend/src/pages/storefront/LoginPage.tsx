@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { extractCustomerAuthError } from '../../services/customerAuthService';
 import OAuthButtons from '../../components/storefront/OAuthButtons';
@@ -8,6 +9,7 @@ import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel
 const LoginPage: React.FC = () => {
   const { login, verify2fa } = useCustomerAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaToken, setMfaToken] = useState<string | null>(null);
@@ -42,16 +44,14 @@ const LoginPage: React.FC = () => {
       await verify2fa(mfaToken, totpCode);
       navigate('/account');
     } catch {
-      setError('Invalid verification code.');
+      setError(t('login.invalidCode'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const title = mfaToken ? 'Two-factor authentication' : 'Sign in';
-  const subtitle = mfaToken
-    ? 'Enter the code from your authenticator app.'
-    : 'Access your orders and saved details.';
+  const title = mfaToken ? t('login.titleMfa') : t('login.title');
+  const subtitle = mfaToken ? t('login.subtitleMfa') : t('login.subtitle');
 
   return (
     <StorefrontAuthPanel
@@ -61,12 +61,12 @@ const LoginPage: React.FC = () => {
         <>
           {!mfaToken && (
             <div className="storefront-auth__links">
-              <Link to="/register">Create account</Link>
-              <Link to="/forgot-password">Forgot password?</Link>
+              <Link to="/register">{t('login.createAccount')}</Link>
+              <Link to="/forgot-password">{t('login.forgotPassword')}</Link>
             </div>
           )}
           <Link to="/catalog" className="storefront-auth__guest">
-            Continue as guest
+            {t('login.continueAsGuest')}
           </Link>
         </>
       }
@@ -75,7 +75,7 @@ const LoginPage: React.FC = () => {
       {mfaToken ? (
         <form onSubmit={handle2fa} className="storefront-auth__form">
           <label className="storefront-field">
-            <span className="storefront-field__label">Authentication code</span>
+            <span className="storefront-field__label">{t('login.authCode')}</span>
             <input
               className="storefront-field__input"
               value={totpCode}
@@ -85,13 +85,13 @@ const LoginPage: React.FC = () => {
             />
           </label>
           <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
-            {submitting ? 'Verifying…' : 'Verify'}
+            {submitting ? t('login.verifying') : t('login.verify')}
           </button>
         </form>
       ) : (
         <form onSubmit={handleLogin} className="storefront-auth__form">
           <label className="storefront-field">
-            <span className="storefront-field__label">Email</span>
+            <span className="storefront-field__label">{t('fields.email')}</span>
             <input
               type="email"
               className="storefront-field__input"
@@ -102,7 +102,7 @@ const LoginPage: React.FC = () => {
             />
           </label>
           <label className="storefront-field">
-            <span className="storefront-field__label">Password</span>
+            <span className="storefront-field__label">{t('fields.password')}</span>
             <input
               type="password"
               className="storefront-field__input"
@@ -113,7 +113,7 @@ const LoginPage: React.FC = () => {
             />
           </label>
           <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
-            {submitting ? 'Signing in…' : 'Sign in'}
+            {submitting ? t('login.signingIn') : t('login.submit')}
           </button>
           <OAuthButtons />
         </form>

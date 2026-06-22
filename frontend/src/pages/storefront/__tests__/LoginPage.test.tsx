@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import LoginPage from '../LoginPage';
 import { CustomerAuthProvider } from '../../../contexts/CustomerAuthContext';
 
@@ -17,7 +18,7 @@ jest.mock('../../../services/customerAuthService', () => ({
 
 describe('LoginPage', () => {
   it('renders sign in form', () => {
-    render(
+    renderWithI18n(
       <CustomerAuthProvider>
         <MemoryRouter>
           <LoginPage />

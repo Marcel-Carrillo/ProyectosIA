@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { extractCustomerAuthError } from '../../services/customerAuthService';
 import OAuthButtons from '../../components/storefront/OAuthButtons';
 import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
-const FIELD_LABELS: Record<string, string> = {
-  firstName: 'First name',
-  lastName: 'Last name',
-  email: 'Email',
-  phone: 'Phone',
-  password: 'Password',
-};
-
 const RegisterPage: React.FC = () => {
   const { register } = useCustomerAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation('auth');
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -25,6 +19,14 @@ const RegisterPage: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const fieldLabels: Record<string, string> = {
+    firstName: t('fields.firstName'),
+    lastName: t('fields.lastName'),
+    email: t('fields.email'),
+    phone: t('fields.phone'),
+    password: t('fields.password'),
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +50,11 @@ const RegisterPage: React.FC = () => {
 
   return (
     <StorefrontAuthPanel
-      title="Create account"
-      subtitle="Join Mavile in a minute."
+      title={t('register.title')}
+      subtitle={t('register.subtitle')}
       footer={
         <Link to="/login" className="storefront-auth__guest">
-          Already have an account? Sign in
+          {t('register.alreadyHaveAccount')}
         </Link>
       }
     >
@@ -60,7 +62,7 @@ const RegisterPage: React.FC = () => {
       <form onSubmit={handleSubmit} className="storefront-auth__form">
         {(['firstName', 'lastName', 'email', 'phone', 'password'] as const).map((field) => (
           <label className="storefront-field" key={field}>
-            <span className="storefront-field__label">{FIELD_LABELS[field]}</span>
+            <span className="storefront-field__label">{fieldLabels[field]}</span>
             <input
               type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
               className="storefront-field__input"
@@ -72,7 +74,7 @@ const RegisterPage: React.FC = () => {
           </label>
         ))}
         <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
-          {submitting ? 'Creating account…' : 'Register'}
+          {submitting ? t('register.creating') : t('register.submit')}
         </button>
         <OAuthButtons />
       </form>

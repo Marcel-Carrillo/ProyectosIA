@@ -56,21 +56,23 @@
   min-width: 0;
 }
 
-.storefront-header__wordmark {
+/* Brand logo link (center column) */
+.storefront-header__logo-link {
   justify-self: center;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--color-near-black);
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-@media (min-width: 768px) {
-  .storefront-header__wordmark {
-    font-size: var(--font-size-lg);
-  }
+/* Brand logo image — crop to the primary logo area (top portion of branding sheet) */
+.storefront-header__logo {
+  display: block;
+  height: 38px;
+  width: 110px;
+  object-fit: cover;
+  object-position: center top;
+  user-select: none;
 }
 
 .storefront-header__actions {
@@ -78,6 +80,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--spacing-5);
+  min-width: 0;
   color: var(--color-mid);
 }
 
@@ -109,12 +112,23 @@
 
 @media (max-width: 767.98px) {
   .storefront-header__bar {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr;
     padding: var(--spacing-4);
+    gap: var(--spacing-4);
   }
 
-  .storefront-header__wordmark {
+  .storefront-header__logo-link {
     justify-self: start;
+  }
+
+  .storefront-header__logo {
+    height: 28px;
+    width: 82px;
+  }
+
+  .storefront-header__actions {
+    justify-self: end;
+    gap: var(--spacing-3);
   }
 }
 
@@ -123,6 +137,8 @@
   background-color: transparent;
   overflow-x: auto;
   scrollbar-width: none;
+  /* min-width: 0 allows the grid item to shrink so overflow-x: auto works */
+  min-width: 0;
 }
 
 .storefront-nav::-webkit-scrollbar {
@@ -134,7 +150,7 @@
 }
 
 .storefront-nav--mobile {
-  border-top: 1px solid rgba(232, 230, 226, 0.4);
+  /* controlled by JS via .storefront-header__mobile-menu */
 }
 
 .storefront-nav__list {
@@ -151,11 +167,10 @@
 }
 
 .storefront-nav--mobile .storefront-nav__list {
-  justify-content: center;
-  gap: var(--spacing-5);
-  padding: var(--spacing-3) var(--spacing-6);
-  max-width: 1280px;
-  margin: 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: var(--spacing-2) 0;
 }
 
 .storefront-nav__link {
@@ -170,6 +185,11 @@
   transition: color 0.15s ease;
 }
 
+.storefront-nav--mobile .storefront-nav__link {
+  padding: var(--spacing-3) 0;
+  width: 100%;
+}
+
 .storefront-nav__link:hover,
 .storefront-nav__link--active {
   color: var(--color-near-black);
@@ -182,6 +202,42 @@
 
   .storefront-nav--mobile {
     display: none;
+  }
+}
+
+/* Hamburger button — mobile only */
+.storefront-header__hamburger {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .storefront-header__hamburger {
+    display: inline-flex;
+  }
+}
+
+/* Mobile collapsible menu — overlay (absolute) so it doesn't push page content */
+.storefront-header__mobile-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  border-top: 1px solid rgba(232, 230, 226, 0.6);
+  background-color: rgba(250, 249, 247, 0.98);
+  backdrop-filter: blur(12px);
+  padding: var(--spacing-2) var(--spacing-6) var(--spacing-6);
+  box-shadow: 0 8px 24px rgba(26, 26, 24, 0.08);
+}
+
+.storefront-header__mobile-menu--open {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .storefront-header__mobile-menu {
+    display: none !important;
   }
 }
 
@@ -1605,4 +1661,49 @@
   justify-content: center;
   gap: var(--spacing-6);
   margin-top: var(--spacing-10);
+}
+
+
+/* Language switcher */
+.storefront-lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.storefront-lang-switcher__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+  padding: 4px 3px;
+  min-width: 32px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.storefront-lang-switcher__btn:hover {
+  color: var(--color-near-black);
+}
+
+.storefront-lang-switcher__btn--active {
+  color: var(--color-near-black);
+  font-weight: var(--font-weight-semibold, 600);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.storefront-lang-switcher__divider {
+  color: rgba(107, 106, 102, 0.4);
+  font-size: var(--font-size-xs);
+  user-select: none;
+  line-height: 1;
 }

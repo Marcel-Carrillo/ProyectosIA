@@ -1,0 +1,54 @@
+{
+  "header": {
+    "home": "Mavile home",
+    "account": "Account",
+    "cart": "Cart, {{count}} items",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "nav": {
+    "all": "All",
+    "categoryNavLabel": "Category navigation",
+    "category": {
+      "accessories": "Accessories",
+      "dresses": "Dresses",
+      "electronics": "Electronics",
+      "furniture": "Furniture",
+      "men": "Men",
+      "shoes": "Shoes",
+      "women": "Women"
+    }
+  },
+  "footer": {
+    "brand": "Timeless pieces made in Europe with noble materials.",
+    "cities": "Madrid · Lisbon · Paris",
+    "shop": "Shop",
+    "help": "Help",
+    "company": "Company",
+    "link": {
+      "women": "Women",
+      "men": "Men",
+      "accessories": "Accessories",
+      "newArrivals": "New arrivals",
+      "shipping": "Shipping",
+      "returns": "Returns",
+      "sizeGuide": "Size guide",
+      "contact": "Contact",
+      "ourStory": "Our story",
+      "materials": "Materials",
+      "sustainability": "Sustainability",
+      "press": "Press"
+    }
+  },
+  "pagination": {
+    "label": "Pagination",
+    "page": "Page {{page}}",
+    "previous": "Previous page",
+    "next": "Next page"
+  },
+  "oauth": {
+    "google": "Continue with Google",
+    "apple": "Continue with Apple",
+    "facebook": "Continue with Facebook"
+  }
+}

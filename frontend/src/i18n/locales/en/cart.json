@@ -1,0 +1,26 @@
+{
+  "title": "Cart",
+  "count_one": "{{count}} item",
+  "count_other": "{{count}} items",
+  "empty": {
+    "eyebrow": "Your cart",
+    "title": "A pause before you choose.",
+    "text": "Your cart is empty. Return to the catalog to explore our latest selection.",
+    "browseCatalog": "Browse catalog"
+  },
+  "item": {
+    "decreaseQty": "Decrease quantity",
+    "increaseQty": "Increase quantity",
+    "remove": "Remove"
+  },
+  "summary": {
+    "title": "Summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "free": "Free",
+    "total": "Total",
+    "checkout": "Checkout",
+    "continueShopping": "Continue shopping",
+    "note": "Free shipping on orders over €100. Free returns within 30 days."
+  }
+}

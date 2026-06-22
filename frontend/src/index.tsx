@@ -1,4 +1,5 @@
 import React from 'react';
+import './i18n/index';
 import ReactDOM from 'react-dom/client';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
