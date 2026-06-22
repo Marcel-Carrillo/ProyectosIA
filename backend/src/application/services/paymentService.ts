@@ -79,7 +79,7 @@ export class PaymentService {
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-    } catch (_err) {
+    } catch {
       throw new PaymentWebhookSignatureInvalidError();
     }
 
