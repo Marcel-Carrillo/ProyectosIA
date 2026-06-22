@@ -17,9 +17,13 @@ build/
 .env.*
 !.env.example
 !.env.*.example
+# env files without dot prefix (same semantics, never commit)
+backend/env
+backend/env.docker
 
 # local MCP config (credentials stay on your machine)
 .mcp.json
+mcp.json
 
 # worktree directories
 .worktrees/

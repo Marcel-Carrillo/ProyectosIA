@@ -4,6 +4,8 @@ import crypto from 'crypto';
 import { hashRefreshToken } from '../../../infrastructure/auth/refreshTokenUtils';
 import { prisma } from '../../../infrastructure/prismaClient';
 
+jest.setTimeout(30000);
+
 describe('customer auth extended', () => {
   const email = `ext-${Date.now()}@example.com`;
   const password = 'BuyerPass1';

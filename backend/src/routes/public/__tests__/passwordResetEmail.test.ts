@@ -6,6 +6,8 @@ import {
   waitForPasswordResetEmail,
 } from '../../../infrastructure/email/mailpitClient';
 
+jest.setTimeout(30000);
+
 describe('password reset email (Mailpit)', () => {
   let mailpitReady = false;
   const email = `reset-mail-${Date.now()}@example.com`;

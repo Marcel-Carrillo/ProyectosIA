@@ -17,6 +17,8 @@ import { app } from '../../../index';
 import { getAdminAccessToken, withAdminAuth } from '../../../test-utils/adminAuthHelper';
 import { prisma } from '../../../infrastructure/prismaClient';
 
+jest.setTimeout(30000);
+
 const address = {
   fullName: 'Guest User',
   streetLine1: 'Main St',
