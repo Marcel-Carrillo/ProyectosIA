@@ -21,5 +21,7 @@ COPY tsconfig.json ./
 COPY src ./src
 COPY entrypoint.sh ./entrypoint.sh
 RUN tr -d '\r' < ./entrypoint.sh > /tmp/ep.sh && mv /tmp/ep.sh ./entrypoint.sh && chmod +x ./entrypoint.sh
+RUN chown -R node:node /app
+USER node
 EXPOSE 3000
 ENTRYPOINT ["./entrypoint.sh"]
