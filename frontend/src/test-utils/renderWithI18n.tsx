@@ -7,10 +7,12 @@ import esCommon from '../i18n/locales/es/common.json';
 import esAuth from '../i18n/locales/es/auth.json';
 import esCatalog from '../i18n/locales/es/catalog.json';
 import esCart from '../i18n/locales/es/cart.json';
+import esAccount from '../i18n/locales/es/account.json';
 import enCommon from '../i18n/locales/en/common.json';
 import enAuth from '../i18n/locales/en/auth.json';
 import enCatalog from '../i18n/locales/en/catalog.json';
 import enCart from '../i18n/locales/en/cart.json';
+import enAccount from '../i18n/locales/en/account.json';
 
 const createTestI18n = (lng: 'es' | 'en' = 'en') => {
   const testI18n = i18n.createInstance();
@@ -19,8 +21,8 @@ const createTestI18n = (lng: 'es' | 'en' = 'en') => {
     fallbackLng: 'es',
     defaultNS: 'common',
     resources: {
-      es: { common: esCommon, auth: esAuth, catalog: esCatalog, cart: esCart },
-      en: { common: enCommon, auth: enAuth, catalog: enCatalog, cart: enCart },
+      es: { common: esCommon, auth: esAuth, catalog: esCatalog, cart: esCart, account: esAccount },
+      en: { common: enCommon, auth: enAuth, catalog: enCatalog, cart: enCart, account: enAccount },
     },
     interpolation: { escapeValue: false },
   });

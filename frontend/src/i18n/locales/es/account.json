@@ -1,1 +1,126 @@
-{}
+{
+  "layout": {
+    "eyebrow": "Mavile · Mi cuenta",
+    "navLabel": "Navegación de cuenta",
+    "logout": "Cerrar sesión",
+    "nav": {
+      "overview": "Resumen",
+      "profile": "Perfil",
+      "orders": "Pedidos",
+      "wishlist": "Favoritos",
+      "security": "Seguridad"
+    }
+  },
+  "overview": {
+    "title": "Bienvenido de nuevo",
+    "cards": {
+      "profile": {
+        "label": "Cuenta",
+        "title": "Perfil",
+        "description": "Actualiza tu nombre, teléfono y datos personales."
+      },
+      "orders": {
+        "label": "Compras",
+        "title": "Pedidos",
+        "description": "Sigue tus envíos y consulta tu historial de pedidos."
+      },
+      "wishlist": {
+        "label": "Guardados",
+        "title": "Favoritos",
+        "description": "Productos que has guardado para más tarde."
+      },
+      "security": {
+        "label": "Seguridad",
+        "title": "Autenticación en dos pasos",
+        "description": "Añade una capa extra de protección a tu cuenta."
+      }
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "panelTitle": "Información personal",
+    "fields": {
+      "email": "Correo electrónico",
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "phone": "Teléfono"
+    },
+    "save": "Guardar cambios",
+    "success": "Perfil actualizado.",
+    "errors": {
+      "load": "No se pudo cargar el perfil.",
+      "save": "No se pudo guardar el perfil."
+    }
+  },
+  "orders": {
+    "title": "Pedidos",
+    "panelTitle": "Historial de pedidos",
+    "empty": {
+      "title": "Aún no tienes pedidos",
+      "text": "Cuando realices un pedido, aparecerá aquí."
+    },
+    "errors": {
+      "load": "No se pudieron cargar los pedidos."
+    }
+  },
+  "orderDetail": {
+    "title": "Detalle del pedido",
+    "titleWithNumber": "Pedido {{orderNumber}}",
+    "back": "← Volver a pedidos",
+    "errors": {
+      "load": "No se pudo cargar el detalle del pedido."
+    },
+    "table": {
+      "product": "Producto",
+      "sku": "SKU",
+      "qty": "Cant.",
+      "unit": "Precio",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "shipping": "Envío",
+      "discount": "Descuento"
+    }
+  },
+  "wishlist": {
+    "title": "Favoritos",
+    "panelTitle": "Productos guardados",
+    "remove": "Eliminar",
+    "empty": {
+      "title": "Tu lista de favoritos está vacía",
+      "text": "Guarda los artículos que te gusten y encuéntralos aquí más tarde."
+    },
+    "errors": {
+      "load": "No se pudo cargar la lista de favoritos."
+    }
+  },
+  "security": {
+    "title": "Seguridad",
+    "panelTitle": "Autenticación en dos pasos",
+    "intro": "Protege tu cuenta con un código de verificación de tu aplicación de autenticación.",
+    "startSetup": "Iniciar configuración",
+    "secretHint": "Añade este secreto a tu aplicación de autenticación:",
+    "verificationCode": "Código de verificación",
+    "confirm": "Confirmar 2FA",
+    "enabled": "La autenticación en dos pasos ya está activa en tu cuenta.",
+    "errors": {
+      "setup": "No se pudo iniciar la configuración de 2FA.",
+      "invalidCode": "Código no válido. Inténtalo de nuevo."
+    }
+  },
+  "common": {
+    "loading": "Cargando…",
+    "browseCatalog": "Ver catálogo"
+  },
+  "status": {
+    "Paid": "Pagado",
+    "PendingPayment": "Pago pendiente",
+    "Failed": "Fallido",
+    "Pending": "Pendiente",
+    "Processing": "En proceso",
+    "Shipped": "Enviado",
+    "Delivered": "Entregado",
+    "Cancelled": "Cancelado",
+    "Completed": "Completado",
+    "Refunded": "Reembolsado"
+  }
+}

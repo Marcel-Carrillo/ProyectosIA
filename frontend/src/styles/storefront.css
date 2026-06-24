@@ -1826,3 +1826,533 @@
   user-select: none;
   line-height: 1;
 }
+
+/* Account area */
+.storefront-account {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--spacing-16) var(--spacing-6);
+}
+
+@media (min-width: 640px) {
+  .storefront-account {
+    padding: var(--spacing-16) var(--spacing-8);
+  }
+}
+
+.storefront-account__header {
+  padding-bottom: var(--spacing-8);
+  border-bottom: 1px solid var(--color-light);
+}
+
+.storefront-account__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+}
+
+.storefront-account__title {
+  margin: var(--spacing-4) 0 0;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.025em;
+  color: var(--color-near-black);
+}
+
+@media (min-width: 640px) {
+  .storefront-account__title {
+    font-size: var(--font-size-4xl);
+  }
+}
+
+.storefront-account__greeting {
+  margin: var(--spacing-4) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-near-black);
+}
+
+.storefront-account__email {
+  display: block;
+  margin-top: var(--spacing-1);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-mid);
+}
+
+.storefront-account__layout {
+  display: grid;
+  gap: var(--spacing-10);
+  padding-top: var(--spacing-10);
+}
+
+@media (min-width: 768px) {
+  .storefront-account__layout {
+    grid-template-columns: 220px 1fr;
+    gap: var(--spacing-16);
+    align-items: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .storefront-account__layout {
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+.storefront-account__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+@media (min-width: 768px) {
+  .storefront-account__sidebar {
+    position: sticky;
+    top: 8rem;
+  }
+}
+
+.storefront-account__user {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding-bottom: var(--spacing-6);
+  border-bottom: 1px solid var(--color-light);
+}
+
+.storefront-account__user-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-near-black);
+}
+
+.storefront-account__user-email {
+  font-size: var(--font-size-xs);
+  color: var(--color-mid);
+  word-break: break-all;
+}
+
+.storefront-account__nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+@media (min-width: 768px) {
+  .storefront-account__nav {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+}
+
+.storefront-account__nav-link {
+  display: block;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+@media (min-width: 768px) {
+  .storefront-account__nav-link {
+    padding: var(--spacing-3) 0;
+    border: none;
+    border-bottom: 1px solid transparent;
+  }
+}
+
+.storefront-account__nav-link:hover {
+  color: var(--color-near-black);
+}
+
+.storefront-account__nav-link--active {
+  color: var(--color-near-black);
+  border-color: var(--color-light);
+  background: var(--color-off-white);
+}
+
+@media (min-width: 768px) {
+  .storefront-account__nav-link--active {
+    border-color: transparent;
+    border-bottom-color: var(--color-near-black);
+    background: transparent;
+  }
+}
+
+.storefront-account__logout {
+  align-self: flex-start;
+  margin-top: var(--spacing-2);
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-family-body);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.storefront-account__logout:hover {
+  color: var(--color-error);
+}
+
+.storefront-account__main {
+  min-width: 0;
+}
+
+.storefront-account__panel {
+  border: 1px solid var(--color-light);
+  padding: var(--spacing-6);
+}
+
+@media (min-width: 640px) {
+  .storefront-account__panel {
+    padding: var(--spacing-8);
+  }
+}
+
+.storefront-account__panel-title {
+  margin: 0 0 var(--spacing-6);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+  font-weight: var(--font-weight-medium);
+}
+
+.storefront-account__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+}
+
+.storefront-account__form-actions {
+  padding-top: var(--spacing-2);
+}
+
+.storefront-account__alert {
+  margin: 0 0 var(--spacing-6);
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.storefront-account__alert--error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.storefront-account__alert--success {
+  background: #f0f7f2;
+  color: #2d6a4f;
+}
+
+.storefront-account__dashboard-grid {
+  display: grid;
+  gap: var(--spacing-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 480px) {
+  .storefront-account__dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .storefront-account__dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-5);
+  }
+}
+
+.storefront-account__dashboard-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-6);
+  border: 1px solid var(--color-light);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.storefront-account__dashboard-card:hover {
+  border-color: var(--color-near-black);
+  color: inherit;
+  transform: translateY(-2px);
+}
+
+.storefront-account__dashboard-card-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+}
+
+.storefront-account__dashboard-card-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-near-black);
+}
+
+.storefront-account__dashboard-card-desc {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--color-mid);
+}
+
+.storefront-account__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.storefront-account__list-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--spacing-4);
+  align-items: center;
+  padding: var(--spacing-5) 0;
+  border-bottom: 1px solid var(--color-light);
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.storefront-account__list-item:first-child {
+  padding-top: 0;
+}
+
+.storefront-account__list-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+a.storefront-account__list-item:hover {
+  opacity: 0.75;
+  color: inherit;
+}
+
+.storefront-account__list-primary {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-near-black);
+}
+
+.storefront-account__list-secondary {
+  margin-top: var(--spacing-1);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-mid);
+}
+
+.storefront-account__list-meta {
+  text-align: right;
+}
+
+.storefront-account__list-price {
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-near-black);
+}
+
+.storefront-account__badge {
+  display: inline-block;
+  margin-top: var(--spacing-2);
+  padding: 2px var(--spacing-2);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-light);
+  color: var(--color-mid);
+}
+
+.storefront-account__badge--success {
+  border-color: #b7dfc5;
+  color: #2d6a4f;
+  background: #f0f7f2;
+}
+
+.storefront-account__badge--pending {
+  border-color: #e8dcc8;
+  color: #8a6d3b;
+  background: #faf6ef;
+}
+
+.storefront-account__empty {
+  text-align: center;
+  padding: var(--spacing-12) var(--spacing-4);
+}
+
+.storefront-account__empty-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-near-black);
+}
+
+.storefront-account__empty-text {
+  margin: var(--spacing-3) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-mid);
+}
+
+.storefront-account__empty .storefront-btn--text {
+  margin-top: var(--spacing-8);
+}
+
+.storefront-account__wishlist-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--spacing-5);
+  align-items: center;
+  padding: var(--spacing-5) 0;
+  border-bottom: 1px solid var(--color-light);
+}
+
+.storefront-account__wishlist-item:first-child {
+  padding-top: 0;
+}
+
+.storefront-account__wishlist-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.storefront-account__wishlist-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-near-black);
+  text-decoration: none;
+}
+
+.storefront-account__wishlist-name:hover {
+  text-decoration: underline;
+}
+
+.storefront-account__wishlist-price {
+  margin-top: var(--spacing-2);
+}
+
+.storefront-account__remove-btn {
+  border: none;
+  background: none;
+  font-family: var(--font-family-body);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.storefront-account__remove-btn:hover {
+  color: var(--color-error);
+}
+
+.storefront-account__order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: var(--spacing-4) 0 var(--spacing-8);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-mid);
+}
+
+.storefront-account__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-light);
+}
+
+.storefront-account__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.storefront-account__table th {
+  padding: var(--spacing-4) var(--spacing-5);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--color-mid);
+  background: var(--color-off-white);
+  border-bottom: 1px solid var(--color-light);
+}
+
+.storefront-account__table td {
+  padding: var(--spacing-4) var(--spacing-5);
+  color: var(--color-near-black);
+  border-bottom: 1px solid var(--color-light);
+  vertical-align: top;
+}
+
+.storefront-account__table tr:last-child td {
+  border-bottom: none;
+}
+
+.storefront-account__table .text-muted {
+  color: var(--color-mid);
+  font-size: var(--font-size-xs);
+}
+
+.storefront-account__table tfoot td {
+  border-bottom: none;
+  border-top: 1px solid var(--color-light);
+}
+
+.storefront-account__table tfoot tr:last-child td {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-md);
+  padding-top: var(--spacing-5);
+}
+
+.storefront-account__secret {
+  display: block;
+  margin: var(--spacing-4) 0;
+  padding: var(--spacing-4);
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.08em;
+  background: var(--color-off-white);
+  border: 1px solid var(--color-light);
+  word-break: break-all;
+}
+
+.storefront-account__loading {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-mid);
+}
+
+.storefront-account__back {
+  display: inline-block;
+  margin-bottom: var(--spacing-6);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.storefront-account__back:hover {
+  color: var(--color-near-black);
+}

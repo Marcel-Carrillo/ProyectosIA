@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import AccountLayout from '../../components/storefront/AccountLayout';
 import { getProfile, updateProfile } from '../../services/customerAuthService';
 import { CustomerProfile } from '../../types/auth';
 
 const AccountProfilePage: React.FC = () => {
+  const { t } = useTranslation('account');
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -18,8 +19,8 @@ const AccountProfilePage: React.FC = () => {
       setFirstName(p.firstName);
       setLastName(p.lastName);
       setPhone(p.phone ?? '');
-    }).catch(() => setError('Could not load profile.'));
-  }, []);
+    }).catch(() => setError(t('profile.errors.load')));
+  }, [t]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,42 +31,68 @@ const AccountProfilePage: React.FC = () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      setError('Could not save profile.');
+      setError(t('profile.errors.save'));
     }
   };
 
   return (
-    <Container className="py-4" style={{ maxWidth: 560 }}>
-      <p className="mb-3"><Link to="/account">← My account</Link></p>
-      <Card>
-        <Card.Body>
-          <h1 className="h4 mb-3">Profile</h1>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {saved && <Alert variant="success">Profile updated.</Alert>}
-          {profile && (
-            <Form onSubmit={handleSave}>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control value={profile.email} disabled readOnly />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>First name</Form.Label>
-                <Form.Control value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Last name</Form.Label>
-                <Form.Control value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Phone</Form.Label>
-                <Form.Control value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </Form.Group>
-              <Button type="submit">Save changes</Button>
-            </Form>
-          )}
-        </Card.Body>
-      </Card>
-    </Container>
+    <AccountLayout title={t('profile.title')}>
+      <div className="storefront-account__panel">
+        <h2 className="storefront-account__panel-title">{t('profile.panelTitle')}</h2>
+        {error && <p className="storefront-account__alert storefront-account__alert--error" role="alert">{error}</p>}
+        {saved && (
+          <p className="storefront-account__alert storefront-account__alert--success" role="status">
+            {t('profile.success')}
+          </p>
+        )}
+        {profile ? (
+          <form className="storefront-account__form" onSubmit={handleSave}>
+            <label className="storefront-field">
+              <span className="storefront-field__label">{t('profile.fields.email')}</span>
+              <input
+                className="storefront-field__input"
+                value={profile.email}
+                disabled
+                readOnly
+              />
+            </label>
+            <label className="storefront-field">
+              <span className="storefront-field__label">{t('profile.fields.firstName')}</span>
+              <input
+                className="storefront-field__input"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </label>
+            <label className="storefront-field">
+              <span className="storefront-field__label">{t('profile.fields.lastName')}</span>
+              <input
+                className="storefront-field__input"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </label>
+            <label className="storefront-field">
+              <span className="storefront-field__label">{t('profile.fields.phone')}</span>
+              <input
+                className="storefront-field__input"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </label>
+            <div className="storefront-account__form-actions">
+              <button type="submit" className="storefront-btn storefront-btn--primary storefront-btn--press">
+                {t('profile.save')}
+              </button>
+            </div>
+          </form>
+        ) : !error && (
+          <p className="storefront-account__loading">{t('common.loading')}</p>
+        )}
+      </div>
+    </AccountLayout>
   );
 };
 
