@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { resetPassword } from '../../services/customerAuthService';
 import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
 const ResetPasswordPage: React.FC = () => {
+  const { t } = useTranslation('auth');
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = params.get('token') ?? '';
@@ -14,7 +16,7 @@ const ResetPasswordPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      setError('Reset token is missing.');
+      setError(t('resetPassword.missingToken'));
       return;
     }
     setError('');
@@ -23,7 +25,7 @@ const ResetPasswordPage: React.FC = () => {
       await resetPassword(token, password);
       navigate('/login');
     } catch {
-      setError('Invalid or expired reset token.');
+      setError(t('resetPassword.errorMessage'));
     } finally {
       setSubmitting(false);
     }
@@ -31,18 +33,18 @@ const ResetPasswordPage: React.FC = () => {
 
   return (
     <StorefrontAuthPanel
-      title="Reset password"
-      subtitle="Choose a new password for your account."
+      title={t('resetPassword.title')}
+      subtitle={t('resetPassword.subtitle')}
       footer={
         <Link to="/login" className="storefront-auth__guest">
-          Back to sign in
+          {t('resetPassword.backToSignIn')}
         </Link>
       }
     >
       {error && <p className="storefront-auth__error" role="alert">{error}</p>}
       <form onSubmit={handleSubmit} className="storefront-auth__form">
         <label className="storefront-field">
-          <span className="storefront-field__label">New password</span>
+          <span className="storefront-field__label">{t('resetPassword.newPassword')}</span>
           <input
             type="password"
             className="storefront-field__input"
@@ -54,7 +56,7 @@ const ResetPasswordPage: React.FC = () => {
           />
         </label>
         <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
-          {submitting ? 'Updating…' : 'Update password'}
+          {submitting ? t('resetPassword.updating') : t('resetPassword.submit')}
         </button>
       </form>
     </StorefrontAuthPanel>

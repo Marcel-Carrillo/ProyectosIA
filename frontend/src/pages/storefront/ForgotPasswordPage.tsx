@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { forgotPassword } from '../../services/customerAuthService';
 import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
 const ForgotPasswordPage: React.FC = () => {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ const ForgotPasswordPage: React.FC = () => {
       await forgotPassword(email);
       setSent(true);
     } catch {
-      setError('Could not send reset email. Try again later.');
+      setError(t('forgotPassword.errorMessage'));
     } finally {
       setSubmitting(false);
     }
@@ -25,23 +27,23 @@ const ForgotPasswordPage: React.FC = () => {
 
   return (
     <StorefrontAuthPanel
-      title="Forgot password"
-      subtitle={sent ? undefined : 'We will email you a reset link.'}
+      title={t('forgotPassword.title')}
+      subtitle={sent ? undefined : t('forgotPassword.subtitle')}
       footer={
         <Link to="/login" className="storefront-auth__guest">
-          Back to sign in
+          {t('forgotPassword.backToSignIn')}
         </Link>
       }
     >
       {sent ? (
         <p className="storefront-auth__info">
-          If an account exists for that email, we sent reset instructions.
+          {t('forgotPassword.successMessage')}
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="storefront-auth__form">
           {error && <p className="storefront-auth__error" role="alert">{error}</p>}
           <label className="storefront-field">
-            <span className="storefront-field__label">Email</span>
+            <span className="storefront-field__label">{t('fields.email')}</span>
             <input
               type="email"
               className="storefront-field__input"
@@ -52,7 +54,7 @@ const ForgotPasswordPage: React.FC = () => {
             />
           </label>
           <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
-            {submitting ? 'Sending…' : 'Send reset link'}
+            {submitting ? t('forgotPassword.sending') : t('forgotPassword.submit')}
           </button>
         </form>
       )}
