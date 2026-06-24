@@ -1,14 +1,40 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useStorefrontCategories } from '../../hooks/useStorefrontCategories';
 
 const StorefrontFooter: React.FC = () => {
   const { t } = useTranslation('common');
+  const { getHref } = useStorefrontCategories();
+
+  const shopLinks: { labelKey: string; to: string }[] = [
+    { labelKey: 'footer.link.women', to: getHref('women') },
+    { labelKey: 'footer.link.men', to: getHref('men') },
+    { labelKey: 'footer.link.accessories', to: getHref('accessories') },
+    { labelKey: 'footer.link.newArrivals', to: '/catalog?sort=createdAt&order=desc' },
+  ];
+
+  const helpLinks = [
+    { labelKey: 'footer.link.shipping', to: '/pages/shipping' },
+    { labelKey: 'footer.link.returns', to: '/pages/returns' },
+    { labelKey: 'footer.link.sizeGuide', to: '/pages/size-guide' },
+    { labelKey: 'footer.link.contact', to: '/pages/contact' },
+  ];
+
+  const companyLinks = [
+    { labelKey: 'footer.link.ourStory', to: '/pages/our-story' },
+    { labelKey: 'footer.link.materials', to: '/pages/materials' },
+    { labelKey: 'footer.link.sustainability', to: '/pages/sustainability' },
+    { labelKey: 'footer.link.press', to: '/pages/press' },
+  ];
 
   return (
     <footer className="storefront-footer">
       <div className="storefront-footer__grid">
         <div>
-          <p className="storefront-footer__brand-title">Mavile</p>
+          <Link to="/catalog" className="storefront-footer__brand-link">
+            <img src="/mavile-logo.svg" alt="Mavile" className="storefront-footer__brand-logo" />
+          </Link>
           <p className="storefront-footer__brand-text">
             {t('footer.brand')}
           </p>
@@ -16,28 +42,31 @@ const StorefrontFooter: React.FC = () => {
         <div>
           <h4 className="storefront-footer__col-title">{t('footer.shop')}</h4>
           <ul className="storefront-footer__links">
-            <li><button type="button">{t('footer.link.women')}</button></li>
-            <li><button type="button">{t('footer.link.men')}</button></li>
-            <li><button type="button">{t('footer.link.accessories')}</button></li>
-            <li><button type="button">{t('footer.link.newArrivals')}</button></li>
+            {shopLinks.map((link) => (
+              <li key={link.labelKey}>
+                <Link to={link.to}>{t(link.labelKey)}</Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
           <h4 className="storefront-footer__col-title">{t('footer.help')}</h4>
           <ul className="storefront-footer__links">
-            <li><button type="button">{t('footer.link.shipping')}</button></li>
-            <li><button type="button">{t('footer.link.returns')}</button></li>
-            <li><button type="button">{t('footer.link.sizeGuide')}</button></li>
-            <li><button type="button">{t('footer.link.contact')}</button></li>
+            {helpLinks.map((link) => (
+              <li key={link.labelKey}>
+                <Link to={link.to}>{t(link.labelKey)}</Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
           <h4 className="storefront-footer__col-title">{t('footer.company')}</h4>
           <ul className="storefront-footer__links">
-            <li><button type="button">{t('footer.link.ourStory')}</button></li>
-            <li><button type="button">{t('footer.link.materials')}</button></li>
-            <li><button type="button">{t('footer.link.sustainability')}</button></li>
-            <li><button type="button">{t('footer.link.press')}</button></li>
+            {companyLinks.map((link) => (
+              <li key={link.labelKey}>
+                <Link to={link.to}>{t(link.labelKey)}</Link>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

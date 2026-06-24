@@ -1,0 +1,155 @@
+{
+  "backToShop": "Back to shop",
+  "shipping": {
+    "eyebrow": "Help",
+    "title": "Shipping",
+    "intro": "We deliver across mainland Spain in 2–4 business days. Free shipping on orders over €100.",
+    "sections": [
+      {
+        "heading": "Delivery times",
+        "body": "Mainland Spain: 2–4 business days. Balearic Islands, Canary Islands and rest of EU: 4–7 business days. Orders are prepared Monday to Friday."
+      },
+      {
+        "heading": "Rates",
+        "body": "Standard shipping: €8. Free on orders over €100. You will receive a tracking number by email as soon as your order leaves our Madrid warehouse."
+      },
+      {
+        "heading": "Tracking",
+        "body": "Check your order status under Account → Orders. For help, email hello@mavile.com."
+      }
+    ]
+  },
+  "returns": {
+    "eyebrow": "Help",
+    "title": "Returns",
+    "intro": "You have 30 days from delivery to return any unworn item.",
+    "sections": [
+      {
+        "heading": "How to return",
+        "body": "Start a return from Account → Orders. Pack the item with its original tags and drop off at any collection point."
+      },
+      {
+        "heading": "Refunds",
+        "body": "We process refunds within 5–7 business days after receiving the item. The amount is credited to your original payment method."
+      },
+      {
+        "heading": "Exceptions",
+        "body": "For hygiene reasons, we cannot accept returns on underwear, swimwear or personalised items. Sale items may have specific conditions noted on the product page."
+      }
+    ]
+  },
+  "size-guide": {
+    "eyebrow": "Help",
+    "title": "Size guide",
+    "intro": "Our garments follow a contemporary fit. If you are between sizes, we recommend sizing up.",
+    "sections": [
+      {
+        "heading": "Tops",
+        "body": "XS (34–36), S (36–38), M (38–40), L (40–42), XL (42–44). Shirts and knits have ease through the shoulders and chest."
+      },
+      {
+        "heading": "Trousers",
+        "body": "Waist sizes 34–44. Standard inseam is 78 cm for women and 82 cm for men. See product pages for detailed measurements."
+      },
+      {
+        "heading": "Footwear",
+        "body": "EU sizes 36–45. Our leather shoes soften slightly with wear. If between sizes, choose the smaller for a snugger fit."
+      }
+    ]
+  },
+  "contact": {
+    "eyebrow": "Help",
+    "title": "Contact",
+    "intro": "We are here to help with orders, sizing and any questions about Mavile.",
+    "sections": [
+      {
+        "heading": "Customer care",
+        "body": "Email: hello@mavile.com · Phone: +34 910 000 000 · Hours: Monday–Friday, 9:00–18:00 (CET)."
+      },
+      {
+        "heading": "Stores",
+        "body": "Madrid — Calle Serrano 45 · Lisbon — Rua do Século 12 · Paris — Rue de Rivoli 88. Visit by appointment."
+      },
+      {
+        "heading": "Press & partnerships",
+        "body": "For media and partnerships: press@mavile.com"
+      }
+    ]
+  },
+  "our-story": {
+    "eyebrow": "Company",
+    "title": "Our story",
+    "intro": "Mavile was born in Madrid with a simple idea: timeless, well-made clothing for everyday life.",
+    "sections": [
+      {
+        "heading": "Origins",
+        "body": "Founded in 2018, Mavile combines European design with responsible production in Portugal and Italy. Each collection is built on essential pieces that outlast the season."
+      },
+      {
+        "heading": "Philosophy",
+        "body": "Modern. Clean. Wearable. We believe in fewer garments, better made. No loud logos — noble materials and cuts that move with you."
+      },
+      {
+        "heading": "Today",
+        "body": "We operate online and in three cities — Madrid, Lisbon and Paris — with a design, sourcing and customer care team united by one obsession: quality without compromise."
+      }
+    ]
+  },
+  "materials": {
+    "eyebrow": "Company",
+    "title": "Materials",
+    "intro": "We select fibres and fabrics for feel, durability and traceable origin.",
+    "sections": [
+      {
+        "heading": "Natural fibres",
+        "body": "Italian virgin wool, Belgian linen, organic cotton and Mongolian cashmere. We prioritise renewable fibres with OEKO-TEX or GOTS certifications where available."
+      },
+      {
+        "heading": "Leather",
+        "body": "Vegetable-tanned leather for shoes, belts and bags. We work with certified tanneries in Italy and Spain that reduce chrome use."
+      },
+      {
+        "heading": "Care",
+        "body": "Every product includes washing and care instructions. Good care extends a garment's life — the most sustainable way to dress."
+      }
+    ]
+  },
+  "sustainability": {
+    "eyebrow": "Company",
+    "title": "Sustainability",
+    "intro": "The best garment is the one you already own. We design for longevity.",
+    "sections": [
+      {
+        "heading": "Production",
+        "body": "We manufacture in small batches to avoid overstock. Over 80% of production takes place in Portugal and Italy, reducing logistics footprint."
+      },
+      {
+        "heading": "Packaging",
+        "body": "Recycled cardboard boxes with no plastic inside. Shipping bags are reusable and padding is kraft paper."
+      },
+      {
+        "heading": "Commitment",
+        "body": "We publish an annual impact report with measurable goals: CO₂ reduction, supplier traceability and garment repair programmes."
+      }
+    ]
+  },
+  "press": {
+    "eyebrow": "Company",
+    "title": "Press",
+    "intro": "Resources for media, editors and collaborators.",
+    "sections": [
+      {
+        "heading": "Press kit",
+        "body": "Download logos, campaign imagery and press notes by emailing press@mavile.com. We respond within 48 business hours."
+      },
+      {
+        "heading": "Recent coverage",
+        "body": "Mavile has been featured in Vogue España, Monocle and The Gentlewoman for its minimalist approach and quality materials."
+      },
+      {
+        "heading": "Interviews",
+        "body": "For interviews with the creative team or workshop visits, contact our communications department."
+      }
+    ]
+  }
+}

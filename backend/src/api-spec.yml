@@ -1,0 +1,4240 @@
+openapi: 3.0.0
+info:
+  title: Women's Fashion Ecommerce API
+  description: |
+    REST API for the women's fashion ecommerce platform, designed for managing products, categories, suppliers, customer orders, supplier orders, shipments, returns, and refunds.
+
+    This API follows Domain-Driven Design principles and implements a layered architecture for scalable ecommerce and supplier-fulfilled order management.
+
+    ## Features
+    - Product catalog management with categories, variants, prices, images, and supplier references
+    - Supplier management for external fulfillment workflows
+    - Customer management with addresses and order history
+    - Customer order management with payment and fulfillment status tracking
+    - Supplier order management for background supplier-fulfilled ecommerce
+    - Shipment tracking for supplier or store-managed deliveries
+    - Return request and refund management
+    - Comprehensive filtering, sorting, and pagination support
+
+    ## Business Model
+    The initial business model is supplier-fulfilled ecommerce:
+    - The store does not manage its own warehouse at the beginning.
+    - Customers place orders through the online store.
+    - Store administrators process supplier orders in the background.
+    - Suppliers may ship products directly to customers.
+    - The system must support future evolution to internal stock, hybrid fulfillment, multiple suppliers, and supplier automation.
+
+  version: 0.0.0.001
+  contact:
+    name: Ecommerce Development Team
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.ecommerce.dev
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: |
+        Unauthenticated endpoint for load balancers and monitoring. Probes database connectivity
+        with a lightweight `SELECT 1` query via Prisma.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server is running and database is reachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Server is running but database is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthErrorResponse'
+
+  /categories:
+    get:
+      summary: Get all categories
+      description: Retrieve all product categories
+      tags:
+        - Categories
+      parameters:
+        - in: query
+          name: includeInactive
+          schema:
+            type: boolean
+            default: false
+          description: When true, includes inactive (soft-deleted) categories in the response
+      responses:
+        '200':
+          description: Successfully retrieved categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new category
+      description: Create a new product category
+      tags:
+        - Categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /categories/{id}:
+    get:
+      summary: Get category by ID
+      description: Retrieve a specific category by ID
+      tags:
+        - Categories
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Successfully retrieved category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update category
+      description: Update an existing category
+      tags:
+        - Categories
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Soft-delete category
+      description: Soft-delete a category by setting its status to Inactive (row is not removed from the database)
+      tags:
+        - Categories
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Category soft-deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /products:
+    get:
+      summary: Get all products
+      description: Retrieve a paginated list of products with optional filtering and sorting
+      tags:
+        - Products
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term to filter products by name, slug, brand, or description
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+          description: Filter products by category ID
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ProductStatus'
+          description: Filter products by status
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [name, slug, brand, createdAt, updatedAt]
+            default: createdAt
+          description: Field to sort products by
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+      responses:
+        '200':
+          description: Successfully retrieved products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new product
+      description: Create a new product with optional variants and images
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /products/{id}:
+    get:
+      summary: Get product by ID
+      description: Retrieve detailed information about a specific product, including variants and images
+      tags:
+        - Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Successfully retrieved product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update product
+      description: Update an existing product
+      tags:
+        - Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete product
+      description: Delete an existing product
+      tags:
+        - Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Product deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products:
+    get:
+      summary: List products (admin)
+      description: Returns a paginated list of non-deleted products with optional filtering.
+      tags:
+        - Admin — Products
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ProductStatus'
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create product (admin)
+      description: Creates a new product. Slug is auto-generated from name in kebab-case. Default status is Draft.
+      tags:
+        - Admin — Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Slug conflict after 5 auto-retry attempts (PRODUCT_SLUG_CONFLICT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}:
+    get:
+      summary: Get product by ID (admin)
+      tags:
+        - Admin — Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Product with variants and images
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update product (admin)
+      description: Partial update. To activate, product must have ≥1 active variant. Archived products cannot be reactivated.
+      tags:
+        - Admin — Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: |
+            Business rule violation:
+            - PRODUCT_REQUIRES_ACTIVE_VARIANT: activating product with no active variants
+            - PRODUCT_ARCHIVED_CANNOT_REACTIVATE: attempting to reactivate an archived product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Soft-delete product (admin)
+      description: Sets deletedAt timestamp. Product is excluded from all subsequent queries.
+      tags:
+        - Admin — Products
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Product soft-deleted
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/variants:
+    get:
+      summary: List variants for product (admin)
+      description: Returns all non-deleted variants. supplierId, supplierReference, and supplierCost are NEVER included in responses.
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Variants retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create variant (admin)
+      description: >
+        Creates a new variant for the product. compareAtPrice must be strictly greater than
+        publicPrice if provided. supplierId/supplierReference/supplierCost are accepted as
+        input but never returned in the response.
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductVariantRequest'
+      responses:
+        '201':
+          description: Variant created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: SKU already exists (VARIANT_SKU_CONFLICT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: compareAtPrice is not greater than publicPrice (VARIANT_COMPARE_PRICE_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/variants/{variantId}:
+    get:
+      summary: Get variant by ID (admin)
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Variant retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update variant (admin)
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductVariantRequest'
+      responses:
+        '200':
+          description: Variant updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: compareAtPrice validation error (VARIANT_COMPARE_PRICE_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Soft-delete variant (admin)
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Variant soft-deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/images:
+    get:
+      summary: List images for product (admin)
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Images retrieved ordered by sortOrder
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductImage'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Add image to product (admin)
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductImageRequest'
+      responses:
+        '201':
+          description: Image added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductImage'
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/images/{imageId}:
+    patch:
+      summary: Update image (admin)
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: imageId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductImageRequest'
+      responses:
+        '200':
+          description: Image updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductImage'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Hard-delete image (admin)
+      description: Permanently removes the image row (hard-delete, no deletedAt).
+      tags:
+        - Admin — Product Images
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: imageId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Image deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers:
+    get:
+      summary: List suppliers (admin)
+      description: >
+        Returns a paginated list of suppliers with optional search (case-insensitive
+        name match) and status filter. Admin-only; no `/api/public/suppliers` route exists.
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Case-insensitive filter on supplier name
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/SupplierStatus'
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          description: Number of items per page. Clamped to a maximum of 100.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Suppliers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create supplier (admin)
+      description: Creates a new supplier. Default status is Active when omitted.
+      tags:
+        - Admin — Suppliers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierRequest'
+      responses:
+        '201':
+          description: Supplier created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{id}:
+    get:
+      summary: Get supplier by ID (admin)
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Supplier retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Invalid id parameter (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update supplier (admin)
+      description: Partial update including status transitions (Active, Inactive, Blocked).
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierRequest'
+      responses:
+        '200':
+          description: Supplier updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Soft-delete supplier (admin)
+      description: >
+        Sets status to Inactive. The supplier row is preserved (no hard-delete).
+        Returns 200 with the updated supplier, not 204.
+      tags:
+        - Admin — Suppliers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Supplier deactivated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierResponse'
+        '400':
+          description: Invalid id parameter (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/public/products:
+    get:
+      summary: List products (public storefront)
+      description: >
+        Customer-facing product listing for the storefront. Results are always
+        restricted to Active products (any client-supplied `status` is ignored).
+        Responses are serialized with a customer-safe allow-list and NEVER include
+        supplier data (`supplierId`, `supplierReference`, `supplierCost`),
+        `deletedAt`, or internal notes. Only Active variants are returned.
+      tags:
+        - Public — Catalog
+      parameters:
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          description: Number of items per page. Clamped to a maximum of 100.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [name, createdAt]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProductListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/public/products/{id}:
+    get:
+      summary: Get product by ID (public storefront)
+      description: >
+        Returns a single Active product with its Active variants and images
+        ordered by sortOrder, serialized with the customer-safe allow-list.
+        Non-existent or non-Active products return 404.
+      tags:
+        - Public — Catalog
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProductResponse'
+        '404':
+          description: Product not found or not Active (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/public/categories:
+    get:
+      summary: List categories (public storefront)
+      description: >
+        Returns the active categories available to the storefront navigation.
+        The Category model holds no supplier or internal data.
+      tags:
+        - Public — Catalog
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customers:
+    get:
+      summary: List customers (admin)
+      description: Retrieve a paginated list of customers with optional search by name or email
+      tags:
+        - Customers
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Filter customers by first name, last name, or email (case-insensitive)
+      responses:
+        '200':
+          description: Customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create customer (admin)
+      description: Create a new customer. Email is normalized to lowercase before persistence. Returns 409 on duplicate email.
+      tags:
+        - Customers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customers/{id}:
+    get:
+      summary: Get customer by ID (admin)
+      description: Retrieve a customer with their addresses array included
+      tags:
+        - Customers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Customer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerWithAddressesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update customer (admin)
+      description: Partially update a customer. Only provided fields are updated. Email uniqueness is re-validated if changed.
+      tags:
+        - Customers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete customer (admin)
+      description: Hard-delete a customer and all their addresses (cascade). Returns 409 if the customer has any orders.
+      tags:
+        - Customers
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Customer deleted successfully (no body)
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cannot delete — customer has existing orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: CUSTOMER_HAS_ORDERS
+                  message: Customer has existing orders and cannot be deleted
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customers/{customerId}/addresses:
+    get:
+      summary: List customer addresses (admin)
+      description: Retrieve all addresses for a customer
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+      responses:
+        '200':
+          description: Addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create customer address (admin)
+      description: Add a new address to a customer
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerAddressRequest'
+      responses:
+        '201':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customers/{customerId}/addresses/{addressId}:
+    patch:
+      summary: Update customer address (admin)
+      description: Partially update an address. Ownership is enforced — address must belong to customerId.
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+        - in: path
+          name: addressId
+          required: true
+          schema:
+            type: integer
+          description: Address ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerAddressRequest'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete customer address (admin)
+      description: Hard-delete an address. Ownership is enforced — address must belong to customerId.
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: integer
+          description: Customer ID
+        - in: path
+          name: addressId
+          required: true
+          schema:
+            type: integer
+          description: Address ID
+      responses:
+        '204':
+          description: Address deleted successfully (no body)
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customer-orders:
+    get:
+      summary: List customer orders (admin)
+      description: Paginated admin list with filters and search. Supplier-internal fields are never returned.
+      tags:
+        - Admin Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: customerId
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/CustomerOrderStatus'
+        - in: query
+          name: paymentStatus
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - in: query
+          name: fulfillmentStatus
+          schema:
+            $ref: '#/components/schemas/FulfillmentStatus'
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: createdFrom
+          schema:
+            type: string
+            format: date
+          description: Inclusive start date (UTC day bounds) for filtering by createdAt
+        - in: query
+          name: createdTo
+          schema:
+            type: string
+            format: date
+          description: Inclusive end date (UTC day bounds) for filtering by createdAt
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [createdAt, totalAmount, orderNumber]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Customer orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create customer order (admin)
+      tags:
+        - Admin Customer Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerOrderRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customer-orders/{id}:
+    get:
+      summary: Get customer order by ID (admin)
+      tags:
+        - Admin Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Customer order retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '404':
+          description: CUSTOMER_ORDER_NOT_FOUND
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customer-orders/{id}/status:
+    patch:
+      summary: Update customer order statuses (admin)
+      description: Update any combination of order, payment, and fulfillment status with transition validation.
+      tags:
+        - Admin Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerOrderStatusRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid status transition (ORDER_STATUS_TRANSITION_INVALID, PAYMENT_STATUS_TRANSITION_INVALID, FULFILLMENT_STATUS_TRANSITION_INVALID)
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/customer-orders/{id}/supplier-orders:
+    post:
+      summary: Generate supplier orders from customer order (admin)
+      description: Auto-generate one supplier order per supplier from a paid or processing customer order. Idempotent when all items are already covered.
+      tags:
+        - Admin Customer Orders
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Existing supplier orders returned (idempotent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '201':
+          description: Supplier orders created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '404':
+          description: CUSTOMER_ORDER_NOT_FOUND
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: CUSTOMER_ORDER_NOT_ELIGIBLE, VARIANT_SUPPLIER_MISSING, SUPPLIER_BLOCKED
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders:
+    get:
+      summary: List supplier orders (admin)
+      tags:
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: customerOrderId
+          schema:
+            type: integer
+        - in: query
+          name: supplierId
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/SupplierOrderStatus'
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [createdAt, supplierOrderNumber]
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Supplier orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create supplier order manually (admin)
+      tags:
+        - Admin Supplier Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierOrderRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: CUSTOMER_ORDER_NOT_ELIGIBLE, SUPPLIER_BLOCKED
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}:
+    get:
+      summary: Get supplier order by ID (admin)
+      tags:
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Supplier order retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          description: SUPPLIER_ORDER_NOT_FOUND
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/status:
+    patch:
+      summary: Update supplier order status (admin)
+      tags:
+        - Admin Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierOrderStatusRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: SUPPLIER_ORDER_STATUS_TRANSITION_INVALID
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Legacy paths below — superseded by /api/admin/customer-orders* (KAN-18)
+  /customer-orders:
+    get:
+      summary: Get all customer orders
+      description: Retrieve a paginated list of customer orders
+      tags:
+        - Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: customerId
+          schema:
+            type: integer
+          description: Filter orders by customer ID
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/CustomerOrderStatus'
+          description: Filter orders by customer-facing order status
+        - in: query
+          name: paymentStatus
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+          description: Filter orders by payment status
+        - in: query
+          name: fulfillmentStatus
+          schema:
+            $ref: '#/components/schemas/FulfillmentStatus'
+          description: Filter orders by fulfillment status
+      responses:
+        '200':
+          description: Successfully retrieved customer orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new customer order
+      description: Create a new customer order
+      tags:
+        - Customer Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerOrderRequest'
+      responses:
+        '201':
+          description: Customer order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /customer-orders/{id}:
+    get:
+      summary: Get customer order by ID
+      description: Retrieve detailed information about a specific customer order
+      tags:
+        - Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Successfully retrieved customer order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /customer-orders/{id}/status:
+    patch:
+      summary: Update customer order status
+      description: Update the customer-facing order status, payment status, or fulfillment status
+      tags:
+        - Customer Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerOrderStatusRequest'
+      responses:
+        '200':
+          description: Customer order status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /customer-orders/{id}/supplier-orders:
+    post:
+      summary: Create supplier orders from customer order
+      description: Create one or more supplier orders from a paid or processing customer order
+      tags:
+        - Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '201':
+          description: Supplier orders created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /supplier-orders:
+    get:
+      summary: Get all supplier orders
+      description: Retrieve a paginated list of supplier orders
+      tags:
+        - Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: customerOrderId
+          schema:
+            type: integer
+          description: Filter supplier orders by customer order ID
+        - in: query
+          name: supplierId
+          schema:
+            type: integer
+          description: Filter supplier orders by supplier ID
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/SupplierOrderStatus'
+          description: Filter supplier orders by status
+      responses:
+        '200':
+          description: Successfully retrieved supplier orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a supplier order
+      description: Create a supplier order manually
+      tags:
+        - Supplier Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierOrderRequest'
+      responses:
+        '201':
+          description: Supplier order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /supplier-orders/{id}:
+    get:
+      summary: Get supplier order by ID
+      description: Retrieve detailed information about a specific supplier order
+      tags:
+        - Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Successfully retrieved supplier order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /supplier-orders/{id}/status:
+    patch:
+      summary: Update supplier order status
+      description: Update the supplier order status
+      tags:
+        - Supplier Orders
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierOrderStatusRequest'
+      responses:
+        '200':
+          description: Supplier order status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/shipments:
+    get:
+      summary: Get all shipments
+      description: Retrieve a paginated list of shipments. Requires admin authentication.
+      tags:
+        - Shipments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Number of items per page
+        - in: query
+          name: customerOrderId
+          schema:
+            type: integer
+          description: Filter shipments by customer order ID
+        - in: query
+          name: supplierOrderId
+          schema:
+            type: integer
+          description: Filter shipments by supplier order ID
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ShipmentStatus'
+          description: Filter shipments by status
+      responses:
+        '200':
+          description: Successfully retrieved shipments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create shipment
+      description: Create shipment information for a customer order. Optionally link to a supplier order. Requires admin authentication.
+      tags:
+        - Shipments
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShipmentRequest'
+      responses:
+        '201':
+          description: Shipment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/shipments/{id}:
+    get:
+      summary: Get shipment by ID
+      description: Retrieve a single shipment with related customer order and supplier order info. Requires admin authentication.
+      tags:
+        - Shipments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shipment ID
+      responses:
+        '200':
+          description: Shipment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/shipments/{id}/status:
+    patch:
+      summary: Update shipment status
+      description: |
+        Transition a shipment to a new status following the state machine:
+        Pending → Shipped | Failed | Returned
+        Shipped → InTransit | Delivered | Failed | Returned
+        InTransit → Delivered | Failed | Returned
+        Delivered, Failed, Returned are terminal states.
+        Requires admin authentication.
+      tags:
+        - Shipments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shipment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  $ref: '#/components/schemas/ShipmentStatus'
+      responses:
+        '200':
+          description: Shipment status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '400':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/return-requests:
+    get:
+      summary: Get all return requests (admin)
+      description: Retrieve a paginated list of return requests. Requires admin authentication.
+      tags:
+        - Return Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: customerOrderId
+          schema:
+            type: integer
+          description: Filter return requests by customer order ID
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ReturnRequestStatus'
+          description: Filter return requests by status
+      responses:
+        '200':
+          description: Successfully retrieved return requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRequestListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create return request (admin)
+      description: |
+        Create a return request for a specific order item. Requires admin authentication.
+        Validations: order must exist, order must not be Cancelled, item must exist, item must belong to the order.
+      tags:
+        - Return Requests
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReturnRequestRequest'
+      responses:
+        '201':
+          description: Return request created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/return-requests/{id}:
+    get:
+      summary: Get return request by ID (admin)
+      description: Retrieve a single return request. Requires admin authentication.
+      tags:
+        - Return Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Return Request ID
+      responses:
+        '200':
+          description: Return request retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRequestResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/return-requests/{id}/status:
+    patch:
+      summary: Update return request status (admin)
+      description: |
+        Transition a return request to a new status following the state machine:
+        Requested → Approved | Rejected | Cancelled
+        Approved → Received | Cancelled
+        Received → Refunded | Cancelled
+        Rejected, Refunded, Cancelled are terminal states.
+        Requires admin authentication.
+      tags:
+        - Return Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Return Request ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReturnRequestStatusRequest'
+      responses:
+        '200':
+          description: Return request status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/refunds:
+    get:
+      summary: Get all refunds (admin)
+      description: Retrieve a paginated list of refunds. Requires admin authentication.
+      tags:
+        - Refunds
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: customerOrderId
+          schema:
+            type: integer
+          description: Filter refunds by customer order ID
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/RefundStatus'
+          description: Filter refunds by status
+      responses:
+        '200':
+          description: Successfully retrieved refunds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Unauthorized — missing or invalid admin token
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create refund (admin)
+      description: Create a total or partial refund for a customer order. Requires admin authentication.
+      tags:
+        - Refunds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRefundRequest'
+      responses:
+        '201':
+          description: Refund created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Unauthorized — missing or invalid admin token
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/refunds/{id}:
+    get:
+      summary: Get refund by ID (admin)
+      description: Retrieve a single refund by its ID. Requires admin authentication.
+      tags:
+        - Refunds
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Successfully retrieved refund
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '401':
+          description: Unauthorized — missing or invalid admin token
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/refunds/{id}/status:
+    patch:
+      summary: Update refund status (admin)
+      description: |
+        Advance a refund through its state machine. Requires admin authentication.
+        Allowed transitions: Pending → Processing, Pending → Cancelled,
+        Processing → Completed, Processing → Failed, Processing → Cancelled.
+        Terminal states (Completed, Failed, Cancelled) do not allow further transitions.
+        When transitioning to Completed, processedAt is set and CustomerOrder.paymentStatus is recalculated.
+        **Stripe sync (Pending → Processing):** calls `stripe.refunds.create` with `payment_intent` and `amount`
+        using idempotency key `refund:{id}`. Stores Stripe refund id in `paymentProviderReference`.
+        If Stripe fails, the transition is aborted and 409 REFUND_STRIPE_ERROR is returned.
+        **charge.refunded webhook** advances Processing → Completed automatically when Stripe confirms.
+      tags:
+        - Refunds
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRefundStatusRequest'
+      responses:
+        '200':
+          description: Refund status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Unauthorized — missing or invalid admin token
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ─── Admin authentication (required for all other /api/admin/* routes) ───
+  /api/admin/auth/login:
+    post:
+      summary: Admin login
+      tags: [Admin Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: Returns admin profile and accessToken; sets admin_refresh cookie }
+        '401': { description: INVALID_CREDENTIALS }
+
+  /api/admin/auth/me:
+    get:
+      summary: Current admin profile
+      tags: [Admin Auth]
+      security: [{ AdminBearer: [] }]
+      responses:
+        '200': { description: Admin profile without passwordHash }
+        '401': { description: Unauthorized }
+
+  # ─── Public storefront auth & account ───
+  /api/public/auth/register:
+    post:
+      summary: Register customer account
+      tags: [Customer Auth]
+      responses:
+        '201': { description: Account created with accessToken and refresh cookie }
+
+  /api/public/auth/login:
+    post:
+      summary: Customer login
+      tags: [Customer Auth]
+      responses:
+        '200': { description: Session or mfaRequired + mfaToken when 2FA enabled }
+
+  /api/public/account/profile:
+    get:
+      summary: Get own customer profile
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      responses:
+        '200': { description: Customer profile }
+        '401': { description: Unauthorized }
+
+  /api/public/account/wishlist:
+    get:
+      summary: List wishlist
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      responses:
+        '200': { description: Wishlist items }
+
+  /api/public/checkout/guest:
+    post:
+      summary: Guest checkout
+      tags: [Checkout]
+      description: |
+        Creates a CustomerOrder and a Stripe PaymentIntent atomically.
+        Returns `clientSecret` for the frontend to call `stripe.confirmPayment`.
+        If Stripe is unavailable, the order is rolled back and 503 is returned.
+        `stripePaymentIntentId` is NEVER included in the response.
+      responses:
+        '201':
+          description: Order created — includes clientSecret for Stripe.js
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      orderNumber: { type: string }
+                      status: { type: string }
+                      paymentStatus: { type: string }
+                      totalAmount: { type: string }
+                      currency: { type: string }
+                      clientSecret: { type: string, description: Stripe PaymentIntent client_secret for stripe.confirmPayment }
+        '503':
+          description: PAYMENT_GATEWAY_UNAVAILABLE — Stripe unreachable; order rolled back
+
+  /api/public/checkout:
+    post:
+      summary: Authenticated checkout
+      tags: [Checkout]
+      security: [{ CustomerBearer: [] }]
+      description: Same as guest checkout but uses authenticated customer identity.
+      responses:
+        '201': { description: Order + clientSecret for token customerId }
+        '503': { description: PAYMENT_GATEWAY_UNAVAILABLE }
+
+  /api/public/payments/config:
+    get:
+      summary: Get Stripe publishable key and mode
+      tags: [Payments]
+      description: |
+        Returns the Stripe publishable key for initializing Stripe.js on the frontend.
+        The secret key is NEVER included.
+      responses:
+        '200':
+          description: Stripe configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      publishableKey: { type: string, description: Stripe publishable key (pk_test_* or pk_live_*) }
+                      mode: { type: string, enum: [test, live] }
+
+  /api/public/payments/webhook:
+    post:
+      summary: Stripe webhook receiver
+      tags: [Payments]
+      description: |
+        Receives Stripe events. Must be called with raw body (not JSON-parsed).
+        Verifies signature using `STRIPE_WEBHOOK_SECRET`.
+        Processed events are stored in `StripeWebhookEvent` for idempotency.
+        Handled event types: `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`.
+      parameters:
+        - in: header
+          name: stripe-signature
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Event processed or already processed (idempotent) }
+        '400':
+          description: PAYMENT_WEBHOOK_SIGNATURE_INVALID — missing or invalid Stripe-Signature header
+
+  /api/public/coupons/validate:
+    post:
+      summary: Validate coupon code
+      tags: [Coupons]
+      responses:
+        '200': { description: valid true/false with discountAmount or reason }
+
+components:
+  parameters:
+    IdPathParam:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      description: Resource unique identifier
+
+    PageParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    LimitParam:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+      description: Number of items per page
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Business rule conflict or duplicated resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - db
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+          example: ok
+        db:
+          type: string
+          enum:
+            - up
+          example: up
+      additionalProperties: false
+
+    HealthErrorResponse:
+      type: object
+      required:
+        - status
+        - db
+      properties:
+        status:
+          type: string
+          enum:
+            - error
+          example: error
+        db:
+          type: string
+          enum:
+            - down
+          example: down
+      additionalProperties: false
+
+    ProductStatus:
+      type: string
+      enum:
+        - Draft
+        - Active
+        - Inactive
+        - Archived
+
+    ProductVariantStatus:
+      type: string
+      enum:
+        - Active
+        - Inactive
+        - OutOfStock
+        - Archived
+
+    StockPolicy:
+      type: string
+      enum:
+        - SupplierManaged
+        - InternalStock
+        - Hybrid
+
+    SupplierStatus:
+      type: string
+      enum:
+        - Active
+        - Inactive
+        - Blocked
+
+    CustomerOrderStatus:
+      type: string
+      enum:
+        - PendingPayment
+        - Paid
+        - Processing
+        - Completed
+        - Cancelled
+        - Refunded
+
+    PaymentStatus:
+      type: string
+      enum:
+        - Pending
+        - Authorized
+        - Paid
+        - Failed
+        - Refunded
+        - PartiallyRefunded
+
+    FulfillmentStatus:
+      type: string
+      enum:
+        - NotStarted
+        - PendingSupplierOrder
+        - SupplierOrderPlaced
+        - PartiallyFulfilled
+        - Fulfilled
+        - Blocked
+        - Cancelled
+
+    SupplierOrderStatus:
+      type: string
+      enum:
+        - Draft
+        - Requested
+        - Confirmed
+        - OutOfStock
+        - Shipped
+        - Delivered
+        - Cancelled
+
+    ShipmentStatus:
+      type: string
+      enum:
+        - Pending
+        - Shipped
+        - InTransit
+        - Delivered
+        - Failed
+        - Returned
+
+    ReturnRequestStatus:
+      type: string
+      enum:
+        - Requested
+        - Approved
+        - Rejected
+        - Received
+        - Refunded
+        - Cancelled
+
+    RefundStatus:
+      type: string
+      enum:
+        - Pending
+        - Processing
+        - Completed
+        - Failed
+        - Cancelled
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 10
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Validation failed
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            details:
+              type: array
+              items:
+                type: object
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Dresses
+        description:
+          type: string
+          nullable: true
+          example: Women's dresses collection
+        imageUrl:
+          type: string
+          nullable: true
+          example: https://cdn.example.com/categories/dresses.jpg
+        status:
+          type: string
+          enum: [Active, Inactive]
+          example: Active
+        parentId:
+          type: integer
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Dresses
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: Women's dresses collection
+        imageUrl:
+          type: string
+          nullable: true
+          example: https://cdn.example.com/categories/dresses.jpg
+        status:
+          type: string
+          enum: [Active, Inactive]
+          default: Active
+        parentId:
+          type: integer
+          nullable: true
+          example: null
+
+    UpdateCategoryRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateCategoryRequest'
+
+    CategoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Category'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    CategoryListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        message:
+          type: string
+          example: Categories retrieved successfully
+
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        productId:
+          type: integer
+          example: 1
+        url:
+          type: string
+          example: https://cdn.example.com/products/black-midi-dress.jpg
+        altText:
+          type: string
+          nullable: true
+          example: Black midi dress
+        sortOrder:
+          type: integer
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductVariant:
+      type: object
+      description: >
+        Represents a sellable variant of a product. Note: supplierId, supplierReference,
+        and supplierCost are stored in the database but are NEVER included in API responses.
+        These fields are excluded at the Prisma select layer as a security invariant.
+      properties:
+        id:
+          type: integer
+          example: 1
+        productId:
+          type: integer
+          example: 1
+        sku:
+          type: string
+          example: DRESS-BLACK-S
+        size:
+          type: string
+          nullable: true
+          example: S
+        color:
+          type: string
+          nullable: true
+          example: Black
+        publicPrice:
+          type: number
+          format: decimal
+          example: 49.99
+        compareAtPrice:
+          type: number
+          format: decimal
+          nullable: true
+          example: 59.99
+        stockPolicy:
+          $ref: '#/components/schemas/StockPolicy'
+        status:
+          $ref: '#/components/schemas/ProductVariantStatus'
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Black midi dress
+        slug:
+          type: string
+          example: black-midi-dress
+        description:
+          type: string
+          nullable: true
+          example: Elegant black midi dress
+        brand:
+          type: string
+          nullable: true
+          example: Store Brand
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        mainImageUrl:
+          type: string
+          nullable: true
+          example: https://cdn.example.com/products/black-midi-dress.jpg
+        categoryId:
+          type: integer
+          nullable: true
+          example: 1
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVariant'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateProductVariantRequest:
+      type: object
+      required:
+        - sku
+        - publicPrice
+        - stockPolicy
+        - status
+      properties:
+        sku:
+          type: string
+          maxLength: 100
+          example: DRESS-BLACK-S
+        size:
+          type: string
+          maxLength: 50
+          nullable: true
+          example: S
+        color:
+          type: string
+          maxLength: 50
+          nullable: true
+          example: Black
+        publicPrice:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 49.99
+        compareAtPrice:
+          type: number
+          format: decimal
+          nullable: true
+          example: 59.99
+        supplierId:
+          type: integer
+          nullable: true
+          example: 1
+        supplierReference:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: SUP-BLACK-DRESS-S
+        supplierCost:
+          type: number
+          format: decimal
+          nullable: true
+          example: 24.99
+        stockPolicy:
+          $ref: '#/components/schemas/StockPolicy'
+        status:
+          $ref: '#/components/schemas/ProductVariantStatus'
+
+    CreateProductImageRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          maxLength: 500
+          example: https://cdn.example.com/products/black-midi-dress.jpg
+        altText:
+          type: string
+          maxLength: 250
+          nullable: true
+          example: Black midi dress
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 0
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - slug
+        - status
+      properties:
+        name:
+          type: string
+          maxLength: 150
+          example: Black midi dress
+        slug:
+          type: string
+          maxLength: 200
+          example: black-midi-dress
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          example: Elegant black midi dress
+        brand:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: Store Brand
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        mainImageUrl:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: https://cdn.example.com/products/black-midi-dress.jpg
+        categoryId:
+          type: integer
+          nullable: true
+          example: 1
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateProductVariantRequest'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateProductImageRequest'
+
+    UpdateProductRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductRequest'
+
+    ProductResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Product'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    ProductListResult:
+      type: object
+      description: Paginated product list result as returned by GET /api/admin/products
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+          example: 42
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+
+    ProductListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ProductListResult'
+        message:
+          type: string
+          example: Products retrieved successfully
+
+    PublicProductVariant:
+      type: object
+      description: >
+        Customer-safe variant. Supplier fields (supplierId, supplierReference,
+        supplierCost) and deletedAt are never included.
+      properties:
+        id:
+          type: integer
+          example: 12
+        sku:
+          type: string
+          example: EJS-3
+        size:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        publicPrice:
+          type: number
+          example: 29.9
+        compareAtPrice:
+          type: number
+          nullable: true
+        status:
+          type: string
+          example: Active
+
+    PublicProduct:
+      type: object
+      description: >
+        Customer-safe product as returned by the public catalog API. Uses an
+        explicit allow-list; supplier and internal fields are never present.
+        Only Active variants are included.
+      properties:
+        id:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: Classic Red Pullover Hoodie
+        slug:
+          type: string
+          example: classic-red-pullover-hoodie
+        description:
+          type: string
+          nullable: true
+        brand:
+          type: string
+          nullable: true
+        status:
+          type: string
+          example: Active
+        mainImageUrl:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+          nullable: true
+          example: 4
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProductVariant'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PublicProductResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/PublicProduct'
+        message:
+          type: string
+          example: Product retrieved successfully
+
+    PublicProductListResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProduct'
+        total:
+          type: integer
+          example: 35
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+
+    PublicProductListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/PublicProductListResult'
+        message:
+          type: string
+          example: Products retrieved successfully
+
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Example Supplier
+        contactName:
+          type: string
+          nullable: true
+          example: Supplier Contact
+        contactEmail:
+          type: string
+          nullable: true
+          example: supplier@example.com
+        contactPhone:
+          type: string
+          nullable: true
+          example: '+34999999999'
+        website:
+          type: string
+          nullable: true
+          example: https://supplier.example.com
+        notes:
+          type: string
+          nullable: true
+          example: Internal supplier notes
+        status:
+          $ref: '#/components/schemas/SupplierStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateSupplierRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 150
+          example: Example Supplier
+        contactName:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: Supplier Contact
+        contactEmail:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: supplier@example.com
+        contactPhone:
+          type: string
+          maxLength: 30
+          nullable: true
+          example: '+34999999999'
+        website:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: https://supplier.example.com
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+          example: Internal supplier notes
+        status:
+          $ref: '#/components/schemas/SupplierStatus'
+
+    UpdateSupplierRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        contactName:
+          type: string
+          maxLength: 150
+          nullable: true
+        contactEmail:
+          type: string
+          maxLength: 255
+          nullable: true
+        contactPhone:
+          type: string
+          maxLength: 30
+          nullable: true
+        website:
+          type: string
+          maxLength: 500
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+        status:
+          $ref: '#/components/schemas/SupplierStatus'
+
+    SupplierListResult:
+      type: object
+      description: Paginated supplier list result as returned by GET /api/admin/suppliers
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Supplier'
+        total:
+          type: integer
+          example: 10
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+
+    SupplierResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Supplier'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    SupplierListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SupplierListResult'
+        message:
+          type: string
+          example: Suppliers retrieved successfully
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        firstName:
+          type: string
+          example: Jane
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          example: jane@example.com
+        phone:
+          type: string
+          nullable: true
+          example: '+34600000000'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CustomerAddress:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerId:
+          type: integer
+          example: 1
+        type:
+          type: string
+          enum: [Shipping, Billing]
+          example: Shipping
+        fullName:
+          type: string
+          maxLength: 150
+          example: Jane Doe
+        phone:
+          type: string
+          nullable: true
+          maxLength: 30
+          example: '+34600000000'
+        streetLine1:
+          type: string
+          maxLength: 150
+          example: Calle Gran Vía 28
+        streetLine2:
+          type: string
+          nullable: true
+          maxLength: 150
+          example: Piso 3
+        city:
+          type: string
+          maxLength: 100
+          example: Madrid
+        province:
+          type: string
+          maxLength: 100
+          example: Madrid
+        postalCode:
+          type: string
+          maxLength: 20
+          example: '28013'
+        country:
+          type: string
+          maxLength: 100
+          example: Spain
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateCustomerRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+          example: Jane
+        lastName:
+          type: string
+          maxLength: 100
+          example: Doe
+        email:
+          type: string
+          maxLength: 255
+          example: jane@example.com
+        phone:
+          type: string
+          maxLength: 30
+          nullable: true
+          example: '+34600000000'
+
+    UpdateCustomerRequest:
+      type: object
+      description: All fields are optional. Only provided fields are updated.
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+          example: Jane
+        lastName:
+          type: string
+          maxLength: 100
+          example: Doe
+        email:
+          type: string
+          maxLength: 255
+          example: jane@example.com
+        phone:
+          type: string
+          maxLength: 30
+          nullable: true
+          example: '+34600000000'
+
+    CreateCustomerAddressRequest:
+      type: object
+      required:
+        - type
+        - fullName
+        - streetLine1
+        - city
+        - province
+        - postalCode
+        - country
+      properties:
+        type:
+          type: string
+          enum: [Shipping, Billing]
+          example: Shipping
+        fullName:
+          type: string
+          maxLength: 150
+          example: Jane Doe
+        phone:
+          type: string
+          nullable: true
+          maxLength: 30
+          example: '+34600000000'
+        streetLine1:
+          type: string
+          maxLength: 150
+          example: Calle Gran Vía 28
+        streetLine2:
+          type: string
+          nullable: true
+          maxLength: 150
+          example: Piso 3
+        city:
+          type: string
+          maxLength: 100
+          example: Madrid
+        province:
+          type: string
+          maxLength: 100
+          example: Madrid
+        postalCode:
+          type: string
+          maxLength: 20
+          example: '28013'
+        country:
+          type: string
+          maxLength: 100
+          example: Spain
+
+    UpdateCustomerAddressRequest:
+      type: object
+      description: All fields are optional. Only provided fields are updated.
+      properties:
+        type:
+          type: string
+          enum: [Shipping, Billing]
+        fullName:
+          type: string
+          maxLength: 150
+        phone:
+          type: string
+          nullable: true
+          maxLength: 30
+        streetLine1:
+          type: string
+          maxLength: 150
+        streetLine2:
+          type: string
+          nullable: true
+          maxLength: 150
+        city:
+          type: string
+          maxLength: 100
+        province:
+          type: string
+          maxLength: 100
+        postalCode:
+          type: string
+          maxLength: 20
+        country:
+          type: string
+          maxLength: 100
+
+    CustomerResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Customer'
+        message:
+          type: string
+          example: Customer retrieved successfully
+
+    CustomerWithAddressesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          allOf:
+            - $ref: '#/components/schemas/Customer'
+            - type: object
+              properties:
+                addresses:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CustomerAddress'
+        message:
+          type: string
+          example: Customer retrieved successfully
+
+    CustomerListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Customer'
+            total:
+              type: integer
+              example: 42
+            page:
+              type: integer
+              example: 1
+            pageSize:
+              type: integer
+              example: 20
+        message:
+          type: string
+          example: Customers retrieved successfully
+
+    CustomerAddressResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CustomerAddress'
+        message:
+          type: string
+          example: Address saved successfully
+
+    CustomerAddressListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerAddress'
+        message:
+          type: string
+          example: Addresses retrieved successfully
+
+    AddressSnapshot:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: Jane Doe
+        phone:
+          type: string
+          example: '+34600000000'
+        streetLine1:
+          type: string
+          example: Main Street 10
+        streetLine2:
+          type: string
+          nullable: true
+          example: 2A
+        city:
+          type: string
+          example: Malaga
+        province:
+          type: string
+          example: Malaga
+        postalCode:
+          type: string
+          example: '29001'
+        country:
+          type: string
+          example: Spain
+
+    CustomerOrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerOrderId:
+          type: integer
+          example: 1
+        productVariantId:
+          type: integer
+          example: 1
+        productNameSnapshot:
+          type: string
+          example: Black midi dress
+        variantSnapshot:
+          type: object
+          example:
+            size: S
+            color: Black
+        skuSnapshot:
+          type: string
+          example: DRESS-BLACK-S
+        quantity:
+          type: integer
+          example: 1
+        unitPrice:
+          type: number
+          format: decimal
+          example: 49.99
+        totalPrice:
+          type: number
+          format: decimal
+          example: 49.99
+        fulfillmentStatus:
+          $ref: '#/components/schemas/FulfillmentStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CustomerOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        orderNumber:
+          type: string
+          example: ORD-000001
+        customerId:
+          type: integer
+          example: 1
+        status:
+          $ref: '#/components/schemas/CustomerOrderStatus'
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        fulfillmentStatus:
+          $ref: '#/components/schemas/FulfillmentStatus'
+        subtotalAmount:
+          type: number
+          format: decimal
+          example: 49.99
+        shippingAmount:
+          type: number
+          format: decimal
+          example: 4.99
+        discountAmount:
+          type: number
+          format: decimal
+          example: 0
+        totalAmount:
+          type: number
+          format: decimal
+          example: 54.98
+        currency:
+          type: string
+          example: EUR
+        shippingAddressSnapshot:
+          $ref: '#/components/schemas/AddressSnapshot'
+        billingAddressSnapshot:
+          $ref: '#/components/schemas/AddressSnapshot'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerOrderItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateCustomerOrderItemRequest:
+      type: object
+      required:
+        - productVariantId
+        - quantity
+      properties:
+        productVariantId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+
+    CreateCustomerOrderRequest:
+      type: object
+      required:
+        - customerId
+        - items
+        - shippingAddressSnapshot
+        - billingAddressSnapshot
+      properties:
+        customerId:
+          type: integer
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateCustomerOrderItemRequest'
+        shippingAddressSnapshot:
+          $ref: '#/components/schemas/AddressSnapshot'
+        billingAddressSnapshot:
+          $ref: '#/components/schemas/AddressSnapshot'
+
+    UpdateCustomerOrderStatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/CustomerOrderStatus'
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        fulfillmentStatus:
+          $ref: '#/components/schemas/FulfillmentStatus'
+
+    CustomerOrderResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CustomerOrder'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    CustomerOrderListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerOrder'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    SupplierOrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        supplierOrderId:
+          type: integer
+          example: 1
+        customerOrderItemId:
+          type: integer
+          example: 1
+        productVariantId:
+          type: integer
+          example: 1
+        supplierReferenceSnapshot:
+          type: string
+          nullable: true
+          example: SUP-BLACK-DRESS-S
+        quantity:
+          type: integer
+          example: 1
+        supplierCost:
+          type: number
+          format: decimal
+          example: 24.99
+        status:
+          $ref: '#/components/schemas/SupplierOrderStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SupplierOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        supplierOrderNumber:
+          type: string
+          example: SUP-000001
+        customerOrderId:
+          type: integer
+          example: 1
+        supplierId:
+          type: integer
+          example: 1
+        status:
+          $ref: '#/components/schemas/SupplierOrderStatus'
+        requestedAt:
+          type: string
+          format: date-time
+          nullable: true
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        shippedAt:
+          type: string
+          format: date-time
+          nullable: true
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        trackingNumber:
+          type: string
+          nullable: true
+          example: TRK123456789
+        trackingUrl:
+          type: string
+          nullable: true
+          example: https://carrier.example.com/TRK123456789
+        internalNotes:
+          type: string
+          nullable: true
+          example: Internal supplier order notes
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierOrderItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateSupplierOrderItemRequest:
+      type: object
+      required:
+        - customerOrderItemId
+        - productVariantId
+        - quantity
+        - supplierCost
+      properties:
+        customerOrderItemId:
+          type: integer
+          example: 1
+        productVariantId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+        supplierCost:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 24.99
+
+    CreateSupplierOrderRequest:
+      type: object
+      required:
+        - customerOrderId
+        - supplierId
+        - items
+      properties:
+        customerOrderId:
+          type: integer
+          example: 1
+        supplierId:
+          type: integer
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateSupplierOrderItemRequest'
+        internalNotes:
+          type: string
+          nullable: true
+          example: Internal supplier order notes
+
+    UpdateSupplierOrderStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/SupplierOrderStatus'
+        trackingNumber:
+          type: string
+          nullable: true
+          example: TRK123456789
+        trackingUrl:
+          type: string
+          nullable: true
+          example: https://carrier.example.com/TRK123456789
+
+    SupplierOrderResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SupplierOrder'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    SupplierOrderListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierOrder'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerOrderId:
+          type: integer
+          example: 1
+        supplierOrderId:
+          type: integer
+          nullable: true
+          example: 1
+        carrier:
+          type: string
+          nullable: true
+          example: DHL
+        trackingNumber:
+          type: string
+          nullable: true
+          example: TRK123456789
+        trackingUrl:
+          type: string
+          nullable: true
+          example: https://carrier.example.com/TRK123456789
+        status:
+          $ref: '#/components/schemas/ShipmentStatus'
+        shippedAt:
+          type: string
+          format: date-time
+          nullable: true
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateShipmentRequest:
+      type: object
+      required:
+        - customerOrderId
+        - status
+      properties:
+        customerOrderId:
+          type: integer
+          example: 1
+        supplierOrderId:
+          type: integer
+          nullable: true
+          example: 1
+        carrier:
+          type: string
+          nullable: true
+          example: DHL
+        trackingNumber:
+          type: string
+          nullable: true
+          example: TRK123456789
+        trackingUrl:
+          type: string
+          nullable: true
+          example: https://carrier.example.com/TRK123456789
+        status:
+          $ref: '#/components/schemas/ShipmentStatus'
+
+    ShipmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Shipment'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    ShipmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shipment'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ReturnRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerOrderId:
+          type: integer
+          example: 1
+        customerOrderItemId:
+          type: integer
+          example: 1
+        reason:
+          type: string
+          example: Size does not fit
+        status:
+          $ref: '#/components/schemas/ReturnRequestStatus'
+        requestedAt:
+          type: string
+          format: date-time
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        rejectedAt:
+          type: string
+          format: date-time
+          nullable: true
+        receivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateReturnRequestRequest:
+      type: object
+      required:
+        - customerOrderId
+        - customerOrderItemId
+        - reason
+      properties:
+        customerOrderId:
+          type: integer
+          example: 1
+        customerOrderItemId:
+          type: integer
+          example: 1
+        reason:
+          type: string
+          maxLength: 500
+          example: Size does not fit
+
+    UpdateReturnRequestStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/ReturnRequestStatus'
+
+    ReturnRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ReturnRequest'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    ReturnRequestListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReturnRequest'
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+        message:
+          type: string
+          example: Return requests retrieved successfully
+
+    Refund:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerOrderId:
+          type: integer
+          example: 1
+        returnRequestId:
+          type: integer
+          nullable: true
+          example: 1
+        amount:
+          type: number
+          format: decimal
+          example: 49.99
+        reason:
+          type: string
+          nullable: true
+          example: Refund for returned item
+        status:
+          $ref: '#/components/schemas/RefundStatus'
+        paymentProviderReference:
+          type: string
+          nullable: true
+          example: PAY-123456
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateRefundRequest:
+      type: object
+      required:
+        - customerOrderId
+        - amount
+      properties:
+        customerOrderId:
+          type: integer
+          example: 1
+        returnRequestId:
+          type: integer
+          nullable: true
+          example: 1
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+          example: 49.99
+        reason:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: Refund for returned item
+        paymentProviderReference:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: PAY-123456
+
+    UpdateRefundStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/RefundStatus'
+        paymentProviderReference:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: PAY-123456
+
+    RefundResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Refund'
+        message:
+          type: string
+          example: Operation completed successfully
+
+    RefundListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refund'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
