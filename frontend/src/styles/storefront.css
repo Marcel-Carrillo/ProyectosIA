@@ -60,6 +60,12 @@
   display: none;
 }
 
+@media (min-width: 768px) {
+  .storefront-header__bar-start {
+    display: block;
+  }
+}
+
 .storefront-header__nav-row {
   display: none;
   border-top: 1px solid rgba(232, 230, 226, 0.5);
