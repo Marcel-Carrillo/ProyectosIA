@@ -22,10 +22,10 @@ const StorefrontHeader: React.FC = () => {
   return (
     <header className="storefront-header">
       <div className="storefront-header__bar">
-        <CategoryNav variant="header" />
+        <div className="storefront-header__bar-start" aria-hidden="true" />
 
         <Link to="/catalog" className="storefront-header__logo-link" aria-label={t('header.home')}>
-          <img src="/mavile-logo.png" alt="Mavile" className="storefront-header__logo" />
+          <img src="/mavile-logo.svg" alt="Mavile" className="storefront-header__logo" />
         </Link>
 
         <div className="storefront-header__actions">
@@ -76,7 +76,10 @@ const StorefrontHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile collapsible menu */}
+      <div className="storefront-header__nav-row">
+        <CategoryNav variant="header" />
+      </div>
+
       <div
         id="storefront-mobile-menu"
         className={`storefront-header__mobile-menu${isMenuOpen ? ' storefront-header__mobile-menu--open' : ''}`}

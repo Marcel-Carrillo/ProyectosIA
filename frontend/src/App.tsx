@@ -37,6 +37,7 @@ import AccountOrderDetailPage from './pages/storefront/AccountOrderDetailPage';
 import ForgotPasswordPage from './pages/storefront/ForgotPasswordPage';
 import ResetPasswordPage from './pages/storefront/ResetPasswordPage';
 import TwoFactorSetupPage from './pages/storefront/TwoFactorSetupPage';
+import ContentPage from './pages/storefront/ContentPage';
 
 const CatalogPage = lazy(() => import('./pages/storefront/CatalogPage'));
 const StorefrontProductPage = lazy(() => import('./pages/storefront/ProductPage'));
@@ -81,6 +82,7 @@ const App: React.FC = () => {
                 <Route path="/account/orders/:id" element={<RequireCustomerAuth><AccountOrderDetailPage /></RequireCustomerAuth>} />
                 <Route path="/account/wishlist" element={<RequireCustomerAuth><AccountWishlistPage /></RequireCustomerAuth>} />
                 <Route path="/account/security/2fa" element={<RequireCustomerAuth><TwoFactorSetupPage /></RequireCustomerAuth>} />
+                <Route path="/pages/:slug" element={<ContentPage />} />
               </Route>
 
               <Route

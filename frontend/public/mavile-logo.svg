@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 36" fill="none" role="img" aria-label="Mavile">
+  <path
+    fill="#0D1B2A"
+    d="M2 30V6l6.5 11L15 6l6.5 11L28 6v24h-3.8V17.2L15 28.5 5.8 17.2V30H2Z"
+  />
+  <line x1="36" y1="8" x2="36" y2="28" stroke="#D8C7B3" stroke-width="1" />
+  <text
+    x="46"
+    y="24"
+    fill="#0D1B2A"
+    font-family="Inter, 'Segoe UI', system-ui, sans-serif"
+    font-size="20"
+    font-weight="400"
+    letter-spacing="0.04em"
+  >
+    Mavile
+  </text>
+</svg>
