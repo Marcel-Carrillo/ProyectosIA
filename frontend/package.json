@@ -70,10 +70,9 @@
     "cypress": "^15.17.0"
   },
   "jest": {
-    "moduleNameMapper": {
-      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/main.js",
-      "^react-router$": "<rootDir>/node_modules/react-router/dist/main.js"
-    }
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-router-dom|react-router|@remix-run)/)"
+    ]
   },
   "proxy": "http://localhost:3000"
 }
