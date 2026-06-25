@@ -468,6 +468,129 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/products/{id}/translations:
+    get:
+      summary: List translations for product (admin)
+      description: Returns all translation rows for the product (all locales).
+      tags:
+        - Admin — Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Translations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductTranslation'
+                  message: { type: string }
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/translations/{locale}:
+    put:
+      summary: Upsert product translation (admin)
+      description: >
+        Creates or updates the translation for the given locale.
+        Supported locales: `en`, `es`. Returns `TRANSLATION_LOCALE_INVALID` (HTTP 422) for unsupported locales.
+      tags:
+        - Admin — Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: locale
+          required: true
+          schema:
+            type: string
+            enum: [en, es]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 150
+                description:
+                  type: string
+                  maxLength: 2000
+                  nullable: true
+                source:
+                  type: string
+                  enum: [manual, import, machine]
+                  default: manual
+      responses:
+        '200':
+          description: Translation upserted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    $ref: '#/components/schemas/ProductTranslation'
+                  message: { type: string }
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Invalid locale (TRANSLATION_LOCALE_INVALID) or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete product translation (admin)
+      description: Deletes the translation for the given locale. Returns 404 if the locale row does not exist.
+      tags:
+        - Admin — Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: locale
+          required: true
+          schema:
+            type: string
+            enum: [en, es]
+      responses:
+        '204':
+          description: Translation deleted
+        '404':
+          description: Product or translation not found (PRODUCT_NOT_FOUND / TRANSLATION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/admin/products/{id}/variants:
     get:
       summary: List variants for product (admin)
@@ -931,9 +1054,21 @@ paths:
         Responses are serialized with a customer-safe allow-list and NEVER include
         supplier data (`supplierId`, `supplierReference`, `supplierCost`),
         `deletedAt`, or internal notes. Only Active variants are returned.
+        The `name` and `description` fields are resolved using the locale fallback
+        chain: requested locale → `en` translation → `Product.name`.
+        Search always matches the English `Product.name` (localized search is deferred).
       tags:
         - Public — Catalog
       parameters:
+        - in: header
+          name: Accept-Language
+          description: >
+            BCP 47 language tag for product content locale (e.g. `es`, `en`, `es-ES`).
+            Region subtags are stripped (`es-ES` → `es`). Unknown locales default to `en`.
+            Supported values: `en`, `es`.
+          schema:
+            type: string
+            example: es
         - in: query
           name: categoryId
           schema:
@@ -967,6 +1102,12 @@ paths:
       responses:
         '200':
           description: Products retrieved successfully
+          headers:
+            Vary:
+              description: Instructs caches to vary on Accept-Language
+              schema:
+                type: string
+                example: Accept-Language
           content:
             application/json:
               schema:
@@ -981,13 +1122,27 @@ paths:
         Returns a single Active product with its Active variants and images
         ordered by sortOrder, serialized with the customer-safe allow-list.
         Non-existent or non-Active products return 404.
+        The `name` and `description` fields are resolved using the locale fallback
+        chain: requested locale → `en` translation → `Product.name`.
       tags:
         - Public — Catalog
       parameters:
         - $ref: '#/components/parameters/IdPathParam'
+        - in: header
+          name: Accept-Language
+          description: BCP 47 language tag for product content locale. Supported values: `en`, `es`.
+          schema:
+            type: string
+            example: es
       responses:
         '200':
           description: Product retrieved successfully
+          headers:
+            Vary:
+              description: Instructs caches to vary on Accept-Language
+              schema:
+                type: string
+                example: Accept-Language
           content:
             application/json:
               schema:
@@ -2747,6 +2902,40 @@ components:
           type: integer
           example: 0
         createdAt:
+          type: string
+          format: date-time
+
+    ProductTranslation:
+      type: object
+      description: Locale-specific name and description override for a product.
+      properties:
+        id:
+          type: integer
+          example: 1
+        productId:
+          type: integer
+          example: 1
+        locale:
+          type: string
+          enum: [en, es]
+          example: es
+        name:
+          type: string
+          maxLength: 150
+          example: Vestido de Verano
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          example: Un vestido ligero para el verano
+        source:
+          type: string
+          enum: [manual, import, machine]
+          example: manual
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
 

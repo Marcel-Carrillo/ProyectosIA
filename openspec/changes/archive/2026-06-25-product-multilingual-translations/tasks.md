@@ -43,14 +43,14 @@
 
 - [x] 6.1 Update `serializePublicProduct` (in `backend/src/presentation/serializers/`) to accept a `locale: string` argument and use `resolveProductLocale` to set `name` and `description` in the output DTO
 - [x] 6.2 Verify the allow-list in `serializePublicProduct` still excludes all supplier fields (`supplierId`, `supplierReference`, `supplierCost`) and internal fields — supplier protection invariant must remain intact
-- [ ] 6.3 Update serializer unit tests to cover ES response, EN response, and fallback scenarios, and re-assert no supplier field leakage
+- [x] 6.3 Update serializer unit tests to cover ES response, EN response, and fallback scenarios, and re-assert no supplier field leakage
 
 ## 7. Backend: Public Product Controller and Routes
 
 - [x] 7.1 Update the public product list controller (handler for `GET /api/public/products`) to read `req.headers['accept-language']`, pass the normalized locale to `serializePublicProduct`, and add `res.set('Vary', 'Accept-Language')` before the response
 - [x] 7.2 Update the public product detail controller (handler for `GET /api/public/products/:id`) with the same locale resolution and `Vary` header
-- [ ] 7.3 Add a TODO comment in the public search handler noting that search still matches `Product.name` (English only) and localized search is deferred
-- [ ] 7.4 Update public product controller tests to assert: ES locale returns translated name, EN/default returns English, `Vary: Accept-Language` header is present on both endpoints, supplier fields are absent
+- [x] 7.3 Add a TODO comment in the public search handler noting that search still matches `Product.name` (English only) and localized search is deferred
+- [x] 7.4 Update public product controller tests to assert: ES locale returns translated name, EN/default returns English, `Vary: Accept-Language` header is present on both endpoints, supplier fields are absent
 
 ## 8. Backend: Admin Controller and Translation Sub-Routes
 
@@ -85,7 +85,7 @@
 
 - [x] 12.1 Add `i18n.language` as a dependency to the product-fetching `useEffect` in `frontend/src/pages/storefront/CatalogPage.tsx` (catalog list) so it re-fetches when language changes
 - [x] 12.2 Add `i18n.language` as a dependency to the product-fetching `useEffect` in `frontend/src/pages/storefront/ProductPage.tsx` (product detail) with the same pattern
-- [ ] 12.3 Verify that no other product-consuming component or hook caches product data in a way that would prevent the re-fetch from surfacing updated translated content (check `ProductCard`, `ProductGrid`, etc.)
+- [x] 12.3 Verify that no other product-consuming component or hook caches product data in a way that would prevent the re-fetch from surfacing updated translated content (check `ProductCard`, `ProductGrid`, etc.)
 - [ ] 12.4 Update component tests for `CatalogPage` and `ProductPage` to assert that a language change triggers a new API call
 
 ## 13. Frontend: Admin ProductFormModal Translation Fields
@@ -101,7 +101,7 @@
 
 - [x] 14.1 Review existing `productService.test.ts` (backend) and verify no tests break due to the `include: { translations: true }` addition to repository mocks
 - [x] 14.2 Review and update `publicProductController.test.ts` for the new `locale` parameter and `Vary` header
-- [ ] 14.3 Review `ProductCard.test.tsx`, `ProductGrid.test.tsx` for any prop or display changes related to translated names
+- [x] 14.3 Review `ProductCard.test.tsx`, `ProductGrid.test.tsx` for any prop or display changes related to translated names
 - [x] 14.4 Review `ProductFormModal.test.tsx` and update for the translation tab/fields and payload
 - [x] 14.5 Confirm all pre-existing test assertions on supplier field exclusion still pass (regression check on the allow-list)
 
@@ -144,10 +144,10 @@
 
 ## 18. Update Technical Documentation (MANDATORY)
 
-- [ ] 18.1 Update `docs/data-model.md`: add `ProductTranslation` entity section with fields, validation rules, uniqueness constraint, relationship to `Product`, and ERD note
-- [ ] 18.2 Update `docs/api-spec.yml`: add `Accept-Language` parameter to public product endpoints; add `Vary: Accept-Language` to response headers; add `translations` array to admin create/update; document translation sub-routes; add `TRANSLATION_LOCALE_INVALID`
-- [ ] 18.3 Update `docs/development_guide.md`: document the backfill script usage (`npm run backfill:translations`), required `LIBRETRANSLATE_URL` env var, and idempotency guarantee
-- [ ] 18.4 Update `docs/frontend-standards.md`: document the `Accept-Language` Axios interceptor pattern and the `i18n.language` useEffect dependency pattern
+- [x] 18.1 Update `docs/data-model.md`: add `ProductTranslation` entity section with fields, validation rules, uniqueness constraint, relationship to `Product`, and ERD note
+- [x] 18.2 Update `docs/api-spec.yml`: add `Accept-Language` parameter to public product endpoints; add `Vary: Accept-Language` to response headers; add `translations` array to admin create/update; document translation sub-routes; add `TRANSLATION_LOCALE_INVALID`
+- [x] 18.3 Update `docs/development_guide.md`: document the backfill script usage (`npm run backfill:translations`), required `LIBRETRANSLATE_URL` env var, and idempotency guarantee
+- [x] 18.4 Update `docs/frontend-standards.md`: document the `Accept-Language` Axios interceptor pattern and the `i18n.language` useEffect dependency pattern
 
 ## 19. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
