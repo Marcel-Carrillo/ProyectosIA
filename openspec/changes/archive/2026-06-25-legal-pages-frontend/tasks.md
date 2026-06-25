@@ -87,9 +87,9 @@
 
 ## 11. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 11.2 Verify all tasks above are complete and reports exist under `openspec/changes/legal-pages-frontend/reports/`
-- [ ] 11.3 Stage all relevant files: `ContentPage.tsx`, `StorefrontFooter.tsx`, `es/pages.json`, `en/pages.json`, `es/common.json`, `en/common.json`, test files, `docs/frontend-standards.md`, OpenSpec artifacts
-- [ ] 11.4 Create commit: `feat(storefront): add Privacy Policy and Legal Notice pages (ES/EN)`
-- [ ] 11.5 Push branch: `git push -u origin feature/legal-pages-frontend`
-- [ ] 11.6 Create PR with `gh pr create` targeting `master`; report PR URL in chat
+- [x] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 11.2 Verify all tasks above are complete and reports exist under `openspec/changes/legal-pages-frontend/reports/`
+- [x] 11.3 Stage all relevant files
+- [x] 11.4 Create commit: `feat(storefront): add Privacy Policy and Legal Notice pages (ES/EN)` — dd52e08
+- [x] 11.5 Push branch: `git push -u origin feature/legal-pages-frontend` — pushed
+- [x] 11.6 Create PR — https://github.com/Marcel-Carrillo/ProyectosIA/pull/43
