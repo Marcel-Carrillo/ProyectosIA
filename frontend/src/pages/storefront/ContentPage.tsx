@@ -11,6 +11,8 @@ const VALID_SLUGS = [
   'materials',
   'sustainability',
   'press',
+  'privacy',
+  'legal',
 ] as const;
 
 type ContentSlug = (typeof VALID_SLUGS)[number];

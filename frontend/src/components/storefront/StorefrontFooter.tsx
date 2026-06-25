@@ -74,6 +74,8 @@ const StorefrontFooter: React.FC = () => {
         <div className="storefront-footer__bottom-inner">
           <span>&copy; {new Date().getFullYear()} Mavile</span>
           <span>{t('footer.cities')}</span>
+          <Link to="/pages/privacy">{t('footer.link.privacy')}</Link>
+          <Link to="/pages/legal">{t('footer.link.legal')}</Link>
         </div>
       </div>
     </footer>

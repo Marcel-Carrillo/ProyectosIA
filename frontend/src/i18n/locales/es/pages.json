@@ -151,5 +151,75 @@
         "body": "Para entrevistas con el equipo creativo o visitas a talleres, contacta con nuestro departamento de comunicación."
       }
     ]
+  },
+  "privacy": {
+    "eyebrow": "Legal",
+    "title": "Política de Privacidad",
+    "intro": "En cumplimiento del Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), te informamos sobre el tratamiento de tus datos personales.",
+    "sections": [
+      {
+        "heading": "Responsable del tratamiento",
+        "body": "Marcel Carrillo Huerta, con DNI 25733447N, domicilio en Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga y correo electrónico de contacto komabones@gmail.com."
+      },
+      {
+        "heading": "Datos que recopilamos",
+        "body": "Recopilamos datos de identificación y contacto (nombre, correo electrónico, dirección de envío), datos de navegación (cookies técnicas y analíticas) y datos de pago gestionados directamente por Stripe. Mavile no almacena datos de tarjeta bancaria."
+      },
+      {
+        "heading": "Finalidades y base legal",
+        "body": "Gestión de pedidos y envíos (ejecución del contrato — art. 6.1.b RGPD). Comunicaciones transaccionales y de cuenta (interés legítimo — art. 6.1.f). Comunicaciones comerciales con consentimiento explícito (art. 6.1.a). Cumplimiento de obligaciones legales (art. 6.1.c)."
+      },
+      {
+        "heading": "Conservación de datos",
+        "body": "Los datos de pedidos se conservan durante el tiempo necesario para cumplir obligaciones contractuales y fiscales (mínimo 5 años según normativa tributaria). Los datos de marketing se conservan hasta que retires el consentimiento."
+      },
+      {
+        "heading": "Destinatarios",
+        "body": "Tus datos pueden ser comunicados a proveedores de logística y envío para la gestión de pedidos, a Stripe para el procesamiento de pagos, y a proveedores de servicios tecnológicos. No cedemos datos a terceros con fines comerciales propios."
+      },
+      {
+        "heading": "Transferencias internacionales",
+        "body": "Stripe, Inc. (EE.UU.) actúa como encargado del tratamiento bajo las cláusulas contractuales tipo aprobadas por la Comisión Europea, garantizando un nivel adecuado de protección."
+      },
+      {
+        "heading": "Tus derechos",
+        "body": "Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a komabones@gmail.com con copia de tu documento de identidad. Tienes también derecho a presentar una reclamación ante la AEPD (www.aepd.es)."
+      },
+      {
+        "heading": "Cookies",
+        "body": "Esta web utiliza cookies técnicas necesarias para su funcionamiento y cookies analíticas para medir el uso del sitio. Puedes configurar tu navegador para rechazar cookies no esenciales. Próximamente publicaremos una política de cookies completa."
+      }
+    ]
+  },
+  "legal": {
+    "eyebrow": "Legal",
+    "title": "Aviso Legal",
+    "intro": "En cumplimiento del artículo 10 de la Ley 34/2002, de Servicios de la Sociedad de la Información y del Comercio Electrónico (LSSI-CE), se facilitan los siguientes datos identificativos.",
+    "sections": [
+      {
+        "heading": "Datos del titular",
+        "body": "Titular: Marcel Carrillo Huerta. DNI: 25733447N. Domicilio: Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga. Correo electrónico: komabones@gmail.com."
+      },
+      {
+        "heading": "Datos registrales",
+        "body": "Marcel Carrillo Huerta ejerce la actividad como persona física (autónomo). Epígrafe IAE: pendiente de completar."
+      },
+      {
+        "heading": "Objeto y condiciones de uso",
+        "body": "La presente página web tiene por objeto la venta online de moda y accesorios femeninos. El acceso y uso de esta web implica la aceptación de las presentes condiciones. El titular se reserva el derecho a modificarlas en cualquier momento."
+      },
+      {
+        "heading": "Propiedad intelectual e industrial",
+        "body": "Todos los contenidos de esta web (textos, imágenes, diseños, logotipos y código fuente) son propiedad de Marcel Carrillo Huerta o de sus licenciantes y están protegidos por la legislación española e internacional de propiedad intelectual. Queda prohibida su reproducción, distribución o comunicación pública sin autorización expresa."
+      },
+      {
+        "heading": "Responsabilidad",
+        "body": "El titular no se hace responsable de los daños derivados de un uso inadecuado de la web, de la interrupción del servicio por causas técnicas ajenas a su control, ni de los contenidos de terceros a los que pueda enlazar esta web."
+      },
+      {
+        "heading": "Legislación aplicable",
+        "body": "Las presentes condiciones se rigen por la legislación española. Para la resolución de controversias, las partes se someten, con renuncia a cualquier otro fuero, a los juzgados y tribunales del domicilio del consumidor, de conformidad con la normativa vigente de defensa del consumidor."
+      }
+    ]
   }
 }
