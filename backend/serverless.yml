@@ -33,6 +33,8 @@ functions:
           cors:
             origins:
               - 'https://d1p5rkpgizqh62.cloudfront.net'
+              - 'https://mavile.es'
+              - 'https://www.mavile.es'
             headers:
               - Content-Type
               - Authorization
@@ -45,6 +47,8 @@ functions:
           cors:
             origins:
               - 'https://d1p5rkpgizqh62.cloudfront.net'
+              - 'https://mavile.es'
+              - 'https://www.mavile.es'
             headers:
               - Content-Type
               - Authorization
