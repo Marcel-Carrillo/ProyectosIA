@@ -50,6 +50,7 @@ export interface Product {
   categoryId: number | null;
   variants?: ProductVariant[];
   images?: ProductImage[];
+  translations?: ProductTranslation[];
   createdAt: string;
   updatedAt: string;
 }
