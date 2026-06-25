@@ -937,13 +937,15 @@ Do **not** render i18n-aware storefront components with plain `render()` from RT
 
 ### Static Content Pages (`/pages/:slug`)
 
-`ContentPage` (`frontend/src/pages/storefront/ContentPage.tsx`) renders static informational pages routed at `/pages/:slug`. The `slug` parameter maps to a key in the `pages` i18n namespace. Supported slugs: `shipping`, `returns`, `size-guide`, `contact`, `our-story`, `materials`, `sustainability`, `press`.
+`ContentPage` (`frontend/src/pages/storefront/ContentPage.tsx`) renders static informational pages routed at `/pages/:slug`. The `slug` parameter maps to a key in the `pages` i18n namespace. Supported slugs: `shipping`, `returns`, `size-guide`, `contact`, `our-story`, `materials`, `sustainability`, `press`, `privacy`, `legal`.
 
 Each page key in `pages.json` has the shape:
 ```json
 {
   "shipping": {
+    "eyebrow": "...",
     "title": "...",
+    "intro": "...",
     "sections": [
       { "heading": "...", "body": "..." }
     ]
@@ -951,7 +953,9 @@ Each page key in `pages.json` has the shape:
 }
 ```
 
-Footer links point to these routes. To add a new static page: add the slug to `App.tsx` (the `/pages/:slug` route already catches it), add the content to `es/pages.json` and `en/pages.json`.
+Footer links point to these routes. To add a new static page: add the slug to the `VALID_SLUGS` array in `ContentPage.tsx`, add `eyebrow`, `title`, `intro`, and `sections` content to both `es/pages.json` and `en/pages.json`, and optionally add a footer link via `common.json` + `StorefrontFooter.tsx`.
+
+> **Legal pages note:** `privacy` and `legal` slugs contain placeholder data for the business owner (`Marcel Carrillo Huerta`, DNI `25733447N`). If the business structure changes (new company, different contact email, etc.) update the content directly in `es/pages.json` and `en/pages.json`.
 
 ### Adding New Strings
 
