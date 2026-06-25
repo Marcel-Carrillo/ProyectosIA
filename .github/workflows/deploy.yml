@@ -27,7 +27,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build backend (TypeScript → dist/)
         working-directory: backend
