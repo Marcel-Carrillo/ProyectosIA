@@ -7,6 +7,9 @@ const mockFindById = jest.fn();
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockSoftDelete = jest.fn();
+const mockListTranslations = jest.fn();
+const mockUpsertTranslation = jest.fn();
+const mockDeleteTranslation = jest.fn();
 
 jest.mock('../../../application/services/productService', () => ({
   ProductService: jest.fn().mockImplementation(() => ({
@@ -15,6 +18,9 @@ jest.mock('../../../application/services/productService', () => ({
     create: mockCreate,
     update: mockUpdate,
     softDelete: mockSoftDelete,
+    listTranslations: mockListTranslations,
+    upsertTranslation: mockUpsertTranslation,
+    deleteTranslation: mockDeleteTranslation,
   })),
 }));
 
@@ -26,9 +32,13 @@ jest.mock('../../../infrastructure/repositories/productVariantRepository', () =>
   ProductVariantRepository: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('../../../infrastructure/repositories/productTranslationRepository', () => ({
-  ProductTranslationRepository: jest.fn().mockImplementation(() => ({})),
-}));
+jest.mock('../../../infrastructure/repositories/productTranslationRepository', () => {
+  const actual = jest.requireActual('../../../infrastructure/repositories/productTranslationRepository');
+  return {
+    ...actual,
+    ProductTranslationRepository: jest.fn().mockImplementation(() => ({})),
+  };
+});
 
 import {
   listProducts,
@@ -36,7 +46,13 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  listProductTranslations,
+  upsertProductTranslation,
+  deleteProductTranslation,
 } from '../productController';
+import { TranslationLocaleInvalidError } from '../../../application/validator';
+import { TranslationNotFoundError } from '../../../infrastructure/repositories/productTranslationRepository';
+import { ProductTranslation } from '../../../domain/models/productTranslation';
 
 const makeProduct = (overrides: Partial<ConstructorParameters<typeof Product>[0]> = {}) =>
   new Product({ id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Draft', ...overrides });
@@ -127,18 +143,30 @@ describe('getProductById', () => {
 describe('createProduct', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('should return 201 with created product', async () => {
-    const p = makeProduct();
+  it('should return 201 with created product including translations', async () => {
+    const p = makeProduct({ translations: [new ProductTranslation({ productId: 1, locale: 'es', name: 'Vestido', source: 'manual' })] });
     mockCreate.mockResolvedValue(p);
-    const req = { body: { name: 'Summer Dress' } } as Request;
+    mockFindById.mockResolvedValue(p);
+    const req = { body: { name: 'Summer Dress', translations: [{ locale: 'es', name: 'Vestido' }] } } as Request;
     const res = mockRes();
     await createProduct(req, res, mockNext);
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+      translations: [{ locale: 'es', name: 'Vestido' }],
+    }));
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: p,
       message: 'Product created successfully',
     });
+  });
+
+  it('should call next on invalid translation locale', async () => {
+    const req = { body: { name: 'Summer Dress', translations: [{ locale: 'fr', name: 'Robe' }] } } as Request;
+    const res = mockRes();
+    await createProduct(req, res, mockNext);
+    expect(mockNext).toHaveBeenCalledWith(expect.any(TranslationLocaleInvalidError));
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
   it('should call next on slug conflict', async () => {
@@ -163,17 +191,28 @@ describe('createProduct', () => {
 describe('updateProduct', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('should return 200 with updated product', async () => {
-    const updated = makeProduct({ name: 'Updated' });
+  it('should return 200 with updated product and forward translations', async () => {
+    const updated = makeProduct({ name: 'Updated', translations: [new ProductTranslation({ productId: 1, locale: 'es', name: 'Actualizado', source: 'manual' })] });
     mockUpdate.mockResolvedValue(updated);
-    const req = { params: { id: '1' }, body: { name: 'Updated' } } as unknown as Request;
+    const req = { params: { id: '1' }, body: { name: 'Updated', translations: [{ locale: 'es', name: 'Actualizado' }] } } as unknown as Request;
     const res = mockRes();
     await updateProduct(req, res, mockNext);
+    expect(mockUpdate).toHaveBeenCalledWith(1, expect.objectContaining({
+      translations: [{ locale: 'es', name: 'Actualizado' }],
+    }));
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: updated,
       message: 'Product updated successfully',
     });
+  });
+
+  it('should call next on invalid translation locale', async () => {
+    const req = { params: { id: '1' }, body: { translations: [{ locale: 'fr', name: 'Robe' }] } } as unknown as Request;
+    const res = mockRes();
+    await updateProduct(req, res, mockNext);
+    expect(mockNext).toHaveBeenCalledWith(expect.any(TranslationLocaleInvalidError));
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it('should call next when requires active variant', async () => {
@@ -223,5 +262,64 @@ describe('deleteProduct', () => {
     const res = mockRes();
     await deleteProduct(req, res, mockNext);
     expect(mockNext).toHaveBeenCalledWith(err);
+  });
+});
+
+describe('listProductTranslations', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns translation rows', async () => {
+    const rows = [new ProductTranslation({ productId: 1, locale: 'es', name: 'Vestido', source: 'manual' })];
+    mockListTranslations.mockResolvedValue(rows);
+    const req = { params: { id: '1' } } as unknown as Request;
+    const res = mockRes();
+    await listProductTranslations(req, res, mockNext);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: rows,
+      message: 'Translations retrieved successfully',
+    });
+  });
+});
+
+describe('upsertProductTranslation', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('upserts a translation', async () => {
+    const row = new ProductTranslation({ productId: 1, locale: 'es', name: 'Vestido', source: 'manual' });
+    mockUpsertTranslation.mockResolvedValue(row);
+    const req = { params: { id: '1', locale: 'es' }, body: { name: 'Vestido' } } as unknown as Request;
+    const res = mockRes();
+    await upsertProductTranslation(req, res, mockNext);
+    expect(mockUpsertTranslation).toHaveBeenCalledWith(1, 'es', { name: 'Vestido' });
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('calls next on invalid locale', async () => {
+    mockUpsertTranslation.mockRejectedValue(new TranslationLocaleInvalidError());
+    const req = { params: { id: '1', locale: 'fr' }, body: { name: 'Robe' } } as unknown as Request;
+    const res = mockRes();
+    await upsertProductTranslation(req, res, mockNext);
+    expect(mockNext).toHaveBeenCalledWith(expect.any(TranslationLocaleInvalidError));
+  });
+});
+
+describe('deleteProductTranslation', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns 204 on success', async () => {
+    mockDeleteTranslation.mockResolvedValue(undefined);
+    const req = { params: { id: '1', locale: 'es' } } as unknown as Request;
+    const res = mockRes();
+    await deleteProductTranslation(req, res, mockNext);
+    expect(res.status).toHaveBeenCalledWith(204);
+  });
+
+  it('calls next when translation not found', async () => {
+    mockDeleteTranslation.mockRejectedValue(new TranslationNotFoundError());
+    const req = { params: { id: '1', locale: 'xx' } } as unknown as Request;
+    const res = mockRes();
+    await deleteProductTranslation(req, res, mockNext);
+    expect(mockNext).toHaveBeenCalledWith(expect.any(TranslationNotFoundError));
   });
 });

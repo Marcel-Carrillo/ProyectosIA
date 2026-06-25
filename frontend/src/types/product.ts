@@ -107,6 +107,7 @@ export interface UpdateProductInput {
   status?: ProductStatus;
   mainImageUrl?: string | null;
   categoryId?: number | null;
+  translations?: { locale: SupportedLocale; name: string; description?: string | null }[];
 }
 
 /** Body for POST /api/admin/products/:id/variants. Never include supplier fields. */

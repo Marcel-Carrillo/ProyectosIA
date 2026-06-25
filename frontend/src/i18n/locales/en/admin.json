@@ -1,0 +1,13 @@
+{
+  "product": {
+    "form": {
+      "translationSection": "Translations",
+      "translationSectionHint": "Optional localized name and description for the storefront.",
+      "nameEn": "Name (EN)",
+      "descriptionEn": "Description (EN)",
+      "nameEs": "Name (ES)",
+      "descriptionEs": "Description (ES)",
+      "spanishSection": "Spanish translation (optional)"
+    }
+  }
+}

@@ -4,7 +4,7 @@ import { ProductRepository } from '../../infrastructure/repositories/productRepo
 import { ProductVariantRepository } from '../../infrastructure/repositories/productVariantRepository';
 import { ProductTranslationRepository } from '../../infrastructure/repositories/productTranslationRepository';
 import { logger } from '../../infrastructure/logger';
-import { ValidationError } from '../../application/validator';
+import { ValidationError, validateTranslationsArray } from '../../application/validator';
 
 function parseOptionalQueryInt(value: unknown, paramName: string): number | undefined {
   if (value === undefined || value === null || value === '') {
@@ -57,9 +57,11 @@ export async function getProductById(req: Request, res: Response, next: NextFunc
 
 export async function createProduct(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    validateTranslationsArray(req.body?.translations);
     const product = await productService.create(req.body as Parameters<typeof productService.create>[0]);
+    const withTranslations = await productService.findById(product.id!);
     logger.info('Product created', { productId: product.id, slug: product.slug });
-    res.status(201).json({ success: true, data: product, message: 'Product created successfully' });
+    res.status(201).json({ success: true, data: withTranslations, message: 'Product created successfully' });
   } catch (err) {
     next(err);
   }
@@ -68,6 +70,7 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
 export async function updateProduct(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = parseInt(req.params['id'] as string, 10);
+    validateTranslationsArray(req.body?.translations);
     const product = await productService.update(id, req.body as Parameters<typeof productService.update>[1]);
     logger.info('Product updated', { productId: id });
     res.json({ success: true, data: product, message: 'Product updated successfully' });

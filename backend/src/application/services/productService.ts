@@ -57,7 +57,8 @@ export class ProductService {
       }
     }
 
-    return product;
+    const refreshed = await this.repo.findById(product.id!);
+    return refreshed ?? product;
   }
 
   async upsertTranslation(productId: number, locale: string, data: TranslationUpsertData): Promise<ProductTranslation> {
@@ -79,7 +80,10 @@ export class ProductService {
     await this.translationRepo.delete(productId, locale);
   }
 
-  async update(id: number, data: ProductUpdateData): Promise<Product> {
+  async update(
+    id: number,
+    data: ProductUpdateData & { translations?: (TranslationUpsertData & { locale: string })[] },
+  ): Promise<Product> {
     const current = await this.repo.findById(id);
     if (!current) throw new ProductNotFoundError();
 
@@ -96,7 +100,23 @@ export class ProductService {
       if (activeCount === 0) throw new ProductRequiresActiveVariantError();
     }
 
-    return this.repo.update(id, data);
+    const { translations, ...productData } = data;
+    await this.repo.update(id, productData);
+
+    if (translations && translations.length > 0) {
+      for (const t of translations) {
+        validateTranslationInput(t as unknown as Record<string, unknown>);
+        await this.translationRepo.upsert(id, t.locale, {
+          name: t.name,
+          description: t.description,
+          source: t.source,
+        });
+      }
+    }
+
+    const refreshed = await this.repo.findById(id);
+    if (!refreshed) throw new ProductNotFoundError();
+    return refreshed;
   }
 
   async softDelete(id: number): Promise<void> {

@@ -3,7 +3,7 @@ import { IProductRepository, IProductVariantRepository, ProductListResult } from
 import { IProductTranslationRepository } from '../../../domain/repositories/productTranslationRepository';
 import { Product } from '../../../domain/models/product';
 import { ProductTranslation } from '../../../domain/models/productTranslation';
-import { ValidationError } from '../../validator';
+import { ValidationError, TranslationLocaleInvalidError } from '../../validator';
 import {
   ProductNotFoundError,
   ProductSlugConflictError,
@@ -147,7 +147,7 @@ describe('ProductService - update lifecycle', () => {
   it('should activate Draft product with active variants', async () => {
     const draft = makeProduct({ status: 'Draft' });
     const active = makeProduct({ status: 'Active' });
-    mockRepo.findById.mockResolvedValue(draft);
+    mockRepo.findById.mockResolvedValueOnce(draft).mockResolvedValueOnce(active);
     mockVariantRepo.countActiveByProduct.mockResolvedValue(2);
     mockRepo.update.mockResolvedValue(active);
     const result = await service.update(1, { status: 'Active' });
@@ -222,13 +222,13 @@ describe('ProductService - create with translations', () => {
     expect(mockTranslationRepo.upsert).not.toHaveBeenCalled();
   });
 
-  it('throws ValidationError for unsupported locale', async () => {
+  it('throws TranslationLocaleInvalidError for unsupported locale', async () => {
     mockRepo.findBySlug.mockResolvedValue(null);
     mockRepo.create.mockResolvedValue(makeProduct());
 
     await expect(
       service.create({ name: 'Summer Dress', translations: [{ locale: 'fr', name: 'Robe', source: 'manual' }] }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    ).rejects.toBeInstanceOf(TranslationLocaleInvalidError);
   });
 });
 
@@ -251,9 +251,9 @@ describe('ProductService - upsertTranslation', () => {
     await expect(service.upsertTranslation(99, 'es', { name: 'Vestido', source: 'manual' })).rejects.toBeInstanceOf(ProductNotFoundError);
   });
 
-  it('throws ValidationError for unsupported locale', async () => {
+  it('throws TranslationLocaleInvalidError for unsupported locale', async () => {
     mockRepo.findById.mockResolvedValue(makeProduct());
-    await expect(service.upsertTranslation(1, 'fr', { name: 'Robe', source: 'manual' })).rejects.toBeInstanceOf(ValidationError);
+    await expect(service.upsertTranslation(1, 'fr', { name: 'Robe', source: 'manual' })).rejects.toBeInstanceOf(TranslationLocaleInvalidError);
   });
 });
 
@@ -274,6 +274,36 @@ describe('ProductService - listTranslations', () => {
   it('throws ProductNotFoundError when product does not exist', async () => {
     mockRepo.findById.mockResolvedValue(null);
     await expect(service.listTranslations(99)).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
+});
+
+describe('ProductService - update with translations', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('upserts translations and returns refreshed product', async () => {
+    const product = makeProduct();
+    const refreshed = makeProduct({ translations: [makeTranslation()] });
+    mockRepo.findById.mockResolvedValueOnce(product).mockResolvedValueOnce(refreshed);
+    mockRepo.update.mockResolvedValue(product);
+    mockTranslationRepo.upsert.mockResolvedValue(makeTranslation());
+
+    const result = await service.update(1, {
+      name: 'Updated',
+      translations: [{ locale: 'es', name: 'Actualizado', source: 'manual' }],
+    });
+
+    expect(mockTranslationRepo.upsert).toHaveBeenCalledWith(1, 'es', expect.objectContaining({ name: 'Actualizado' }));
+    expect(result).toBe(refreshed);
+  });
+
+  it('leaves omitted locales unchanged when translations not provided', async () => {
+    const refreshed = makeProduct({ name: 'Updated' });
+    mockRepo.findById.mockResolvedValueOnce(makeProduct()).mockResolvedValueOnce(refreshed);
+    mockRepo.update.mockResolvedValue(refreshed);
+
+    await service.update(1, { name: 'Updated' });
+
+    expect(mockTranslationRepo.upsert).not.toHaveBeenCalled();
   });
 });
 
