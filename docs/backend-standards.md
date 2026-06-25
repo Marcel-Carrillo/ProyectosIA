@@ -1514,6 +1514,80 @@ npx prisma db seed       # Seed database
 - **All Tests Passing**: Ensure all tests pass before deployment
 - **Code Review**: Review code for adherence to standards
 
+## Environments
+
+The backend supports two deployment environments with distinct configurations. The production deployment model must NOT be changed without explicit approval.
+
+### Development (Local Docker)
+
+- **Runtime**: `ts-node-dev` inside a Docker container (hot-reload via `backend/src` bind-mount)
+- **Database**: Postgres 15 in the `db` Docker Compose service — `DATABASE_URL` points to `db:5432`
+- **SMTP**: Mailpit in the `mailpit` Compose service — `SMTP_HOST=mailpit`
+- **Config file**: `backend/.env.docker` (git-ignored; never commit)
+- **Startup**: `docker compose up -d` from project root — starts db, mailpit, backend and frontend; migrations and seed run automatically via `entrypoint.sh`
+- **Prisma binary targets**: `schema.prisma` includes `linux-musl-openssl-3.0.x` for Alpine Linux compatibility
+
+### Production (AWS Lambda)
+
+- **Runtime**: AWS Lambda `nodejs20.x` via Serverless Framework
+- **Database**: AWS RDS PostgreSQL in `eu-north-1` — connection string in SSM Parameter Store
+- **SMTP**: External SMTP provider configured via SSM
+- **Config**: All secrets via SSM Parameter Store at `/ecommerce/prod/*`; no `.env` file on Lambda
+- **Deployment**: `cd backend && npx serverless deploy --stage prod`
+
+### trust proxy Convention
+
+Express must be configured with `trust proxy` before any middleware is mounted:
+
+```ts
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
+```
+
+- **`production`**: trusts exactly 1 hop (API Gateway + CloudFront each add one `X-Forwarded-For`; only the outermost hop is trusted)
+- **`development`**: trusts loopback only (the CRA dev proxy runs on `127.0.0.1`)
+
+This prevents `express-rate-limit` v8 from throwing `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` in both environments while preserving accurate per-IP rate limiting. Setting `trust proxy: true` globally is prohibited — it allows IP spoofing to bypass rate limits.
+
+## API Documentation (Swagger UI)
+
+The backend exposes the full OpenAPI 3.0 spec via Swagger UI.
+
+| Item | Value |
+|------|-------|
+| Spec source | `backend/src/api-spec.yml` |
+| Dev endpoint | `http://localhost:3000/api-docs` |
+| Libraries | `swagger-ui-express ^5.0.1`, `js-yaml ^5.0.0` (in `dependencies`) |
+| Type stubs | `@types/swagger-ui-express ^4.1.8`, `@types/js-yaml ^4.0.9` (in `devDependencies`) |
+
+The spec is loaded in `src/index.ts` at startup:
+
+```typescript
+import swaggerUi from 'swagger-ui-express';
+import * as fs from 'fs';
+import * as yaml from 'js-yaml';
+
+const swaggerDocument = yaml.load(
+  fs.readFileSync(`${__dirname}/api-spec.yml`, 'utf8')
+) as object;
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+```
+
+### Rules for `api-spec.yml`
+
+- Every `$ref: '#/components/responses/X'` used in any endpoint **must** have a matching entry under `components.responses`. Missing entries cause Swagger UI to render `Resolve error` banners and break interactive docs.
+- Standard reusable responses already defined: `BadRequest`, `NotFound`, `Conflict`, `InternalServerError`, `Unauthorized`, `UnprocessableEntity`.
+- To add a new shared response, add it to `components.responses` before referencing it in any path.
+
+### Dependency hygiene
+
+All packages imported in `src/` must be declared in `package.json` — both the runtime package in `dependencies` and its `@types/*` stub in `devDependencies`. Named Docker volumes persist `node_modules` between rebuilds and can silently mask missing packages; `npm ci` on a clean environment will fail. To confirm a package's installed version before pinning it:
+
+```bash
+docker exec ecommerce-backend sh -c "cat /app/node_modules/<pkg>/package.json | grep '\"version\"'"
+```
+
+---
+
 ## Serverless Deployment
 
 ### AWS Lambda Configuration

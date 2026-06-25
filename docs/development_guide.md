@@ -307,21 +307,103 @@ When the codebase changes, review and update the relevant documentation:
 * For frontend architecture, components, routes, services, or UI patterns, update `docs/frontend-standards.md`.
 * For documentation or AI rule changes, update `docs/documentation-standards.md`.
 
-## ✅ Recommended Startup Order
+## 🐳 Docker Dev Setup (Recommended)
 
-When starting the project locally, use this order:
+The recommended local setup runs the entire backend stack in Docker containers. This ensures no connection to the production AWS RDS database and provides a fully isolated, reproducible environment.
+
+### First-time setup
+
+1. **Create `backend/.env.docker`** from the example:
+
+   ```bash
+   cp backend/.env.example backend/.env.docker
+   ```
+
+   Edit `backend/.env.docker` and set the Docker service URLs:
+
+   ```env
+   DATABASE_URL="postgresql://ecommerceUser:ecommercePassword@db:5432/ecommerceDb"
+   SMTP_HOST=mailpit
+   SMTP_PORT=1025
+   NODE_ENV=development
+   ```
+
+   Add your Stripe test keys and any optional OAuth credentials. The file is git-ignored — never commit it.
+
+2. **Start all services:**
+
+   ```bash
+   docker compose up -d
+   ```
+
+   On first run, the backend container automatically:
+   - Runs `prisma migrate deploy` against the local Postgres
+   - Runs `prisma db seed` (skipped on subsequent runs if data exists)
+   - Starts `ts-node-dev` with hot-reload
+
+3. **Start the frontend** (included automatically in `docker compose up`):
+
+   The frontend container starts together with the backend. For faster hot-reload on Windows you can instead run it from the host:
+
+   ```bash
+   cd frontend && npm start
+   ```
+
+   To skip the frontend container and run only the backend stack:
+
+   ```bash
+   docker compose up -d db mailpit backend
+   ```
+
+### Daily workflow
 
 ```bash
-# 1. Start database
-docker-compose up -d
+# Start everything
+docker compose up -d
 
-# 2. Start backend
-cd backend
-npm run dev
+# View backend logs
+docker compose logs -f backend
+
+# Stop everything
+docker compose down
+```
+
+### Endpoints
+
+| Service | URL |
+|---------|-----|
+| Backend API | http://localhost:3000 |
+| Frontend | http://localhost:3001 |
+| Mailpit UI | http://localhost:8025 |
+| Postgres | localhost:5432 |
+
+### Troubleshooting
+
+**`ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` (old installs):** This error from `express-rate-limit` is fixed by the `trust proxy` setting in `backend/src/index.ts`. If you see it, ensure you have the latest code and rebuild: `docker compose up -d --build`.
+
+**Prisma binary target errors:** The `schema.prisma` includes `linux-musl-openssl-3.0.x` as a binary target for Alpine Linux compatibility. If you see engine errors, clear the volume and rebuild: `docker compose down && docker volume rm proyectoprueba_backend_node_modules && docker compose up -d --build`.
+
+**Port conflicts:** If port `3000` is in use by a host backend process, stop it before starting the Docker stack.
+
+## ✅ Recommended Startup Order
+
+**Docker-based (default):**
+
+```bash
+docker compose up -d          # starts db + mailpit + backend + frontend
+```
+
+**Host-based (alternative, requires local Postgres):**
+
+```bash
+# 1. Start database and Mailpit only
+docker compose up -d db mailpit
+
+# 2. Start backend on host (uses backend/.env pointing to localhost:5432)
+cd backend && npm run dev
 
 # 3. Start frontend in a separate terminal
-cd frontend
-npm start
+cd frontend && npm start
 ```
 
 ## ✅ Basic Health Checks

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { Alert, Button, Form } from 'react-bootstrap';
 
 interface PaymentFormProps {
   orderNumber: string;
@@ -34,7 +33,6 @@ export default function PaymentForm({ orderNumber, onSuccess, onError }: Payment
       } else if (paymentIntent?.status === 'succeeded') {
         onSuccess();
       } else {
-        // requires_action or redirect — Stripe.js handles the redirect
         onSuccess();
       }
     } catch {
@@ -47,21 +45,21 @@ export default function PaymentForm({ orderNumber, onSuccess, onError }: Payment
   };
 
   return (
-    <Form onSubmit={handlePay}>
+    <form onSubmit={handlePay} className="storefront-payment">
       <PaymentElement />
       {paymentError && (
-        <Alert variant="danger" className="mt-3" data-testid="payment-error">
+        <p className="storefront-auth__error" role="alert" data-testid="payment-error">
           {paymentError}
-        </Alert>
+        </p>
       )}
-      <Button
+      <button
         type="submit"
         disabled={!stripe || paying}
-        className="w-100 mt-3"
+        className="storefront-btn storefront-btn--primary storefront-btn--press"
         data-testid="btn-pay"
       >
         {paying ? 'Processing…' : 'Pay now'}
-      </Button>
-    </Form>
+      </button>
+    </form>
   );
 }

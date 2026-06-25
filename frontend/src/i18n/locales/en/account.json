@@ -1,0 +1,126 @@
+{
+  "layout": {
+    "eyebrow": "Mavile · My account",
+    "navLabel": "Account navigation",
+    "logout": "Log out",
+    "nav": {
+      "overview": "Overview",
+      "profile": "Profile",
+      "orders": "Orders",
+      "wishlist": "Wishlist",
+      "security": "Security"
+    }
+  },
+  "overview": {
+    "title": "Welcome back",
+    "cards": {
+      "profile": {
+        "label": "Account",
+        "title": "Profile",
+        "description": "Update your name, phone and personal details."
+      },
+      "orders": {
+        "label": "Shopping",
+        "title": "Orders",
+        "description": "Track deliveries and view your order history."
+      },
+      "wishlist": {
+        "label": "Saved",
+        "title": "Wishlist",
+        "description": "Products you have saved for later."
+      },
+      "security": {
+        "label": "Security",
+        "title": "Two-factor auth",
+        "description": "Add an extra layer of protection to your account."
+      }
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "panelTitle": "Personal information",
+    "fields": {
+      "email": "Email",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phone": "Phone"
+    },
+    "save": "Save changes",
+    "success": "Profile updated.",
+    "errors": {
+      "load": "Could not load profile.",
+      "save": "Could not save profile."
+    }
+  },
+  "orders": {
+    "title": "Orders",
+    "panelTitle": "Order history",
+    "empty": {
+      "title": "No orders yet",
+      "text": "When you place an order, it will appear here."
+    },
+    "errors": {
+      "load": "Could not load orders."
+    }
+  },
+  "orderDetail": {
+    "title": "Order details",
+    "titleWithNumber": "Order {{orderNumber}}",
+    "back": "← Back to orders",
+    "errors": {
+      "load": "Could not load order details."
+    },
+    "table": {
+      "product": "Product",
+      "sku": "SKU",
+      "qty": "Qty",
+      "unit": "Unit",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "shipping": "Shipping",
+      "discount": "Discount"
+    }
+  },
+  "wishlist": {
+    "title": "Wishlist",
+    "panelTitle": "Saved products",
+    "remove": "Remove",
+    "empty": {
+      "title": "Your wishlist is empty",
+      "text": "Save items you love and find them here later."
+    },
+    "errors": {
+      "load": "Could not load wishlist."
+    }
+  },
+  "security": {
+    "title": "Security",
+    "panelTitle": "Two-factor authentication",
+    "intro": "Protect your account with a verification code from your authenticator app.",
+    "startSetup": "Start setup",
+    "secretHint": "Add this secret to your authenticator app:",
+    "verificationCode": "Verification code",
+    "confirm": "Confirm 2FA",
+    "enabled": "2FA is now enabled on your account.",
+    "errors": {
+      "setup": "Could not start 2FA setup.",
+      "invalidCode": "Invalid code. Try again."
+    }
+  },
+  "common": {
+    "loading": "Loading…",
+    "browseCatalog": "Browse catalog"
+  },
+  "status": {
+    "Paid": "Paid",
+    "PendingPayment": "Pending payment",
+    "Failed": "Failed",
+    "Pending": "Pending",
+    "Processing": "Processing",
+    "Shipped": "Shipped",
+    "Delivered": "Delivered",
+    "Cancelled": "Cancelled",
+    "Completed": "Completed",
+    "Refunded": "Refunded"
+  }
+}

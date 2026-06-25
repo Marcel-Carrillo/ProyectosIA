@@ -1,0 +1,26 @@
+{
+  "title": "Carrito",
+  "count_one": "{{count}} artículo",
+  "count_other": "{{count}} artículos",
+  "empty": {
+    "eyebrow": "Tu carrito",
+    "title": "Un momento antes de elegir.",
+    "text": "Tu carrito está vacío. Vuelve al catálogo para explorar nuestra última selección.",
+    "browseCatalog": "Ver catálogo"
+  },
+  "item": {
+    "decreaseQty": "Reducir cantidad",
+    "increaseQty": "Aumentar cantidad",
+    "remove": "Eliminar"
+  },
+  "summary": {
+    "title": "Resumen",
+    "subtotal": "Subtotal",
+    "shipping": "Envío",
+    "free": "Gratis",
+    "total": "Total",
+    "checkout": "Finalizar compra",
+    "continueShopping": "Seguir comprando",
+    "note": "Envío gratuito en pedidos superiores a 100 €. Devoluciones gratuitas en 30 días."
+  }
+}

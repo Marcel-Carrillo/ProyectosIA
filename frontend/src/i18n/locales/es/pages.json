@@ -1,0 +1,155 @@
+{
+  "backToShop": "Volver a la tienda",
+  "shipping": {
+    "eyebrow": "Ayuda",
+    "title": "Envíos",
+    "intro": "Entregamos en la península en 2–4 días laborables. Envío gratuito a partir de 100 €.",
+    "sections": [
+      {
+        "heading": "Plazos de entrega",
+        "body": "España peninsular: 2–4 días laborables. Baleares, Canarias y resto de UE: 4–7 días laborables. Los pedidos se preparan de lunes a viernes."
+      },
+      {
+        "heading": "Costes",
+        "body": "Envío estándar: 8 €. Gratuito en pedidos superiores a 100 €. Recibirás un email con el número de seguimiento en cuanto salga de nuestro almacén en Madrid."
+      },
+      {
+        "heading": "Seguimiento",
+        "body": "Puedes consultar el estado de tu pedido en Mi cuenta → Pedidos. Si necesitas ayuda, escríbenos a hola@mavile.com."
+      }
+    ]
+  },
+  "returns": {
+    "eyebrow": "Ayuda",
+    "title": "Devoluciones",
+    "intro": "Tienes 30 días desde la recepción para devolver cualquier artículo sin usar.",
+    "sections": [
+      {
+        "heading": "Cómo devolver",
+        "body": "Inicia la devolución desde Mi cuenta → Pedidos. Empaqueta el artículo con su etiqueta original y entrega el paquete en cualquier punto de recogida."
+      },
+      {
+        "heading": "Reembolsos",
+        "body": "Procesamos el reembolso en 5–7 días laborables tras recibir el artículo. El importe se abonará al mismo método de pago utilizado en la compra."
+      },
+      {
+        "heading": "Excecciones",
+        "body": "Por higiene, no aceptamos devoluciones de pendientes, bañadores o artículos personalizados. Los productos rebajados pueden tener condiciones específicas indicadas en la ficha."
+      }
+    ]
+  },
+  "size-guide": {
+    "eyebrow": "Ayuda",
+    "title": "Guía de tallas",
+    "intro": "Nuestras prendas siguen un corte contemporáneo. Si dudas entre dos tallas, te recomendamos la superior.",
+    "sections": [
+      {
+        "heading": "Ropa superior",
+        "body": "XS (34–36), S (36–38), M (38–40), L (40–42), XL (42–44). Las camisas y jerséis tienen holgura en hombros y pecho."
+      },
+      {
+        "heading": "Pantalones",
+        "body": "Tallas 34–44 en cintura. La largura estándar es 78 cm para mujer y 82 cm para hombre. Consulta las medidas en cada ficha de producto."
+      },
+      {
+        "heading": "Calzado",
+        "body": "Tallas EU 36–45. Nuestros zapatos de piel se adaptan ligeramente con el uso. Si estás entre dos tallas, elige la menor para un ajuste más ceñido."
+      }
+    ]
+  },
+  "contact": {
+    "eyebrow": "Ayuda",
+    "title": "Contacto",
+    "intro": "Estamos aquí para ayudarte con pedidos, tallas y cualquier consulta sobre Mavile.",
+    "sections": [
+      {
+        "heading": "Atención al cliente",
+        "body": "Email: hola@mavile.com · Teléfono: +34 910 000 000 · Horario: lunes a viernes, 9:00–18:00 (CET)."
+      },
+      {
+        "heading": "Tiendas",
+        "body": "Madrid — Calle Serrano 45 · Lisboa — Rua do Século 12 · París — Rue de Rivoli 88. Visita con cita previa."
+      },
+      {
+        "heading": "Prensa y colaboraciones",
+        "body": "Para medios y partnerships: prensa@mavile.com"
+      }
+    ]
+  },
+  "our-story": {
+    "eyebrow": "Empresa",
+    "title": "Nuestra historia",
+    "intro": "Mavile nació en Madrid con una idea sencilla: ropa atemporal, bien hecha, para el día a día.",
+    "sections": [
+      {
+        "heading": "Orígenes",
+        "body": "Fundada en 2018, Mavile combina diseño europeo con producción responsable en Portugal e Italia. Cada colección se construye sobre piezas esenciales que perduran más allá de la temporada."
+      },
+      {
+        "heading": "Filosofía",
+        "body": "Moderno. Limpio. Wearable. Creemos en menos prendas, mejor confeccionadas. Sin logos estridentes, con materiales nobles y cortes que favorecen el movimiento."
+      },
+      {
+        "heading": "Hoy",
+        "body": "Operamos online y en tres ciudades — Madrid, Lisboa y París — con un equipo de diseño, sourcing y atención al cliente unido por la misma obsesión: calidad sin compromiso."
+      }
+    ]
+  },
+  "materials": {
+    "eyebrow": "Empresa",
+    "title": "Materiales",
+    "intro": "Seleccionamos fibras y tejidos por su tacto, durabilidad y origen trazable.",
+    "sections": [
+      {
+        "heading": "Fibras naturales",
+        "body": "Lana virgen italiana, lino belga, algodón orgánico y cachemira de Mongolia. Priorizamos fibras renovables con certificaciones OEKO-TEX o GOTS cuando están disponibles."
+      },
+      {
+        "heading": "Piel y cuero",
+        "body": "Cuero de curtido vegetal para calzado, cinturones y bolsos. Trabajamos con curtidos certificados en Italia y España que reducen el uso de cromo."
+      },
+      {
+        "heading": "Cuidado",
+        "body": "Cada producto incluye instrucciones de lavado y conservación. Un buen cuidado alarga la vida de la prenda — la forma más sostenible de vestir."
+      }
+    ]
+  },
+  "sustainability": {
+    "eyebrow": "Empresa",
+    "title": "Sostenibilidad",
+    "intro": "La mejor prenda es la que ya tienes. Diseñamos para que dure.",
+    "sections": [
+      {
+        "heading": "Producción",
+        "body": "Fabricamos en lotes pequeños para evitar excedentes. Más del 80 % de nuestra producción se realiza en Portugal e Italia, reduciendo la huella logística."
+      },
+      {
+        "heading": "Embalaje",
+        "body": "Cajas de cartón reciclado y sin plástico en el interior. Las bolsas de transporte son reutilizables y los rellenos son papel kraft."
+      },
+      {
+        "heading": "Compromiso",
+        "body": "Publicamos un informe anual de impacto con objetivos medibles: reducción de CO₂, trazabilidad de proveedores y programas de reparación de prendas."
+      }
+    ]
+  },
+  "press": {
+    "eyebrow": "Empresa",
+    "title": "Prensa",
+    "intro": "Recursos para medios, editores y colaboradores.",
+    "sections": [
+      {
+        "heading": "Kit de prensa",
+        "body": "Descarga logotipos, imágenes de campaña y notas de prensa escribiendo a prensa@mavile.com. Respondemos en 48 horas laborables."
+      },
+      {
+        "heading": "Apariciones recientes",
+        "body": "Mavile ha sido destacada en Vogue España, Monocle y The Gentlewoman por su enfoque minimalista y materiales de calidad."
+      },
+      {
+        "heading": "Entrevistas",
+        "body": "Para entrevistas con el equipo creativo o visitas a talleres, contacta con nuestro departamento de comunicación."
+      }
+    ]
+  }
+}

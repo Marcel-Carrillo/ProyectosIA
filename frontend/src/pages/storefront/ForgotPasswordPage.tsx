@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { forgotPassword } from '../../services/customerAuthService';
+import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
 const ForgotPasswordPage: React.FC = () => {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -17,35 +19,46 @@ const ForgotPasswordPage: React.FC = () => {
       await forgotPassword(email);
       setSent(true);
     } catch {
-      setError('Could not send reset email. Try again later.');
+      setError(t('forgotPassword.errorMessage'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Container className="py-4" style={{ maxWidth: 480 }}>
-      <Card>
-        <Card.Body>
-          <h1 className="h4 mb-3">Forgot password</h1>
-          {sent ? (
-            <Alert variant="success">
-              If an account exists for that email, we sent reset instructions.
-            </Alert>
-          ) : (
-            <Form onSubmit={handleSubmit}>
-              {error && <Alert variant="danger">{error}</Alert>}
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </Form.Group>
-              <Button type="submit" className="w-100" disabled={submitting}>Send reset link</Button>
-            </Form>
-          )}
-          <div className="small mt-3"><Link to="/login">Back to sign in</Link></div>
-        </Card.Body>
-      </Card>
-    </Container>
+    <StorefrontAuthPanel
+      title={t('forgotPassword.title')}
+      subtitle={sent ? undefined : t('forgotPassword.subtitle')}
+      footer={
+        <Link to="/login" className="storefront-auth__guest">
+          {t('forgotPassword.backToSignIn')}
+        </Link>
+      }
+    >
+      {sent ? (
+        <p className="storefront-auth__info">
+          {t('forgotPassword.successMessage')}
+        </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="storefront-auth__form">
+          {error && <p className="storefront-auth__error" role="alert">{error}</p>}
+          <label className="storefront-field">
+            <span className="storefront-field__label">{t('fields.email')}</span>
+            <input
+              type="email"
+              className="storefront-field__input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </label>
+          <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
+            {submitting ? t('forgotPassword.sending') : t('forgotPassword.submit')}
+          </button>
+        </form>
+      )}
+    </StorefrontAuthPanel>
   );
 };
 

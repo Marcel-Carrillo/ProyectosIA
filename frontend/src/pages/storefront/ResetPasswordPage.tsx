@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { resetPassword } from '../../services/customerAuthService';
+import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
 const ResetPasswordPage: React.FC = () => {
+  const { t } = useTranslation('auth');
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = params.get('token') ?? '';
@@ -14,7 +16,7 @@ const ResetPasswordPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      setError('Reset token is missing.');
+      setError(t('resetPassword.missingToken'));
       return;
     }
     setError('');
@@ -23,29 +25,41 @@ const ResetPasswordPage: React.FC = () => {
       await resetPassword(token, password);
       navigate('/login');
     } catch {
-      setError('Invalid or expired reset token.');
+      setError(t('resetPassword.errorMessage'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Container className="py-4" style={{ maxWidth: 480 }}>
-      <Card>
-        <Card.Body>
-          <h1 className="h4 mb-3">Reset password</h1>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>New password</Form.Label>
-              <Form.Control type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-            </Form.Group>
-            <Button type="submit" className="w-100" disabled={submitting}>Update password</Button>
-          </Form>
-          <div className="small mt-3"><Link to="/login">Back to sign in</Link></div>
-        </Card.Body>
-      </Card>
-    </Container>
+    <StorefrontAuthPanel
+      title={t('resetPassword.title')}
+      subtitle={t('resetPassword.subtitle')}
+      footer={
+        <Link to="/login" className="storefront-auth__guest">
+          {t('resetPassword.backToSignIn')}
+        </Link>
+      }
+    >
+      {error && <p className="storefront-auth__error" role="alert">{error}</p>}
+      <form onSubmit={handleSubmit} className="storefront-auth__form">
+        <label className="storefront-field">
+          <span className="storefront-field__label">{t('resetPassword.newPassword')}</span>
+          <input
+            type="password"
+            className="storefront-field__input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+        </label>
+        <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
+          {submitting ? t('resetPassword.updating') : t('resetPassword.submit')}
+        </button>
+      </form>
+    </StorefrontAuthPanel>
   );
 };
 

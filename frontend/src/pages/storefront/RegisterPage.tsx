@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { extractCustomerAuthError } from '../../services/customerAuthService';
 import OAuthButtons from '../../components/storefront/OAuthButtons';
+import StorefrontAuthPanel from '../../components/storefront/StorefrontAuthPanel';
 
 const RegisterPage: React.FC = () => {
   const { register } = useCustomerAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation('auth');
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -17,6 +19,14 @@ const RegisterPage: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const fieldLabels: Record<string, string> = {
+    firstName: t('fields.firstName'),
+    lastName: t('fields.lastName'),
+    email: t('fields.email'),
+    phone: t('fields.phone'),
+    password: t('fields.password'),
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,30 +49,36 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <Container className="py-4" style={{ maxWidth: 480 }}>
-      <Card>
-        <Card.Body>
-          <h1 className="h4 mb-3">Create account</h1>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={handleSubmit}>
-            {(['firstName', 'lastName', 'email', 'phone', 'password'] as const).map((field) => (
-              <Form.Group className="mb-3" key={field}>
-                <Form.Label>{field === 'firstName' ? 'First name' : field === 'lastName' ? 'Last name' : field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
-                <Form.Control
-                  type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
-                  required={field !== 'phone'}
-                  value={form[field]}
-                  onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-                />
-              </Form.Group>
-            ))}
-            <Button type="submit" className="w-100 mb-2" disabled={submitting}>Register</Button>
-            <div className="small"><Link to="/login">Already have an account?</Link></div>
-            <OAuthButtons />
-          </Form>
-        </Card.Body>
-      </Card>
-    </Container>
+    <StorefrontAuthPanel
+      title={t('register.title')}
+      subtitle={t('register.subtitle')}
+      footer={
+        <Link to="/login" className="storefront-auth__guest">
+          {t('register.alreadyHaveAccount')}
+        </Link>
+      }
+    >
+      {error && <p className="storefront-auth__error" role="alert">{error}</p>}
+      <form onSubmit={handleSubmit} className="storefront-auth__form">
+        {(['firstName', 'lastName', 'email', 'phone', 'password'] as const).map((field) => (
+          <label className="storefront-field" key={field}>
+            <span className="storefront-field__label">{fieldLabels[field]}</span>
+            <input
+              type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
+              className="storefront-field__input"
+              required={field !== 'phone'}
+              value={form[field]}
+              onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+              autoComplete={field === 'password' ? 'new-password' : field}
+            />
+          </label>
+        ))}
+        <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
+          {submitting ? t('register.creating') : t('register.submit')}
+        </button>
+        <OAuthButtons />
+      </form>
+    </StorefrontAuthPanel>
   );
 };
 

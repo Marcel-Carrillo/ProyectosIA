@@ -85,12 +85,17 @@ The system SHALL expose `GET /api/admin/refunds/:id` returning the refund matchi
 
 ### Requirement: Admin can advance a refund through its state machine
 
-The system SHALL expose `PATCH /api/admin/refunds/:id/status` accepting `status` (required) and `paymentProviderReference` (optional, max 150 chars). Allowed transitions: Pending to Processing, Pending to Cancelled, Processing to Completed, Processing to Failed, Processing to Cancelled. Terminal states (Completed, Failed, Cancelled) SHALL NOT allow further transitions. Invalid transitions SHALL return `409` with error code `REFUND_TRANSITION_INVALID`. When transitioning to Completed, the system SHALL set `processedAt = now()` and recalculate `CustomerOrder.paymentStatus` within a Prisma transaction.
+The system SHALL expose `PATCH /api/admin/refunds/:id/status` accepting `status` (required) and `paymentProviderReference` (optional, max 150 chars). Allowed transitions: Pending to Processing, Pending to Cancelled, Processing to Completed, Processing to Failed, Processing to Cancelled. Terminal states (Completed, Failed, Cancelled) SHALL NOT allow further transitions. Invalid transitions SHALL return `409` with error code `REFUND_TRANSITION_INVALID`. When transitioning from `Pending` to `Processing`, the system SHALL call `stripe.refunds.create` using the `CustomerOrder.stripePaymentIntentId`; the Stripe refund id SHALL be stored in `Refund.paymentProviderReference`; if the Stripe call fails the transition SHALL be aborted and `409` with `REFUND_STRIPE_ERROR` returned. When transitioning to `Completed`, the system SHALL set `processedAt = now()` and recalculate `CustomerOrder.paymentStatus` within a Prisma transaction.
 
-#### Scenario: Advance from Pending to Processing
+#### Scenario: Advance from Pending to Processing creates Stripe refund
 
-- **WHEN** an admin submits `PATCH /api/admin/refunds/:id/status` with status Processing for a Pending refund
-- **THEN** the system returns `200` with the updated refund showing `status = Processing`
+- **WHEN** an admin submits `PATCH /api/admin/refunds/:id/status` with status `Processing` for a Pending refund
+- **THEN** the system calls `stripe.refunds.create`, stores the Stripe refund id, and returns `200` with the updated refund showing `status = Processing`
+
+#### Scenario: Stripe failure on Processing transition keeps refund Pending
+
+- **WHEN** `stripe.refunds.create` returns an error on the Pending→Processing transition
+- **THEN** the refund remains `Pending` and the endpoint returns `409` with `REFUND_STRIPE_ERROR`
 
 #### Scenario: Complete a refund sets processedAt and updates paymentStatus
 

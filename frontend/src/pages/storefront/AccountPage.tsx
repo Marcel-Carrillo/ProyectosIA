@@ -1,29 +1,36 @@
 import React from 'react';
-import { Button, Card, Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
+import { useTranslation } from 'react-i18next';
+import AccountLayout from '../../components/storefront/AccountLayout';
+
+const DASHBOARD_LINKS = [
+  { to: '/account/profile', cardKey: 'profile' },
+  { to: '/account/orders', cardKey: 'orders' },
+  { to: '/account/wishlist', cardKey: 'wishlist' },
+  { to: '/account/security/2fa', cardKey: 'security' },
+] as const;
 
 const AccountPage: React.FC = () => {
-  const { customer, logout } = useCustomerAuth();
+  const { t } = useTranslation('account');
 
   return (
-    <Container className="py-4" style={{ maxWidth: 560 }}>
-      <Card>
-        <Card.Body>
-          <h1 className="h4">My account</h1>
-          {customer && (
-            <p className="mb-3">{customer.firstName} {customer.lastName}<br />{customer.email}</p>
-          )}
-          <div className="d-flex flex-wrap gap-2">
-            <Link to="/account/profile" className="btn btn-outline-primary btn-sm">Profile</Link>
-            <Link to="/account/orders" className="btn btn-outline-primary btn-sm">Orders</Link>
-            <Link to="/account/wishlist" className="btn btn-outline-primary btn-sm">Wishlist</Link>
-            <Link to="/account/security/2fa" className="btn btn-outline-primary btn-sm">2FA</Link>
-            <Button variant="outline-secondary" size="sm" onClick={() => logout()}>Log out</Button>
-          </div>
-        </Card.Body>
-      </Card>
-    </Container>
+    <AccountLayout title={t('overview.title')}>
+      <div className="storefront-account__dashboard-grid">
+        {DASHBOARD_LINKS.map((item) => (
+          <Link key={item.to} to={item.to} className="storefront-account__dashboard-card">
+            <span className="storefront-account__dashboard-card-label">
+              {t(`overview.cards.${item.cardKey}.label`)}
+            </span>
+            <h2 className="storefront-account__dashboard-card-title">
+              {t(`overview.cards.${item.cardKey}.title`)}
+            </h2>
+            <p className="storefront-account__dashboard-card-desc">
+              {t(`overview.cards.${item.cardKey}.description`)}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </AccountLayout>
   );
 };
 

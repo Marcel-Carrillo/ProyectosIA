@@ -754,16 +754,22 @@ frontend/src/
 │       ├── StorefrontHeader.tsx
 │       ├── StorefrontFooter.tsx
 │       ├── CategoryNav.tsx
+│       ├── LanguageSwitcher.tsx
 │       ├── PriceTag.tsx
 │       ├── ProductCard.tsx
 │       ├── ProductGrid.tsx
 │       ├── ProductGallery.tsx
 │       ├── VariantSelector.tsx
 │       └── Pagination.tsx
+├── constants/
+│   └── storefrontCategories.ts  # STOREFRONT_CATEGORY_ORDER, DB name → i18n key map
+├── hooks/
+│   └── useStorefrontCategories.ts  # Fetches + maps categories; returns { links, getHref, isLoading }
 ├── pages/
 │   └── storefront/          # Storefront page components (lazy-loaded)
 │       ├── CatalogPage.tsx
-│       └── ProductPage.tsx
+│       ├── ProductPage.tsx
+│       └── ContentPage.tsx  # Static content pages at /pages/:slug (uses pages namespace)
 ├── styles/
 │   ├── tokens.css           # CSS custom properties (design tokens)
 │   └── storefront.css       # Storefront utility classes
@@ -795,6 +801,45 @@ Tokens are a layer **on top of** Bootstrap, not a replacement. Use Bootstrap gri
 
 Supplier fields (`supplierId`, `supplierReference`, `supplierCost`) must **never** appear in any storefront component output. They are excluded at the Prisma select layer on the server and are absent from all `ProductVariant` types.
 
+### Storefront Header Layout
+
+The header bar uses a **3-column CSS Grid** (`grid-template-columns: 1fr auto 1fr`):
+
+| Column | Element | Class |
+|--------|---------|-------|
+| 1 (`1fr`) | Invisible layout placeholder | `.storefront-header__bar-start` |
+| 2 (`auto`) | Logo link | `.storefront-header__logo` |
+| 3 (`1fr`) | Language switcher + icons | `.storefront-header__actions` |
+
+The `CategoryNav` lives in a **separate row** (`.storefront-header__nav-row`) below the bar — it is not a grid child of the bar.
+
+**Critical rule:** `.storefront-header__bar-start` must **never** be set to `display: none` globally. Removing it from the grid flow causes the logo to collapse into column 1, off-centering it. The correct pattern:
+
+```css
+/* mobile: hide the placeholder (2-column mobile grid, no centering needed) */
+.storefront-header__bar-start { display: none; }
+
+/* desktop: restore it so the 3-column grid centres the logo */
+@media (min-width: 768px) {
+  .storefront-header__bar-start { display: block; }
+}
+```
+
+### `useStorefrontCategories` hook
+
+`frontend/src/hooks/useStorefrontCategories.ts` fetches categories from `GET /api/public/categories`, maps each DB name to a canonical i18n key via `categoryNameToKey()` (defined in `frontend/src/constants/storefrontCategories.ts`), and translates the label with `t('nav.category.<key>', { ns: 'common' })`.
+
+Return shape:
+```typescript
+{
+  links: Array<{ key: string; label: string; href: string }>,
+  isLoading: boolean,
+  getHref: (key: string) => string,
+}
+```
+
+Category order is controlled by `STOREFRONT_CATEGORY_ORDER` in `storefrontCategories.ts`. To add a new category: add the DB name to `STOREFRONT_CATEGORY_DB_NAMES`, add the i18n key to `common.json` under `nav.category`, and include the key in `STOREFRONT_CATEGORY_ORDER`.
+
 ### Storefront Testing
 
 Add Cypress test file: `cypress/e2e/storefront.cy.ts`
@@ -806,6 +851,113 @@ Recommended scenarios:
 - Product detail shows gallery, price, variant selector
 - No supplier fields in HTML source
 - Admin routes unaffected (layout isolation)
+
+---
+
+## Internationalisation (i18n) — Storefront Only
+
+### Scope
+
+i18n is enabled **only for the public storefront** (routes under `StorefrontLayout`). The admin panel remains hardcoded in Spanish. Admin components must never call `useTranslation`.
+
+### Library and Initialisation
+
+```bash
+npm install i18next@^23 react-i18next@^14 i18next-browser-languagedetector@^7 --legacy-peer-deps
+```
+
+Singleton initialised in `frontend/src/i18n/index.ts` and imported **once** at the top of `frontend/src/index.tsx` (before `<App />`):
+
+```typescript
+import './i18n/index';
+```
+
+Key settings:
+- `fallbackLng: 'es'` — Spanish is the default; UI renders Spanish if no stored preference.
+- `supportedLngs: ['es', 'en']`
+- `detection.lookupLocalStorage: 'mavile.lang'` — preference persisted across sessions.
+- `defaultNS: 'common'`, `keySeparator: '.'`
+
+### Locale File Structure
+
+```
+frontend/src/i18n/
+├── index.ts                 # init singleton
+└── locales/
+    ├── es/
+    │   ├── common.json      # header, nav, footer, pagination, oauth
+    │   ├── auth.json        # fields, login, register
+    │   ├── catalog.json     # hero, toolbar, sort, error, pieces count
+    │   ├── cart.json        # title, count, empty, item, summary
+    │   ├── pages.json       # static content pages (shipping, returns, size-guide, contact, our-story, materials, sustainability, press)
+    │   ├── product.json     # (placeholder — extend for ProductPage)
+    │   ├── checkout.json    # (placeholder — extend for CheckoutPage)
+    │   └── account.json     # (placeholder — extend for AccountPage)
+    └── en/
+        └── … (mirrors es/)
+```
+
+### Usage in Components
+
+Use the `useTranslation` hook with the relevant namespace:
+
+```typescript
+import { useTranslation } from 'react-i18next';
+
+const { t } = useTranslation('catalog');
+// ...
+<h1>{t('hero.title')}</h1>
+<p>{t('pieces', { count: total })}</p>   // pluralisation
+```
+
+Rules:
+- Always pass the **namespace** as first argument to `useTranslation` (omit only for `'common'`).
+- Never place UI strings in module-level constants — they cannot be reactive to language changes. Use `t()` inside the component body or compute a local object inside the component.
+- `PriceTag` uses `i18n.language` to select an `Intl.NumberFormat` locale (`'es-ES'` / `'en-IE'`) while always formatting in EUR.
+- `StorefrontLayout` syncs `document.documentElement.lang` via `useEffect` on `i18n.language`.
+
+### Language Switcher
+
+`LanguageSwitcher` lives in `frontend/src/components/storefront/LanguageSwitcher.tsx` and is rendered inside `StorefrontHeader`. It calls `i18n.changeLanguage('es'|'en')` and sets `aria-pressed` on the active flag button.
+
+CSS lives in `frontend/src/styles/storefront.css` under `.storefront-lang-switcher`.
+
+### Testing i18n-aware Components
+
+Use `renderWithI18n` from `frontend/src/test-utils/renderWithI18n.tsx`. It wraps the component with an isolated `I18nextProvider` and defaults to `lng: 'en'`:
+
+```typescript
+import { renderWithI18n } from '../../../test-utils/renderWithI18n';
+
+renderWithI18n(<CartPage />, { lng: 'en' });  // English assertions
+renderWithI18n(<CartPage />, { lng: 'es' });  // Spanish assertions
+```
+
+Do **not** render i18n-aware storefront components with plain `render()` from RTL — translations will be missing and tests will assert on key paths.
+
+### Static Content Pages (`/pages/:slug`)
+
+`ContentPage` (`frontend/src/pages/storefront/ContentPage.tsx`) renders static informational pages routed at `/pages/:slug`. The `slug` parameter maps to a key in the `pages` i18n namespace. Supported slugs: `shipping`, `returns`, `size-guide`, `contact`, `our-story`, `materials`, `sustainability`, `press`.
+
+Each page key in `pages.json` has the shape:
+```json
+{
+  "shipping": {
+    "title": "...",
+    "sections": [
+      { "heading": "...", "body": "..." }
+    ]
+  }
+}
+```
+
+Footer links point to these routes. To add a new static page: add the slug to `App.tsx` (the `/pages/:slug` route already catches it), add the content to `es/pages.json` and `en/pages.json`.
+
+### Adding New Strings
+
+1. Add the key to both `es/<namespace>.json` and `en/<namespace>.json`.
+2. If it's a new namespace, add the import and resource entry in `frontend/src/i18n/index.ts` and `renderWithI18n.tsx`.
+3. Use `t('key', { count })` for plural keys (i18next pluralisation: `key_one` / `key_other`).
 
 ---
 

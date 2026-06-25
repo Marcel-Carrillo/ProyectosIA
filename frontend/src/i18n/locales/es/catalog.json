@@ -1,0 +1,23 @@
+{
+  "hero": {
+    "eyebrow": "Otoño · Invierno · 26",
+    "title": "Una selección discreta de piezas hechas para durar.",
+    "subtitle": "Materiales nobles, cortes limpios, una paleta neutra. Diseñado con cuidado, confeccionado para el día a día."
+  },
+  "toolbar": {
+    "searchPlaceholder": "Buscar",
+    "searchLabel": "Buscar productos por nombre",
+    "sortLabel": "Ordenar productos"
+  },
+  "sort": {
+    "newest": "Más reciente",
+    "oldest": "Más antiguo",
+    "nameAZ": "Nombre A–Z",
+    "nameZA": "Nombre Z–A"
+  },
+  "error": {
+    "loadFailed": "No se pudieron cargar los productos. Por favor, inténtalo de nuevo más tarde."
+  },
+  "pieces_one": "{{count}} pieza",
+  "pieces_other": "{{count}} piezas"
+}

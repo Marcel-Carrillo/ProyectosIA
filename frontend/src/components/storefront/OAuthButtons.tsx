@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Stack } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
 
@@ -17,6 +17,7 @@ const defaultProviders: OAuthProviders = {
 
 const OAuthButtons: React.FC = () => {
   const [providers, setProviders] = useState<OAuthProviders>(defaultProviders);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     let cancelled = false;
@@ -27,9 +28,7 @@ const OAuthButtons: React.FC = () => {
           setProviders(body.data as OAuthProviders);
         }
       })
-      .catch(() => {
-        // keep buttons hidden when API is unavailable
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -41,35 +40,35 @@ const OAuthButtons: React.FC = () => {
   }
 
   return (
-    <Stack gap={2} className="mt-3">
+    <div className="storefront-oauth">
       {providers.google && (
-        <Button
-          variant="outline-dark"
-          size="sm"
+        <button
+          type="button"
+          className="storefront-oauth__btn"
           onClick={() => { window.location.href = `${API_BASE}/api/public/auth/google`; }}
         >
-          Continue with Google
-        </Button>
+          {t('oauth.google')}
+        </button>
       )}
       {providers.apple && (
-        <Button
-          variant="outline-dark"
-          size="sm"
+        <button
+          type="button"
+          className="storefront-oauth__btn"
           onClick={() => { window.location.href = `${API_BASE}/api/public/auth/apple`; }}
         >
-          Continue with Apple
-        </Button>
+          {t('oauth.apple')}
+        </button>
       )}
       {providers.facebook && (
-        <Button
-          variant="outline-dark"
-          size="sm"
+        <button
+          type="button"
+          className="storefront-oauth__btn"
           onClick={() => { window.location.href = `${API_BASE}/api/public/auth/facebook`; }}
         >
-          Continue with Facebook
-        </Button>
+          {t('oauth.facebook')}
+        </button>
       )}
-    </Stack>
+    </div>
   );
 };
 

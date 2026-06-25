@@ -1,0 +1,23 @@
+{
+  "hero": {
+    "eyebrow": "Fall · Winter · 26",
+    "title": "A discreet selection of pieces made to last.",
+    "subtitle": "Noble materials, clean cuts, a neutral palette. Designed with care, crafted for everyday wear."
+  },
+  "toolbar": {
+    "searchPlaceholder": "Search",
+    "searchLabel": "Search products by name",
+    "sortLabel": "Sort products"
+  },
+  "sort": {
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "nameAZ": "Name A–Z",
+    "nameZA": "Name Z–A"
+  },
+  "error": {
+    "loadFailed": "Unable to load products. Please try again later."
+  },
+  "pieces_one": "{{count}} piece",
+  "pieces_other": "{{count}} pieces"
+}

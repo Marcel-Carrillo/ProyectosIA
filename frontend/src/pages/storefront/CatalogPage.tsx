@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/product';
 import ProductGrid from '../../components/storefront/ProductGrid';
@@ -7,12 +8,12 @@ import Pagination from '../../components/storefront/Pagination';
 
 const PAGE_SIZE = 20;
 
-const SORT_OPTIONS = [
-  { label: 'Newest', sort: 'createdAt', order: 'desc' },
-  { label: 'Oldest', sort: 'createdAt', order: 'asc' },
-  { label: 'Name A–Z', sort: 'name', order: 'asc' },
-  { label: 'Name Z–A', sort: 'name', order: 'desc' },
-];
+const SORT_KEYS = [
+  { key: 'newest', sort: 'createdAt', order: 'desc' },
+  { key: 'oldest', sort: 'createdAt', order: 'asc' },
+  { key: 'nameAZ', sort: 'name', order: 'asc' },
+  { key: 'nameZA', sort: 'name', order: 'desc' },
+] as const;
 
 const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,6 +22,7 @@ const CatalogPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  const { t } = useTranslation('catalog');
 
   useEffect(() => {
     setSearchInput(searchParams.get('search') || '');
@@ -54,11 +56,11 @@ const CatalogPage: React.FC = () => {
       setProducts(res.data.items);
       setTotal(res.data.total);
     } catch {
-      setError('Unable to load products. Please try again later.');
+      setError(t('error.loadFailed'));
     } finally {
       setIsLoading(false);
     }
-  }, [page, categoryId, search, sort, order]);
+  }, [page, categoryId, search, sort, order, t]);
 
   useEffect(() => {
     fetchProducts();
@@ -94,52 +96,64 @@ const CatalogPage: React.FC = () => {
   const currentSortValue = `${sort}:${order}`;
 
   return (
-    <div className="storefront-section">
-      <div className="storefront-container">
-        <div className="storefront-controls">
-          <form onSubmit={handleSearch} className="storefront-controls__search" role="search">
-            <div className="storefront-controls__search-row">
+    <div>
+      <section className="storefront-hero">
+        <div className="storefront-hero__inner">
+          <p className="storefront-hero__eyebrow storefront-animate-fade-in">{t('hero.eyebrow')}</p>
+          <h1 className="storefront-hero__title storefront-animate-fade-in" style={{ animationDelay: '80ms' }}>
+            {t('hero.title')}
+          </h1>
+          <p className="storefront-hero__subtitle storefront-animate-fade-in" style={{ animationDelay: '160ms' }}>
+            {t('hero.subtitle')}
+          </p>
+        </div>
+      </section>
+
+      <section className="storefront-toolbar">
+        <div className="storefront-toolbar__inner">
+          <div className="storefront-toolbar__filters" aria-hidden="true" />
+          <div className="storefront-toolbar__tools">
+            <form onSubmit={handleSearch} className="storefront-toolbar__search" role="search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3-3" />
+              </svg>
               <input
                 type="search"
-                className="storefront-controls__input"
+                className="storefront-toolbar__input"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search products…"
-                aria-label="Search products by name"
+                placeholder={t('toolbar.searchPlaceholder')}
+                aria-label={t('toolbar.searchLabel')}
               />
-              <button type="submit" className="storefront-controls__submit">
-                Search
-              </button>
-            </div>
-          </form>
-
-          <select
-            className="storefront-controls__sort"
-            value={currentSortValue}
-            onChange={handleSort}
-            aria-label="Sort products"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={`${opt.sort}:${opt.order}`} value={`${opt.sort}:${opt.order}`}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            </form>
+            <select
+              className="storefront-toolbar__sort"
+              value={currentSortValue}
+              onChange={handleSort}
+              aria-label={t('toolbar.sortLabel')}
+            >
+              {SORT_KEYS.map((opt) => (
+                <option key={`${opt.sort}:${opt.order}`} value={`${opt.sort}:${opt.order}`}>
+                  {t(`sort.${opt.key}`)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+      </section>
 
+      <section className="storefront-catalog">
         {error && (
-          <div
-            role="alert"
-            style={{
-              padding: '12px 16px',
-              background: 'var(--color-error-bg)',
-              color: 'var(--color-error)',
-              marginBottom: 24,
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
+          <div className="storefront-alert" role="alert">
             {error}
           </div>
+        )}
+
+        {!isLoading && !error && products.length > 0 && (
+          <p className="storefront-catalog__count">
+            {t('pieces', { count: total })}
+          </p>
         )}
 
         <ProductGrid
@@ -155,7 +169,7 @@ const CatalogPage: React.FC = () => {
             onPageChange={handlePageChange}
           />
         )}
-      </div>
+      </section>
     </div>
   );
 };

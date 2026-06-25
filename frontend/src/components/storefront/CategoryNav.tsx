@@ -1,37 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { categoryService } from '../../services/categoryService';
-import { Category } from '../../types/category';
+import { useTranslation } from 'react-i18next';
+import { useStorefrontCategories } from '../../hooks/useStorefrontCategories';
 
-const CategoryNav: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+interface CategoryNavProps {
+  variant: 'header' | 'mobile';
+  onNavClick?: () => void;
+}
+
+const CategoryNav: React.FC<CategoryNavProps> = ({ variant, onNavClick }) => {
   const [searchParams] = useSearchParams();
   const activeCategoryId = searchParams.get('categoryId');
+  const { t } = useTranslation('common');
+  const { links } = useStorefrontCategories();
 
-  useEffect(() => {
-    categoryService.getAll()
-      .then(setCategories)
-      .catch(() => {});
-  }, []);
+  const navClass =
+    variant === 'header'
+      ? 'storefront-nav storefront-nav--header'
+      : 'storefront-nav storefront-nav--mobile';
 
   return (
-    <nav className="storefront-nav" aria-label="Category navigation">
+    <nav className={navClass} aria-label={t('nav.categoryNavLabel')}>
       <ul className="storefront-nav__list">
         <li>
           <Link
             to="/catalog"
             className={`storefront-nav__link${!activeCategoryId ? ' storefront-nav__link--active' : ''}`}
+            onClick={onNavClick}
           >
-            All
+            {t('nav.all')}
           </Link>
         </li>
-        {categories.map((cat) => (
+        {links.map((cat) => (
           <li key={cat.id}>
             <Link
-              to={`/catalog?categoryId=${cat.id}`}
+              to={cat.href}
               className={`storefront-nav__link${activeCategoryId === String(cat.id) ? ' storefront-nav__link--active' : ''}`}
+              onClick={onNavClick}
             >
-              {cat.name}
+              {cat.label}
             </Link>
           </li>
         ))}

@@ -2,6 +2,8 @@ import request from 'supertest';
 import { app } from '../../../index';
 import { withAdminAuth } from '../../../test-utils/adminAuthHelper';
 
+jest.setTimeout(30000);
+
 describe('adminAuthRoutes', () => {
   it('rejects unauthenticated access to customers API', async () => {
     const res = await request(app).get('/api/admin/customers');

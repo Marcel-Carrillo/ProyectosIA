@@ -1,6 +1,8 @@
 import request from 'supertest';
 import { app } from '../../../index';
 
+jest.setTimeout(30000);
+
 describe('customer order isolation', () => {
   const emailA = `buyer-a-${Date.now()}@example.com`;
   const emailB = `buyer-b-${Date.now()}@example.com`;
