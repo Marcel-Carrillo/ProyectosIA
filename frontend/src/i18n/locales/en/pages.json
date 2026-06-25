@@ -151,5 +151,75 @@
         "body": "For interviews with the creative team or workshop visits, contact our communications department."
       }
     ]
+  },
+  "privacy": {
+    "eyebrow": "Legal",
+    "title": "Privacy Policy",
+    "intro": "In compliance with Regulation (EU) 2016/679 (GDPR) and applicable data protection law, we inform you about how we process your personal data.",
+    "sections": [
+      {
+        "heading": "Data controller",
+        "body": "Marcel Carrillo Huerta, with tax ID 25733447N, registered address at Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga (Spain) and contact email komabones@gmail.com."
+      },
+      {
+        "heading": "Data we collect",
+        "body": "We collect identification and contact details (name, email address, shipping address), browsing data (technical and analytics cookies) and payment data managed directly by Stripe. Mavile does not store card payment data."
+      },
+      {
+        "heading": "Purposes and legal basis",
+        "body": "Order and shipping management (contract performance — Art. 6(1)(b) GDPR). Transactional and account communications (legitimate interest — Art. 6(1)(f)). Marketing communications with explicit consent (Art. 6(1)(a)). Compliance with legal obligations (Art. 6(1)(c))."
+      },
+      {
+        "heading": "Retention periods",
+        "body": "Order data is retained for the period required to fulfil contractual and fiscal obligations (minimum 5 years under Spanish tax law). Marketing data is retained until you withdraw consent."
+      },
+      {
+        "heading": "Recipients",
+        "body": "Your data may be shared with logistics and shipping providers for order fulfilment, with Stripe for payment processing, and with technology service providers. We do not sell your data to third parties."
+      },
+      {
+        "heading": "International transfers",
+        "body": "Stripe, Inc. (USA) acts as a data processor under Standard Contractual Clauses approved by the European Commission, ensuring an adequate level of protection."
+      },
+      {
+        "heading": "Your rights",
+        "body": "You may exercise your rights of access, rectification, erasure, objection, restriction and portability by writing to komabones@gmail.com with a copy of your identity document. You also have the right to lodge a complaint with the Spanish Data Protection Agency (www.aepd.es)."
+      },
+      {
+        "heading": "Cookies",
+        "body": "This website uses technically necessary cookies for its operation and analytics cookies to measure usage. You can configure your browser to reject non-essential cookies. A full cookie policy will be published shortly."
+      }
+    ]
+  },
+  "legal": {
+    "eyebrow": "Legal",
+    "title": "Legal Notice",
+    "intro": "In compliance with Article 10 of Spain's Information Society Services and Electronic Commerce Act (LSSI-CE), the following identifying information is provided.",
+    "sections": [
+      {
+        "heading": "Company details",
+        "body": "Name: Marcel Carrillo Huerta. Tax ID (DNI): 25733447N. Address: Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga, Spain. Email: komabones@gmail.com."
+      },
+      {
+        "heading": "Registry information",
+        "body": "Marcel Carrillo Huerta operates as a sole trader (autónomo). IAE business activity code: to be completed."
+      },
+      {
+        "heading": "Purpose and terms of use",
+        "body": "This website facilitates the online sale of women's fashion and accessories. Accessing and using this site implies acceptance of these terms. The owner reserves the right to modify them at any time."
+      },
+      {
+        "heading": "Intellectual and industrial property",
+        "body": "All content on this website (texts, images, designs, logos and source code) is owned by Marcel Carrillo Huerta or its licensors and is protected by Spanish and international intellectual property law. Reproduction, distribution or public communication without express authorisation is prohibited."
+      },
+      {
+        "heading": "Liability",
+        "body": "The owner accepts no liability for damages arising from improper use of the website, service interruptions due to technical causes beyond its control, or the content of third-party sites linked from this website."
+      },
+      {
+        "heading": "Governing law",
+        "body": "These terms are governed by Spanish law. For the resolution of disputes, the parties submit to the courts of the consumer's place of residence, in accordance with applicable consumer protection legislation."
+      }
+    ]
   }
 }
