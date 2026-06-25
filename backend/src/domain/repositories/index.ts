@@ -12,6 +12,8 @@ export type {
   ProductImageCreateData,
   ProductImageUpdateData,
 } from './productRepository';
+export { IProductTranslationRepository } from './productTranslationRepository';
+export type { TranslationUpsertData } from './productTranslationRepository';
 export { ISupplierRepository } from './supplierRepository';
 export type {
   SupplierCreateData,

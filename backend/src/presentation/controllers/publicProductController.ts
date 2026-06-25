@@ -5,6 +5,7 @@ import {
   ProductNotFoundError,
 } from '../../infrastructure/repositories/productRepository';
 import { ProductVariantRepository } from '../../infrastructure/repositories/productVariantRepository';
+import { ProductTranslationRepository } from '../../infrastructure/repositories/productTranslationRepository';
 import { logger } from '../../infrastructure/logger';
 import { ValidationError } from '../../application/validator';
 import { serializePublicProduct } from '../serializers/publicProduct';
@@ -25,6 +26,7 @@ function parseOptionalQueryInt(value: unknown, paramName: string): number | unde
 const productService = new ProductService(
   new ProductRepository(),
   new ProductVariantRepository(),
+  new ProductTranslationRepository(),
 );
 
 export async function listPublicProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -48,8 +50,11 @@ export async function listPublicProducts(req: Request, res: Response, next: Next
       order: orderValue,
     });
 
+    const locale = req.headers?.['accept-language'];
+    res.setHeader('Vary', 'Accept-Language');
+
     const data = {
-      items: result.items.map(serializePublicProduct),
+      items: result.items.map((p) => serializePublicProduct(p, locale)),
       total: result.total,
       page: result.page,
       pageSize: result.pageSize,
@@ -76,8 +81,10 @@ export async function getPublicProductById(req: Request, res: Response, next: Ne
       throw new ProductNotFoundError();
     }
 
+    const locale = req.headers?.['accept-language'];
+    res.setHeader('Vary', 'Accept-Language');
     logger.info('Public product retrieved', { productId: id });
-    res.json({ success: true, data: serializePublicProduct(product), message: 'Product retrieved successfully' });
+    res.json({ success: true, data: serializePublicProduct(product, locale), message: 'Product retrieved successfully' });
   } catch (err) {
     next(err);
   }

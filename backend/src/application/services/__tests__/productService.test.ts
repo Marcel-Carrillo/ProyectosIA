@@ -1,5 +1,6 @@
 import { ProductService } from '../productService';
 import { IProductRepository, IProductVariantRepository, ProductListResult } from '../../../domain/repositories/productRepository';
+import { IProductTranslationRepository } from '../../../domain/repositories/productTranslationRepository';
 import { Product } from '../../../domain/models/product';
 import { ValidationError } from '../../validator';
 import {
@@ -38,7 +39,14 @@ const mockVariantRepo: jest.Mocked<IProductVariantRepository> = {
   softDelete: jest.fn(),
 };
 
-const service = new ProductService(mockRepo, mockVariantRepo);
+const mockTranslationRepo: jest.Mocked<IProductTranslationRepository> = {
+  upsert: jest.fn(),
+  findByProduct: jest.fn(),
+  findByProductAndLocale: jest.fn(),
+  delete: jest.fn(),
+};
+
+const service = new ProductService(mockRepo, mockVariantRepo, mockTranslationRepo);
 
 describe('ProductService - findAll', () => {
   beforeEach(() => jest.clearAllMocks());
