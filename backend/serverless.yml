@@ -57,6 +57,8 @@ package:
     - '!node_modules/**'
     - 'node_modules/.prisma/client/**'
     - 'node_modules/@prisma/client/**'
+    - '!node_modules/.prisma/client/libquery_engine-debian*'
+    - '!node_modules/.prisma/client/libquery_engine-linux-musl*'
 
 plugins:
   - serverless-esbuild
