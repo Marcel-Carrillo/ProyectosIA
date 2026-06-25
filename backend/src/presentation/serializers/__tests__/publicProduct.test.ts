@@ -58,6 +58,52 @@ describe('serializePublicProduct', () => {
     expect(dto.images.map((i) => i.sortOrder)).toEqual([0, 1, 2]);
   });
 
+  it('returns ES translation when locale is es', () => {
+    const product = new Product({
+      id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Active',
+      translations: [{ productId: 1, locale: 'es', name: 'Vestido de Verano', description: 'Un vestido ligero', source: 'manual' }],
+    });
+    const dto = serializePublicProduct(product, 'es');
+    expect(dto.name).toBe('Vestido de Verano');
+    expect(dto.description).toBe('Un vestido ligero');
+  });
+
+  it('returns EN translation when locale is en and EN translation exists', () => {
+    const product = new Product({
+      id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Active',
+      translations: [
+        { productId: 1, locale: 'en', name: 'Summer Dress EN', description: 'EN desc', source: 'manual' },
+        { productId: 1, locale: 'es', name: 'Vestido', description: null, source: 'manual' },
+      ],
+    });
+    const dto = serializePublicProduct(product, 'en');
+    expect(dto.name).toBe('Summer Dress EN');
+  });
+
+  it('falls back to EN translation when ES translation is missing', () => {
+    const product = new Product({
+      id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Active',
+      translations: [{ productId: 1, locale: 'en', name: 'Summer Dress EN', description: 'EN desc', source: 'manual' }],
+    });
+    const dto = serializePublicProduct(product, 'es');
+    expect(dto.name).toBe('Summer Dress EN');
+  });
+
+  it('falls back to Product.name when no translations exist', () => {
+    const product = new Product({ id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Active' });
+    const dto = serializePublicProduct(product, 'es');
+    expect(dto.name).toBe('Summer Dress');
+  });
+
+  it('handles region-stripped locale (es-ES → es)', () => {
+    const product = new Product({
+      id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Active',
+      translations: [{ productId: 1, locale: 'es', name: 'Vestido', description: null, source: 'manual' }],
+    });
+    const dto = serializePublicProduct(product, 'es-ES');
+    expect(dto.name).toBe('Vestido');
+  });
+
   it('never emits supplier or internal fields, even if present on the entity', () => {
     const product = makeProduct();
     // Simulate a future model leak: attach supplier/internal data onto the entity.

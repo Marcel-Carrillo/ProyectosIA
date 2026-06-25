@@ -433,6 +433,35 @@ If the backend cannot connect to the database, verify:
 * Prisma migrations have been applied.
 * The backend `.env` file exists and is placed inside the `backend/` directory.
 
+## 🌐 Product Translation Backfill
+
+After running a migration that introduces the `ProductTranslation` table, seed existing products with translations using the backfill script:
+
+```bash
+cd backend
+npm run backfill:translations
+```
+
+**What it does:**
+
+1. For every active product without an `en` translation row, creates one by copying `Product.name` and `Product.description` (`source = "import"`). This is idempotent — runs already-translated products are skipped.
+2. For every active product without an `es` translation row, calls LibreTranslate to translate `en → es` (`source = "machine"`). This step is skipped if `LIBRETRANSLATE_URL` is not set.
+
+**Environment variables:**
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `LIBRETRANSLATE_URL` | No | LibreTranslate instance URL (e.g., `http://localhost:5000`). If unset, ES auto-translation is skipped. |
+
+**Example with LibreTranslate:**
+
+```bash
+LIBRETRANSLATE_URL=http://localhost:5000 npm run backfill:translations
+```
+
+The script is safe to run multiple times (idempotent) and logs a summary of rows created vs. skipped.
+
 ## 🧪 Suggested Manual Test Flow
 
 After setup, validate the basic ecommerce flow:

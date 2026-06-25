@@ -10,6 +10,7 @@ import esProduct from './locales/es/product.json';
 import esCheckout from './locales/es/checkout.json';
 import esAccount from './locales/es/account.json';
 import esPages from './locales/es/pages.json';
+import esAdmin from './locales/es/admin.json';
 
 import enCommon from './locales/en/common.json';
 import enAuth from './locales/en/auth.json';
@@ -19,6 +20,7 @@ import enProduct from './locales/en/product.json';
 import enCheckout from './locales/en/checkout.json';
 import enAccount from './locales/en/account.json';
 import enPages from './locales/en/pages.json';
+import enAdmin from './locales/en/admin.json';
 
 i18n
   .use(LanguageDetector)
@@ -34,6 +36,7 @@ i18n
         checkout: esCheckout,
         account: esAccount,
         pages: esPages,
+        admin: esAdmin,
       },
       en: {
         common: enCommon,
@@ -44,6 +47,7 @@ i18n
         checkout: enCheckout,
         account: enAccount,
         pages: enPages,
+        admin: enAdmin,
       },
     },
     fallbackLng: 'es',

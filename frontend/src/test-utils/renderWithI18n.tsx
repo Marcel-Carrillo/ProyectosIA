@@ -8,11 +8,13 @@ import esAuth from '../i18n/locales/es/auth.json';
 import esCatalog from '../i18n/locales/es/catalog.json';
 import esCart from '../i18n/locales/es/cart.json';
 import esAccount from '../i18n/locales/es/account.json';
+import esAdmin from '../i18n/locales/es/admin.json';
 import enCommon from '../i18n/locales/en/common.json';
 import enAuth from '../i18n/locales/en/auth.json';
 import enCatalog from '../i18n/locales/en/catalog.json';
 import enCart from '../i18n/locales/en/cart.json';
 import enAccount from '../i18n/locales/en/account.json';
+import enAdmin from '../i18n/locales/en/admin.json';
 
 const createTestI18n = (lng: 'es' | 'en' = 'en') => {
   const testI18n = i18n.createInstance();
@@ -21,8 +23,8 @@ const createTestI18n = (lng: 'es' | 'en' = 'en') => {
     fallbackLng: 'es',
     defaultNS: 'common',
     resources: {
-      es: { common: esCommon, auth: esAuth, catalog: esCatalog, cart: esCart, account: esAccount },
-      en: { common: enCommon, auth: enAuth, catalog: enCatalog, cart: enCart, account: enAccount },
+      es: { common: esCommon, auth: esAuth, catalog: esCatalog, cart: esCart, account: esAccount, admin: esAdmin },
+      en: { common: enCommon, auth: enAuth, catalog: enCatalog, cart: enCart, account: enAccount, admin: enAdmin },
     },
     interpolation: { escapeValue: false },
   });
@@ -41,5 +43,5 @@ export function renderWithI18n(ui: React.ReactElement, options: RenderWithI18nOp
     <I18nextProvider i18n={testI18n}>{children}</I18nextProvider>
   );
 
-  return render(ui, { wrapper: Wrapper, ...rest });
+  return { ...render(ui, { wrapper: Wrapper, ...rest }), i18n: testI18n };
 }

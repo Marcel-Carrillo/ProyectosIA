@@ -961,6 +961,50 @@ Footer links point to these routes. To add a new static page: add the slug to `A
 
 ---
 
+## Multilingual Product Data — API Patterns
+
+### Accept-Language Interceptor
+
+Public product API calls must include the current i18n language as the `Accept-Language` header so the backend returns translated product content.
+
+**Pattern:** Create a scoped axios instance for public product requests and attach a request interceptor:
+
+```typescript
+import axios from 'axios';
+import i18n from '../i18n';
+
+const publicProductAxios = axios.create({ baseURL: API_BASE_URL });
+
+publicProductAxios.interceptors.request.use((config) => {
+  config.headers['Accept-Language'] = i18n.language || 'es';
+  return config;
+});
+```
+
+**Rules:**
+
+* Scope the interceptor to the public product axios instance only — do NOT add it to the admin service or other axios instances.
+* Read the language from `i18n.language`, not from `localStorage` directly.
+* Default to `'es'` if `i18n.language` is undefined (matches the storefront default language).
+
+### i18n.language as useEffect Dependency
+
+When a component fetches product data (list or detail), it must include `i18n.language` as a `useEffect` dependency so it re-fetches when the user changes language:
+
+```typescript
+const { i18n } = useTranslation();
+
+useEffect(() => {
+  fetchProduct(id);
+}, [id, i18n.language]); // re-fetch when language changes
+```
+
+**Rules:**
+
+* Add `i18n.language` to `useCallback` dependency arrays in catalog/product hooks as well.
+* Do NOT cache product data in component state across language changes — the re-fetch is the intended mechanism.
+* Components that only render props (e.g., `ProductCard`, `ProductGrid`) do not need this dependency; they receive already-translated data from the parent page.
+
 ## Stack Decisions
 
 ### CRA vs. Vite

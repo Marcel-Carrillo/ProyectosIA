@@ -18,6 +18,17 @@ export class ValidationError extends Error {
   }
 }
 
+export class TranslationLocaleInvalidError extends Error {
+  readonly code = 'TRANSLATION_LOCALE_INVALID' as const;
+  readonly status = 422;
+
+  constructor() {
+    super("Field 'locale' must be one of: en, es");
+    this.name = 'TranslationLocaleInvalidError';
+    Object.setPrototypeOf(this, TranslationLocaleInvalidError.prototype);
+  }
+}
+
 export function validateRequiredFields(
   data: Record<string, unknown>,
   fields: string[]
@@ -50,10 +61,20 @@ export function validateProductData(data: Record<string, unknown>): void {
 
 const SUPPORTED_LOCALES = ['en', 'es'];
 
+export function validateTranslationsArray(translations: unknown): void {
+  if (translations === undefined || translations === null) return;
+  if (!Array.isArray(translations)) {
+    throw new ValidationError("Field 'translations' must be an array");
+  }
+  for (const item of translations) {
+    validateTranslationInput(item as Record<string, unknown>);
+  }
+}
+
 export function validateTranslationInput(data: Record<string, unknown>): void {
   const locale = data['locale'];
   if (!locale || !SUPPORTED_LOCALES.includes(locale as string)) {
-    throw new ValidationError(`Field 'locale' must be one of: ${SUPPORTED_LOCALES.join(', ')}`);
+    throw new TranslationLocaleInvalidError();
   }
   const name = data['name'];
   if (!name || name === '') {

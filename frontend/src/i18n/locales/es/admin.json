@@ -1,0 +1,13 @@
+{
+  "product": {
+    "form": {
+      "translationSection": "Traducciones",
+      "translationSectionHint": "Nombre y descripción localizados opcionales para la tienda.",
+      "nameEn": "Nombre (EN)",
+      "descriptionEn": "Descripción (EN)",
+      "nameEs": "Nombre (ES)",
+      "descriptionEs": "Descripción (ES)",
+      "spanishSection": "Traducción al español (opcional)"
+    }
+  }
+}
