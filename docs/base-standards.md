@@ -87,7 +87,23 @@ The system must be designed with flexibility around:
 * The system should be prepared for future supplier automation.
 * The first version should prioritize manual control over premature automation.
 
-## 5. Specific Standards
+## 5. Real-Time Task Completion Marking (MANDATORY — applies to all OpenSpec work)
+
+When implementing tasks from any `tasks.md` file, you MUST mark each sub-task `[x]` **immediately** after completing it — not at the end of the session, not in bulk before archiving, not as a summary.
+
+**The rule:**
+
+1. Complete a sub-task.
+2. Edit `tasks.md` on disk and change `- [ ]` to `- [x]` for that sub-task.
+3. Move to the next sub-task.
+
+If the session is interrupted, the state of `tasks.md` on disk must accurately reflect exactly what has been completed up to that point.
+
+**Exception:** Verification sub-tasks (unit tests, curl, E2E, commit/PR) are marked `[x]` only after their criteria are met (tests pass, DB restored, report file created). See `docs/openspec-tasks-mandatory-steps.md` for the full criteria per step.
+
+This rule exists because the user has had to manually correct missing checkboxes multiple times. Failure to follow this rule means the user must review every task by hand after archiving.
+
+## 6. Specific Standards
 
 For detailed standards and guidelines specific to different areas of the project, refer to:
 
@@ -99,7 +115,7 @@ For detailed standards and guidelines specific to different areas of the project
 * [Development Guide](./development_guide.md)
 * [OpenSpec Tasks Mandatory Steps](./openspec-tasks-mandatory-steps.md)
 
-## 6. Token Efficiency and Selective Context Loading
+## 7. Token Efficiency and Selective Context Loading
 
 Agents must minimize unnecessary context loading.
 
@@ -133,7 +149,7 @@ Agents must minimize unnecessary context loading.
 * Load cross-area documentation only when the requested change explicitly affects multiple areas.
 * When a document is large, read only the sections directly relevant to the current task whenever the tool or environment allows partial reading.
 
-## 7. Project Agents
+## 8. Project Agents
 
 For specialized AI agent behavior, refer to:
 
@@ -147,21 +163,21 @@ Use the relevant agent depending on the type of work:
 * Frontend changes: use `frontend-developer.md`
 * Product strategy, market analysis, user personas, value proposition, or MVP scope: use `product-strategy-analyst.md`
 
-## 8. Project Skills
+## 9. Project Skills
 
 * Skills live in `ai-specs/skills`.
 * When a request matches a skill, load and follow the corresponding `SKILL.md` automatically before continuing.
 * Also load any referenced files in the skill folder when the skill requires them.
 * Do not modify skills unless the user explicitly asks for a workflow or skill update.
 
-## 9. Multi-Agent Portability
+## 10. Multi-Agent Portability
 
 * Keep reusable AI artifacts in `ai-specs` as the canonical source.
 * Agent-specific paths such as `.claude` and `.cursor` should reference canonical files when possible.
 * Whenever a file is renamed, moved, or deleted, verify that related references remain valid.
 * If symbolic links are used, verify that they remain valid after file moves or folder restructuring.
 
-## 10. Mandatory Spec Updates
+## 11. Mandatory Spec Updates
 
 When a new business or technical change appears after implementation has started, agents must update the relevant specification artifacts before changing code.
 
@@ -172,7 +188,7 @@ Required order:
 3. Verify the implementation against the updated specification.
 4. Do not apply direct code-only fixes when the change affects documented business behavior.
 
-## 11. Documentation Update Requirements
+## 12. Documentation Update Requirements
 
 Agents must update the relevant documentation whenever implementation changes affect documented behavior.
 
@@ -185,7 +201,7 @@ Required documentation updates:
 * Update `docs/development_guide.md` when setup, environment variables, Docker, Prisma, scripts, or testing commands change.
 * Update `docs/documentation-standards.md` when documentation workflow or AI rule update processes change.
 
-## 12. Approval Rules
+## 13. Approval Rules
 
 Agents must not change the following without explicit user approval:
 
