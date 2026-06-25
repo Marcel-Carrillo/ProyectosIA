@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ProductService } from '../../application/services/productService';
 import { ProductRepository } from '../../infrastructure/repositories/productRepository';
 import { ProductVariantRepository } from '../../infrastructure/repositories/productVariantRepository';
+import { ProductTranslationRepository } from '../../infrastructure/repositories/productTranslationRepository';
 import { logger } from '../../infrastructure/logger';
 import { ValidationError } from '../../application/validator';
 
@@ -19,6 +20,7 @@ function parseOptionalQueryInt(value: unknown, paramName: string): number | unde
 const productService = new ProductService(
   new ProductRepository(),
   new ProductVariantRepository(),
+  new ProductTranslationRepository(),
 );
 
 export async function listProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -79,6 +81,40 @@ export async function deleteProduct(req: Request, res: Response, next: NextFunct
     const id = parseInt(req.params['id'] as string, 10);
     await productService.softDelete(id);
     logger.info('Product deleted', { productId: id });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listProductTranslations(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const productId = parseInt(req.params['id'] as string, 10);
+    const translations = await productService.listTranslations(productId);
+    res.json({ success: true, data: translations, message: 'Translations retrieved successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function upsertProductTranslation(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const productId = parseInt(req.params['id'] as string, 10);
+    const locale = req.params['locale'] as string;
+    const translation = await productService.upsertTranslation(productId, locale, req.body as Parameters<typeof productService.upsertTranslation>[2]);
+    logger.info('Product translation upserted', { productId, locale });
+    res.status(200).json({ success: true, data: translation, message: 'Translation saved successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteProductTranslation(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const productId = parseInt(req.params['id'] as string, 10);
+    const locale = req.params['locale'] as string;
+    await productService.deleteTranslation(productId, locale);
+    logger.info('Product translation deleted', { productId, locale });
     res.status(204).send();
   } catch (err) {
     next(err);

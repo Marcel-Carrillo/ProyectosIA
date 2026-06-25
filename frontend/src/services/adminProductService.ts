@@ -14,6 +14,10 @@ import {
   CreateImageInput,
   UpdateImageInput,
   AdminApiError,
+  UpsertTranslationInput,
+  TranslationResponse,
+  TranslationListResponse,
+  SupportedLocale,
 } from '../types/product';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
@@ -196,6 +200,44 @@ export const adminProductService = {
       await axios.delete(`${ADMIN_BASE}/${productId}/images/${imageId}`);
     } catch (error) {
       console.error('Error deleting image:', error);
+      throw error;
+    }
+  },
+
+  // ─── Translations ──────────────────────────────────────────────────────────
+
+  listTranslations: async (productId: number): Promise<TranslationListResponse> => {
+    try {
+      const response = await axios.get<TranslationListResponse>(`${ADMIN_BASE}/${productId}/translations`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching translations:', error);
+      throw error;
+    }
+  },
+
+  upsertTranslation: async (
+    productId: number,
+    locale: SupportedLocale,
+    data: UpsertTranslationInput,
+  ): Promise<TranslationResponse> => {
+    try {
+      const response = await axios.put<TranslationResponse>(
+        `${ADMIN_BASE}/${productId}/translations/${locale}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error upserting translation:', error);
+      throw error;
+    }
+  },
+
+  deleteTranslation: async (productId: number, locale: SupportedLocale): Promise<void> => {
+    try {
+      await axios.delete(`${ADMIN_BASE}/${productId}/translations/${locale}`);
+    } catch (error) {
+      console.error('Error deleting translation:', error);
       throw error;
     }
   },

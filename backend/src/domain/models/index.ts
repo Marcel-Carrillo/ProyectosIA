@@ -3,6 +3,8 @@ export type { ProductStatus } from './product';
 export { ProductVariant } from './productVariant';
 export type { ProductVariantStatus, StockPolicy } from './productVariant';
 export { ProductImage } from './productImage';
+export { ProductTranslation } from './productTranslation';
+export type { TranslationSource } from './productTranslation';
 export { Supplier } from './supplier';
 export type { SupplierStatus } from './supplier';
 

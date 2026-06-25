@@ -1,6 +1,7 @@
 import { Product } from '../../domain/models/product';
 import { ProductVariant } from '../../domain/models/productVariant';
 import { ProductImage } from '../../domain/models/productImage';
+import { resolveProductLocale } from '../../application/helpers/resolveProductLocale';
 
 /**
  * Customer-safe Data Transfer Objects for the public catalog API.
@@ -64,7 +65,9 @@ function serializeImage(image: ProductImage): PublicProductImageDTO {
   };
 }
 
-export function serializePublicProduct(product: Product): PublicProductDTO {
+export function serializePublicProduct(product: Product, locale?: string | null): PublicProductDTO {
+  const resolved = resolveProductLocale(product, locale);
+
   const variants = (product.variants ?? [])
     .filter((v) => v.status === 'Active')
     .map(serializeVariant);
@@ -76,9 +79,9 @@ export function serializePublicProduct(product: Product): PublicProductDTO {
 
   return {
     id: product.id,
-    name: product.name,
+    name: resolved.name,
     slug: product.slug,
-    description: product.description ?? null,
+    description: resolved.description,
     brand: product.brand ?? null,
     status: product.status,
     mainImageUrl: product.mainImageUrl ?? null,

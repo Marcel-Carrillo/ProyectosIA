@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '../i18n';
 import {
   ProductListResponse,
   ProductResponse,
@@ -7,11 +8,19 @@ import {
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
 
+const publicProductAxios = axios.create({ baseURL: API_BASE_URL });
+
+publicProductAxios.interceptors.request.use((config) => {
+  const locale = i18n.language || 'es';
+  config.headers['Accept-Language'] = locale;
+  return config;
+});
+
 export const productService = {
   getAll: async (params?: ProductQueryParams): Promise<ProductListResponse> => {
     try {
-      const response = await axios.get<ProductListResponse>(
-        `${API_BASE_URL}/api/public/products`,
+      const response = await publicProductAxios.get<ProductListResponse>(
+        '/api/public/products',
         { params }
       );
       return response.data;
@@ -23,8 +32,8 @@ export const productService = {
 
   getById: async (id: number): Promise<ProductResponse> => {
     try {
-      const response = await axios.get<ProductResponse>(
-        `${API_BASE_URL}/api/public/products/${id}`
+      const response = await publicProductAxios.get<ProductResponse>(
+        `/api/public/products/${id}`
       );
       return response.data;
     } catch (error) {

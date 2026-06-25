@@ -1,5 +1,6 @@
 import { ProductVariant } from './productVariant';
 import { ProductImage } from './productImage';
+import { ProductTranslation } from './productTranslation';
 
 export type ProductStatus = 'Draft' | 'Active' | 'Inactive' | 'Archived';
 
@@ -17,6 +18,7 @@ export class Product {
   updatedAt?: Date;
   variants?: ProductVariant[];
   images?: ProductImage[];
+  translations?: ProductTranslation[];
 
   constructor(data: {
     id?: number;
@@ -32,6 +34,7 @@ export class Product {
     updatedAt?: Date;
     variants?: ConstructorParameters<typeof ProductVariant>[0][];
     images?: ConstructorParameters<typeof ProductImage>[0][];
+    translations?: ConstructorParameters<typeof ProductTranslation>[0][];
   }) {
     this.id = data.id;
     this.name = data.name;
@@ -49,6 +52,9 @@ export class Product {
     }
     if (data.images) {
       this.images = data.images.map((i) => new ProductImage(i));
+    }
+    if (data.translations) {
+      this.translations = data.translations.map((t) => new ProductTranslation(t));
     }
   }
 }

@@ -6,8 +6,10 @@ import {
   ProductListFilters,
   ProductListResult,
 } from '../../domain/repositories/productRepository';
+import { IProductTranslationRepository, TranslationUpsertData } from '../../domain/repositories/productTranslationRepository';
 import { Product } from '../../domain/models/product';
-import { validateProductData } from '../validator';
+import { ProductTranslation } from '../../domain/models/productTranslation';
+import { validateProductData, validateTranslationInput } from '../validator';
 import {
   ProductNotFoundError,
   ProductRequiresActiveVariantError,
@@ -19,6 +21,7 @@ export class ProductService {
   constructor(
     private readonly repo: IProductRepository,
     private readonly variantRepo: IProductVariantRepository,
+    private readonly translationRepo: IProductTranslationRepository,
   ) {}
 
   async findAll(filters: ProductListFilters = {}): Promise<ProductListResult> {
@@ -31,14 +34,49 @@ export class ProductService {
     return product;
   }
 
-  async create(data: Omit<ProductCreateData, 'slug'> & { slug?: string }): Promise<Product> {
+  async create(
+    data: Omit<ProductCreateData, 'slug'> & { slug?: string; translations?: (TranslationUpsertData & { locale: string })[] },
+  ): Promise<Product> {
     validateProductData(data as Record<string, unknown>);
     const effectiveStatus = data.status ?? 'Draft';
     if (effectiveStatus === 'Active') {
       throw new ProductRequiresActiveVariantError();
     }
-    const slug = data.slug ?? (await this.resolveUniqueSlug(data.name));
-    return this.repo.create({ ...data, slug });
+    const { translations, ...productData } = data;
+    const slug = productData.slug ?? (await this.resolveUniqueSlug(productData.name));
+    const product = await this.repo.create({ ...productData, slug });
+
+    if (translations && translations.length > 0) {
+      for (const t of translations) {
+        validateTranslationInput(t as unknown as Record<string, unknown>);
+        await this.translationRepo.upsert(product.id!, t.locale, {
+          name: t.name,
+          description: t.description,
+          source: t.source,
+        });
+      }
+    }
+
+    return product;
+  }
+
+  async upsertTranslation(productId: number, locale: string, data: TranslationUpsertData): Promise<ProductTranslation> {
+    const product = await this.repo.findById(productId);
+    if (!product) throw new ProductNotFoundError();
+    validateTranslationInput({ locale, ...data });
+    return this.translationRepo.upsert(productId, locale, data);
+  }
+
+  async listTranslations(productId: number): Promise<ProductTranslation[]> {
+    const product = await this.repo.findById(productId);
+    if (!product) throw new ProductNotFoundError();
+    return this.translationRepo.findByProduct(productId);
+  }
+
+  async deleteTranslation(productId: number, locale: string): Promise<void> {
+    const product = await this.repo.findById(productId);
+    if (!product) throw new ProductNotFoundError();
+    await this.translationRepo.delete(productId, locale);
   }
 
   async update(id: number, data: ProductUpdateData): Promise<Product> {

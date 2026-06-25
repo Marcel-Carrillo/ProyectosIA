@@ -101,6 +101,7 @@ export class ProductRepository implements IProductRepository {
             where: { deletedAt: null, status: 'Active' },
             orderBy: { publicPrice: 'asc' },
           },
+          translations: true,
         },
       }),
       prisma.product.count({ where }),
@@ -124,6 +125,7 @@ export class ProductRepository implements IProductRepository {
           orderBy: { createdAt: 'asc' },
         },
         images: { orderBy: { sortOrder: 'asc' } },
+        translations: true,
       },
     });
     return row ? new Product(row) : null;

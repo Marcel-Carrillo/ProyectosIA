@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { productService } from '../../services/productService';
 import { Product, ProductVariant } from '../../types/product';
 import ProductGallery from '../../components/storefront/ProductGallery';
@@ -10,6 +11,7 @@ import { useCart } from '../../contexts/CartContext';
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { addItem } = useCart();
+  const { i18n } = useTranslation();
   const [added, setAdded] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +42,7 @@ const ProductPage: React.FC = () => {
         }
       })
       .finally(() => setIsLoading(false));
-  }, [id]);
+  }, [id, i18n.language]);
 
   if (isLoading) {
     return (

@@ -5,6 +5,9 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  listProductTranslations,
+  upsertProductTranslation,
+  deleteProductTranslation,
 } from '../../presentation/controllers/productController';
 import {
   listVariants,
@@ -33,6 +36,11 @@ imageRouter.post('/', addImage);
 imageRouter.patch('/:imageId', updateImage);
 imageRouter.delete('/:imageId', deleteImage);
 
+const translationRouter = Router({ mergeParams: true });
+translationRouter.get('/', listProductTranslations);
+translationRouter.put('/:locale', upsertProductTranslation);
+translationRouter.delete('/:locale', deleteProductTranslation);
+
 const productRouter = Router();
 productRouter.get('/', listProducts);
 productRouter.post('/', createProduct);
@@ -42,5 +50,6 @@ productRouter.delete('/:id', deleteProduct);
 
 productRouter.use('/:id/variants', variantRouter);
 productRouter.use('/:id/images', imageRouter);
+productRouter.use('/:id/translations', translationRouter);
 
 export default productRouter;
