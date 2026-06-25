@@ -163,7 +163,7 @@ async function main() {
 
 | Step | Result | Detail |
 |------|--------|--------|
-${results.map((r) => `| ${r.id} | ${r.pass ? 'PASS' : 'FAIL'} | ${r.detail.replace(/\|/g, '\\|')} |`).join('\n')}
+${results.map((r) => `| ${r.id} | ${r.pass ? 'PASS' : 'FAIL'} | ${r.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|')} |`).join('\n')}
 
 All checks executed against \`http://localhost:3000\` with Docker stack running.
 `;
