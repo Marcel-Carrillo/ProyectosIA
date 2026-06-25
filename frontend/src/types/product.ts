@@ -1,6 +1,19 @@
 export type ProductStatus = 'Draft' | 'Active' | 'Inactive' | 'Archived';
 export type ProductVariantStatus = 'Active' | 'Inactive';
 export type StockPolicy = 'TRACK' | 'DONT_TRACK' | 'DENY';
+export type TranslationSource = 'manual' | 'import' | 'machine';
+export type SupportedLocale = 'en' | 'es';
+
+export interface ProductTranslation {
+  id: number;
+  productId: number;
+  locale: SupportedLocale;
+  name: string;
+  description: string | null;
+  source: TranslationSource;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface ProductVariant {
   id: number;
@@ -82,6 +95,7 @@ export interface CreateProductInput {
   brand?: string | null;
   mainImageUrl?: string | null;
   categoryId?: number | null;
+  translations?: { locale: SupportedLocale; name: string; description?: string | null }[];
 }
 
 /** Body for PATCH /api/admin/products/:id. slug is auto-generated; never send it. */
@@ -114,6 +128,25 @@ export interface UpdateVariantInput {
   compareAtPrice?: number | null;
   stockPolicy?: StockPolicy;
   status?: ProductVariantStatus;
+}
+
+/** Body for PUT /api/admin/products/:id/translations/:locale */
+export interface UpsertTranslationInput {
+  name: string;
+  description?: string | null;
+  source?: TranslationSource;
+}
+
+export interface TranslationResponse {
+  success: boolean;
+  data: ProductTranslation;
+  message: string;
+}
+
+export interface TranslationListResponse {
+  success: boolean;
+  data: ProductTranslation[];
+  message: string;
 }
 
 /** Body for POST /api/admin/products/:id/images */

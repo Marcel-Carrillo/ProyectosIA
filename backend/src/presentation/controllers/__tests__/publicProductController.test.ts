@@ -30,6 +30,10 @@ jest.mock('../../../infrastructure/repositories/productVariantRepository', () =>
   ProductVariantRepository: jest.fn().mockImplementation(() => ({})),
 }));
 
+jest.mock('../../../infrastructure/repositories/productTranslationRepository', () => ({
+  ProductTranslationRepository: jest.fn().mockImplementation(() => ({})),
+}));
+
 import { listPublicProducts, getPublicProductById } from '../publicProductController';
 
 const makeProduct = (overrides: Partial<ConstructorParameters<typeof Product>[0]> = {}) =>
@@ -55,6 +59,7 @@ const mockRes = () => {
   const res = {} as Response;
   res.status = jest.fn().mockReturnValue(res);
   res.json = jest.fn().mockReturnValue(res);
+  res.setHeader = jest.fn().mockReturnValue(res);
   return res;
 };
 

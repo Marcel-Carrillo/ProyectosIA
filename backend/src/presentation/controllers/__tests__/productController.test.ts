@@ -26,6 +26,10 @@ jest.mock('../../../infrastructure/repositories/productVariantRepository', () =>
   ProductVariantRepository: jest.fn().mockImplementation(() => ({})),
 }));
 
+jest.mock('../../../infrastructure/repositories/productTranslationRepository', () => ({
+  ProductTranslationRepository: jest.fn().mockImplementation(() => ({})),
+}));
+
 import {
   listProducts,
   getProductById,

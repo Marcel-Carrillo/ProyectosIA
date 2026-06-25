@@ -55,6 +55,7 @@ model Product {
   updatedAt    DateTime         @updatedAt
   variants     ProductVariant[]
   images       ProductImage[]
+  translations ProductTranslation[]
 }
 
 model ProductVariant {
@@ -396,6 +397,21 @@ model CouponRedemption {
   createdAt       DateTime      @default(now())
 
   @@index([couponId])
+}
+
+model ProductTranslation {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  locale      String   @db.VarChar(5)
+  name        String   @db.VarChar(150)
+  description String?  @db.VarChar(2000)
+  source      String   @default("manual") @db.VarChar(20)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([productId, locale])
+  @@index([productId])
 }
 
 model StripeWebhookEvent {

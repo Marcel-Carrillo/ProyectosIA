@@ -48,6 +48,26 @@ export function validateProductData(data: Record<string, unknown>): void {
   }
 }
 
+const SUPPORTED_LOCALES = ['en', 'es'];
+
+export function validateTranslationInput(data: Record<string, unknown>): void {
+  const locale = data['locale'];
+  if (!locale || !SUPPORTED_LOCALES.includes(locale as string)) {
+    throw new ValidationError(`Field 'locale' must be one of: ${SUPPORTED_LOCALES.join(', ')}`);
+  }
+  const name = data['name'];
+  if (!name || name === '') {
+    throw new ValidationError("Field 'name' is required for translation");
+  }
+  if (typeof name === 'string' && name.length > 150) {
+    throw new ValidationError("Translation 'name' must not exceed 150 characters");
+  }
+  const description = data['description'];
+  if (description !== undefined && description !== null && typeof description === 'string' && description.length > 2000) {
+    throw new ValidationError("Translation 'description' must not exceed 2000 characters");
+  }
+}
+
 export function validateProductVariantPublicPrice(publicPrice: unknown): void {
   if (publicPrice === undefined || publicPrice === null || publicPrice === '') {
     throw new ValidationError("Field 'publicPrice' is required");
