@@ -92,6 +92,11 @@ Archive a completed change in the experimental workflow.
    The spec sync (Step 4) edited `openspec/specs/*` and the archive (Step 5) moved the change directory — both are uncommitted repo changes. Close the loop:
    - Stage and commit them (e.g. `chore(openspec): archive <name> and sync main specs`), excluding `.env`/secrets. If review is wanted, push and open a PR via `ai-specs/skills/commit/SKILL.md`.
    - Per `ai-specs/skills/using-git-worktrees/SKILL.md`, if the change used a Git worktree, OFFER to clean it up now — explicit, only after the PR is merged: verify no uncommitted/unpushed work, then `git worktree remove` and delete the merged branch. NEVER auto-remove a worktree with unsaved work.
+   - **Return to `develop` (MANDATORY — last action):** After the commit, always switch back to the `develop` branch:
+     ```bash
+     git checkout develop && git pull
+     ```
+     The feature branch is gone after merging; staying on it leaves the workspace in a dead state. Always end the archive on `develop`.
 
 8. **Jira integration — transition to "Finalizado"**
 
@@ -185,3 +190,4 @@ Target archive directory already exists.
 - Offer explicit Git worktree cleanup only after merge confirmation (per using-git-worktrees); never auto-remove
 - If delta specs exist, always sync automatically — never ask the user, never skip sync
 - Use the Skill tool to invoke `openspec-sync-specs` (agent-driven) whenever delta specs are present
+- Always end on `develop` (`git checkout develop && git pull`) — the feature branch is deleted after merge and staying on it is a dead state
