@@ -18,6 +18,8 @@ import {
   AdminApiError,
 } from '../types/product';
 import { Category } from '../types/category';
+import { buildTranslationsPayload, readTranslationField } from '../utils/translationFormHelpers';
+import { useTranslation } from 'react-i18next';
 
 const errorCode = (error: unknown): string =>
   (error as AxiosError<AdminApiError>).response?.data?.error?.code ?? '';
@@ -34,12 +36,18 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
+  const { t } = useTranslation('admin');
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     brand: '',
     categoryId: '',
     mainImageUrl: '',
+    nameEn: '',
+    descriptionEn: '',
+    nameEs: '',
+    descriptionEs: '',
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -69,6 +77,10 @@ const ProductDetailPage: React.FC = () => {
         brand: productRes.data.brand ?? '',
         categoryId: productRes.data.categoryId ? String(productRes.data.categoryId) : '',
         mainImageUrl: productRes.data.mainImageUrl ?? '',
+        nameEn: readTranslationField(productRes.data.translations, 'en', 'name') || productRes.data.name,
+        descriptionEn: readTranslationField(productRes.data.translations, 'en', 'description') || (productRes.data.description ?? ''),
+        nameEs: readTranslationField(productRes.data.translations, 'es', 'name'),
+        descriptionEs: readTranslationField(productRes.data.translations, 'es', 'description'),
       });
     } catch (error) {
       if (errorCode(error) === 'PRODUCT_NOT_FOUND') {
@@ -104,12 +116,21 @@ const ProductDetailPage: React.FC = () => {
     setSaveError('');
     setSaveSuccess(false);
     try {
+      const translations = buildTranslationsPayload({
+        name: formData.name,
+        description: formData.description,
+        nameEn: formData.nameEn,
+        descriptionEn: formData.descriptionEn,
+        nameEs: formData.nameEs,
+        descriptionEs: formData.descriptionEs,
+      });
       const payload: UpdateProductInput = {
         name: formData.name,
         description: formData.description || null,
         brand: formData.brand || null,
         categoryId: formData.categoryId ? Number(formData.categoryId) : null,
         mainImageUrl: formData.mainImageUrl || null,
+        translations: translations.length > 0 ? translations : undefined,
       };
       const res = await adminProductService.update(numId, payload);
       setProduct(res.data);
@@ -320,6 +341,58 @@ const ProductDetailPage: React.FC = () => {
                         type="text"
                         value={formData.mainImageUrl}
                         onChange={(e) => setFormData((p) => ({ ...p, mainImageUrl: e.target.value }))}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <hr />
+                <p className="text-muted small">{t('product.form.translationSectionHint')}</p>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>{t('product.form.nameEn')}</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.nameEn}
+                        onChange={(e) => setFormData((p) => ({ ...p, nameEn: e.target.value }))}
+                        data-testid="input-name-en"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>{t('product.form.nameEs')}</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.nameEs}
+                        onChange={(e) => setFormData((p) => ({ ...p, nameEs: e.target.value }))}
+                        data-testid="input-name-es"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>{t('product.form.descriptionEn')}</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={formData.descriptionEn}
+                        onChange={(e) => setFormData((p) => ({ ...p, descriptionEn: e.target.value }))}
+                        data-testid="input-description-en"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>{t('product.form.descriptionEs')}</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={formData.descriptionEs}
+                        onChange={(e) => setFormData((p) => ({ ...p, descriptionEs: e.target.value }))}
+                        data-testid="input-description-es"
                       />
                     </Form.Group>
                   </Col>

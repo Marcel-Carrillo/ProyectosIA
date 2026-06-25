@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ValidationError } from '../application/validator';
+import { ValidationError, TranslationLocaleInvalidError } from '../application/validator';
 import {
   ProductNotFoundError,
   ProductSlugConflictError,
@@ -12,6 +12,7 @@ import {
   VariantComparePriceInvalidError,
 } from '../infrastructure/repositories/productVariantRepository';
 import { ImageNotFoundError } from '../infrastructure/repositories/productImageRepository';
+import { TranslationNotFoundError } from '../infrastructure/repositories/productTranslationRepository';
 import { SupplierNotFoundError } from '../infrastructure/repositories/supplierRepository';
 import {
   CustomerNotFoundError,
@@ -100,6 +101,14 @@ export function globalErrorHandler(
 
   if (err instanceof ValidationError) {
     statusCode = 400;
+    code = err.code;
+    message = err.message;
+  } else if (err instanceof TranslationLocaleInvalidError) {
+    statusCode = err.status;
+    code = err.code;
+    message = err.message;
+  } else if (err instanceof TranslationNotFoundError) {
+    statusCode = err.status;
     code = err.code;
     message = err.message;
   } else if (err instanceof ProductNotFoundError) {

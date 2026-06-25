@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Form, Button, Alert } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import { adminProductService, extractErrorMessage } from '../../services/adminProductService';
 import { Category } from '../../types/category';
 import { CreateProductInput, Product } from '../../types/product';
+import { buildTranslationsPayload } from '../../utils/translationFormHelpers';
 
 type ProductFormModalProps = {
   show: boolean;
@@ -24,6 +26,7 @@ type FormData = {
 const EMPTY: FormData = { name: '', description: '', brand: '', categoryId: '', mainImageUrl: '', nameEs: '', descriptionEs: '' };
 
 const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuccess, categories }) => {
+  const { t } = useTranslation('admin');
   const [formData, setFormData] = useState<FormData>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -47,10 +50,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
     setSaving(true);
     setError('');
     try {
-      const translations: CreateProductInput['translations'] = [];
-      if (formData.nameEs.trim()) {
-        translations.push({ locale: 'es', name: formData.nameEs.trim(), description: formData.descriptionEs || null });
-      }
+      const translations = buildTranslationsPayload({
+        name: formData.name,
+        description: formData.description,
+        nameEn: formData.name,
+        descriptionEn: formData.description,
+        nameEs: formData.nameEs,
+        descriptionEs: formData.descriptionEs,
+      });
       const payload: CreateProductInput = {
         name: formData.name.trim(),
         description: formData.description || null,
@@ -131,9 +138,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
             />
           </Form.Group>
           <hr />
-          <p className="text-muted small mb-2">Spanish translation (optional)</p>
+          <p className="text-muted small mb-2">{t('product.form.spanishSection')}</p>
           <Form.Group className="mb-3">
-            <Form.Label>Name (ES)</Form.Label>
+            <Form.Label>{t('product.form.nameEs')}</Form.Label>
             <Form.Control
               type="text"
               value={formData.nameEs}
@@ -142,7 +149,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Description (ES)</Form.Label>
+            <Form.Label>{t('product.form.descriptionEs')}</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}

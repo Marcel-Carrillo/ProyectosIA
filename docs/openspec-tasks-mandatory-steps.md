@@ -6,6 +6,33 @@ alwaysApply: true
 
 # OpenSpec Tasks: Mandatory Steps Enforcement
 
+---
+
+## REGLA CRÍTICA — MARCADO DE TAREAS EN TIEMPO REAL (LEE ESTO PRIMERO)
+
+**Esta regla se aplica SIEMPRE, sin excepción, desde el primer sub-task hasta el último.**
+
+Cada vez que terminas una sub-tarea, debes editar `tasks.md` en disco **en ese mismo momento** y cambiar `- [ ]` por `- [x]`. No al final de la sesión, no antes de archivar, no en bloque al terminar una sección: **INMEDIATAMENTE**, una a una, a medida que se completan.
+
+**Cómo aplicarlo:**
+
+- Implementas tarea 1.1 → editas `tasks.md` → marcas `[x]` → continúas con 1.2.
+- Implementas tarea 1.2 → editas `tasks.md` → marcas `[x]` → continúas con 1.3.
+- Si la sesión se interrumpe, el estado de `tasks.md` en disco debe reflejar exactamente lo completado hasta ese punto.
+
+**Por qué es obligatorio:**
+
+- El historial de la sesión puede perderse o comprimirse entre interrupciones.
+- Al archivar, decenas de tareas aparecen sin marcar aunque el trabajo esté hecho, obligando a revisar todo manualmente.
+- El usuario ha tenido que corregir esto repetidamente. No vuelvas a requerir esta corrección.
+
+**Regla por tipo de tarea:**
+
+- **Tareas de implementación** (código, tests, CSS, componentes, docs): marcar `[x]` en cuanto ese sub-task está terminado y verificado localmente.
+- **Tareas de verificación** (unit tests, curl, E2E, commit/PR): marcar `[x]` solo después de cumplir los criterios del step correspondiente (tests pasados, DB restaurada, reporte creado). Ver secciones 3, 7 y 8 de este documento.
+
+---
+
 When creating or updating `tasks.md` artifacts in OpenSpec changes, you MUST:
 
 ## 1. Read openspec/config.yaml First

@@ -2,13 +2,15 @@ import { ProductService } from '../productService';
 import { IProductRepository, IProductVariantRepository, ProductListResult } from '../../../domain/repositories/productRepository';
 import { IProductTranslationRepository } from '../../../domain/repositories/productTranslationRepository';
 import { Product } from '../../../domain/models/product';
-import { ValidationError } from '../../validator';
+import { ProductTranslation } from '../../../domain/models/productTranslation';
+import { ValidationError, TranslationLocaleInvalidError } from '../../validator';
 import {
   ProductNotFoundError,
   ProductSlugConflictError,
   ProductRequiresActiveVariantError,
   ProductArchivedCannotReactivateError,
 } from '../../../infrastructure/repositories/productRepository';
+import { TranslationNotFoundError } from '../../../infrastructure/repositories/productTranslationRepository';
 
 const makeProduct = (overrides: Partial<ConstructorParameters<typeof Product>[0]> = {}) =>
   new Product({ id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Draft', ...overrides });
@@ -145,7 +147,7 @@ describe('ProductService - update lifecycle', () => {
   it('should activate Draft product with active variants', async () => {
     const draft = makeProduct({ status: 'Draft' });
     const active = makeProduct({ status: 'Active' });
-    mockRepo.findById.mockResolvedValue(draft);
+    mockRepo.findById.mockResolvedValueOnce(draft).mockResolvedValueOnce(active);
     mockVariantRepo.countActiveByProduct.mockResolvedValue(2);
     mockRepo.update.mockResolvedValue(active);
     const result = await service.update(1, { status: 'Active' });
@@ -191,5 +193,140 @@ describe('ProductService - softDelete', () => {
   it('should throw ProductNotFoundError when product does not exist', async () => {
     mockRepo.findById.mockResolvedValue(null);
     await expect(service.softDelete(99)).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
+});
+
+const makeTranslation = (overrides: Partial<ConstructorParameters<typeof ProductTranslation>[0]> = {}) =>
+  new ProductTranslation({ productId: 1, locale: 'es', name: 'Vestido', description: null, source: 'manual', ...overrides });
+
+describe('ProductService - create with translations', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('upserts translations after product creation', async () => {
+    const product = makeProduct();
+    mockRepo.findBySlug.mockResolvedValue(null);
+    mockRepo.create.mockResolvedValue(product);
+    mockTranslationRepo.upsert.mockResolvedValue(makeTranslation());
+
+    await service.create({ name: 'Summer Dress', translations: [{ locale: 'es', name: 'Vestido', source: 'manual' }] });
+
+    expect(mockTranslationRepo.upsert).toHaveBeenCalledWith(1, 'es', expect.objectContaining({ name: 'Vestido' }));
+  });
+
+  it('skips translation upsert when translations array is empty', async () => {
+    mockRepo.findBySlug.mockResolvedValue(null);
+    mockRepo.create.mockResolvedValue(makeProduct());
+
+    await service.create({ name: 'Summer Dress', translations: [] });
+
+    expect(mockTranslationRepo.upsert).not.toHaveBeenCalled();
+  });
+
+  it('throws TranslationLocaleInvalidError for unsupported locale', async () => {
+    mockRepo.findBySlug.mockResolvedValue(null);
+    mockRepo.create.mockResolvedValue(makeProduct());
+
+    await expect(
+      service.create({ name: 'Summer Dress', translations: [{ locale: 'fr', name: 'Robe', source: 'manual' }] }),
+    ).rejects.toBeInstanceOf(TranslationLocaleInvalidError);
+  });
+});
+
+describe('ProductService - upsertTranslation', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('upserts a translation for an existing product', async () => {
+    mockRepo.findById.mockResolvedValue(makeProduct());
+    const translation = makeTranslation();
+    mockTranslationRepo.upsert.mockResolvedValue(translation);
+
+    const result = await service.upsertTranslation(1, 'es', { name: 'Vestido', source: 'manual' });
+
+    expect(mockTranslationRepo.upsert).toHaveBeenCalledWith(1, 'es', expect.objectContaining({ name: 'Vestido' }));
+    expect(result).toBe(translation);
+  });
+
+  it('throws ProductNotFoundError when product does not exist', async () => {
+    mockRepo.findById.mockResolvedValue(null);
+    await expect(service.upsertTranslation(99, 'es', { name: 'Vestido', source: 'manual' })).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
+
+  it('throws TranslationLocaleInvalidError for unsupported locale', async () => {
+    mockRepo.findById.mockResolvedValue(makeProduct());
+    await expect(service.upsertTranslation(1, 'fr', { name: 'Robe', source: 'manual' })).rejects.toBeInstanceOf(TranslationLocaleInvalidError);
+  });
+});
+
+describe('ProductService - listTranslations', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns all translations for an existing product', async () => {
+    mockRepo.findById.mockResolvedValue(makeProduct());
+    const translations = [makeTranslation(), makeTranslation({ locale: 'en', name: 'Summer Dress' })];
+    mockTranslationRepo.findByProduct.mockResolvedValue(translations);
+
+    const result = await service.listTranslations(1);
+
+    expect(result).toBe(translations);
+    expect(mockTranslationRepo.findByProduct).toHaveBeenCalledWith(1);
+  });
+
+  it('throws ProductNotFoundError when product does not exist', async () => {
+    mockRepo.findById.mockResolvedValue(null);
+    await expect(service.listTranslations(99)).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
+});
+
+describe('ProductService - update with translations', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('upserts translations and returns refreshed product', async () => {
+    const product = makeProduct();
+    const refreshed = makeProduct({ translations: [makeTranslation()] });
+    mockRepo.findById.mockResolvedValueOnce(product).mockResolvedValueOnce(refreshed);
+    mockRepo.update.mockResolvedValue(product);
+    mockTranslationRepo.upsert.mockResolvedValue(makeTranslation());
+
+    const result = await service.update(1, {
+      name: 'Updated',
+      translations: [{ locale: 'es', name: 'Actualizado', source: 'manual' }],
+    });
+
+    expect(mockTranslationRepo.upsert).toHaveBeenCalledWith(1, 'es', expect.objectContaining({ name: 'Actualizado' }));
+    expect(result).toBe(refreshed);
+  });
+
+  it('leaves omitted locales unchanged when translations not provided', async () => {
+    const refreshed = makeProduct({ name: 'Updated' });
+    mockRepo.findById.mockResolvedValueOnce(makeProduct()).mockResolvedValueOnce(refreshed);
+    mockRepo.update.mockResolvedValue(refreshed);
+
+    await service.update(1, { name: 'Updated' });
+
+    expect(mockTranslationRepo.upsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('ProductService - deleteTranslation', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('deletes a translation for an existing product', async () => {
+    mockRepo.findById.mockResolvedValue(makeProduct());
+    mockTranslationRepo.delete.mockResolvedValue(undefined);
+
+    await service.deleteTranslation(1, 'es');
+
+    expect(mockTranslationRepo.delete).toHaveBeenCalledWith(1, 'es');
+  });
+
+  it('throws ProductNotFoundError when product does not exist', async () => {
+    mockRepo.findById.mockResolvedValue(null);
+    await expect(service.deleteTranslation(99, 'es')).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
+
+  it('propagates TranslationNotFoundError from repository (404 case)', async () => {
+    mockRepo.findById.mockResolvedValue(makeProduct());
+    mockTranslationRepo.delete.mockRejectedValue(new TranslationNotFoundError());
+    await expect(service.deleteTranslation(1, 'es')).rejects.toBeInstanceOf(TranslationNotFoundError);
   });
 });

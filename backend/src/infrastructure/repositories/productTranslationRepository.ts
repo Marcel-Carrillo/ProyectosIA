@@ -52,6 +52,8 @@ export class ProductTranslationRepository implements IProductTranslationReposito
   }
 
   async delete(productId: number, locale: string): Promise<void> {
+    const existing = await this.findByProductAndLocale(productId, locale);
+    if (!existing) throw new TranslationNotFoundError();
     await prisma.productTranslation.delete({
       where: { productId_locale: { productId, locale } },
     });

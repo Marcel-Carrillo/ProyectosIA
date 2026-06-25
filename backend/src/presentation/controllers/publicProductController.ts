@@ -40,6 +40,7 @@ export async function listPublicProducts(req: Request, res: Response, next: Next
       requestedPageSize !== undefined ? Math.min(requestedPageSize, MAX_PAGE_SIZE) : undefined;
 
     // Public listing always restricts to Active products; any client-supplied status is ignored.
+    // TODO: search currently matches Product.name (English only). Localized search is deferred.
     const result = await productService.findAll({
       status: 'Active',
       categoryId: parseOptionalQueryInt(categoryId, 'categoryId'),

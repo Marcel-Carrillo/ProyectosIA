@@ -14,6 +14,7 @@
     "lint": "eslint src --ext .ts",
     "prisma:generate": "prisma generate",
     "import:products": "npx ts-node prisma/importEscuelaJs.ts",
+    "backfill:translations": "npx ts-node scripts/backfillProductTranslations.ts",
     "db:seed": "npx prisma db seed",
     "deploy:lambda": "serverless deploy",
     "postinstall": "prisma generate"

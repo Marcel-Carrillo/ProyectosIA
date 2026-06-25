@@ -4,12 +4,17 @@ import axios from 'axios';
 import ProductFormModal from '../ProductFormModal';
 import { Product } from '../../../types/product';
 import { adminProductService } from '../../../services/adminProductService';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../../../i18n';
 
 jest.mock('../../../services/adminProductService', () => {
   const actual = jest.requireActual('../../../services/adminProductService');
   return { __esModule: true, ...actual, adminProductService: { create: jest.fn() } };
 });
 const mocked = adminProductService as jest.Mocked<typeof adminProductService>;
+
+const renderModal = (ui: React.ReactElement) =>
+  render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
 
 const created: Product = {
   id: 9,
@@ -36,7 +41,7 @@ describe('ProductFormModal', () => {
   it('creates a product and calls onSuccess', async () => {
     mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
     const onSuccess = jest.fn();
-    render(<ProductFormModal show onHide={jest.fn()} onSuccess={onSuccess} categories={[]} />);
+    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={onSuccess} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'New' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
     await waitFor(() =>
@@ -47,9 +52,25 @@ describe('ProductFormModal', () => {
 
   it('shows the slug-conflict error and keeps the modal open', async () => {
     mocked.create.mockRejectedValue(makeAxiosError('PRODUCT_SLUG_CONFLICT', 409));
-    render(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dup' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
     expect(await screen.findByText(/already exists/i)).toBeInTheDocument();
+  });
+
+  it('includes ES translation in create payload when provided', async () => {
+    mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
+    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
+    fireEvent.change(screen.getByTestId('input-product-name-es'), { target: { value: 'Vestido' } });
+    fireEvent.click(screen.getByTestId('btn-modal-save'));
+    await waitFor(() =>
+      expect(mocked.create).toHaveBeenCalledWith(expect.objectContaining({
+        translations: expect.arrayContaining([
+          expect.objectContaining({ locale: 'en', name: 'Dress' }),
+          expect.objectContaining({ locale: 'es', name: 'Vestido' }),
+        ]),
+      })),
+    );
   });
 });

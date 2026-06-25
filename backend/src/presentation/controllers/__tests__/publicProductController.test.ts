@@ -113,6 +113,24 @@ describe('listPublicProducts', () => {
     expect(json).not.toContain('deletedAt');
   });
 
+  it('sets Vary: Accept-Language header', async () => {
+    mockFindAll.mockResolvedValue(makeListResult([makeProduct()]));
+    const req = { query: {} } as Request;
+    const res = mockRes();
+    await listPublicProducts(req, res, mockNext);
+    expect(res.setHeader).toHaveBeenCalledWith('Vary', 'Accept-Language');
+  });
+
+  it('passes Accept-Language header value to serializer (ES locale)', async () => {
+    const esProduct = makeProduct({ translations: [{ id: 1, productId: 1, locale: 'es', name: 'Vestido Verano', description: null, source: 'manual', createdAt: new Date(), updatedAt: new Date() }] });
+    mockFindAll.mockResolvedValue(makeListResult([esProduct]));
+    const req = { query: {}, headers: { 'accept-language': 'es' } } as unknown as Request;
+    const res = mockRes();
+    await listPublicProducts(req, res, mockNext);
+    const payload = (res.json as jest.Mock).mock.calls[0][0];
+    expect(payload.data.items[0].name).toBe('Vestido Verano');
+  });
+
   it('calls next on error', async () => {
     const err = new Error('db error');
     mockFindAll.mockRejectedValue(err);
@@ -162,5 +180,32 @@ describe('getPublicProductById', () => {
     const res = mockRes();
     await getPublicProductById(req, res, mockNext);
     expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({ code: 'VALIDATION_ERROR' }));
+  });
+
+  it('sets Vary: Accept-Language header on detail response', async () => {
+    mockFindById.mockResolvedValue(makeProduct());
+    const req = { params: { id: '1' } } as unknown as Request;
+    const res = mockRes();
+    await getPublicProductById(req, res, mockNext);
+    expect(res.setHeader).toHaveBeenCalledWith('Vary', 'Accept-Language');
+  });
+
+  it('returns ES translation when Accept-Language is es', async () => {
+    const esProduct = makeProduct({ translations: [{ id: 1, productId: 1, locale: 'es', name: 'Vestido Verano', description: null, source: 'manual', createdAt: new Date(), updatedAt: new Date() }] });
+    mockFindById.mockResolvedValue(esProduct);
+    const req = { params: { id: '1' }, headers: { 'accept-language': 'es' } } as unknown as Request;
+    const res = mockRes();
+    await getPublicProductById(req, res, mockNext);
+    const payload = (res.json as jest.Mock).mock.calls[0][0];
+    expect(payload.data.name).toBe('Vestido Verano');
+  });
+
+  it('falls back to Product.name when no ES translation exists', async () => {
+    mockFindById.mockResolvedValue(makeProduct());
+    const req = { params: { id: '1' }, headers: { 'accept-language': 'es' } } as unknown as Request;
+    const res = mockRes();
+    await getPublicProductById(req, res, mockNext);
+    const payload = (res.json as jest.Mock).mock.calls[0][0];
+    expect(payload.data.name).toBe('Summer Dress');
   });
 });

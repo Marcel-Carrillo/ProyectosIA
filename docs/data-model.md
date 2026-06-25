@@ -100,9 +100,51 @@ Products are soft-deleted by setting `deletedAt = now()` rather than removing th
 * `category`: Many-to-one relationship with Category model
 * `variants`: One-to-many relationship with ProductVariant model
 * `images`: One-to-many relationship with ProductImage model
+* `translations`: One-to-many relationship with ProductTranslation model (locale-specific name/description)
 * `customerOrderItems`: One-to-many relationship with CustomerOrderItem model through ProductVariant
 
-### 3. ProductVariant
+### 3. ProductTranslation
+
+Stores locale-specific name and description overrides for a product. Enables multilingual product content without modifying the base `Product` entity.
+
+**Fields:**
+
+* `id`: Auto-incremented integer primary key
+* `productId`: Foreign key referencing the Product (required)
+* `locale`: BCP 47 language tag, max 5 characters — supported values: `en`, `es`
+* `name`: Translated product name (required, max 150 characters)
+* `description`: Translated product description (optional, max 2000 characters)
+* `source`: How the translation was created — `manual` (admin UI), `import` (backfill script), or `machine` (auto-translated via LibreTranslate)
+* `createdAt`: Timestamp when the translation was created
+* `updatedAt`: Timestamp when the translation was last updated
+
+**Validation Rules:**
+
+* `locale` must be one of `en` or `es` (`TRANSLATION_LOCALE_INVALID` if invalid)
+* `name` is required and cannot exceed 150 characters
+* `description` is optional but cannot exceed 2000 characters
+* Only one row per `(productId, locale)` pair — enforced by `@@unique([productId, locale])`
+
+**Locale Resolution (fallback chain):**
+
+When a public API request includes `Accept-Language: es` (or `es-ES`, region stripped to `es`):
+1. Return the `es` translation row if it exists
+2. Otherwise return the `en` translation row if it exists
+3. Otherwise return `Product.name` / `Product.description` (the original English fallback)
+
+Unknown locales (e.g., `fr`) default to the `en` chain above.
+
+**Soft Delete:**
+
+Not applicable. Translations are hard-deleted via `DELETE /api/admin/products/:id/translations/:locale`. Deleting the parent Product cascades and removes all its translations (`ON DELETE CASCADE`).
+
+**Relationships:**
+
+* `product`: Many-to-one relationship with Product model (FK with `ON DELETE CASCADE`)
+
+**ERD note:** `Product ||--o{ ProductTranslation : "translated_by"`
+
+### 4. ProductVariant
 
 Represents a specific sellable version of a product.
 
