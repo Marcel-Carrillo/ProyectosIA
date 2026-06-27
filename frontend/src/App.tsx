@@ -49,10 +49,19 @@ function ScrollManager() {
   const { key } = useLocation();
   const navType = useNavigationType();
 
-  // Save scroll position when leaving a route
+  // Save on every scroll AND synchronously on cleanup (covers fast click after scroll)
   useEffect(() => {
+    let rafId: number;
+    const save = () => sessionStorage.setItem(`scroll:${key}`, String(Math.round(window.scrollY)));
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(save);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
-      sessionStorage.setItem(`scroll:${key}`, String(Math.round(window.scrollY)));
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+      save(); // synchronous capture at navigation moment
     };
   }, [key]);
 
@@ -64,27 +73,26 @@ function ScrollManager() {
     }
 
     const saved = sessionStorage.getItem(`scroll:${key}`);
-    if (!saved) return;
+    if (!saved || saved === '0') return;
 
     const y = parseInt(saved, 10);
     const scrollToY = () => window.scrollTo(0, y);
 
-    // Fire immediately + at multiple delays to survive skeleton→data DOM swap
-    // and async API responses (typically 200-600ms)
     scrollToY();
     const raf = requestAnimationFrame(scrollToY);
     const t300 = setTimeout(scrollToY, 300);
     const t700 = setTimeout(scrollToY, 700);
+    const t1200 = setTimeout(scrollToY, 1200);
 
-    // ResizeObserver as complementary signal for image/content reflows
     const observer = new ResizeObserver(scrollToY);
     observer.observe(document.body);
-    const observerStop = setTimeout(() => observer.disconnect(), 1200);
+    const observerStop = setTimeout(() => observer.disconnect(), 2000);
 
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(t300);
       clearTimeout(t700);
+      clearTimeout(t1200);
       clearTimeout(observerStop);
       observer.disconnect();
     };
