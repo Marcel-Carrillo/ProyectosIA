@@ -5,9 +5,8 @@ import { PrismaClient } from '@prisma/client';
 
 import { importPrintfulProducts } from '../src/infrastructure/import/printfulProductImporter';
 
-import { seedFashionCatalog } from './seedFashionCatalog';
-
-
+// RETIRED: fashion demo catalog replaced by real Printful catalog.
+// import { seedFashionCatalog } from './seedFashionCatalog';
 
 const prisma = new PrismaClient();
 
@@ -15,11 +14,7 @@ const prisma = new PrismaClient();
 
 async function main() {
 
-  console.log('Seeding Mavile fashion catalog with images...');
-
-  const fashion = await seedFashionCatalog(prisma);
-
-  console.log(`Fashion seed: ${fashion.products} products, ${fashion.categories} categories.`);
+  console.log('Seed: fashion demo catalog retired — using Printful as the real supplier.');
 
 
 
