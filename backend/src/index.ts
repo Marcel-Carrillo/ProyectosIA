@@ -61,6 +61,16 @@ if (process.env.NODE_ENV !== 'test') {
   }
 }
 
+if (process.env.NODE_ENV !== 'test') {
+  const printfulRequiredVars = ['PRINTFUL_API_KEY'];
+  const missingPrintfulVars = printfulRequiredVars.filter((key) => !process.env[key]);
+  if (missingPrintfulVars.length > 0) {
+    throw new Error(
+      `Missing required Printful environment variables: ${missingPrintfulVars.join(', ')}`
+    );
+  }
+}
+
 export const app = express();
 
 // Trust exactly one proxy hop in prod (API Gateway/CloudFront); loopback only in dev

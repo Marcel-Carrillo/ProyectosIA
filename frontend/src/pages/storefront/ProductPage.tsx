@@ -104,7 +104,11 @@ const ProductPage: React.FC = () => {
         </nav>
 
         <div className="storefront-pdp-grid">
-          <ProductGallery images={product.images ?? []} productName={product.name} />
+          <ProductGallery
+            images={product.images ?? []}
+            productName={product.name}
+            selectedColor={selectedVariant?.color ?? null}
+          />
 
           <div className="storefront-pdp-info">
             {product.brand && (

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { CustomerAuthProvider } from './contexts/CustomerAuthContext';
 import { CartProvider } from './contexts/CartContext';
@@ -42,16 +42,69 @@ import ContentPage from './pages/storefront/ContentPage';
 const CatalogPage = lazy(() => import('./pages/storefront/CatalogPage'));
 const StorefrontProductPage = lazy(() => import('./pages/storefront/ProductPage'));
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+// Disable browser auto-restore so we control it manually
+if (typeof window !== 'undefined') window.history.scrollRestoration = 'manual';
+
+function ScrollManager() {
+  const { key } = useLocation();
+  const navType = useNavigationType();
+
+  // Save on every scroll AND synchronously on cleanup (covers fast click after scroll)
+  useEffect(() => {
+    let rafId: number;
+    const save = () => sessionStorage.setItem(`scroll:${key}`, String(Math.round(window.scrollY)));
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(save);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+      save(); // synchronous capture at navigation moment
+    };
+  }, [key]);
+
+  // PUSH/REPLACE → scroll to top; POP → restore saved position
+  useEffect(() => {
+    if (navType !== 'POP') {
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    const saved = sessionStorage.getItem(`scroll:${key}`);
+    if (!saved || saved === '0') return;
+
+    const y = parseInt(saved, 10);
+    const scrollToY = () => window.scrollTo(0, y);
+
+    scrollToY();
+    const raf = requestAnimationFrame(scrollToY);
+    const t300 = setTimeout(scrollToY, 300);
+    const t700 = setTimeout(scrollToY, 700);
+    const t1200 = setTimeout(scrollToY, 1200);
+
+    const observer = new ResizeObserver(scrollToY);
+    observer.observe(document.body);
+    const observerStop = setTimeout(() => observer.disconnect(), 2000);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t300);
+      clearTimeout(t700);
+      clearTimeout(t1200);
+      clearTimeout(observerStop);
+      observer.disconnect();
+    };
+  }, [key, navType]);
+
   return null;
 }
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <ScrollToTop />
+      <ScrollManager />
       <AdminAuthProvider>
         <CustomerAuthProvider>
           <CartProvider>
