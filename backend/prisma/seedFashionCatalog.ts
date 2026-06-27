@@ -244,28 +244,47 @@ export async function seedFashionCatalog(prisma: PrismaClient): Promise<SeedFash
           deletedAt: null,
         },
       });
-      await prisma.productVariant.deleteMany({ where: { productId: existing.id } });
-      await prisma.productImage.deleteMany({ where: { productId: existing.id } });
-      await prisma.productVariant.createMany({
-        data: item.variants.map((v) => ({
-          productId: existing.id,
-          sku: v.sku,
-          size: v.size,
-          color: v.color,
-          publicPrice: v.publicPrice,
-          compareAtPrice: v.compareAtPrice ?? null,
-          stockPolicy: 'SupplierManaged',
-          status: 'Active',
-        })),
-      });
-      await prisma.productImage.createMany({
-        data: item.images.map((img) => ({
-          productId: existing.id,
-          url: img.url,
-          altText: img.altText,
-          sortOrder: img.sortOrder,
-        })),
-      });
+
+      // Only replace variants if none are referenced by orders/wishlists.
+      // If there are references, leave existing variants in place to avoid FK violations.
+      const existingVariantIds = (
+        await prisma.productVariant.findMany({
+          where: { productId: existing.id },
+          select: { id: true },
+        })
+      ).map((v) => v.id);
+
+      const refCount =
+        existingVariantIds.length > 0
+          ? await prisma.customerOrderItem.count({
+              where: { productVariantId: { in: existingVariantIds } },
+            })
+          : 0;
+
+      if (refCount === 0) {
+        await prisma.productVariant.deleteMany({ where: { productId: existing.id } });
+        await prisma.productImage.deleteMany({ where: { productId: existing.id } });
+        await prisma.productVariant.createMany({
+          data: item.variants.map((v) => ({
+            productId: existing.id,
+            sku: v.sku,
+            size: v.size,
+            color: v.color,
+            publicPrice: v.publicPrice,
+            compareAtPrice: v.compareAtPrice ?? null,
+            stockPolicy: 'SupplierManaged',
+            status: 'Active',
+          })),
+        });
+        await prisma.productImage.createMany({
+          data: item.images.map((img) => ({
+            productId: existing.id,
+            url: img.url,
+            altText: img.altText,
+            sortOrder: img.sortOrder,
+          })),
+        });
+      }
     } else {
       await prisma.product.create({
         data: {
