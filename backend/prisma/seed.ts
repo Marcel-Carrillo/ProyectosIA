@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 
-import { importEscuelaJsProducts } from '../src/infrastructure/import/escuelaJsProductImporter';
+// DEPRECATED: EscuelaJS importer retired — kept for reference only, not invoked by seed.
+// import { importEscuelaJsProducts } from '../src/infrastructure/import/escuelaJsProductImporter';
+
+import { importPrintfulProducts } from '../src/infrastructure/import/printfulProductImporter';
 
 import { seedFashionCatalog } from './seedFashionCatalog';
 
@@ -20,17 +23,21 @@ async function main() {
 
 
 
-  if (process.env.ESCUELAJS_IMPORT === 'true') {
+  if (process.env.PRINTFUL_IMPORT === 'true') {
 
-    const limit = Number(process.env.ESCUELAJS_IMPORT_LIMIT ?? '40');
+    const limit = process.env.PRINTFUL_IMPORT_LIMIT
 
-    console.log(`Importing products from EscuelaJS (limit=${limit})...`);
+      ? parseInt(process.env.PRINTFUL_IMPORT_LIMIT, 10)
 
-    const result = await importEscuelaJsProducts(prisma, { limit });
+      : undefined;
+
+    console.log(`Importing products from Printful (limit=${limit ?? 'all'})...`);
+
+    const result = await importPrintfulProducts(prisma, { limit });
 
     console.log(
 
-      `EscuelaJS import: fetched=${result.fetched}, imported=${result.imported}, skipped=${result.skipped}`,
+      `Printful import: fetched=${result.fetched}, imported=${result.imported}, skipped=${result.skipped}`,
 
     );
 

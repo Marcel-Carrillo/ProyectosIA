@@ -1718,4 +1718,70 @@ Required in non-test environments (validated at startup in `index.ts`):
 
 ---
 
+## Supplier Catalog Integration
+
+### Pattern Overview
+
+External supplier catalog integration follows a four-file pattern mirroring the EscuelaJS reference implementation:
+
+```
+src/infrastructure/external/{supplierName}Types.ts   — API response interfaces and base URL constant
+src/infrastructure/external/{supplierName}Client.ts  — typed HTTP client (auth, rate-limit, retries)
+src/infrastructure/import/map{SupplierName}Product.ts — maps API response to internal MappedProductImport interface
+src/infrastructure/import/{supplierName}ProductImporter.ts — orchestrates pagination, upsert, category, supplier
+prisma/import{SupplierName}.ts                        — thin CLI wrapper (instantiate PrismaClient → run → disconnect)
+```
+
+### Printful Integration
+
+Printful is the first real supplier. The integration uses the Sync Products API (store-specific catalog):
+
+- `GET /sync/products` — paginated list of synced products
+- `GET /sync/products/{id}` — detail with variant list including `retail_price`, `options`, `files`
+
+Key behaviors:
+- `retail_price` is a **string** in the Printful API response, not a number — always `parseFloat()` before arithmetic
+- `VariantOption.id` uses **uppercase** keys (`"SIZE"`, `"COLOR"`) — match case-insensitively
+- Supplier must be upserted with `findFirst + create/update` — `Supplier.name` has no `@unique` constraint
+- Category is derived from the first variant's `product.type` field; falls back to `"Apparel"` if empty
+
+### Price Markup Convention
+
+```
+publicPrice = Math.round(supplierCost × PRINTFUL_PRICE_MARKUP × 100) / 100
+```
+
+- `PRINTFUL_PRICE_MARKUP` env var (float, default `1.6` = 60% margin)
+- `supplierCost` = raw `retail_price` from Printful — stored backend-only, NEVER in public API responses
+- `publicPrice` = the price shown to customers
+
+### Catalog Purge Strategy (Demo → Real)
+
+When replacing demo data with real supplier catalog:
+
+| Condition | Action |
+|-----------|--------|
+| Product has no FK references (no orders, wishlist) | Hard-delete: `ProductImage` → `ProductVariant` → `Product` |
+| Product is referenced by any order or wishlist | Soft-delete: `deletedAt = now()`, `status = "Archived"` |
+
+- Demo products are identified by `ProductVariant.sku LIKE 'EJS-%'`
+- Always run `npm run db:clear-demo:dry-run` before the real purge to preview counts
+- Take a DB snapshot before running the real purge in production
+
+### npm Scripts
+
+```bash
+npm run db:import:printful          # Import Printful catalog (requires PRINTFUL_API_KEY)
+npm run db:clear-demo               # Purge EscuelaJS demo catalog (hard + soft delete)
+npm run db:clear-demo:dry-run       # Preview purge without writing anything
+```
+
+### Security Rules
+
+- `PRINTFUL_API_KEY` must NEVER appear in logs, error messages, or API responses
+- `supplierCost`, `supplierReference`, `supplierId` are backend-only — excluded from all public serializers
+- The public product DTO allow-list does not include any supplier fields
+
+---
+
 This document serves as the foundation for maintaining code quality and consistency across the women's fashion ecommerce backend application. All team members should follow these practices to ensure a maintainable, scalable, and testable codebase.

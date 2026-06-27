@@ -94,6 +94,17 @@ stripe listen --forward-to http://localhost:3000/api/public/payments/webhook
 | `4000 0000 0000 9995` | Declined |
 | `4000 0025 0000 3155` | 3DS required |
 
+**Printful Supplier Variables** (`backend/.env`):
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PRINTFUL_API_KEY` | Printful API key — **never expose in logs or API responses** | Yes (non-test) |
+| `PRINTFUL_PRICE_MARKUP` | Float multiplier applied to `retail_price` → `publicPrice` (default `1.6`) | No |
+| `PRINTFUL_THROTTLE_MS` | Delay in ms between Printful detail requests (default `600`) | No |
+| `PRINTFUL_IMPORT_LIMIT` | Max products to import in one run (omit to import all) | No |
+
+> Obtain your API key from the Printful Dashboard under **Settings → API → API Access**. Use a sandbox/test store for development. The key must NEVER be committed to version control.
+
 **Frontend Environment** (`frontend/.env.development`):
 
 ```env
@@ -246,7 +257,19 @@ npx prisma studio
 
 # Seed the database
 npx prisma db seed
+
+# Import Printful catalog (requires PRINTFUL_API_KEY)
+npm run db:import:printful
+
+# Clear demo (EscuelaJS) catalog — dry-run first
+npm run db:clear-demo:dry-run    # logs { wouldHardDelete, wouldSoftDelete }, no writes
+npm run db:clear-demo            # executes the purge (hard-delete + soft-delete)
 ```
+
+> **Before running `db:clear-demo`**: take a PostgreSQL snapshot or dump so you can restore if needed:
+> ```bash
+> docker exec <db-container> pg_dump -U ecommerceUser ecommerceDb > backup.sql
+> ```
 
 Recommended migration names for this project:
 
