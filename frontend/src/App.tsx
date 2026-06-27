@@ -58,17 +58,36 @@ function ScrollManager() {
 
   // PUSH/REPLACE → scroll to top; POP → restore saved position
   useEffect(() => {
-    if (navType === 'POP') {
-      const saved = sessionStorage.getItem(`scroll:${key}`);
-      if (saved) {
-        const y = parseInt(saved, 10);
-        window.scrollTo(0, y);
-        const raf = requestAnimationFrame(() => window.scrollTo(0, y));
-        return () => cancelAnimationFrame(raf);
-      }
-    } else {
+    if (navType !== 'POP') {
       window.scrollTo(0, 0);
+      return;
     }
+
+    const saved = sessionStorage.getItem(`scroll:${key}`);
+    if (!saved) return;
+
+    const y = parseInt(saved, 10);
+    const scrollToY = () => window.scrollTo(0, y);
+
+    // Fire immediately + at multiple delays to survive skeleton→data DOM swap
+    // and async API responses (typically 200-600ms)
+    scrollToY();
+    const raf = requestAnimationFrame(scrollToY);
+    const t300 = setTimeout(scrollToY, 300);
+    const t700 = setTimeout(scrollToY, 700);
+
+    // ResizeObserver as complementary signal for image/content reflows
+    const observer = new ResizeObserver(scrollToY);
+    observer.observe(document.body);
+    const observerStop = setTimeout(() => observer.disconnect(), 1200);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t300);
+      clearTimeout(t700);
+      clearTimeout(observerStop);
+      observer.disconnect();
+    };
   }, [key, navType]);
 
   return null;
