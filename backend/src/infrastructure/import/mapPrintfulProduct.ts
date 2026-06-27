@@ -147,15 +147,18 @@ export function mapCatalogProduct(
     };
   });
 
-  const seenUrls = new Set<string>();
+  // One image per unique color: keeps the thumbnail strip to one swatch per color
+  // instead of one per size+color combination (which creates dozens of near-identical thumbs).
+  const seenColors = new Set<string>();
   const images: MappedPrintfulProductImport['images'] = [];
   let sortOrder = 0;
   for (const v of importableVariants) {
-    if (v.image && !seenUrls.has(v.image)) {
-      seenUrls.add(v.image);
+    const colorKey = v.color ?? '';
+    if (v.image && !seenColors.has(colorKey)) {
+      seenColors.add(colorKey);
       images.push({
         url: v.image,
-        altText: `${catalogProduct.title} — ${v.color ?? ''} ${v.size ?? ''}`.trim(),
+        altText: v.color ? `${catalogProduct.title} — ${v.color}` : catalogProduct.title,
         sortOrder: sortOrder++,
       });
     }

@@ -1004,12 +1004,18 @@
 }
 
 .storefront-gallery__thumbs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-direction: row;
   gap: var(--spacing-3);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
 }
 
 .storefront-gallery__thumb {
+  flex: 0 0 72px;
+  width: 72px;
   aspect-ratio: 3 / 4;
   cursor: pointer;
   overflow: hidden;

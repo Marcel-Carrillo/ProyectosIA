@@ -1,8 +1,10 @@
 import {
   isImportablePrintfulSyncProduct,
   mapPrintfulProduct,
+  isImportableCatalogProduct,
+  mapCatalogProduct,
 } from '../mapPrintfulProduct';
-import { SyncProductDetail, SyncVariant } from '../../external/printfulTypes';
+import { SyncProductDetail, SyncVariant, CatalogProductDetail, CatalogVariant } from '../../external/printfulTypes';
 
 const baseVariant: SyncVariant = {
   id: 100,
@@ -144,5 +146,101 @@ describe('isImportablePrintfulSyncProduct', () => {
 
   it('returns false for empty variant list', () => {
     expect(isImportablePrintfulSyncProduct([])).toBe(false);
+  });
+});
+
+// ── Catalog mapper ────────────────────────────────────────────────────────────
+
+const baseCatalogProduct: CatalogProductDetail = {
+  id: 679,
+  type: 'T-SHIRT',
+  type_name: 'T-Shirt',
+  title: 'Unisex Performance Tee',
+  brand: 'A4',
+  model: 'N3142',
+  image: 'https://cdn.printful.com/products/679/main.jpg',
+};
+
+const makeCatalogVariant = (
+  id: number,
+  color: string,
+  size: string,
+  price = '10.00',
+  imageUrl = `https://cdn.printful.com/products/679/${id}.jpg`,
+): CatalogVariant => ({
+  id,
+  product_id: 679,
+  name: `Unisex Performance Tee — ${color} / ${size}`,
+  size,
+  color,
+  color_code: null,
+  image: imageUrl,
+  price,
+  in_stock: true,
+});
+
+describe('mapCatalogProduct', () => {
+  it('applies markup to compute publicPrice', () => {
+    const mapped = mapCatalogProduct(baseCatalogProduct, [makeCatalogVariant(1, 'Black', 'S')], 1.6);
+    expect(mapped.variants[0]?.publicPrice).toBe(16); // 10 * 1.6
+    expect(mapped.variants[0]?.supplierCost).toBe(10);
+  });
+
+  it('uses PF-CAT- SKU prefix', () => {
+    const mapped = mapCatalogProduct(baseCatalogProduct, [makeCatalogVariant(42, 'Black', 'S')], 1.6);
+    expect(mapped.variants[0]?.sku).toBe('PF-CAT-42');
+  });
+
+  it('sets size and color from direct fields', () => {
+    const mapped = mapCatalogProduct(baseCatalogProduct, [makeCatalogVariant(1, 'White', 'M')], 1.5);
+    expect(mapped.variants[0]?.color).toBe('White');
+    expect(mapped.variants[0]?.size).toBe('M');
+  });
+
+  it('de-duplicates images by color — one image per unique color', () => {
+    // Black S and Black M share the same color → only 1 image stored
+    const variants = [
+      makeCatalogVariant(1, 'Black', 'S', '10.00', 'https://cdn/black-s.jpg'),
+      makeCatalogVariant(2, 'Black', 'M', '10.00', 'https://cdn/black-m.jpg'),
+      makeCatalogVariant(3, 'White', 'S', '10.00', 'https://cdn/white-s.jpg'),
+    ];
+    const mapped = mapCatalogProduct(baseCatalogProduct, variants, 1.6);
+    expect(mapped.images).toHaveLength(2); // Black + White
+  });
+
+  it('altText contains product title and color but not size', () => {
+    const mapped = mapCatalogProduct(baseCatalogProduct, [makeCatalogVariant(1, 'Navy', 'L')], 1.6);
+    expect(mapped.images[0]?.altText).toBe('Unisex Performance Tee — Navy');
+    expect(mapped.images[0]?.altText).not.toContain('L');
+  });
+
+  it('uses product image as mainImageUrl', () => {
+    const mapped = mapCatalogProduct(baseCatalogProduct, [makeCatalogVariant(1, 'Black', 'S')], 1.6);
+    expect(mapped.mainImageUrl).toBe('https://cdn.printful.com/products/679/main.jpg');
+  });
+
+  it('uses pf-cat-{id}- slug prefix', () => {
+    const mapped = mapCatalogProduct(baseCatalogProduct, [makeCatalogVariant(1, 'Black', 'S')], 1.6);
+    expect(mapped.slug).toMatch(/^pf-cat-679-/);
+  });
+});
+
+describe('isImportableCatalogProduct', () => {
+  it('returns true when at least one in_stock variant has a price', () => {
+    expect(isImportableCatalogProduct([makeCatalogVariant(1, 'Black', 'S')])).toBe(true);
+  });
+
+  it('returns false when all variants are out of stock', () => {
+    const oos: CatalogVariant = { ...makeCatalogVariant(1, 'Black', 'S'), in_stock: false };
+    expect(isImportableCatalogProduct([oos])).toBe(false);
+  });
+
+  it('returns false when all variants have zero price', () => {
+    const free: CatalogVariant = { ...makeCatalogVariant(1, 'Black', 'S'), price: '0' };
+    expect(isImportableCatalogProduct([free])).toBe(false);
+  });
+
+  it('returns false for empty list', () => {
+    expect(isImportableCatalogProduct([])).toBe(false);
   });
 });
