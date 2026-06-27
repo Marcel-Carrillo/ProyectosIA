@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { CustomerAuthProvider } from './contexts/CustomerAuthContext';
 import { CartProvider } from './contexts/CartContext';
@@ -42,16 +42,42 @@ import ContentPage from './pages/storefront/ContentPage';
 const CatalogPage = lazy(() => import('./pages/storefront/CatalogPage'));
 const StorefrontProductPage = lazy(() => import('./pages/storefront/ProductPage'));
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+// Disable browser auto-restore so we control it manually
+if (typeof window !== 'undefined') window.history.scrollRestoration = 'manual';
+
+function ScrollManager() {
+  const { key } = useLocation();
+  const navType = useNavigationType();
+
+  // Save scroll position when leaving a route
+  useEffect(() => {
+    return () => {
+      sessionStorage.setItem(`scroll:${key}`, String(Math.round(window.scrollY)));
+    };
+  }, [key]);
+
+  // PUSH/REPLACE → scroll to top; POP → restore saved position
+  useEffect(() => {
+    if (navType === 'POP') {
+      const saved = sessionStorage.getItem(`scroll:${key}`);
+      if (saved) {
+        const y = parseInt(saved, 10);
+        window.scrollTo(0, y);
+        const raf = requestAnimationFrame(() => window.scrollTo(0, y));
+        return () => cancelAnimationFrame(raf);
+      }
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [key, navType]);
+
   return null;
 }
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <ScrollToTop />
+      <ScrollManager />
       <AdminAuthProvider>
         <CustomerAuthProvider>
           <CartProvider>

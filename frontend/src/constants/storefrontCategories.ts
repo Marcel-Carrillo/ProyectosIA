@@ -1,14 +1,15 @@
-/** Canonical storefront category order (matches Mavile fashion catalog). */
-export const STOREFRONT_CATEGORY_ORDER = ['women', 'men', 'accessories', 'shoes'] as const;
+/** Canonical storefront category order. */
+export const STOREFRONT_CATEGORY_ORDER = ['women', 'men', 'accessories', 'shoes', 'other'] as const;
 
 export type StorefrontCategoryKey = (typeof STOREFRONT_CATEGORY_ORDER)[number];
 
-/** Maps canonical key → exact DB category name from seed. */
+/** Maps canonical key → exact DB category name. */
 export const STOREFRONT_CATEGORY_DB_NAMES: Record<StorefrontCategoryKey, string> = {
   women: 'Women',
   men: 'Men',
   accessories: 'Accessories',
   shoes: 'Shoes',
+  other: 'Other',
 };
 
 export function categoryNameToKey(name: string): StorefrontCategoryKey | null {
