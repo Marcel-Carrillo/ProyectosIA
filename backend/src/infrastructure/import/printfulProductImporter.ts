@@ -1,8 +1,15 @@
 import { PrismaClient } from '@prisma/client';
-import { fetchSyncProductList, fetchSyncProductDetail } from '../external/printfulClient';
+import {
+  fetchCatalogProductDetail,
+  fetchCatalogProductList,
+  fetchSyncProductList,
+  fetchSyncProductDetail,
+} from '../external/printfulClient';
 import {
   isImportablePrintfulSyncProduct,
+  isImportableCatalogProduct,
   mapPrintfulProduct,
+  mapCatalogProduct,
   MappedPrintfulProductImport,
 } from './mapPrintfulProduct';
 
@@ -167,5 +174,66 @@ export async function importPrintfulProducts(
 
   const result: ImportPrintfulResult = { fetched, imported, skipped };
   console.log('[printful] import result:', JSON.stringify(result));
+  return result;
+}
+
+// ── Catalog import (no store required) ───────────────────────────────────────
+
+export async function importPrintfulCatalogProducts(
+  prisma: PrismaClient,
+  options: ImportPrintfulOptions = {},
+): Promise<ImportPrintfulResult> {
+  const markupRaw = parseFloat(process.env.PRINTFUL_PRICE_MARKUP ?? '');
+  const markup = Number.isFinite(markupRaw) && markupRaw > 0 ? markupRaw : 1.6;
+  if (!process.env.PRINTFUL_PRICE_MARKUP) {
+    console.log('[printful-catalog] PRINTFUL_PRICE_MARKUP not set, using default 1.6');
+  }
+
+  const throttleMs = parseInt(process.env.PRINTFUL_THROTTLE_MS ?? '600', 10);
+  const supplierId = await upsertPrintfulSupplier(prisma);
+
+  const { limit } = options;
+  const PAGE_SIZE = 20;
+  let offset = 0;
+  let fetched = 0;
+  let imported = 0;
+  let skipped = 0;
+
+  while (true) {
+    const pageLimit = limit ? Math.min(PAGE_SIZE, limit - fetched) : PAGE_SIZE;
+    if (pageLimit <= 0) break;
+
+    const { items, paging } = await fetchCatalogProductList(offset, pageLimit);
+    if (items.length === 0) break;
+
+    for (const listItem of items) {
+      if (limit !== undefined && fetched >= limit) break;
+
+      await sleep(throttleMs);
+
+      const { catalogProduct, catalogVariants } = await fetchCatalogProductDetail(listItem.id);
+      fetched += 1;
+
+      if (!isImportableCatalogProduct(catalogVariants)) {
+        console.log(`[printful-catalog] skipped product ${listItem.id}: no importable variants`);
+        skipped += 1;
+        continue;
+      }
+
+      const mapped = mapCatalogProduct(catalogProduct, catalogVariants, markup);
+      const categoryId = await upsertCategory(prisma, mapped);
+      await upsertPrintfulProduct(prisma, mapped, categoryId, supplierId);
+      imported += 1;
+    }
+
+    // /products endpoint returns all results without paging — stop after first batch
+    if (!paging || offset + items.length >= paging.total) break;
+    if (limit !== undefined && fetched >= limit) break;
+
+    offset += items.length;
+  }
+
+  const result: ImportPrintfulResult = { fetched, imported, skipped };
+  console.log('[printful-catalog] import result:', JSON.stringify(result));
   return result;
 }

@@ -1,4 +1,10 @@
-import { SyncProductDetail, SyncVariant, VariantOption } from '../external/printfulTypes';
+import {
+  CatalogProductDetail,
+  CatalogVariant,
+  SyncProductDetail,
+  SyncVariant,
+  VariantOption,
+} from '../external/printfulTypes';
 
 export interface MappedPrintfulProductVariant {
   sku: string;
@@ -102,6 +108,69 @@ export function mapPrintfulProduct(
     brand: null,
     status: 'Active',
     mainImageUrl,
+    categoryName,
+    categoryDescription: null,
+    categoryImageUrl: null,
+    variants: mappedVariants,
+    images,
+  };
+}
+
+// ── Catalog API mapper ────────────────────────────────────────────────────────
+// Maps GET /products/{id} (no store required) to the same MappedPrintfulProductImport
+// shape. SKUs use the PF-CAT- prefix to distinguish from store sync variants.
+
+export function isImportableCatalogProduct(catalogVariants: CatalogVariant[]): boolean {
+  return catalogVariants.some((v) => v.in_stock && parseFloat(v.price) > 0);
+}
+
+export function mapCatalogProduct(
+  catalogProduct: CatalogProductDetail,
+  catalogVariants: CatalogVariant[],
+  markup: number,
+): MappedPrintfulProductImport {
+  const importableVariants = catalogVariants.filter(
+    (v) => v.in_stock && parseFloat(v.price) > 0,
+  );
+
+  const mappedVariants: MappedPrintfulProductVariant[] = importableVariants.map((v) => {
+    const supplierCost = parseFloat(v.price);
+    return {
+      sku: `PF-CAT-${v.id}`,
+      size: v.size ?? null,
+      color: v.color ?? null,
+      supplierCost,
+      publicPrice: roundToTwoDP(supplierCost * markup),
+      supplierReference: String(v.id),
+      stockPolicy: 'SupplierManaged',
+      status: 'Active',
+    };
+  });
+
+  const seenUrls = new Set<string>();
+  const images: MappedPrintfulProductImport['images'] = [];
+  let sortOrder = 0;
+  for (const v of importableVariants) {
+    if (v.image && !seenUrls.has(v.image)) {
+      seenUrls.add(v.image);
+      images.push({
+        url: v.image,
+        altText: `${catalogProduct.title} — ${v.color ?? ''} ${v.size ?? ''}`.trim(),
+        sortOrder: sortOrder++,
+      });
+    }
+  }
+
+  const categoryName = catalogProduct.type_name?.trim() || catalogProduct.type || 'Apparel';
+  const slug = `pf-cat-${catalogProduct.id}-${toSlug(catalogProduct.title).replace(/^pf-/, '')}`;
+
+  return {
+    name: catalogProduct.title,
+    slug,
+    description: null,
+    brand: catalogProduct.brand ?? null,
+    status: 'Active',
+    mainImageUrl: catalogProduct.image ?? null,
     categoryName,
     categoryDescription: null,
     categoryImageUrl: null,

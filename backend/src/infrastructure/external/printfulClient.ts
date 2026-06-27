@@ -1,5 +1,10 @@
 import {
   PRINTFUL_API_BASE_URL,
+  CatalogProductDetail,
+  CatalogProductDetailResponse,
+  CatalogProductListItem,
+  CatalogProductListResponse,
+  CatalogVariant,
   PrintfulPaging,
   SyncProductDetail,
   SyncProductDetailResponse,
@@ -61,5 +66,29 @@ export async function fetchSyncProductDetail(
   return {
     syncProduct: data.result.sync_product,
     syncVariants: data.result.sync_variants,
+  };
+}
+
+// ── Catalog API (no store required) ─────────────────────────────────────────
+
+export async function fetchCatalogProductList(
+  offset: number,
+  limit: number,
+): Promise<{ items: CatalogProductListItem[]; paging: PrintfulPaging | undefined }> {
+  const url = `${PRINTFUL_API_BASE_URL}/products?offset=${offset}&limit=${limit}`;
+  const response = await fetchWithBackoff(url);
+  const data = (await response.json()) as CatalogProductListResponse;
+  return { items: data.result, paging: data.paging };
+}
+
+export async function fetchCatalogProductDetail(
+  id: number,
+): Promise<{ catalogProduct: CatalogProductDetail; catalogVariants: CatalogVariant[] }> {
+  const url = `${PRINTFUL_API_BASE_URL}/products/${id}`;
+  const response = await fetchWithBackoff(url);
+  const data = (await response.json()) as CatalogProductDetailResponse;
+  return {
+    catalogProduct: data.result.product,
+    catalogVariants: data.result.variants,
   };
 }

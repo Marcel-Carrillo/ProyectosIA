@@ -63,3 +63,53 @@ export interface SyncProductDetailResponse {
     sync_variants: SyncVariant[];
   };
 }
+
+// ── Catalog API: GET /products ─────────────────────────────────────────────
+// Used when no store is connected. Represents Printful's full product template
+// catalog with base prices — NOT store-specific sync products.
+
+export interface CatalogProductListItem {
+  id: number;
+  type: string;
+  type_name: string;
+  title: string;
+  brand: string | null;
+  model: string | null;
+  image: string;
+}
+
+export interface CatalogVariant {
+  id: number;
+  product_id: number;
+  name: string;
+  size: string | null;
+  color: string | null;
+  color_code: string | null;
+  image: string;
+  price: string; // string like sync products' retail_price
+  in_stock: boolean;
+}
+
+export interface CatalogProductDetail {
+  id: number;
+  type: string;
+  type_name: string;
+  title: string;
+  brand: string | null;
+  model: string | null;
+  image: string;
+}
+
+export interface CatalogProductListResponse {
+  code: number;
+  result: CatalogProductListItem[];
+  paging?: PrintfulPaging; // absent on /products — all results returned without pagination
+}
+
+export interface CatalogProductDetailResponse {
+  code: number;
+  result: {
+    product: CatalogProductDetail;
+    variants: CatalogVariant[];
+  };
+}

@@ -15,6 +15,7 @@
     "prisma:generate": "prisma generate",
     "import:products": "npx ts-node prisma/importEscuelaJs.ts",
     "db:import:printful": "npx ts-node prisma/importPrintful.ts",
+    "db:import:printful:catalog": "npx ts-node prisma/importPrintfulCatalog.ts",
     "db:clear-demo": "npx ts-node prisma/clearDemoCatalog.ts",
     "db:clear-demo:dry-run": "npx ts-node prisma/clearDemoCatalog.ts --dry-run",
     "backfill:translations": "npx ts-node scripts/backfillProductTranslations.ts",
