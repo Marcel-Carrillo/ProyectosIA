@@ -119,7 +119,7 @@ export class CheckoutService {
     let discount = new Decimal(0);
 
     if (input.couponCode) {
-      const validation = await couponService.validate(input.couponCode, subtotal.toFixed(2));
+      const validation = await couponService.validate(input.couponCode, subtotal.toFixed(2), input.customerId);
       if (!validation.valid) {
         if (validation.reason === 'exhausted') {
           const { CouponExhaustedError } = await import('./wishlistCouponService');
