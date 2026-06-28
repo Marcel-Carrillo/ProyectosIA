@@ -2435,9 +2435,11 @@ paths:
   /api/public/auth/register:
     post:
       summary: Register customer account
+      description: Creates a new customer account. On success, asynchronously generates a single-use 15% welcome coupon (WELCOME- prefix) and sends a branded welcome email. SMTP failure does not affect the 201 response.
       tags: [Customer Auth]
       responses:
         '201': { description: Account created with accessToken and refresh cookie }
+        '409': { description: Email already registered (ACCOUNT_EMAIL_CONFLICT) }
 
   /api/public/auth/login:
     post:

@@ -1535,6 +1535,15 @@ The backend supports two deployment environments with distinct configurations. T
 - **Config**: All secrets via SSM Parameter Store at `/ecommerce/prod/*`; no `.env` file on Lambda
 - **Deployment**: `cd backend && npx serverless deploy --stage prod`
 
+### Transactional Email Pattern
+
+Transactional emails (password reset, welcome) are sent via `backend/src/infrastructure/email/emailService.ts` using Nodemailer. Key conventions:
+
+- Each email type has a dedicated template file in `backend/src/infrastructure/email/templates/` that exports a `build*Email()` function returning `{ subject, html, text }`. The application layer assembles content; the service is a pure transport adapter.
+- **Fire-and-forget for non-critical emails** (e.g., welcome): call `sendWelcomeEmail(...).catch(err => logger.warn(...))` — do NOT await it, so SMTP failure never blocks or reverts the triggering transaction.
+- **`SMTP_STRICT=true`** turns warnings into thrown errors — useful for integration tests; leave `false` in production.
+- Welcome coupon creation must happen **inside the same Prisma transaction** as the `CustomerAccount.create` so a coupon-code collision rolls back the account (no ghost accounts).
+
 ### trust proxy Convention
 
 Express must be configured with `trust proxy` before any middleware is mounted:

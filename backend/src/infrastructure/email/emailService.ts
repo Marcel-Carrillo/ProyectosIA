@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../logger';
+import { buildPasswordResetEmail } from './templates/passwordResetEmail';
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -23,17 +24,40 @@ function getTransporter(): nodemailer.Transporter {
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   const from = process.env.SMTP_FROM ?? 'noreply@example.com';
+  const { subject, text, html } = buildPasswordResetEmail(resetUrl);
   try {
     await getTransporter().sendMail({
       from,
       to,
-      subject: 'Password reset',
-      text: `Reset your password: ${resetUrl}`,
-      html: `<p>Reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`,
+      subject,
+      text,
+      html,
     });
     logger.info('Password reset email sent', { to });
   } catch (err) {
     logger.warn('Password reset email failed', { to, err: String(err) });
+    if (process.env.SMTP_STRICT === 'true') {
+      throw err;
+    }
+  }
+}
+
+export async function sendWelcomeEmail(
+  to: string,
+  content: { subject: string; html: string; text: string }
+): Promise<void> {
+  const from = process.env.SMTP_FROM ?? 'noreply@example.com';
+  try {
+    await getTransporter().sendMail({
+      from,
+      to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+    });
+    logger.info('Welcome email sent', { to });
+  } catch (err) {
+    logger.warn('Welcome email failed', { to, err: String(err) });
     if (process.env.SMTP_STRICT === 'true') {
       throw err;
     }
