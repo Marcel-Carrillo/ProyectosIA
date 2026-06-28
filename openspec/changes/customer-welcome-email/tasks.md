@@ -79,9 +79,9 @@
 
 ## 10. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 10.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 10.2 Verify all tasks are `[x]` and reports exist under `openspec/changes/customer-welcome-email/reports/`
-- [ ] 10.3 Stage all relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`)
-- [ ] 10.4 Create commit: `feat(auth): send branded welcome email with 15% discount coupon on new customer registration`
-- [ ] 10.5 Push branch `feature/customer-welcome-email` to remote origin
-- [ ] 10.6 Create Pull Request with `gh pr create` and report the PR URL in chat
+- [x] 10.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 10.2 Verify all tasks are `[x]` and reports exist under `openspec/changes/customer-welcome-email/reports/`
+- [x] 10.3 Stage all relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`)
+- [x] 10.4 Create commit: `feat(auth): send branded welcome email with 15% discount coupon on new customer registration`
+- [x] 10.5 Push branch `feature/customer-welcome-email` to remote origin
+- [x] 10.6 Create Pull Request with `gh pr create` and report the PR URL in chat
