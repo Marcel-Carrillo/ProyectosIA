@@ -74,7 +74,24 @@
         "heading": "Prensa y colaboraciones",
         "body": "Para medios y partnerships: prensa@mavile.com"
       }
-    ]
+    ],
+    "form": {
+      "heading": "Escríbenos",
+      "intro": "Rellena el formulario y te responderemos en un plazo de 24–48 horas.",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "subject": "Asunto",
+      "message": "Mensaje",
+      "send": "Enviar mensaje",
+      "sending": "Enviando…",
+      "successTitle": "Mensaje enviado",
+      "successBody": "Hemos recibido tu mensaje. Te responderemos en breve.",
+      "errorMessage": "No hemos podido enviar tu mensaje. Inténtalo de nuevo.",
+      "namePlaceholder": "Tu nombre",
+      "emailPlaceholder": "tu@email.com",
+      "subjectPlaceholder": "¿En qué podemos ayudarte?",
+      "messagePlaceholder": "Escribe tu mensaje aquí…"
+    }
   },
   "our-story": {
     "eyebrow": "Empresa",
@@ -159,7 +176,7 @@
     "sections": [
       {
         "heading": "Responsable del tratamiento",
-        "body": "Marcel Carrillo Huerta, con DNI 25733447N, domicilio en Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga y correo electrónico de contacto komabones@gmail.com."
+        "body": "Marcel Carrillo Huerta, con DNI 25733447N, domicilio en Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga y correo electrónico de contacto mcarhue@mavile.es."
       },
       {
         "heading": "Datos que recopilamos",
@@ -183,7 +200,7 @@
       },
       {
         "heading": "Tus derechos",
-        "body": "Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a komabones@gmail.com con copia de tu documento de identidad. Tienes también derecho a presentar una reclamación ante la AEPD (www.aepd.es)."
+        "body": "Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a mcarhue@mavile.es con copia de tu documento de identidad. Tienes también derecho a presentar una reclamación ante la AEPD (www.aepd.es)."
       },
       {
         "heading": "Cookies",
@@ -198,7 +215,7 @@
     "sections": [
       {
         "heading": "Datos del titular",
-        "body": "Titular: Marcel Carrillo Huerta. DNI: 25733447N. Domicilio: Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga. Correo electrónico: komabones@gmail.com."
+        "body": "Titular: Marcel Carrillo Huerta. DNI: 25733447N. Domicilio: Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga. Correo electrónico: mcarhue@mavile.es."
       },
       {
         "heading": "Datos registrales",

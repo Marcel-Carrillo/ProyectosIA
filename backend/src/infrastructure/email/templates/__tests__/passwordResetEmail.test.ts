@@ -3,10 +3,10 @@ import { buildPasswordResetEmail } from '../passwordResetEmail';
 describe('buildPasswordResetEmail', () => {
   const resetUrl = 'http://localhost:3001/reset-password?token=abc123';
 
-  it('includes embedded Mavile logo and reset link in HTML', () => {
+  it('includes Mavile logo CID reference and reset link in HTML', () => {
     const { html, subject } = buildPasswordResetEmail(resetUrl);
     expect(subject).toContain('Mavile');
-    expect(html).toContain('data:image/png;base64,');
+    expect(html).toContain('cid:mavile-icon');
     expect(html).toContain('Mavile');
     expect(html).toContain('Restablecer contraseña');
     expect(html).toContain(resetUrl);

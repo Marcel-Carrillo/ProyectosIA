@@ -63,7 +63,7 @@ const CheckoutPage: React.FC = () => {
 
   const applyCoupon = async () => {
     if (!couponCode) return;
-    const result = await validateCoupon(couponCode, subtotal.toFixed(2));
+    const result = await validateCoupon(couponCode, subtotal.toFixed(2), customer?.id);
     if (result.valid && result.discountAmount) {
       setDiscount(parseFloat(result.discountAmount));
       setError('');

@@ -9,10 +9,10 @@ describe('buildWelcomeEmail', () => {
     shopUrl: 'http://localhost:3001',
   };
 
-  it('includes embedded Mavile logo, firstName, coupon code and shop URL in HTML', () => {
+  it('includes Mavile logo CID reference, firstName, coupon code and shop URL in HTML', () => {
     const { html, subject } = buildWelcomeEmail(params);
     expect(subject).toContain('Mavile');
-    expect(html).toContain('data:image/png;base64,');
+    expect(html).toContain('cid:mavile-icon');
     expect(html).toContain('Mavile');
     expect(html).toContain('Jane');
     expect(html).toContain('Bienvenida15');

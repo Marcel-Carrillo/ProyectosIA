@@ -15,6 +15,10 @@ import { buildWelcomeEmail } from '../../infrastructure/email/templates/welcomeE
 import { ensureWelcomeCouponExists } from './welcomeCouponService';
 import { logger } from '../../infrastructure/logger';
 
+function getPrimaryFrontendUrl(): string {
+  return (process.env.FRONTEND_URL ?? 'http://localhost:3001').split(',')[0].trim();
+}
+
 export const CUSTOMER_REFRESH_COOKIE = 'customer_refresh';
 
 export class AccountEmailConflictError extends Error {
@@ -122,7 +126,7 @@ export class CustomerAuthService {
     );
 
     const coupon = await ensureWelcomeCouponExists();
-    const shopUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
+    const shopUrl = getPrimaryFrontendUrl();
     const emailContent = buildWelcomeEmail({
       firstName: data.firstName.trim(),
       couponCode: coupon.code,
@@ -234,8 +238,7 @@ export class CustomerAuthService {
       await prisma.passwordResetToken.create({
         data: { customerAccountId: account.id, tokenHash, expiresAt },
       });
-      const frontend = process.env.FRONTEND_URL ?? 'http://localhost:3001';
-      await sendPasswordResetEmail(account.email, `${frontend}/reset-password?token=${raw}`);
+      await sendPasswordResetEmail(account.email, `${getPrimaryFrontendUrl()}/reset-password?token=${raw}`);
     }
     return { message: 'If an account exists, a reset email has been sent' };
   }
@@ -338,7 +341,7 @@ export class CustomerAuthService {
       );
 
       const coupon = await ensureWelcomeCouponExists();
-      const shopUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
+      const shopUrl = getPrimaryFrontendUrl();
       const emailContent = buildWelcomeEmail({
         firstName: account.customer.firstName,
         couponCode: coupon.code,
