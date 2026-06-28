@@ -10,7 +10,10 @@ import { signCustomerAccessToken, signMfaToken, verifyMfaToken } from './custome
 import { ValidationError } from '../validator';
 import speakeasy from 'speakeasy';
 import crypto from 'crypto';
-import { sendPasswordResetEmail } from '../../infrastructure/email/emailService';
+import { sendPasswordResetEmail, sendWelcomeEmail } from '../../infrastructure/email/emailService';
+import { buildWelcomeEmail } from '../../infrastructure/email/templates/welcomeEmail';
+import { ensureWelcomeCouponExists } from './welcomeCouponService';
+import { logger } from '../../infrastructure/logger';
 
 export const CUSTOMER_REFRESH_COOKIE = 'customer_refresh';
 
@@ -68,6 +71,7 @@ export class InvalidTotpCodeError extends Error {
   }
 }
 
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -105,14 +109,30 @@ export class CustomerAuthService {
     }
 
     const passwordHash = await hashPassword(data.password);
-    const account = await prisma.customerAccount.create({
-      data: {
-        customerId: customer.id,
-        email,
-        passwordHash,
-        authProvider: 'local',
-      },
+
+    const account = await prisma.$transaction(async (tx) =>
+      tx.customerAccount.create({
+        data: {
+          customerId: customer.id,
+          email,
+          passwordHash,
+          authProvider: 'local',
+        },
+      }),
+    );
+
+    const coupon = await ensureWelcomeCouponExists();
+    const shopUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
+    const emailContent = buildWelcomeEmail({
+      firstName: data.firstName.trim(),
+      couponCode: coupon.code,
+      percent: coupon.percent,
+      expiresAt: coupon.expiresAt,
+      shopUrl,
     });
+    sendWelcomeEmail(account.email, emailContent).catch((err) =>
+      logger.warn('Welcome email failed', { err })
+    );
 
     return this.issueFullSession(account, customer);
   }
@@ -304,15 +324,31 @@ export class CustomerAuthService {
           },
         });
       }
-      account = await prisma.customerAccount.create({
-        data: {
-          customerId: customer.id,
-          email: normalized,
-          authProvider: provider,
-          [idField]: providerId,
-        },
-        include: { customer: true },
+
+      account = await prisma.$transaction(async (tx) =>
+        tx.customerAccount.create({
+          data: {
+            customerId: customer!.id,
+            email: normalized,
+            authProvider: provider,
+            [idField]: providerId,
+          },
+          include: { customer: true },
+        }),
+      );
+
+      const coupon = await ensureWelcomeCouponExists();
+      const shopUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
+      const emailContent = buildWelcomeEmail({
+        firstName: account.customer.firstName,
+        couponCode: coupon.code,
+        percent: coupon.percent,
+        expiresAt: coupon.expiresAt,
+        shopUrl,
       });
+      sendWelcomeEmail(account.email, emailContent).catch((err) =>
+        logger.warn('Welcome email failed', { err })
+      );
     } else if (!account[idField as keyof typeof account]) {
       account = await prisma.customerAccount.update({
         where: { id: account.id },
