@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { CustomerAuthProvider } from './contexts/CustomerAuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { CookieConsentProvider } from './contexts/CookieConsentContext';
 import Layout from './components/Layout';
 import RequireAdminAuth from './components/admin/RequireAdminAuth';
 import RequireCustomerAuth from './components/storefront/RequireCustomerAuth';
@@ -122,7 +123,7 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/admin/login" element={<AdminLoginPage />} />
 
-              <Route element={<StorefrontLayout />}>
+              <Route element={<CookieConsentProvider><StorefrontLayout /></CookieConsentProvider>}>
                 <Route path="/" element={<Navigate to="/catalog" replace />} />
                 <Route
                   path="/catalog"

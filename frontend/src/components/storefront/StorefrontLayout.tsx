@@ -3,6 +3,8 @@ import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import StorefrontHeader from './StorefrontHeader';
 import StorefrontFooter from './StorefrontFooter';
+import CookieConsentBanner from './CookieConsentBanner';
+import CookiePreferencesModal from './CookiePreferencesModal';
 
 const StorefrontLayout: React.FC = () => {
   const { i18n } = useTranslation();
@@ -18,6 +20,8 @@ const StorefrontLayout: React.FC = () => {
         <Outlet />
       </main>
       <StorefrontFooter />
+      <CookieConsentBanner />
+      <CookiePreferencesModal />
     </div>
   );
 };
