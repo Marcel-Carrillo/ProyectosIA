@@ -1110,3 +1110,103 @@ jest.mock('@stripe/react-stripe-js', () => ({
 ```
 
 Mock `confirmPayment` to test success, error, and network-failure paths independently.
+
+---
+
+## Cookie Consent
+
+### Overview
+
+The cookie consent system is a frontend-only feature. It exposes a `CookieConsentProvider` and a `useCookieConsent` hook that serve as the single source of truth for user consent decisions.
+
+**Files:**
+- `frontend/src/constants/cookieConsent.ts` — constants (`CONSENT_VERSION`, `CONSENT_STORAGE_KEY`, `CONSENT_EXPIRY_DAYS`, `ANALYTICS_CONSENT_EVENT`) and TypeScript interfaces (`ConsentCategories`, `ConsentRecord`, `CookieConsentContextValue`)
+- `frontend/src/contexts/CookieConsentContext.tsx` — `CookieConsentProvider`, `useCookieConsent`, `isConsentValid`
+- `frontend/src/components/storefront/CookieConsentBanner.tsx` — fixed-position bottom banner
+- `frontend/src/components/storefront/CookiePreferencesModal.tsx` — portal modal with focus trap
+- `frontend/src/i18n/locales/{es,en}/cookies.json` — `cookies` i18n namespace
+
+### Provider Placement
+
+`CookieConsentProvider` is scoped to the storefront subtree in `App.tsx`:
+
+```tsx
+<Route element={<CookieConsentProvider><StorefrontLayout /></CookieConsentProvider>}>
+  {/* storefront routes */}
+</Route>
+```
+
+Admin routes must **never** import or consume `useCookieConsent` — they have no consent requirement.
+
+### Using the Hook
+
+```typescript
+import { useCookieConsent } from '../contexts/CookieConsentContext';
+
+const { consent, hasDecision, saveConsent, openPreferences } = useCookieConsent();
+
+// Check before initialising non-essential scripts:
+if (consent.analytics) {
+  initAnalytics();
+}
+```
+
+### Mandatory Convention — Non-Essential Scripts
+
+**Any non-essential script or SDK initialised in the storefront MUST check `useCookieConsent()` before starting.** Violating this rule means loading tracking scripts without user consent, which is a legal breach under EU ePrivacy / LSSI-CE.
+
+Pattern for gating a non-essential script in a React component:
+
+```typescript
+const { consent } = useCookieConsent();
+
+useEffect(() => {
+  if (!consent.analytics) return;
+  loadMyAnalyticsSDK();
+}, [consent.analytics]);
+```
+
+For scripts that must initialise before React mounts (e.g. `index.tsx`), use the `ANALYTICS_CONSENT_EVENT` custom event and read `localStorage` directly — see `index.tsx` for the reference implementation.
+
+### localStorage Schema
+
+Consent is stored at key `mavile.cookieConsent`:
+
+```json
+{
+  "version": "1",
+  "timestamp": "2026-06-28T11:29:16.106Z",
+  "categories": {
+    "necessary": true,
+    "analytics": false,
+    "marketing": false
+  }
+}
+```
+
+Increment `CONSENT_VERSION` in `constants/cookieConsent.ts` to re-prompt all users (e.g. after a significant policy change).
+
+### Re-prompting Users
+
+Change `CONSENT_VERSION` to a new string (e.g. `'2'`). On the next page load, `isConsentValid` returns `false` for all stored records with `version !== CONSENT_VERSION`, and the banner reappears.
+
+### Testing Components That Use useCookieConsent
+
+Wrap the component under test with `CookieConsentProvider` and `MemoryRouter`. Clear `localStorage` in `beforeEach`:
+
+```typescript
+beforeEach(() => localStorage.clear());
+
+function renderBanner(lng: 'es' | 'en' = 'en') {
+  return renderWithI18n(
+    <MemoryRouter>
+      <CookieConsentProvider>
+        <CookieConsentBanner />
+      </CookieConsentProvider>
+    </MemoryRouter>,
+    { lng }
+  );
+}
+```
+
+The `cookies` namespace is registered in `renderWithI18n` and must be present for any component using `useTranslation('cookies')`.

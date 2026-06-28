@@ -1,0 +1,33 @@
+{
+  "banner": {
+    "ariaLabel": "Cookie notice",
+    "message": "We use cookies to improve your experience and show you relevant content. You can accept all, reject non-essential ones, or customise your preferences.",
+    "acceptAll": "Accept all",
+    "rejectAll": "Reject all",
+    "customize": "Customise"
+  },
+  "modal": {
+    "title": "Cookie preferences",
+    "close": "Close",
+    "categories": {
+      "necessary": {
+        "name": "Necessary",
+        "description": "Essential for the website to function. Cannot be disabled."
+      },
+      "analytics": {
+        "name": "Analytics",
+        "description": "Help us understand how visitors interact with the site to improve performance."
+      },
+      "marketing": {
+        "name": "Marketing",
+        "description": "Used to deliver personalised advertising based on your interests on and off this site."
+      }
+    },
+    "savePreferences": "Save preferences",
+    "acceptAll": "Accept all",
+    "rejectAll": "Reject all"
+  },
+  "footer": {
+    "cookieSettings": "Cookie settings"
+  }
+}

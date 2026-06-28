@@ -1,0 +1,33 @@
+{
+  "banner": {
+    "ariaLabel": "Aviso de cookies",
+    "message": "Utilizamos cookies propias y de terceros para mejorar tu experiencia y mostrarte contenido relevante. Puedes aceptar todas, rechazar las no esenciales o personalizar tus preferencias.",
+    "acceptAll": "Aceptar todo",
+    "rejectAll": "Rechazar todo",
+    "customize": "Personalizar"
+  },
+  "modal": {
+    "title": "Preferencias de cookies",
+    "close": "Cerrar",
+    "categories": {
+      "necessary": {
+        "name": "Necesarias",
+        "description": "Imprescindibles para el funcionamiento del sitio web. No se pueden desactivar."
+      },
+      "analytics": {
+        "name": "Analíticas",
+        "description": "Nos ayudan a entender cómo interactúan los visitantes con el sitio para mejorar el rendimiento."
+      },
+      "marketing": {
+        "name": "Marketing",
+        "description": "Permiten mostrarte publicidad personalizada basada en tus intereses dentro y fuera de este sitio."
+      }
+    },
+    "savePreferences": "Guardar preferencias",
+    "acceptAll": "Aceptar todo",
+    "rejectAll": "Rechazar todo"
+  },
+  "footer": {
+    "cookieSettings": "Ajustes de cookies"
+  }
+}

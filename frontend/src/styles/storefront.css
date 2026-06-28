@@ -2476,3 +2476,244 @@ a.storefront-account__list-item:hover {
 .storefront-account__back:hover {
   color: var(--color-near-black);
 }
+
+/* ============================================================
+   Cookie Consent Banner & Preferences Modal
+   ============================================================ */
+
+/* --- Banner --- */
+.storefront-cookie__banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 150;
+  background-color: var(--color-white);
+  border-top: 1px solid var(--color-light);
+  box-shadow: 0 -4px 24px rgba(26, 26, 24, 0.08);
+  padding: var(--spacing-6);
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.storefront-cookie__banner-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-6);
+  flex-wrap: wrap;
+}
+
+.storefront-cookie__banner-message {
+  flex: 1;
+  min-width: 240px;
+  font-size: var(--font-size-sm);
+  color: var(--color-near-black);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.storefront-cookie__banner-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* --- Modal overlay (portal renders at document.body) --- */
+.storefront-cookie__overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(26, 26, 24, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-4);
+}
+
+/* --- Modal card --- */
+.storefront-cookie__modal {
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--spacing-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.storefront-cookie__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.storefront-cookie__modal-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-near-black);
+  margin: 0;
+}
+
+/* --- Category list --- */
+.storefront-cookie__categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.storefront-cookie__category {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4) 0;
+  border-bottom: 1px solid var(--color-light);
+}
+
+.storefront-cookie__category:last-child {
+  border-bottom: none;
+}
+
+.storefront-cookie__category-info {
+  flex: 1;
+}
+
+.storefront-cookie__category-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-near-black);
+  margin: 0 0 var(--spacing-1);
+}
+
+.storefront-cookie__category-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-mid);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* --- Toggle (pill switch) --- */
+.storefront-cookie__toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.storefront-cookie__toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.storefront-cookie__toggle-track {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-light);
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.storefront-cookie__toggle input:checked + .storefront-cookie__toggle-track {
+  background-color: var(--color-near-black);
+}
+
+.storefront-cookie__toggle input:disabled + .storefront-cookie__toggle-track {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.storefront-cookie__toggle-track::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--color-white);
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.storefront-cookie__toggle input:checked + .storefront-cookie__toggle-track::after {
+  transform: translateX(20px);
+}
+
+.storefront-cookie__toggle input:focus-visible + .storefront-cookie__toggle-track {
+  outline: 2px solid var(--color-near-black);
+  outline-offset: 2px;
+}
+
+/* --- Modal action row --- */
+.storefront-cookie__modal-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* --- Footer cookie settings button --- */
+.storefront-footer__cookie-settings {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  text-decoration: underline;
+  line-height: inherit;
+}
+
+.storefront-footer__cookie-settings:hover {
+  color: var(--color-near-black);
+}
+
+.storefront-footer__cookie-settings:focus-visible {
+  outline: 2px solid var(--color-near-black);
+  outline-offset: 2px;
+}
+
+/* --- Ghost button variant for cookie actions --- */
+.storefront-btn--ghost {
+  background: none;
+  border: 1px solid var(--color-near-black);
+  color: var(--color-near-black);
+  padding: 0 var(--spacing-4);
+  height: 40px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.storefront-btn--ghost:hover {
+  background-color: var(--color-near-black);
+  color: var(--color-white);
+}
+
+.storefront-btn--ghost:focus-visible {
+  outline: 2px solid var(--color-near-black);
+  outline-offset: 2px;
+}
+
+/* --- Reduced motion overrides --- */
+@media (prefers-reduced-motion: reduce) {
+  .storefront-cookie__banner,
+  .storefront-cookie__toggle-track,
+  .storefront-cookie__toggle-track::after {
+    transition: none;
+  }
+}
