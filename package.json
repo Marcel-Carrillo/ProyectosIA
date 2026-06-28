@@ -1,4 +1,12 @@
 {
+  "scripts": {
+    "dev:infra": "docker compose up -d db mailpit",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:stop": "docker compose stop db mailpit",
+    "dev:docker": "docker compose up",
+    "dev:docker:down": "docker compose down"
+  },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@types/node": "^20.19.0",
