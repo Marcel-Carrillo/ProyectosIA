@@ -1,8 +1,49 @@
 {
   "hero": {
-    "eyebrow": "Fall · Winter · 26",
-    "title": "A discreet selection of pieces made to last.",
-    "subtitle": "Noble materials, clean cuts, a neutral palette. Designed with care, crafted for everyday wear."
+    "ariaLabel": "Catalog introduction",
+    "dotsLabel": "Change hero image",
+    "variants": {
+      "slide1": {
+        "eyebrow": "Fall · Winter · 26",
+        "title": "A discreet selection of pieces made to last.",
+        "subtitle": "Noble materials, clean cuts, a neutral palette. Designed with care, crafted for everyday wear."
+      },
+      "slide2": {
+        "eyebrow": "Fabrics · Texture",
+        "title": "Quality lives in the details.",
+        "subtitle": "Linen, wool and premium cotton. Garments that improve with time and wear."
+      },
+      "slide3": {
+        "eyebrow": "Style · Essence",
+        "title": "Fewer pieces, more intention.",
+        "subtitle": "A capsule wardrobe designed to combine naturally, season after season."
+      },
+      "women": {
+        "eyebrow": "Women",
+        "title": "Fluid silhouettes, quiet confidence.",
+        "subtitle": "Dresses, coats and knits that balance femininity and structure."
+      },
+      "men": {
+        "eyebrow": "Men",
+        "title": "Relaxed tailoring, assured attitude.",
+        "subtitle": "Impeccable shirts, perfectly cut trousers and layers for every occasion."
+      },
+      "accessories": {
+        "eyebrow": "Accessories",
+        "title": "The detail that completes the look.",
+        "subtitle": "Belts, bags and eyewear chosen with the same care as our garments."
+      },
+      "shoes": {
+        "eyebrow": "Shoes",
+        "title": "A steady step, timeless design.",
+        "subtitle": "From leather sneakers to boots with clean lines — comfort without compromising style."
+      },
+      "search": {
+        "eyebrow": "Search",
+        "title": "Results for “{{query}}”",
+        "subtitle": "Selected pieces matching your search."
+      }
+    }
   },
   "toolbar": {
     "searchPlaceholder": "Search",

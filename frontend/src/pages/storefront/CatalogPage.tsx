@@ -5,6 +5,7 @@ import { productService } from '../../services/productService';
 import { Product } from '../../types/product';
 import ProductGrid from '../../components/storefront/ProductGrid';
 import Pagination from '../../components/storefront/Pagination';
+import CatalogHero from '../../components/storefront/CatalogHero';
 
 const PAGE_SIZE = 20;
 
@@ -22,7 +23,7 @@ const CatalogPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
-  const { t } = useTranslation('catalog');
+  const { t, i18n } = useTranslation('catalog');
 
   useEffect(() => {
     setSearchInput(searchParams.get('search') || '');
@@ -60,7 +61,7 @@ const CatalogPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, categoryId, search, sort, order, t]);
+  }, [page, categoryId, search, sort, order, t, i18n.language]);
 
   useEffect(() => {
     fetchProducts();
@@ -97,17 +98,7 @@ const CatalogPage: React.FC = () => {
 
   return (
     <div>
-      <section className="storefront-hero">
-        <div className="storefront-hero__inner">
-          <p className="storefront-hero__eyebrow storefront-animate-fade-in">{t('hero.eyebrow')}</p>
-          <h1 className="storefront-hero__title storefront-animate-fade-in" style={{ animationDelay: '80ms' }}>
-            {t('hero.title')}
-          </h1>
-          <p className="storefront-hero__subtitle storefront-animate-fade-in" style={{ animationDelay: '160ms' }}>
-            {t('hero.subtitle')}
-          </p>
-        </div>
-      </section>
+      <CatalogHero categoryId={categoryId} search={search} />
 
       <section className="storefront-toolbar">
         <div className="storefront-toolbar__inner">
