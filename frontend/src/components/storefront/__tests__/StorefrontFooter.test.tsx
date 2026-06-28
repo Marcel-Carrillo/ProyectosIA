@@ -3,6 +3,7 @@ import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import StorefrontFooter from '../StorefrontFooter';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
+import { CookieConsentProvider } from '../../../contexts/CookieConsentContext';
 
 jest.mock('../../../hooks/useStorefrontCategories', () => ({
   useStorefrontCategories: () => ({
@@ -13,7 +14,9 @@ jest.mock('../../../hooks/useStorefrontCategories', () => ({
 function renderFooter(lng: 'es' | 'en' = 'es') {
   return renderWithI18n(
     <MemoryRouter>
-      <StorefrontFooter />
+      <CookieConsentProvider>
+        <StorefrontFooter />
+      </CookieConsentProvider>
     </MemoryRouter>,
     { lng },
   );
