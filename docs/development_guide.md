@@ -509,7 +509,11 @@ This section documents the MVP production pipeline: backend on AWS Lambda (Serve
    | `SMTP_USER` | SMTP username |
    | `SMTP_PASS` | SMTP password |
    | `SMTP_FROM` | From address for transactional email |
+   | `SMTP_STRICT` | `true` to let SMTP failures propagate as errors; default `false` |
    | `FRONTEND_URL` | Public storefront URL (CORS / redirects) |
+   | `WELCOME_COUPON_PERCENT` | Discount percentage for new-customer welcome coupon (default `15`) |
+   | `WELCOME_COUPON_VALIDITY_DAYS` | Days until welcome coupon expires (default `30`) |
+   | `WELCOME_COUPON_MIN_ORDER` | Minimum order amount to redeem welcome coupon in EUR (default `0`) |
 
 2. **S3 bucket** — create a bucket for the CRA `frontend/build/` artifacts (manual, one-time).
 

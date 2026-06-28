@@ -1,6 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../../infrastructure/prismaClient';
 import { VariantNotFoundError } from '../../infrastructure/repositories/productVariantRepository';
+import { isWelcomeCouponCode } from '../../constants/welcomeCoupon';
 
 const variantSelect = {
   id: true,
@@ -108,7 +109,17 @@ export class CouponNotFoundError extends Error {
 }
 
 export class CouponService {
-  async validate(code: string, subtotalAmount: string) {
+  private async hasCustomerRedeemedCoupon(couponId: number, customerId: number): Promise<boolean> {
+    const count = await prisma.couponRedemption.count({
+      where: {
+        couponId,
+        customerOrder: { customerId },
+      },
+    });
+    return count > 0;
+  }
+
+  async validate(code: string, subtotalAmount: string, customerId?: number) {
     const coupon = await prisma.coupon.findUnique({
       where: { code: code.trim().toUpperCase() },
     });
@@ -121,6 +132,10 @@ export class CouponService {
     if (coupon.startsAt && coupon.startsAt > now) return { valid: false as const, reason: 'not_started' };
     if (coupon.expiresAt && coupon.expiresAt < now) return { valid: false as const, reason: 'expired' };
     if (subtotal.lessThan(coupon.minOrderAmount)) return { valid: false as const, reason: 'min_order_not_met' };
+    if (isWelcomeCouponCode(code) && customerId) {
+      const alreadyUsed = await this.hasCustomerRedeemedCoupon(coupon.id, customerId);
+      if (alreadyUsed) return { valid: false as const, reason: 'already_used' };
+    }
     if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) {
       return { valid: false as const, reason: 'exhausted' };
     }
@@ -152,10 +167,28 @@ export class CouponService {
     });
     if (!coupon) throw new CouponNotFoundError();
 
-    const validation = await this.validate(couponCode, subtotal.toFixed(2));
+    const order = await tx.customerOrder.findUnique({
+      where: { id: customerOrderId },
+      select: { customerId: true },
+    });
+    if (!order) throw new CouponNotFoundError();
+
+    const validation = await this.validate(couponCode, subtotal.toFixed(2), order.customerId);
     if (!validation.valid) {
-      if (validation.reason === 'exhausted') throw new CouponExhaustedError();
+      if (validation.reason === 'exhausted' || validation.reason === 'already_used') {
+        throw new CouponExhaustedError();
+      }
       throw new CouponNotFoundError();
+    }
+
+    if (isWelcomeCouponCode(couponCode)) {
+      const prior = await tx.couponRedemption.count({
+        where: {
+          couponId: coupon.id,
+          customerOrder: { customerId: order.customerId },
+        },
+      });
+      if (prior > 0) throw new CouponExhaustedError();
     }
 
     if (coupon.maxUses !== null) {

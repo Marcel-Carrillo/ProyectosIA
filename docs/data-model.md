@@ -304,6 +304,8 @@ Authenticated buyer saved variant. Unique per (`customerAccountId`, `productVari
 
 Promotional codes validated at checkout. `CouponRedemption` links a coupon to a `CustomerOrder` with `discountAmount`.
 
+Welcome coupons are auto-generated on new customer registration: `type = "percentage"`, `maxUses = 1`, code prefix `WELCOME-` followed by 32 uppercase hex characters. No `customerId` FK — the prefix provides traceability without a schema migration.
+
 ### 7. CustomerAddress
 
 Represents a customer's shipping or billing address.

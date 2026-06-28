@@ -21,6 +21,7 @@ import authPublicRoutes from './routes/public/authRoutes';
 import accountPublicRoutes from './routes/public/accountRoutes';
 import checkoutPublicRoutes from './routes/public/checkoutRoutes';
 import couponPublicRoutes from './routes/public/couponRoutes';
+import contactPublicRoutes from './routes/public/contactRoutes';
 import paymentPublicRoutes from './routes/public/paymentRoutes';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
 import { requireAdminAuth } from './middleware/requireAdminAuth';
@@ -124,6 +125,7 @@ app.use('/api/public/auth', authPublicRoutes);
 app.use('/api/public/account', accountPublicRoutes);
 app.use('/api/public/checkout', checkoutPublicRoutes);
 app.use('/api/public/coupons', couponPublicRoutes);
+app.use('/api/public/contact', contactPublicRoutes);
 app.use('/api/public/payments', paymentPublicRoutes);
 
 app.use(notFoundHandler);

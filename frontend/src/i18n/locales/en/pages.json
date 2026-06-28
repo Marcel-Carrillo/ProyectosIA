@@ -74,7 +74,24 @@
         "heading": "Press & partnerships",
         "body": "For media and partnerships: press@mavile.com"
       }
-    ]
+    ],
+    "form": {
+      "heading": "Send us a message",
+      "intro": "Fill in the form and we will get back to you within 24–48 hours.",
+      "name": "Name",
+      "email": "Email address",
+      "subject": "Subject",
+      "message": "Message",
+      "send": "Send message",
+      "sending": "Sending…",
+      "successTitle": "Message sent",
+      "successBody": "We have received your message and will reply shortly.",
+      "errorMessage": "We could not send your message. Please try again.",
+      "namePlaceholder": "Your name",
+      "emailPlaceholder": "you@email.com",
+      "subjectPlaceholder": "How can we help?",
+      "messagePlaceholder": "Write your message here…"
+    }
   },
   "our-story": {
     "eyebrow": "Company",
@@ -159,7 +176,7 @@
     "sections": [
       {
         "heading": "Data controller",
-        "body": "Marcel Carrillo Huerta, with tax ID 25733447N, registered address at Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga (Spain) and contact email komabones@gmail.com."
+        "body": "Marcel Carrillo Huerta, with tax ID 25733447N, registered address at Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga (Spain) and contact email mcarhue@mavile.es."
       },
       {
         "heading": "Data we collect",
@@ -183,7 +200,7 @@
       },
       {
         "heading": "Your rights",
-        "body": "You may exercise your rights of access, rectification, erasure, objection, restriction and portability by writing to komabones@gmail.com with a copy of your identity document. You also have the right to lodge a complaint with the Spanish Data Protection Agency (www.aepd.es)."
+        "body": "You may exercise your rights of access, rectification, erasure, objection, restriction and portability by writing to mcarhue@mavile.es with a copy of your identity document. You also have the right to lodge a complaint with the Spanish Data Protection Agency (www.aepd.es)."
       },
       {
         "heading": "Cookies",
@@ -198,7 +215,7 @@
     "sections": [
       {
         "heading": "Company details",
-        "body": "Name: Marcel Carrillo Huerta. Tax ID (DNI): 25733447N. Address: Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga, Spain. Email: komabones@gmail.com."
+        "body": "Name: Marcel Carrillo Huerta. Tax ID (DNI): 25733447N. Address: Calle Roberto Olid, n.º 5, CP 29631, Benalmádena, Málaga, Spain. Email: mcarhue@mavile.es."
       },
       {
         "heading": "Registry information",

@@ -8,6 +8,7 @@ provider:
     NODE_ENV: production
     DATABASE_URL: ${ssm:/ecommerce/prod/DATABASE_URL}
     FRONTEND_URL: ${ssm:/ecommerce/prod/FRONTEND_URL}
+    API_PUBLIC_URL: ${ssm:/ecommerce/prod/API_PUBLIC_URL}
     ADMIN_JWT_SECRET: ${ssm:/ecommerce/prod/ADMIN_JWT_SECRET}
     ADMIN_JWT_EXPIRES_IN: ${ssm:/ecommerce/prod/ADMIN_JWT_EXPIRES_IN}
     CUSTOMER_JWT_SECRET: ${ssm:/ecommerce/prod/CUSTOMER_JWT_SECRET}
@@ -19,9 +20,12 @@ provider:
     SMTP_USER: ${ssm:/ecommerce/prod/SMTP_USER}
     SMTP_PASS: ${ssm:/ecommerce/prod/SMTP_PASS}
     SMTP_FROM: ${ssm:/ecommerce/prod/SMTP_FROM}
+    SMTP_STRICT: 'true'
     STRIPE_SECRET_KEY: ${ssm:/ecommerce/prod/STRIPE_SECRET_KEY}
     STRIPE_PUBLISHABLE_KEY: ${ssm:/ecommerce/prod/STRIPE_PUBLISHABLE_KEY}
     STRIPE_WEBHOOK_SECRET: ${ssm:/ecommerce/prod/STRIPE_WEBHOOK_SECRET}
+    WELCOME_COUPON_PERCENT: '15'
+    WELCOME_COUPON_MIN_ORDER: '0'
 
 functions:
   app:
