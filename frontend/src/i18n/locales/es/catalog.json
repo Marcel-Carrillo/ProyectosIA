@@ -1,8 +1,49 @@
 {
   "hero": {
-    "eyebrow": "Otoño · Invierno · 26",
-    "title": "Una selección discreta de piezas hechas para durar.",
-    "subtitle": "Materiales nobles, cortes limpios, una paleta neutra. Diseñado con cuidado, confeccionado para el día a día."
+    "ariaLabel": "Presentación del catálogo",
+    "dotsLabel": "Cambiar imagen del hero",
+    "variants": {
+      "slide1": {
+        "eyebrow": "Otoño · Invierno · 26",
+        "title": "Una selección discreta de piezas hechas para durar.",
+        "subtitle": "Materiales nobles, cortes limpios, una paleta neutra. Diseñado con cuidado, confeccionado para el día a día."
+      },
+      "slide2": {
+        "eyebrow": "Tejidos · Textura",
+        "title": "La calidad se nota en el detalle.",
+        "subtitle": "Lino, lana y algodón premium. Prendas que mejoran con el tiempo y el uso."
+      },
+      "slide3": {
+        "eyebrow": "Estilo · Esencia",
+        "title": "Menos piezas, más intención.",
+        "subtitle": "Un guardarropa cápsula pensado para combinar con naturalidad, temporada tras temporada."
+      },
+      "women": {
+        "eyebrow": "Mujer",
+        "title": "Siluetas fluidas, presencia serena.",
+        "subtitle": "Vestidos, abrigos y tejidos que equilibran feminidad y estructura."
+      },
+      "men": {
+        "eyebrow": "Hombre",
+        "title": "Sastrería relajada, actitud segura.",
+        "subtitle": "Camisas impecables, pantalones de corte perfecto y capas para cada ocasión."
+      },
+      "accessories": {
+        "eyebrow": "Accesorios",
+        "title": "El detalle que completa el conjunto.",
+        "subtitle": "Cinturones, bolsos y gafas seleccionados con el mismo criterio que nuestras prendas."
+      },
+      "shoes": {
+        "eyebrow": "Calzado",
+        "title": "Paso firme, diseño atemporal.",
+        "subtitle": "Desde sneakers de piel hasta botas de líneas puras — comodidad sin renunciar al estilo."
+      },
+      "search": {
+        "eyebrow": "Búsqueda",
+        "title": "Resultados para «{{query}}»",
+        "subtitle": "Piezas seleccionadas que coinciden con tu búsqueda."
+      }
+    }
   },
   "toolbar": {
     "searchPlaceholder": "Buscar",
