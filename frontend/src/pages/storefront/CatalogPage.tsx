@@ -23,7 +23,7 @@ const CatalogPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
-  const { t, i18n } = useTranslation('catalog');
+  const { t } = useTranslation('catalog');
 
   useEffect(() => {
     setSearchInput(searchParams.get('search') || '');
@@ -61,7 +61,7 @@ const CatalogPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, categoryId, search, sort, order, t, i18n.language]);
+  }, [page, categoryId, search, sort, order, t]);
 
   useEffect(() => {
     fetchProducts();
