@@ -100,4 +100,4 @@
 - [x] 13.3 Stage all relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`)
 - [x] 13.4 Create commit: `feat(storefront): add GDPR-compliant cookie consent banner and preferences modal`
 - [x] 13.5 Push branch `feature/cookie-consent-banner` to remote origin
-- [x] 13.6 Create Pull Request with `gh pr create` and report the PR URL in chat
+- [x] 13.6 Create Pull Request with `gh pr create` — PR #48 merged to develop
