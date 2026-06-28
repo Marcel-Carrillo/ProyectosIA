@@ -238,7 +238,8 @@ export class CustomerAuthService {
       await prisma.passwordResetToken.create({
         data: { customerAccountId: account.id, tokenHash, expiresAt },
       });
-      await sendPasswordResetEmail(account.email, `${getPrimaryFrontendUrl()}/reset-password?token=${raw}`);
+      sendPasswordResetEmail(account.email, `${getPrimaryFrontendUrl()}/reset-password?token=${raw}`)
+        .catch((err) => logger.warn('Password reset email failed', { to: account.email, err: String(err) }));
     }
     return { message: 'If an account exists, a reset email has been sent' };
   }
