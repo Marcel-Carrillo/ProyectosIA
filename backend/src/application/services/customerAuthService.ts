@@ -134,9 +134,11 @@ export class CustomerAuthService {
       expiresAt: coupon.expiresAt,
       shopUrl,
     });
-    sendWelcomeEmail(account.email, emailContent).catch((err) =>
-      logger.warn('Welcome email failed', { err })
-    );
+    try {
+      await sendWelcomeEmail(account.email, emailContent);
+    } catch (err) {
+      logger.warn('Welcome email failed', { err });
+    }
 
     return this.issueFullSession(account, customer);
   }
@@ -238,8 +240,11 @@ export class CustomerAuthService {
       await prisma.passwordResetToken.create({
         data: { customerAccountId: account.id, tokenHash, expiresAt },
       });
-      sendPasswordResetEmail(account.email, `${getPrimaryFrontendUrl()}/reset-password?token=${raw}`)
-        .catch((err) => logger.warn('Password reset email failed', { to: account.email, err: String(err) }));
+      try {
+        await sendPasswordResetEmail(account.email, `${getPrimaryFrontendUrl()}/reset-password?token=${raw}`);
+      } catch (err) {
+        logger.warn('Password reset email failed', { to: account.email, err: String(err) });
+      }
     }
     return { message: 'If an account exists, a reset email has been sent' };
   }
@@ -350,9 +355,11 @@ export class CustomerAuthService {
         expiresAt: coupon.expiresAt,
         shopUrl,
       });
-      sendWelcomeEmail(account.email, emailContent).catch((err) =>
-        logger.warn('Welcome email failed', { err })
-      );
+      try {
+        await sendWelcomeEmail(account.email, emailContent);
+      } catch (err) {
+        logger.warn('Welcome email failed', { err });
+      }
     } else if (!account[idField as keyof typeof account]) {
       account = await prisma.customerAccount.update({
         where: { id: account.id },
