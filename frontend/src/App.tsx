@@ -76,23 +76,34 @@ function ScrollManager() {
     if (!saved || saved === '0') return;
 
     const y = parseInt(saved, 10);
-    const scrollToY = () => window.scrollTo(0, y);
+    let done = false;
 
-    scrollToY();
-    const raf = requestAnimationFrame(scrollToY);
-    const t300 = setTimeout(scrollToY, 300);
-    const t700 = setTimeout(scrollToY, 700);
-    const t1200 = setTimeout(scrollToY, 1200);
+    // Stop retrying once window.scrollY actually reached y (page was tall enough)
+    const attempt = () => {
+      if (done) return;
+      window.scrollTo(0, y);
+      if (Math.abs(window.scrollY - y) < 2) done = true;
+    };
 
-    const observer = new ResizeObserver(scrollToY);
+    attempt();
+    const raf = requestAnimationFrame(attempt);
+    const t300 = setTimeout(attempt, 300);
+    const t700 = setTimeout(attempt, 700);
+    const t1200 = setTimeout(attempt, 1200);
+    const t2500 = setTimeout(attempt, 2500);
+
+    // Watch for page growth (lazy chunk + API response + images) up to 6 s
+    const observer = new ResizeObserver(attempt);
     observer.observe(document.body);
-    const observerStop = setTimeout(() => observer.disconnect(), 2000);
+    const observerStop = setTimeout(() => observer.disconnect(), 6000);
 
     return () => {
+      done = true;
       cancelAnimationFrame(raf);
       clearTimeout(t300);
       clearTimeout(t700);
       clearTimeout(t1200);
+      clearTimeout(t2500);
       clearTimeout(observerStop);
       observer.disconnect();
     };
