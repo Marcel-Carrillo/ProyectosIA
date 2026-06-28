@@ -1,5 +1,3 @@
-import { MAVILE_ICON_DATA_URI } from '../mavileIconEmbedded';
-
 const BRAND_NAME = 'Mavile';
 
 /** Mavile storefront palette */
@@ -25,9 +23,9 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-/** Inline data URI — always visible in Mailpit and email clients (no external fetch). */
+/** CID reference for nodemailer inline attachment (works in Gmail, Outlook, Apple Mail). */
 export function getMavileIconSrc(): string {
-  return MAVILE_ICON_DATA_URI;
+  return 'cid:mavile-icon';
 }
 
 /** @deprecated Use getMavileIconSrc */

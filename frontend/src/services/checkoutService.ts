@@ -12,10 +12,10 @@ export interface CheckoutPayload {
   couponCode?: string;
 }
 
-export async function validateCoupon(code: string, subtotalAmount: string) {
+export async function validateCoupon(code: string, subtotalAmount: string, customerId?: number) {
   const res = await axios.post<{ data: { valid: boolean; discountAmount?: string; reason?: string } }>(
     `${API_BASE}/api/public/coupons/validate`,
-    { code, subtotalAmount }
+    { code, subtotalAmount, ...(customerId !== undefined ? { customerId } : {}) }
   );
   return res.data.data;
 }
