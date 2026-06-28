@@ -12,6 +12,7 @@ import speakeasy from 'speakeasy';
 import crypto from 'crypto';
 import { sendPasswordResetEmail, sendWelcomeEmail } from '../../infrastructure/email/emailService';
 import { buildWelcomeEmail } from '../../infrastructure/email/templates/welcomeEmail';
+import { ensureWelcomeCouponExists } from './welcomeCouponService';
 import { logger } from '../../infrastructure/logger';
 
 export const CUSTOMER_REFRESH_COOKIE = 'customer_refresh';
@@ -70,36 +71,6 @@ export class InvalidTotpCodeError extends Error {
   }
 }
 
-type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
-async function createWelcomeCoupon(
-  tx: PrismaTransactionClient
-): Promise<{ code: string; percent: number; expiresAt: Date }> {
-  const percent = parseInt(process.env.WELCOME_COUPON_PERCENT ?? '15', 10);
-  const validityDays = parseInt(process.env.WELCOME_COUPON_VALIDITY_DAYS ?? '30', 10);
-  const minOrderAmount = parseFloat(process.env.WELCOME_COUPON_MIN_ORDER ?? '0');
-
-  const code = 'WELCOME-' + crypto.randomBytes(16).toString('hex').toUpperCase();
-
-  const startsAt = new Date();
-  const expiresAt = new Date(startsAt);
-  expiresAt.setDate(expiresAt.getDate() + validityDays);
-
-  await tx.coupon.create({
-    data: {
-      code,
-      type: 'percentage',
-      value: percent,
-      maxUses: 1,
-      active: true,
-      startsAt,
-      expiresAt,
-      minOrderAmount,
-    },
-  });
-
-  return { code, percent, expiresAt };
-}
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -139,19 +110,18 @@ export class CustomerAuthService {
 
     const passwordHash = await hashPassword(data.password);
 
-    const { account, coupon } = await prisma.$transaction(async (tx) => {
-      const acc = await tx.customerAccount.create({
+    const account = await prisma.$transaction(async (tx) =>
+      tx.customerAccount.create({
         data: {
           customerId: customer.id,
           email,
           passwordHash,
           authProvider: 'local',
         },
-      });
-      const couponResult = await createWelcomeCoupon(tx);
-      return { account: acc, coupon: couponResult };
-    });
+      }),
+    );
 
+    const coupon = await ensureWelcomeCouponExists();
     const shopUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
     const emailContent = buildWelcomeEmail({
       firstName: data.firstName.trim(),
@@ -355,8 +325,8 @@ export class CustomerAuthService {
         });
       }
 
-      const txResult = await prisma.$transaction(async (tx) => {
-        const acc = await tx.customerAccount.create({
+      account = await prisma.$transaction(async (tx) =>
+        tx.customerAccount.create({
           data: {
             customerId: customer!.id,
             email: normalized,
@@ -364,19 +334,16 @@ export class CustomerAuthService {
             [idField]: providerId,
           },
           include: { customer: true },
-        });
-        const couponResult = await createWelcomeCoupon(tx);
-        return { acc, couponResult };
-      });
+        }),
+      );
 
-      account = txResult.acc;
-
+      const coupon = await ensureWelcomeCouponExists();
       const shopUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
       const emailContent = buildWelcomeEmail({
-        firstName: txResult.acc.customer.firstName,
-        couponCode: txResult.couponResult.code,
-        percent: txResult.couponResult.percent,
-        expiresAt: txResult.couponResult.expiresAt,
+        firstName: account.customer.firstName,
+        couponCode: coupon.code,
+        percent: coupon.percent,
+        expiresAt: coupon.expiresAt,
         shopUrl,
       });
       sendWelcomeEmail(account.email, emailContent).catch((err) =>

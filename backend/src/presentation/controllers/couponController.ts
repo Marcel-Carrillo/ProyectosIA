@@ -3,7 +3,11 @@ import { couponService } from '../../application/services/wishlistCouponService'
 
 export async function validateCoupon(req: Request, res: Response, next: NextFunction) {
   try {
-    const { code, subtotalAmount } = req.body as { code?: string; subtotalAmount?: string };
+    const { code, subtotalAmount, customerId } = req.body as {
+      code?: string;
+      subtotalAmount?: string;
+      customerId?: number;
+    };
     if (!code || subtotalAmount === undefined) {
       res.status(400).json({
         success: false,
@@ -12,7 +16,11 @@ export async function validateCoupon(req: Request, res: Response, next: NextFunc
       return;
     }
     try {
-      const result = await couponService.validate(code, String(subtotalAmount));
+      const result = await couponService.validate(
+        code,
+        String(subtotalAmount),
+        customerId ? Number(customerId) : undefined,
+      );
       if (!result.valid) {
         res.json({ success: true, data: result, message: 'Coupon invalid' });
         return;
