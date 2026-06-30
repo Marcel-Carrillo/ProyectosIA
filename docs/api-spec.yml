@@ -2448,6 +2448,60 @@ paths:
       responses:
         '200': { description: Session or mfaRequired + mfaToken when 2FA enabled }
 
+  /api/public/auth/oauth/providers:
+    get:
+      summary: List configured OAuth providers
+      description: Returns which OAuth providers are enabled based on server env vars. Used by frontend to conditionally render social login buttons.
+      tags: [Customer Auth]
+      responses:
+        '200':
+          description: Provider availability map
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      google: { type: boolean }
+                      apple: { type: boolean }
+                      facebook: { type: boolean }
+
+  /api/public/auth/google:
+    get:
+      summary: Start Google OAuth flow
+      description: Redirects the browser to Google's consent screen. Sets an `oauth_state` CSRF cookie. Requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to be set; returns 501 otherwise.
+      tags: [Customer Auth]
+      responses:
+        '302': { description: Redirect to Google consent URL }
+        '501': { description: OAuth not configured (OAUTH_NOT_CONFIGURED) }
+
+  /api/public/auth/google/callback:
+    get:
+      summary: Google OAuth callback
+      description: |
+        Handles the redirect from Google. Validates the `oauth_state` CSRF cookie. On success:
+        - Finds or creates a CustomerAccount (links googleId to existing email-matched account).
+        - Issues an access token and refresh cookie.
+        - Triggers welcome coupon + email for new accounts.
+        - Redirects to `FRONTEND_URL/account?token=<accessToken>`.
+        The frontend reads `?token=` from the URL, stores it as the access token, and cleans the URL.
+      tags: [Customer Auth]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '302': { description: Redirect to frontend /account?token=<accessToken> with refresh cookie set }
+        '400': { description: Invalid OAuth state or missing code (OAUTH_VERIFICATION_FAILED) }
+
   /api/public/account/profile:
     get:
       summary: Get own customer profile

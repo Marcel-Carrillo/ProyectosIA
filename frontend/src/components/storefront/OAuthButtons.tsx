@@ -41,6 +41,7 @@ const OAuthButtons: React.FC = () => {
 
   return (
     <div className="storefront-oauth">
+      <p className="storefront-oauth__separator">{t('oauth.separator')}</p>
       {providers.google && (
         <button
           type="button"

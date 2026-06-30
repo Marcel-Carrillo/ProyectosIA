@@ -11,13 +11,36 @@ const OrderConfirmationPage: React.FC = () => {
   const location = useLocation();
   const locationState = location.state as { order?: PublicOrder; paymentStatus?: string } | null;
   const order = locationState?.order;
-  const isPolling = locationState?.paymentStatus === 'processing';
+
+  // Detect Stripe wallet redirect (Google Pay / PayPal via redirect: 'if_required')
+  const searchParams = new URLSearchParams(window.location.search);
+  const redirectStatus = searchParams.get('redirect_status');
+  const fromStripeRedirect = redirectStatus === 'succeeded';
+  const stripeRedirectFailed = redirectStatus === 'failed' || redirectStatus === 'canceled';
+
+  const isPolling = locationState?.paymentStatus === 'processing' || fromStripeRedirect;
 
   const [paymentStatus, setPaymentStatus] = useState<string | null>(
-    isPolling ? 'PendingPayment' : (order?.paymentStatus ?? null)
+    stripeRedirectFailed ? 'Failed' : (isPolling ? 'PendingPayment' : (order?.paymentStatus ?? null))
   );
   const [pollTimeout, setPollTimeout] = useState(false);
   const attemptsRef = useRef(0);
+
+  // Clean Stripe redirect params from URL once on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('payment_intent') || params.has('redirect_status')) {
+      params.delete('payment_intent');
+      params.delete('payment_intent_client_secret');
+      params.delete('redirect_status');
+      const newSearch = params.toString();
+      window.history.replaceState(
+        {},
+        '',
+        window.location.pathname + (newSearch ? `?${newSearch}` : '')
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (!isPolling || !orderNumber) return;
