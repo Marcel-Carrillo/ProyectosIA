@@ -9,11 +9,11 @@
 
 > These checks are required before any code change. If any check fails, document the blocker in `openspec/changes/google-login-and-payment-wallets/reports/preflight.md` and defer the affected capability.
 
-- [ ] 1.1 Verify `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set in AWS SSM (`/ecommerce/prod/GOOGLE_CLIENT_ID`, `/ecommerce/prod/GOOGLE_CLIENT_SECRET`) — REQUIRES USER: populate via `aws ssm put-parameter` with actual credential values
-- [ ] 1.2 Verify the authorized redirect URI in Google Cloud Console matches `API_PUBLIC_URL/api/public/auth/google/callback` — REQUIRES USER: manual check in Google Cloud Console
-- [ ] 1.3 Verify Google Pay is enabled in the Stripe Dashboard for the account — REQUIRES USER: manual check in Stripe Dashboard
-- [ ] 1.4 Verify PayPal is available as a Stripe payment method for the account's country (Spain/ES); if not available, document deferral and proceed without PayPal — REQUIRES USER: manual check in Stripe Dashboard
-- [ ] 1.5 Register `mavile.es` domain in Stripe for Google Pay domain verification (Stripe Dashboard → Settings → Payment Methods → Google Pay → Add Domain) — REQUIRES USER: manual action in Stripe Dashboard
+- [x] 1.1 Verify `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set in AWS SSM (`/ecommerce/prod/GOOGLE_CLIENT_ID`, `/ecommerce/prod/GOOGLE_CLIENT_SECRET`) — DONE: populated via `aws ssm put-parameter` (String + SecureString, region eu-north-1)
+- [x] 1.2 Verify the authorized redirect URI in Google Cloud Console matches `API_PUBLIC_URL/api/public/auth/google/callback` — DONE: URI `https://api.mavile.es/api/public/auth/google/callback` configured by user in Google Cloud Console OAuth 2.0 Client
+- [x] 1.3 Verify Google Pay is enabled in the Stripe Dashboard for the account — DONE: enabled via Stripe API on pmc_1Tk1S0DhzetI2439f8YmsEbs (available=true, value=on)
+- [x] 1.4 Verify PayPal is available as a Stripe payment method for the account's country (Spain/ES) — DONE: enabled via Stripe API (available=true, value=on)
+- [x] 1.5 Register `mavile.es` domain in Stripe for Google Pay domain verification — DONE: registered via Stripe API, id=apwc_1To0T6DhzetI2439wCtgRH8z
 - [x] 1.6 Confirm `customerAuthService.oauthLogin` already calls `ensureWelcomeCouponExists` for new Google accounts (read `backend/src/application/services/customerAuthService.ts` lines ~307–369)
 
 ## 2. Backend: Schema and OAuth Verification
@@ -21,7 +21,7 @@
 - [x] 2.1 Read `backend/prisma/schema.prisma` and confirm `CustomerAccount` has `googleId String?` column; if missing, add the field and generate a migration (`npx prisma migrate dev --name add-google-id`)
 - [x] 2.2 Confirm `GET /api/public/auth/oauth/providers` returns `{ "google": true/false }` based on env vars (read `oauthConfig.ts:isGoogleOAuthConfigured`)
 - [x] 2.3 Confirm `google-auth-library` is listed as a dependency in `backend/package.json`
-- [ ] 2.4 Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to SSM if missing:
+- [x] 2.4 Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to SSM if missing:
   - `aws ssm put-parameter --name /ecommerce/prod/GOOGLE_CLIENT_ID --value "..." --type String --region eu-north-1`
   - `aws ssm put-parameter --name /ecommerce/prod/GOOGLE_CLIENT_SECRET --value "..." --type SecureString --region eu-north-1`
 - [x] 2.5 Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to `backend/.env` (dev) and `backend/.env.example` (placeholder)
