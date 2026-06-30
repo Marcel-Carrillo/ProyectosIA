@@ -6,14 +6,14 @@ import {
 import { CustomerAuthRequest } from '../../middleware/requireCustomerAuth';
 import { OAuth2Client } from 'google-auth-library';
 import {
-  createOAuthState,
+  createSignedOAuthState,
+  verifySignedOAuthState,
   getFrontendUrl,
   getOAuthCallbackUrl,
   getOAuthProviderStatus,
   isAppleOAuthConfigured,
   isFacebookOAuthConfigured,
   isGoogleOAuthConfigured,
-  OAUTH_STATE_COOKIE,
 } from '../../infrastructure/auth/oauthConfig';
 import { getFacebookAuthorizationUrl, exchangeFacebookCode } from '../../infrastructure/auth/facebookOAuth';
 import {
@@ -220,27 +220,6 @@ function oauthNotConfigured(res: Response, provider: string): void {
   });
 }
 
-function setOAuthStateCookie(res: Response, provider: string, state: string): void {
-  res.cookie(OAUTH_STATE_COOKIE, encryptCookieValue(`${provider}:${state}`), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    signed: true,
-    maxAge: 10 * 60 * 1000,
-    path: '/',
-  });
-}
-
-function readOAuthState(req: CustomerAuthRequest, provider: string, state?: string): boolean {
-  const encrypted = req.signedCookies?.[OAUTH_STATE_COOKIE] as string | undefined;
-  if (!state || !encrypted) return false;
-  const expected = decryptCookieValue(encrypted);
-  return expected === `${provider}:${state}`;
-}
-
-function clearOAuthStateCookie(res: Response): void {
-  res.clearCookie(OAUTH_STATE_COOKIE, { path: '/' });
-}
 
 async function completeOAuthLogin(
   res: Response,
@@ -270,8 +249,7 @@ export async function googleAuthStart(_req: CustomerAuthRequest, res: Response) 
   }
   const clientId = process.env.GOOGLE_CLIENT_ID!;
   const redirect = getOAuthCallbackUrl('google');
-  const state = createOAuthState();
-  setOAuthStateCookie(res, 'google', state);
+  const state = createSignedOAuthState('google');
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirect,
@@ -290,12 +268,10 @@ export async function googleAuthCallback(req: CustomerAuthRequest, res: Response
       res.status(400).json({ success: false, error: { message: 'Missing code', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
-    if (!readOAuthState(req, 'google', state)) {
-      clearOAuthStateCookie(res);
+    if (!verifySignedOAuthState(state, 'google')) {
       res.status(400).json({ success: false, error: { message: 'Invalid OAuth state', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
-    clearOAuthStateCookie(res);
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const redirect = getOAuthCallbackUrl('google');
@@ -325,8 +301,7 @@ export async function appleAuthStart(_req: CustomerAuthRequest, res: Response) {
     oauthNotConfigured(res, 'Apple');
     return;
   }
-  const state = createOAuthState();
-  setOAuthStateCookie(res, 'apple', state);
+  const state = createSignedOAuthState('apple');
   res.redirect(getAppleAuthorizationUrl(state));
 }
 
@@ -339,12 +314,10 @@ export async function appleAuthCallback(req: CustomerAuthRequest, res: Response,
       res.status(400).json({ success: false, error: { message: 'Missing code', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
-    if (!readOAuthState(req, 'apple', state)) {
-      clearOAuthStateCookie(res);
+    if (!verifySignedOAuthState(state, 'apple')) {
       res.status(400).json({ success: false, error: { message: 'Invalid OAuth state', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
-    clearOAuthStateCookie(res);
     if (!isAppleOAuthConfigured()) {
       oauthNotConfigured(res, 'Apple');
       return;
@@ -365,8 +338,7 @@ export async function facebookAuthStart(_req: CustomerAuthRequest, res: Response
     oauthNotConfigured(res, 'Facebook');
     return;
   }
-  const state = createOAuthState();
-  setOAuthStateCookie(res, 'facebook', state);
+  const state = createSignedOAuthState('facebook');
   res.redirect(getFacebookAuthorizationUrl(state));
 }
 
@@ -378,12 +350,10 @@ export async function facebookAuthCallback(req: CustomerAuthRequest, res: Respon
       res.status(400).json({ success: false, error: { message: 'Missing code', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
-    if (!readOAuthState(req, 'facebook', state)) {
-      clearOAuthStateCookie(res);
+    if (!verifySignedOAuthState(state, 'facebook')) {
       res.status(400).json({ success: false, error: { message: 'Invalid OAuth state', code: 'OAUTH_VERIFICATION_FAILED' } });
       return;
     }
-    clearOAuthStateCookie(res);
     if (!isFacebookOAuthConfigured()) {
       oauthNotConfigured(res, 'Facebook');
       return;
