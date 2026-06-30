@@ -2516,6 +2516,17 @@ a.storefront-account__list-item:hover {
   word-break: break-all;
 }
 
+.storefront-account__qr {
+  display: flex;
+  justify-content: center;
+  margin: var(--spacing-6) 0;
+  padding: var(--spacing-6);
+  background: #ffffff;
+  border: 1px solid var(--color-light);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
 .storefront-account__loading {
   margin: 0;
   font-size: var(--font-size-sm);
