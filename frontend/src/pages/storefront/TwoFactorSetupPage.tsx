@@ -4,15 +4,17 @@ import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import AccountLayout from '../../components/storefront/AccountLayout';
 import { getCustomerAccessToken } from '../../services/customerAuthService';
+import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
 
 const TwoFactorSetupPage: React.FC = () => {
   const { t } = useTranslation('account');
+  const { account } = useCustomerAuth();
   const [secret, setSecret] = useState<string | null>(null);
   const [otpauthUrl, setOtpauthUrl] = useState<string | null>(null);
   const [code, setCode] = useState('');
-  const [enabled, setEnabled] = useState(false);
+  const [justEnabled, setJustEnabled] = useState(false);
   const [error, setError] = useState('');
 
   const headers = () => {
@@ -44,7 +46,7 @@ const TwoFactorSetupPage: React.FC = () => {
         { code },
         { headers: headers() }
       );
-      setEnabled(true);
+      setJustEnabled(true);
     } catch {
       setError(t('security.errors.invalidCode'));
     }
@@ -55,7 +57,7 @@ const TwoFactorSetupPage: React.FC = () => {
       <div className="storefront-account__panel">
         <h2 className="storefront-account__panel-title">{t('security.panelTitle')}</h2>
         {error && <p className="storefront-account__alert storefront-account__alert--error" role="alert">{error}</p>}
-        {enabled ? (
+        {(justEnabled || account?.totpEnabled) ? (
           <p className="storefront-account__alert storefront-account__alert--success" role="status">
             {t('security.enabled')}
           </p>
