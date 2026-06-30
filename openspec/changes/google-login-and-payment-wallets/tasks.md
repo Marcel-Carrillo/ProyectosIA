@@ -119,9 +119,9 @@
 
 ## 13. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 13.1 Load and apply `ai-specs/skills/commit/SKILL.md`
-- [ ] 13.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/google-login-and-payment-wallets/reports/`
-- [ ] 13.3 Stage all relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`)
-- [ ] 13.4 Create commit: `feat(auth,checkout): add Google login and Stripe Payment Element (Google Pay + PayPal)`
-- [ ] 13.5 Push branch `feature/google-login-and-payment-wallets` to remote origin
-- [ ] 13.6 Create Pull Request with `gh pr create` targeting `develop`; include summary of the three capabilities, pre-flight checklist results, and E2E verification status; report PR URL in chat
+- [x] 13.1 Load and apply `ai-specs/skills/commit/SKILL.md`
+- [x] 13.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/google-login-and-payment-wallets/reports/`
+- [x] 13.3 Stage all relevant files (exclude `.env`, `node_modules`, `dist`, `coverage`)
+- [x] 13.4 Create commit: `feat(auth,checkout): add Google login and Stripe Payment Element (Google Pay + PayPal)`
+- [x] 13.5 Push branch `feature/google-login-and-payment-wallets` to remote origin
+- [x] 13.6 Create Pull Request with `gh pr create` targeting `develop`; include summary of the three capabilities, pre-flight checklist results, and E2E verification status; report PR URL in chat
