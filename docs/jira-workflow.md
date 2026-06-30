@@ -38,7 +38,7 @@ Set these environment variables so agents can call the Jira API directly:
 
 ```bash
 # Add to your shell profile (.bashrc, .zshrc) or system env vars (Windows)
-export ATLASSIAN_EMAIL="komabones@gmail.com"
+export ATLASSIAN_EMAIL="mcarhue@mavile.es"
 export ATLASSIAN_API_TOKEN="your-api-token-here"
 ```
 
