@@ -44,6 +44,20 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     let cancelled = false;
     (async () => {
       try {
+        // Extract access token from OAuth callback redirect (?token=...)
+        const params = new URLSearchParams(window.location.search);
+        const oauthToken = params.get('token');
+        if (oauthToken) {
+          setCustomerAccessToken(oauthToken);
+          params.delete('token');
+          const newSearch = params.toString();
+          window.history.replaceState(
+            {},
+            '',
+            window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash
+          );
+        }
+
         if (!getCustomerAccessToken()) {
           await customerRefresh();
         }
