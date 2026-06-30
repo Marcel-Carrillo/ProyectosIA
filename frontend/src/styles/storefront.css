@@ -1779,7 +1779,26 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-2);
+  margin-top: var(--spacing-4);
+}
+
+.storefront-oauth__separator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-mid);
+}
+
+.storefront-oauth__separator::before,
+.storefront-oauth__separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-light);
 }
 
 .storefront-oauth__btn {

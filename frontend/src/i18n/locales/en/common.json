@@ -49,6 +49,7 @@
     "next": "Next page"
   },
   "oauth": {
+    "separator": "or continue with",
     "google": "Continue with Google",
     "apple": "Continue with Apple",
     "facebook": "Continue with Facebook"

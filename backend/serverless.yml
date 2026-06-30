@@ -26,6 +26,8 @@ provider:
     STRIPE_WEBHOOK_SECRET: ${ssm:/ecommerce/prod/STRIPE_WEBHOOK_SECRET}
     WELCOME_COUPON_PERCENT: '15'
     WELCOME_COUPON_MIN_ORDER: '0'
+    GOOGLE_CLIENT_ID: ${ssm:/ecommerce/prod/GOOGLE_CLIENT_ID, ''}
+    GOOGLE_CLIENT_SECRET: ${ssm:/ecommerce/prod/GOOGLE_CLIENT_SECRET, ''}
 
 functions:
   app:
