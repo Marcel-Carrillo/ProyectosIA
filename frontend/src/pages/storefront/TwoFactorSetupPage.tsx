@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { QRCodeSVG } from 'qrcode.react';
 import AccountLayout from '../../components/storefront/AccountLayout';
 import { getCustomerAccessToken } from '../../services/customerAuthService';
 
@@ -73,10 +74,20 @@ const TwoFactorSetupPage: React.FC = () => {
           </>
         ) : (
           <>
-            <p className="storefront-auth__info">{t('security.secretHint')}</p>
-            <code className="storefront-account__secret">{secret}</code>
-            {otpauthUrl && (
-              <p className="storefront-auth__info" style={{ wordBreak: 'break-all' }}>{otpauthUrl}</p>
+            {otpauthUrl ? (
+              <>
+                <p className="storefront-auth__info">{t('security.qrHint')}</p>
+                <div className="storefront-account__qr">
+                  <QRCodeSVG value={otpauthUrl} size={200} />
+                </div>
+                <p className="storefront-auth__info" style={{ marginTop: 'var(--spacing-6)' }}>{t('security.secretHint')}</p>
+                <code className="storefront-account__secret">{secret}</code>
+              </>
+            ) : (
+              <>
+                <p className="storefront-auth__info">{t('security.secretHint')}</p>
+                <code className="storefront-account__secret">{secret}</code>
+              </>
             )}
             <form className="storefront-account__form" onSubmit={confirmSetup}>
               <label className="storefront-field">
