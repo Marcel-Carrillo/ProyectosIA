@@ -24,8 +24,9 @@ Disallow: /shipments
 Disallow: /return-requests
 Disallow: /refunds
 
-# NOTE: this URL is not templated at build time (CRA only templates index.html,
-# not other public/ files). If the API Gateway invoke URL ever changes, update
-# this line manually and confirm it still matches REACT_APP_API_BASE_URL in
-# .env.production / the deploy.yml secret. See design.md Risks for tracking.
-Sitemap: https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod/api/public/sitemap.xml
+# Served same-origin via a CloudFront cache behavior on E3V8C2LV0ASO8L
+# (/sitemap.xml -> API Gateway origin, path-mapped to /prod/api/public/sitemap.xml).
+# This is required by the sitemap protocol: a sitemap can only list URLs under
+# the exact host it is served from, so it cannot live on a different host
+# (e.g. the raw API Gateway domain) than the mavile.es URLs it lists.
+Sitemap: https://mavile.es/sitemap.xml
