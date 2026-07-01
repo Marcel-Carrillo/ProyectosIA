@@ -59,6 +59,11 @@
   "error": {
     "loadFailed": "No se pudieron cargar los productos. Por favor, inténtalo de nuevo más tarde."
   },
+  "meta": {
+    "titleAll": "Todo | Mavile",
+    "titleCategory": "{{category}} | Mavile",
+    "description": "Descubre la colección Mavile: moda atemporal con una estética moderna y minimalista."
+  },
   "pieces_one": "{{count}} pieza",
   "pieces_other": "{{count}} piezas"
 }

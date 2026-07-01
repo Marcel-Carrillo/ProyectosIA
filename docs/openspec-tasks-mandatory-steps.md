@@ -51,9 +51,11 @@ All implementation tasks MUST include these steps in the correct order:
 ### Step 0: Create Feature Branch (MUST BE FIRST)
 
 * **Location**: Must be the very first step (Step 0)
+* **Branch source**: Feature branches MUST branch from `develop`, never from `master`/`main`. If the current checkout is on `master`/`main`, fetch and check out `develop` first (`git fetch origin && git checkout develop && git pull`), then branch from it.
 * **Branch naming**: `feature/[ticket-id]` or `feature/[change-name]`
 * **Action**: Create and switch to feature branch before any code changes
 * **Isolation integration**: Before Step 0 execution, apply `ai-specs/skills/using-git-worktrees/SKILL.md` to decide whether to work in the current checkout or a dedicated Git worktree. Step 0 still applies to the branch inside that chosen workspace.
+* **PR target**: The Pull Request created in the final step (below) MUST target `develop`, never `master`/`main`. `master` only receives `develop` through a separate, deliberate release/promotion step — never directly from a feature branch.
 
 ### Mandatory Steps (Must Be Included):
 
@@ -355,7 +357,7 @@ This rule applies when:
 ```markdown
 ## 0. Setup: Create Feature Branch (MANDATORY - FIRST STEP)
 
-- [ ] 0.1 Create feature branch `feature/product-catalog-backend` from main/master branch
+- [ ] 0.1 Create feature branch `feature/product-catalog-backend` from `develop` branch
 - [ ] 0.2 Verify branch creation and current branch status
 
 ## 1. Backend: Validator Tests (TDD)
@@ -520,11 +522,13 @@ This step must always be the last implementation step, after documentation has b
    git push -u origin <branch-name>
    ```
 
-6. **Create Pull Request** using GitHub CLI:
+6. **Create Pull Request** using GitHub CLI, targeting `develop` (never `master`/`main`):
 
    ```bash
-   gh pr create --title "<type>(<scope>): <summary>" --body "..."
+   gh pr create --base develop --title "<type>(<scope>): <summary>" --body "..."
    ```
+
+   Even though the repository's default branch is `develop`, always pass `--base develop` explicitly — do not rely on the default silently being correct.
 
    PR body must include:
    * Summary of changes
@@ -551,7 +555,8 @@ This step must always be the last implementation step, after documentation has b
 
 * Do not commit `.env` or secrets under any circumstance.
 * Do not commit `node_modules/`, `dist/`, or `coverage/`.
-* Do not push to `master` directly — always use the feature branch.
+* Do not push to `master` or `develop` directly — always use the feature branch.
+* Every feature PR targets `develop`, never `master`/`main`. `master` only receives changes via a separate, deliberate `develop` → `master` release promotion — never a direct feature branch merge.
 * Do not force push without explicit user approval.
 * Do not skip this step — the change is not complete until the PR exists.
 

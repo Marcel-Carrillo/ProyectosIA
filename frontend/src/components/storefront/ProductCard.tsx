@@ -21,7 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const secondImage = product.images?.[1] ?? null;
   const primaryUrl = product.mainImageUrl || firstImage?.url || PLACEHOLDER_IMG;
   const secondaryUrl = secondImage?.url ?? null;
-  const imageAlt = product.mainImageUrl ? product.name : firstImage?.altText || product.name;
+  const imageAlt = firstImage?.altText || product.name;
 
   const lowestVariant = getLowestPriceVariant(product.variants);
 

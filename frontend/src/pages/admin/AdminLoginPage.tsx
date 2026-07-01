@@ -3,6 +3,7 @@ import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { extractAuthError } from '../../services/adminAuthService';
+import Seo from '../../components/storefront/Seo';
 
 const AdminLoginPage: React.FC = () => {
   const { login } = useAdminAuth();
@@ -31,6 +32,7 @@ const AdminLoginPage: React.FC = () => {
 
   return (
     <Container className="py-5" style={{ maxWidth: 420 }}>
+      <Seo title="Admin sign in | Mavile" noindex />
       <Card>
         <Card.Body>
           <h1 className="h4 mb-3">Admin sign in</h1>

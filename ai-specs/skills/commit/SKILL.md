@@ -351,11 +351,15 @@ gh auth status
 gh pr status
 ```
 
+**Base branch (MANDATORY):** every feature PR targets `develop`, never `master`/`main`. `master` is a release branch that only receives changes through a separate, deliberate `develop` → `master` promotion — never directly from a feature branch. Always pass `--base develop` explicitly, even if the repository's default branch is already `develop`; do not rely on the default going unchanged.
+
 If no PR exists for the current branch:
 
 ```bash
-gh pr create
+gh pr create --base develop
 ```
+
+If the user explicitly asks for a release PR (`develop` → `master`), use `--base master` instead — but only when explicitly requested, never as the default for a feature change.
 
 Preferred PR title:
 
@@ -455,6 +459,7 @@ Do not assume that GitHub MCP configured in Cursor is available in Claude Code.
 * Do not commit generated build artifacts unless explicitly required.
 * Do not commit unrelated changes.
 * Do not create commits on the wrong branch.
+* Do not open a feature PR against `master`/`main` — always target `develop` unless the user explicitly requests a `develop` → `master` release PR.
 * Do not push to the wrong remote.
 * Do not force push without explicit user approval.
 * Do not create or update a PR if the user asked for commit-only mode.

@@ -18,3 +18,4 @@ export { default as customerOrderAdminRoutes } from './admin/customerOrderRoutes
 // ─────────────────────────────────────────────────────────────────────────────
 export { default as productPublicRoutes } from './public/productRoutes';
 export { default as categoryPublicRoutes } from './public/categoryRoutes';
+export { default as sitemapPublicRoutes } from './public/sitemapRoutes';

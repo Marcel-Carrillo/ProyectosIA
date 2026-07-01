@@ -6,7 +6,17 @@ import { Product, ProductVariant } from '../../types/product';
 import ProductGallery from '../../components/storefront/ProductGallery';
 import VariantSelector from '../../components/storefront/VariantSelector';
 import PriceTag from '../../components/storefront/PriceTag';
+import Seo, { SITE_URL } from '../../components/storefront/Seo';
+import { useStorefrontCategories } from '../../hooks/useStorefrontCategories';
 import { useCart } from '../../contexts/CartContext';
+
+const SEO_DESCRIPTION_MAX_LENGTH = 155;
+
+function buildSeoDescription(description: string | null): string | undefined {
+  if (!description) return undefined;
+  if (description.length <= SEO_DESCRIPTION_MAX_LENGTH) return description;
+  return `${description.slice(0, SEO_DESCRIPTION_MAX_LENGTH - 3)}...`;
+}
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +28,7 @@ const ProductPage: React.FC = () => {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const { links: categoryLinks } = useStorefrontCategories();
 
   useEffect(() => {
     if (!id) return;
@@ -94,8 +105,61 @@ const ProductPage: React.FC = () => {
 
   const priceVariant = selectedVariant ?? product.variants?.find((v) => !v.deletedAt) ?? null;
 
+  const categoryLink = categoryLinks.find((l) => l.id === product.categoryId);
+  const seoImage = product.mainImageUrl || product.images?.[0]?.url;
+  const seoDescription = buildSeoDescription(product.description);
+  // Price and availability in structured data must come from the same variant,
+  // so an Active variant is always preferred here over the cart's priceVariant
+  // (which may reflect a user-selected or otherwise non-Active variant).
+  const structuredDataVariant = product.variants?.find((v) => v.status === 'Active' && !v.deletedAt) ?? null;
+
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    ...(seoImage ? { image: seoImage } : {}),
+    ...(product.description ? { description: product.description } : {}),
+    ...(structuredDataVariant
+      ? {
+          sku: structuredDataVariant.sku,
+          offers: {
+            '@type': 'Offer',
+            price: structuredDataVariant.publicPrice,
+            priceCurrency: 'EUR',
+            availability: 'https://schema.org/InStock',
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbItems = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/catalog` },
+    ...(categoryLink
+      ? [{ '@type': 'ListItem', position: 2, name: categoryLink.label, item: `${SITE_URL}${categoryLink.href}` }]
+      : []),
+    {
+      '@type': 'ListItem',
+      position: categoryLink ? 3 : 2,
+      name: product.name,
+      item: `${SITE_URL}/catalog/${product.id}`,
+    },
+  ];
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems,
+  };
+
   return (
     <div className="storefront-section">
+      <Seo
+        title={`${product.name} | Mavile`}
+        description={seoDescription}
+        canonicalPath={`/catalog/${product.id}`}
+        image={seoImage}
+        jsonLd={[productJsonLd, breadcrumbJsonLd]}
+      />
       <div className="storefront-container">
         <nav className="storefront-breadcrumb" aria-label="Breadcrumb">
           <Link to="/catalog">Shop</Link>

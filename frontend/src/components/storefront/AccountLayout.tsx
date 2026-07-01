@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
+import Seo from './Seo';
 
 interface AccountLayoutProps {
   title: string;
@@ -30,6 +31,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
 
   return (
     <div className="storefront-account storefront-animate-fade-in">
+      <Seo title={`${title} | Mavile`} noindex />
       <header className="storefront-account__header">
         <p className="storefront-account__eyebrow">{resolvedEyebrow}</p>
         <h1 className="storefront-account__title">{title}</h1>

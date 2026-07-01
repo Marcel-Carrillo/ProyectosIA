@@ -1174,6 +1174,30 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/public/sitemap.xml:
+    get:
+      summary: Dynamic XML sitemap (public storefront)
+      description: >
+        Generates an XML sitemap (sitemaps.org 0.9 schema) listing the public
+        storefront catalog: /catalog, one <url> per Active-status product
+        (/catalog/{id}), one per category (/catalog?categoryId={id}), and one
+        per static content-page slug (/pages/{slug}). Each product and
+        category entry includes <lastmod> derived from its updatedAt. This
+        endpoint is public and unauthenticated. The response is never JSON
+        and never includes supplierId, supplierReference, or supplierCost.
+      tags:
+        - Public — Catalog
+      responses:
+        '200':
+          description: Sitemap generated successfully
+          content:
+            application/xml:
+              schema:
+                type: string
+                description: XML document conforming to the sitemaps.org 0.9 urlset schema
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/admin/customers:
     get:
       summary: List customers (admin)
