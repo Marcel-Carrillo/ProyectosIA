@@ -2,10 +2,10 @@ name: CodeQL Analysis
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, develop]
     types: [opened, synchronize, reopened, ready_for_review]
   push:
-    branches: [master]
+    branches: [master, develop]
   schedule:
     - cron: "0 6 * * 1"
 
