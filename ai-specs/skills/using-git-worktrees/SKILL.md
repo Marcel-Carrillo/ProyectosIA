@@ -81,7 +81,7 @@ Critical business rules:
 Use this priority order:
 
 1. If already on a suitable feature branch, continue there.
-2. If on `main` or `master`, create a feature branch.
+2. If on `main`, `master`, or `develop`, create a feature branch **from `develop`** — `develop` is the integration branch that all feature branches must fork from and PR back into. If currently on `main`/`master`, run `git fetch origin && git checkout develop && git pull` first, then branch from `develop`. Never branch directly from `main`/`master` for feature work.
 3. If the user explicitly requests a separate directory, create a Git worktree.
 4. If the workspace has unrelated local changes, ask whether to create a worktree before starting.
 5. Do not create a worktree automatically without user approval.
@@ -201,11 +201,23 @@ Already on feature branch: <branch-name>
 
 ### If on `main` or `master`
 
-Create a feature branch unless the user asked for a worktree.
+Never branch directly from `main`/`master`. First switch to `develop` and update it, then branch from there, unless the user asked for a worktree.
 
 Example:
 
 ```bash
+git fetch origin
+git checkout develop
+git pull
+git checkout -b feature/<change-name>
+```
+
+### If on `develop`
+
+Update it first, then branch from it directly:
+
+```bash
+git pull
 git checkout -b feature/<change-name>
 ```
 
