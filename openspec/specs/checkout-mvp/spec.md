@@ -67,9 +67,32 @@ For each line item the server SHALL snapshot `productNameSnapshot`, `variantSnap
 - **WHEN** checkout includes a non-existent or inactive variant
 - **THEN** the system returns `404` with `VARIANT_NOT_FOUND` and creates no order
 
-### Requirement: Checkout UI flow includes Stripe Elements payment step
+### Requirement: Checkout payment UI uses Stripe Payment Element
 
-The storefront SHALL provide `/checkout` after `/cart` with steps: review items → shipping/billing forms → optional coupon → **payment (Stripe Elements)** → confirmation. The payment step SHALL use `@stripe/react-stripe-js` and `<PaymentElement>`. On confirmed payment, the buyer is directed to the order confirmation page, which polls for `paymentStatus = Paid`. Layout SHALL work at 360px width minimum. Failure SHALL show the Stripe error and allow retry without losing the order.
+The checkout page (authenticated and guest) SHALL use the Stripe `PaymentElement` component instead of the legacy `CardElement`. The storefront SHALL provide `/checkout` after `/cart` with steps: review items → shipping/billing forms → optional coupon → **payment (Stripe Payment Element)** → confirmation. The frontend SHALL call `stripe.confirmPayment({ elements, confirmParams: { return_url } })` instead of `stripe.confirmCardPayment`. All payment method rendering, selection, and validation SHALL be delegated to the Payment Element. On confirmed payment, the buyer is directed to the order confirmation page, which polls for `paymentStatus = Paid`. Layout SHALL work at 360px width minimum. Failure SHALL show the Stripe error and allow retry without losing the order.
+
+#### Scenario: Authenticated checkout renders Payment Element
+
+- **WHEN** a logged-in customer reaches the payment step
+- **THEN** the Stripe Payment Element is mounted with the `clientSecret` from the checkout response
+- **THEN** available payment methods (card, Google Pay, PayPal) are displayed based on browser/device support and Stripe Dashboard configuration
+
+#### Scenario: Guest checkout renders Payment Element
+
+- **WHEN** a guest customer reaches the payment step
+- **THEN** the same Payment Element is mounted using the guest checkout `clientSecret`
+
+#### Scenario: Checkout redirects to confirmation page after payment
+
+- **WHEN** `stripe.confirmPayment` resolves successfully
+- **THEN** Stripe redirects the browser to `return_url` (order confirmation page) with `payment_intent` and `payment_intent_client_secret` query parameters
+- **THEN** the confirmation page reads these parameters, fetches the order, and displays the result
+
+#### Scenario: CardElement is removed from checkout
+
+- **WHEN** the checkout page is rendered after this change
+- **THEN** no legacy `CardElement` or `CardNumberElement` is rendered
+- **THEN** `stripe.confirmCardPayment` is no longer called
 
 #### Scenario: Complete checkout with successful payment
 

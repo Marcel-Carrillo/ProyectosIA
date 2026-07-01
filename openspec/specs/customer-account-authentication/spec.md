@@ -8,17 +8,17 @@ Public storefront authentication and self-service account area for buyers. Enabl
 
 ### Requirement: Buyer can register with email and password
 
-The system SHALL expose `POST /api/public/auth/register` accepting `{ email, password, firstName, lastName, phone? }`. The email SHALL be normalized (trimmed, lowercased). Password SHALL be at least 8 characters with letters and digits. On success the system SHALL create or link a `Customer` and a `CustomerAccount` with `authProvider = local`, hash the password with bcrypt (cost ≥ 12), issue an access token (`aud: "customer"`) and set an httpOnly refresh cookie. Success SHALL return `201` with `{ account, customer, accessToken }` in the standard envelope. Duplicate email with an existing account SHALL return `409` with code `ACCOUNT_EMAIL_CONFLICT`. Validation failures SHALL return `400` with `VALIDATION_ERROR`. Credentials and tokens SHALL NOT appear in logs.
+The system SHALL expose `POST /api/public/auth/register` accepting `{ email, password, firstName, lastName, phone? }`. The email SHALL be normalized (trimmed, lowercased). Password SHALL be at least 8 characters with letters and digits. On success the system SHALL create or link a `Customer` and a `CustomerAccount` with `authProvider = local`, hash the password with bcrypt (cost ≥ 12), issue an access token (`aud: "customer"`) and set an httpOnly refresh cookie. Success SHALL return `201` with `{ account, customer, accessToken }` in the standard envelope. Duplicate email with an existing account SHALL return `409` with code `ACCOUNT_EMAIL_CONFLICT`. Validation failures SHALL return `400` with `VALIDATION_ERROR`. Credentials and tokens SHALL NOT appear in logs. After a successful account creation, the system SHALL asynchronously generate a welcome coupon and dispatch a welcome email (see `customer-welcome-email` capability); SMTP failure SHALL NOT affect the `201` response.
 
 #### Scenario: Register creates new customer and account
 
 - **WHEN** a buyer submits valid registration data for an email with no existing account
-- **THEN** the system creates `Customer` + `CustomerAccount`, returns `201`, and sets refresh cookie
+- **THEN** the system creates `Customer` + `CustomerAccount`, returns `201`, sets refresh cookie, and asynchronously sends a welcome email with a discount coupon
 
 #### Scenario: Register links existing admin-created customer
 
 - **WHEN** a buyer registers with an email that matches an existing `Customer` without an account
-- **THEN** the system creates `CustomerAccount` linked to that customer and returns `201`
+- **THEN** the system creates `CustomerAccount` linked to that customer, returns `201`, and asynchronously sends a welcome email
 
 #### Scenario: Duplicate email is rejected
 
@@ -67,6 +67,11 @@ The system SHALL expose `POST /api/public/auth/refresh` reading the httpOnly ref
 
 The system SHALL expose `GET /api/public/auth/{google|apple|facebook}` and matching callback routes. Each callback SHALL verify identity server-side, require a verified email from the provider, apply the same email merge rule as registration, store the provider id (`googleId`, `appleId`, or `facebookId`), set `authProvider`, issue tokens, and redirect to the storefront. OAuth verification failure SHALL return `401` with code `OAUTH_VERIFICATION_FAILED`.
 
+For Google specifically, the system SHALL apply the following account-linking rule:
+- If a `CustomerAccount` exists with a matching `googleId` → authenticate and update `lastLoginAt`.
+- If a `CustomerAccount` exists with a matching `email` but no `googleId` → set `googleId` on the existing account, authenticate, and update `lastLoginAt`. No duplicate account SHALL be created.
+- If no `CustomerAccount` exists with the Google email → create a new `Customer` and `CustomerAccount` with `authProvider = 'google'`, trigger the welcome coupon (WELCOME-15%) and welcome email, and issue a session.
+
 #### Scenario: Google login for new buyer
 
 - **WHEN** a buyer completes Google OAuth with a new email
@@ -81,6 +86,38 @@ The system SHALL expose `GET /api/public/auth/{google|apple|facebook}` and match
 
 - **WHEN** a buyer completes Google OAuth and `googleId` already exists
 - **THEN** the system logs in that account and issues new tokens
+
+#### Scenario: New Google registration triggers welcome coupon
+
+- **WHEN** a customer completes Google OAuth for the first time with an email not in the system
+- **THEN** `ensureWelcomeCouponExists` is called and the resulting coupon is emailed to the customer
+- **THEN** the welcome email is sent to the Google account's email address
+
+#### Scenario: Returning Google user skips coupon
+
+- **WHEN** a customer who already has a `CustomerAccount` (with or without `googleId`) authenticates via Google
+- **THEN** no new coupon is created and no welcome email is sent
+
+#### Scenario: Email-matched account gets googleId linked silently
+
+- **WHEN** a customer authenticates via Google and their email matches an existing local account
+- **THEN** `googleId` is set on the existing `CustomerAccount`
+- **THEN** the customer's session is issued without interruption — no UI prompt required
+
+### Requirement: Google OAuth credentials required for production
+
+The system SHALL read `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from environment variables (SSM in production). `GET /api/public/auth/oauth/providers` SHALL return `{ "google": false }` when these variables are absent, and the "Continue with Google" button SHALL not render.
+
+#### Scenario: Google OAuth disabled when credentials missing
+
+- **WHEN** `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` is not set
+- **THEN** `GET /api/public/auth/oauth/providers` returns `{ "google": false }`
+- **THEN** no Google login button is rendered in the frontend
+
+#### Scenario: Google OAuth enabled when credentials present
+
+- **WHEN** both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set
+- **THEN** `GET /api/public/auth/oauth/providers` returns `{ "google": true }`
 
 ### Requirement: Buyer can read current session
 
