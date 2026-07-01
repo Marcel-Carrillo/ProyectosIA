@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
+import Seo from './storefront/Seo';
 
 const Layout: React.FC = () => {
   const { admin, logout } = useAdminAuth();
@@ -40,6 +41,7 @@ const Layout: React.FC = () => {
         </Container>
       </Navbar>
       <main className="admin-main">
+        <Seo title="Admin | Mavile" noindex />
         <Outlet />
       </main>
     </div>

@@ -651,7 +651,10 @@ Recommended frontend environment variables:
 ```text
 REACT_APP_API_BASE_URL
 REACT_APP_ENVIRONMENT
+REACT_APP_SITE_URL
 ```
+
+`REACT_APP_SITE_URL` is the public storefront origin used for canonical URLs, Open Graph tags, and JSON-LD (see `Seo` component below). It is not sensitive and is committed directly in `.env.production` — do not add it to CI/CD secrets.
 
 ## Performance Best Practices
 
@@ -851,6 +854,34 @@ Recommended scenarios:
 - Product detail shows gallery, price, variant selector
 - No supplier fields in HTML source
 - Admin routes unaffected (layout isolation)
+
+---
+
+## SEO and Metadata
+
+### `Seo` Component
+
+`frontend/src/components/storefront/Seo.tsx` is the single shared component for per-route `<head>` metadata, built on `react-helmet-async` (`HelmetProvider` wraps the app root in `App.tsx`). Props: `title` (required), `description`, `canonicalPath` (site-relative, e.g. `/catalog/42`), `image` (absolute URL, falls back to a default OG image), `noindex`, `jsonLd` (one object or an array — e.g. `Product` + `BreadcrumbList` on the PDP). It renders `<title>`, meta description, canonical link, Open Graph/Twitter tags, a `noindex, nofollow` robots meta when `noindex` is true, and JSON-LD `<script>` tags.
+
+`SITE_URL` is exported from `Seo.tsx` (derived from `REACT_APP_SITE_URL`) — reuse it when a page needs the absolute site origin outside the component itself (e.g. building `BreadcrumbList` item URLs).
+
+### Rendering Convention: One `Seo` Per Page
+
+Render exactly **one** `<Seo>` per page view. Do not add a second, layout-level `<Seo>` alongside a page's own `<Seo>` — `react-helmet-async`'s React 19 code path does **not** dedupe `<meta>`/`og:*` tags across independently-mounted `Helmet` instances (only `<title>` is reliably prioritized). Two simultaneously-mounted `Helmet` instances produce duplicate `meta[name="description"]`/`og:title` tags in the final DOM, which is an SEO regression, not a cosmetic issue.
+
+This is why `frontend/public/index.html` has no static `meta[name="description"]` (removed — it would coexist with, not be replaced by, each page's own description) and why `StorefrontLayout.tsx` does not render a fallback `Seo`. Every storefront route renders its own `Seo` directly, or via a shared wrapper component that all its consumers share (never both):
+
+- **Admin pages**: covered once by `frontend/src/components/Layout.tsx` (`<Seo title="Admin | Mavile" noindex />`), not by individual page files.
+- **Customer account pages**: covered once by `frontend/src/components/storefront/AccountLayout.tsx`.
+- **Customer auth pages** (login/register/forgot/reset password): covered once by `frontend/src/components/storefront/StorefrontAuthPanel.tsx`.
+- **Cart, checkout, order confirmation**: each page renders its own `<Seo noindex>` directly (no shared wrapper).
+- **Catalog, product detail, static content pages**: each renders its own public `<Seo>` with page-specific title/description/canonical (and JSON-LD on the product detail page).
+
+When adding a new route, decide which of the above buckets it belongs to (public and indexable vs. private/`noindex`) and either add `<Seo>` directly to the page or confirm it already renders through a shared wrapper — never add a second `Seo` on top of one already provided by a wrapper.
+
+### Known Limitation — SSR/Prerendering (Phase 2)
+
+The storefront remains a client-side-rendered SPA (no SSR/SSG/prerendering). `Seo`'s tags are only present in the DOM after React hydrates, so non-JS-executing crawlers and some social-preview bots may not see per-page metadata. Googlebot executes JS and sees the final DOM. Locale-segmented URLs/`hreflang` and slug-based PDP routes (`/catalog/:slug` instead of `/catalog/:id`) are also out of scope — raise a new OpenSpec change before implementing either.
 
 ---
 

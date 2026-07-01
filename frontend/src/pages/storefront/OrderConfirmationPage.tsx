@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { PublicOrder } from '../../types/auth';
 import { getOrderPaymentStatus } from '../../services/paymentService';
+import Seo from '../../components/storefront/Seo';
 
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_ATTEMPTS = 15;
@@ -67,6 +68,7 @@ const OrderConfirmationPage: React.FC = () => {
 
   return (
     <div className="storefront-confirmation storefront-animate-fade-up">
+      <Seo title="Order confirmation | Mavile" noindex />
       <p className="storefront-confirmation__eyebrow">Mavile</p>
       <h1 className="storefront-confirmation__title">
         {paid ? 'Payment confirmed' : 'Thank you for your order'}

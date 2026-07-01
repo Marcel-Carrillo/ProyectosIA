@@ -2,6 +2,7 @@ import React from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import i18n from 'i18next';
 import { initReactI18next, I18nextProvider } from 'react-i18next';
+import { HelmetProvider } from 'react-helmet-async';
 
 import esCommon from '../i18n/locales/es/common.json';
 import esAuth from '../i18n/locales/es/auth.json';
@@ -44,7 +45,9 @@ export function renderWithI18n(ui: React.ReactElement, options: RenderWithI18nOp
   const testI18n = createTestI18n(lng);
 
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <I18nextProvider i18n={testI18n}>{children}</I18nextProvider>
+    <HelmetProvider>
+      <I18nextProvider i18n={testI18n}>{children}</I18nextProvider>
+    </HelmetProvider>
   );
 
   return { ...render(ui, { wrapper: Wrapper, ...rest }), i18n: testI18n };

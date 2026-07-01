@@ -17,6 +17,7 @@ import returnRequestAdminRoutes from './routes/admin/returnRequestRoutes';
 import adminAuthRoutes from './routes/admin/adminAuthRoutes';
 import productPublicRoutes from './routes/public/productRoutes';
 import categoryPublicRoutes from './routes/public/categoryRoutes';
+import sitemapPublicRoutes from './routes/public/sitemapRoutes';
 import authPublicRoutes from './routes/public/authRoutes';
 import accountPublicRoutes from './routes/public/accountRoutes';
 import checkoutPublicRoutes from './routes/public/checkoutRoutes';
@@ -121,6 +122,7 @@ app.use('/api/admin', adminRouter);
 // ─────────────────────────────────────────────────────────────────────────────
 app.use('/api/public/products', productPublicRoutes);
 app.use('/api/public/categories', categoryPublicRoutes);
+app.use('/api/public/sitemap.xml', sitemapPublicRoutes);
 app.use('/api/public/auth', authPublicRoutes);
 app.use('/api/public/account', accountPublicRoutes);
 app.use('/api/public/checkout', checkoutPublicRoutes);

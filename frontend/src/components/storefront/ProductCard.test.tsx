@@ -68,6 +68,34 @@ describe('ProductCard', () => {
     expect(img.getAttribute('src')).toContain('data:image/svg+xml');
   });
 
+  it('prefers image altText over product name when both mainImageUrl and altText are present', () => {
+    const withAlt: Product = {
+      ...baseProduct,
+      mainImageUrl: 'https://cdn.example.com/dress.jpg',
+      images: [{ id: 1, productId: 1, url: 'https://cdn.example.com/dress.jpg', altText: 'Black midi dress on model', sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' }],
+    };
+    render(
+      <MemoryRouter>
+        <ProductCard product={withAlt} />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('img', { name: 'Black midi dress on model' })).toBeInTheDocument();
+  });
+
+  it('falls back to product name when altText is empty, even with mainImageUrl set', () => {
+    const noAlt: Product = {
+      ...baseProduct,
+      mainImageUrl: 'https://cdn.example.com/dress.jpg',
+      images: [{ id: 1, productId: 1, url: 'https://cdn.example.com/dress.jpg', altText: null, sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' }],
+    };
+    render(
+      <MemoryRouter>
+        <ProductCard product={noAlt} />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('img', { name: 'Black Midi Dress' })).toBeInTheDocument();
+  });
+
   it('links to the correct catalog/:id path', () => {
     render(
       <MemoryRouter>

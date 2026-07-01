@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import Seo from '../../components/storefront/Seo';
 
 const VALID_SLUGS = [
   'shipping',
@@ -137,6 +138,7 @@ const ContentPage: React.FC = () => {
 
   return (
     <article className="storefront-content-page storefront-animate-fade-up">
+      <Seo title={t(`${slug}.title`)} description={t(`${slug}.intro`)} canonicalPath={`/pages/${slug}`} />
       <div className="storefront-container storefront-content-page__inner">
         <Link to="/catalog" className="storefront-content-page__back">
           {t('backToShop')}

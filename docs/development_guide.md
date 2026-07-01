@@ -98,6 +98,7 @@ stripe listen --forward-to http://localhost:3000/api/public/payments/webhook
 
 ```env
 REACT_APP_API_BASE_URL=http://localhost:3000
+REACT_APP_SITE_URL=http://localhost:3001
 PORT=3001
 ```
 

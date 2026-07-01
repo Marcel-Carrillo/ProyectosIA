@@ -4,6 +4,7 @@ import ProductPage from '../ProductPage';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 
 const mockGetById = jest.fn();
+const mockCategoryGetAll = jest.fn();
 
 jest.mock('react-router-dom', () => ({
   useParams: () => ({ id: '1' }),
@@ -20,9 +21,16 @@ jest.mock('../../../services/productService', () => ({
   },
 }));
 
+jest.mock('../../../services/categoryService', () => ({
+  categoryService: {
+    getAll: (...args: unknown[]) => mockCategoryGetAll(...args),
+  },
+}));
+
 describe('ProductPage language refetch', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCategoryGetAll.mockResolvedValue([]);
     mockGetById.mockResolvedValue({
       data: {
         id: 1,
