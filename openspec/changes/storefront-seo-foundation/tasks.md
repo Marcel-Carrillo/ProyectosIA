@@ -85,9 +85,9 @@
 
 ## 12. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 12.1 Load and apply `ai-specs/skills/commit/SKILL.md`.
-- [ ] 12.2 Verify all tasks above are marked complete and all reports exist under `openspec/changes/storefront-seo-foundation/reports/`.
-- [ ] 12.3 Stage all relevant files (exclude `.env`, `node_modules/`, `dist/`, `coverage/`).
-- [ ] 12.4 Create commit with Conventional Commit message (`feat(seo): add technical SEO foundation for storefront`).
-- [ ] 12.5 Push branch `feature/storefront-seo-foundation` to remote origin.
-- [ ] 12.6 Create Pull Request with `gh pr create` and report the PR URL in chat.
+- [x] 12.1 Load and apply `ai-specs/skills/commit/SKILL.md`.
+- [x] 12.2 Verify all tasks above are marked complete and all reports exist under `openspec/changes/storefront-seo-foundation/reports/`. (Also ran an adversarial review — see `reports/2026-07-01-adversarial-review.md` — and fixed the two Major findings before committing.)
+- [x] 12.3 Stage all relevant files (exclude `.env`, `node_modules/`, `dist/`, `coverage/`).
+- [x] 12.4 Create commit with Conventional Commit message (`feat(seo): add technical SEO foundation for storefront`). (Commit `6ea9dd9`.)
+- [x] 12.5 Push branch `feature/storefront-seo-foundation` to remote origin.
+- [x] 12.6 Create Pull Request with `gh pr create` and report the PR URL in chat. (PR #56: https://github.com/Marcel-Carrillo/ProyectosIA/pull/56)
