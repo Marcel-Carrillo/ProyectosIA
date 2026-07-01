@@ -9,6 +9,7 @@ import { getStripeConfig } from '../../services/paymentService';
 import { PublicOrder } from '../../types/auth';
 import PaymentForm from '../../components/storefront/PaymentForm';
 import PriceTag from '../../components/storefront/PriceTag';
+import Seo from '../../components/storefront/Seo';
 
 const emptyAddress = {
   fullName: '',
@@ -113,6 +114,7 @@ const CheckoutPage: React.FC = () => {
   if (step === 'payment' && pendingOrder?.clientSecret && stripePromise) {
     return (
       <div className="storefront-checkout storefront-animate-fade-up">
+        <Seo title="Payment | Mavile" noindex />
         <p className="storefront-checkout__eyebrow">Mavile</p>
         <h1 className="storefront-checkout__title">Payment</h1>
         {error && <p className="storefront-auth__error" role="alert">{error}</p>}
@@ -138,6 +140,7 @@ const CheckoutPage: React.FC = () => {
 
   return (
     <div className="storefront-checkout storefront-animate-fade-up">
+      <Seo title="Checkout | Mavile" noindex />
       <p className="storefront-checkout__eyebrow">Mavile</p>
       <h1 className="storefront-checkout__title">Checkout</h1>
 

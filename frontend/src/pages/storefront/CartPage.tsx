@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '../../contexts/CartContext';
 import PriceTag from '../../components/storefront/PriceTag';
+import Seo from '../../components/storefront/Seo';
 
 const PLACEHOLDER_IMG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="112" height="149" viewBox="0 0 112 149"%3E%3Crect width="112" height="149" fill="%23f5f4f1"/%3E%3C/svg%3E';
 
@@ -23,6 +24,7 @@ const CartPage: React.FC = () => {
   if (!items.length) {
     return (
       <div className="storefront-cart-empty storefront-animate-fade-up">
+        <Seo title={`${t('title')} | Mavile`} noindex />
         <p className="storefront-cart-empty__eyebrow">{t('empty.eyebrow')}</p>
         <h1 className="storefront-cart-empty__title">{t('empty.title')}</h1>
         <p className="storefront-cart-empty__text">{t('empty.text')}</p>
@@ -35,6 +37,7 @@ const CartPage: React.FC = () => {
 
   return (
     <div className="storefront-cart storefront-animate-fade-in">
+      <Seo title={`${t('title')} | Mavile`} noindex />
       <div className="storefront-cart__header">
         <h1 className="storefront-cart__title">{t('title')}</h1>
         <span className="storefront-cart__count">

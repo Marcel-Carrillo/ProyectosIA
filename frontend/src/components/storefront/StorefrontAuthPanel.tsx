@@ -1,4 +1,5 @@
 import React from 'react';
+import Seo from './Seo';
 
 interface StorefrontAuthPanelProps {
   title: string;
@@ -15,6 +16,7 @@ const StorefrontAuthPanel: React.FC<StorefrontAuthPanelProps> = ({
 }) => {
   return (
     <div className="storefront-auth">
+      <Seo title={`${title} | Mavile`} noindex />
       <div className="storefront-auth__panel storefront-animate-fade-up">
         <p className="storefront-auth__eyebrow">Mavile</p>
         <h1 className="storefront-auth__title">{title}</h1>

@@ -1,3 +1,31 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+
+# Auth / account / checkout — customer non-public routes
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-confirmation/
+Disallow: /account
+Disallow: /account/
+
+# Admin back-office — not under /admin/*, listed explicitly (routes verified in App.tsx)
+Disallow: /admin/login
+Disallow: /products
+Disallow: /categories
+Disallow: /suppliers
+Disallow: /customers
+Disallow: /customer-orders
+Disallow: /supplier-orders
+Disallow: /shipments
+Disallow: /return-requests
+Disallow: /refunds
+
+# NOTE: this URL is not templated at build time (CRA only templates index.html,
+# not other public/ files). If the API Gateway invoke URL ever changes, update
+# this line manually and confirm it still matches REACT_APP_API_BASE_URL in
+# .env.production / the deploy.yml secret. See design.md Risks for tracking.
+Sitemap: https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod/api/public/sitemap.xml

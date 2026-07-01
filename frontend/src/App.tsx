@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { CustomerAuthProvider } from './contexts/CustomerAuthContext';
 import { CartProvider } from './contexts/CartContext';
@@ -115,6 +116,7 @@ function ScrollManager() {
 
 const App: React.FC = () => {
   return (
+    <HelmetProvider>
     <BrowserRouter>
       <ScrollManager />
       <AdminAuthProvider>
@@ -187,6 +189,7 @@ const App: React.FC = () => {
         </CustomerAuthProvider>
       </AdminAuthProvider>
     </BrowserRouter>
+    </HelmetProvider>
   );
 };
 

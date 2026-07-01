@@ -59,6 +59,11 @@
   "error": {
     "loadFailed": "Unable to load products. Please try again later."
   },
+  "meta": {
+    "titleAll": "Shop All | Mavile",
+    "titleCategory": "{{category}} | Mavile",
+    "description": "Discover the Mavile collection — timeless fashion with a modern, minimalist aesthetic."
+  },
   "pieces_one": "{{count}} piece",
   "pieces_other": "{{count}} pieces"
 }

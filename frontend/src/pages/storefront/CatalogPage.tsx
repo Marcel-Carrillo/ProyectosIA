@@ -6,6 +6,8 @@ import { Product } from '../../types/product';
 import ProductGrid from '../../components/storefront/ProductGrid';
 import Pagination from '../../components/storefront/Pagination';
 import CatalogHero from '../../components/storefront/CatalogHero';
+import Seo from '../../components/storefront/Seo';
+import { useStorefrontCategories } from '../../hooks/useStorefrontCategories';
 
 const PAGE_SIZE = 20;
 
@@ -96,8 +98,15 @@ const CatalogPage: React.FC = () => {
 
   const currentSortValue = `${sort}:${order}`;
 
+  const { links: categoryLinks } = useStorefrontCategories();
+  const activeCategory = categoryLinks.find((l) => l.id === categoryId);
+  const seoTitle = activeCategory
+    ? t('meta.titleCategory', { category: activeCategory.label })
+    : t('meta.titleAll');
+
   return (
     <div>
+      <Seo title={seoTitle} description={t('meta.description')} canonicalPath="/catalog" />
       <CatalogHero categoryId={categoryId} search={search} />
 
       <section className="storefront-toolbar">
