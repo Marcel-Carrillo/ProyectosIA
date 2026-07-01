@@ -78,7 +78,9 @@ describe('SitemapService - buildEntries', () => {
     process.env['FRONTEND_URL'] = 'https://example.test';
     const service = new SitemapService(productService, categoryService);
     const entries = await service.buildEntries();
-    entries.forEach((entry) => expect(entry.loc.startsWith('https://example.test')).toBe(true));
+    // Compare the parsed origin exactly rather than a string prefix, which
+    // would also match an unrelated host like https://example.test.evil.com.
+    entries.forEach((entry) => expect(new URL(entry.loc).origin).toBe('https://example.test'));
   });
 
   it('should_never_include_supplier_fields_in_any_entry', async () => {
