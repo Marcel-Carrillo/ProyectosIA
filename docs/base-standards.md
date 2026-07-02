@@ -2,7 +2,8 @@
 
 description: This document contains all development rules and guidelines for this project, applicable to all AI agents.
 alwaysApply: true
------------------
+
+---
 
 ## 1. Core Principles
 
@@ -87,23 +88,159 @@ The system must be designed with flexibility around:
 * The system should be prepared for future supplier automation.
 * The first version should prioritize manual control over premature automation.
 
-## 5. Real-Time Task Completion Marking (MANDATORY — applies to all OpenSpec work)
+## 5. Evidence-Based Real-Time Task Completion Marking
 
-When implementing tasks from any `tasks.md` file, you MUST mark each sub-task `[x]` **immediately** after completing it — not at the end of the session, not in bulk before archiving, not as a summary.
+When implementing tasks from any `tasks.md` file, agents MUST mark each sub-task `[x]` immediately after completing and verifying it.
 
-**The rule:**
+A task is not complete when the agent believes it is implemented.
+A task is complete only when there is objective evidence that the implementation exists and works, per the evidence rules in Section 6 (Mandatory Verification Gate).
 
-1. Complete a sub-task.
-2. Edit `tasks.md` on disk and change `- [ ]` to `- [x]` for that sub-task.
-3. Move to the next sub-task.
+Required sequence:
 
-If the session is interrupted, the state of `tasks.md` on disk must accurately reflect exactly what has been completed up to that point.
+1. Complete the sub-task.
+2. Verify the sub-task with concrete evidence (see Section 6 for what counts as valid/invalid evidence).
+3. Record the evidence in the response.
+4. Edit `tasks.md` on disk and change `- [ ]` to `- [x]`.
+5. Move to the next sub-task.
 
-**Exception:** Verification sub-tasks (unit tests, curl, E2E, commit/PR) are marked `[x]` only after their criteria are met (tests pass, DB restored, report file created). See `docs/openspec-tasks-mandatory-steps.md` for the full criteria per step.
+If verification fails, is unavailable, or is inconclusive, the task MUST remain unchecked.
+Never mark a task `[x]` based only on intent, assumption, or partial implementation.
 
-This rule exists because the user has had to manually correct missing checkboxes multiple times. Failure to follow this rule means the user must review every task by hand after archiving.
+If the session is interrupted, `tasks.md` must accurately reflect only verified completed work.
 
-## 6. Specific Standards
+## 6. Mandatory Verification Gate
+
+Before claiming that any task, feature, bug fix, deployment, or PR step is complete, agents must provide verification evidence.
+
+Valid evidence includes at least one of:
+
+* A passing unit/integration/E2E test.
+* A successful command output.
+* A successful curl/API response.
+* A file path and line numbers showing the implementation.
+* A Playwright screenshot or browser verification for UI behavior.
+* A database query proving the expected persisted state.
+
+Invalid evidence:
+
+* "Implemented."
+* "Done."
+* "Looks correct."
+* "Should work."
+* "The code has been updated."
+* Any claim without file paths, command output, tests, or runtime verification.
+
+For every completed item, the response must include:
+
+* What was changed.
+* Where it was changed.
+* How it was verified.
+* The command/test/check used.
+* The result of that verification.
+
+Completion claims without evidence are forbidden.
+
+Examples of acceptable completion statements:
+
+* `Implemented in backend/src/modules/products/product.service.ts:42-88 and verified with npm test -- product.service.test.ts.`
+* `Endpoint verified with curl GET /api/public/products returning 200.`
+* `Frontend behavior verified with Playwright on /products page.`
+* `OpenSpec task 2.3 marked complete after test ProductService should create variants passed.`
+
+Examples of forbidden completion statements:
+
+* `Done.`
+* `All tasks completed.`
+* `Implemented successfully.`
+* `This should now work.`
+* `I have updated everything.`
+
+## 7. Git, Branch, Commit, and PR Rules
+
+Agents must verify git state before any commit, PR, merge, archive, or deployment operation.
+
+Before committing, agents must run and report:
+
+* `git status`
+* `git branch --show-current`
+* `git diff --stat`
+* `git diff --cached --stat` when applicable
+
+Commit rules:
+
+* Always load and follow the required commit `SKILL.md` before committing.
+* Never commit directly with raw git commands unless the commit skill explicitly allows it.
+* Never commit unrelated changes.
+* Never include secrets, credentials, `.env` files, local logs, build artifacts, or temporary files.
+* Commit messages must be in English.
+
+Branch rules:
+
+* Feature work must be done on a feature branch.
+* Feature PRs must target `develop`, not `master`.
+* Archive commits must be made on `develop`, not on the feature branch.
+* Before creating a PR, check whether an existing PR already exists for the same branch.
+* Never create duplicate PRs.
+
+Before creating a PR, agents must verify:
+
+* Correct source branch.
+* Correct target branch.
+* No duplicate PR exists.
+* Tests have passed.
+* OpenSpec tasks are verified and checked.
+* Required documentation has been updated.
+
+## 8. AWS and Deployment Rules
+
+Before any AWS deployment, agents must run a deployment preflight.
+
+Required preflight checks:
+
+* Confirm current AWS account.
+* Confirm AWS region.
+* Confirm `serverless.yml` region.
+* Default AWS region is `eu-north-1` unless the user explicitly says otherwise.
+* Confirm required environment variables.
+* Confirm Lambda package size is acceptable.
+* Confirm IAM permissions are available.
+* Confirm API Gateway routes.
+* Confirm CORS configuration.
+* Confirm cookie and SameSite settings when authentication is involved.
+* Confirm frontend production API base URL.
+* Confirm backend health endpoint after deployment.
+
+Deployment rules:
+
+* Never deploy before tests pass.
+* Never deploy if region is ambiguous.
+* Never deploy if required environment variables are missing.
+* Never expose supplier costs, supplier credentials, internal notes, or private fulfillment data through public APIs.
+* Never use `komabones@gmail.com` for AWS SES or corporate email configuration.
+* Use the corporate/Mavile email address for store-related email configuration.
+
+## 9. Session Preflight for Large Tasks
+
+For large tasks involving implementation, deployment, GitHub, Jira, Stripe, OAuth, or AWS, agents must run a preflight before editing code.
+
+The preflight must check:
+
+* Current git branch.
+* Working tree status.
+* Target branch.
+* GitHub CLI authentication.
+* Required MCP server availability.
+* Required environment variables.
+* AWS region when deployment is involved.
+* Relevant documentation files to load.
+* Relevant skill files to load.
+* Test commands available for the affected area.
+
+Agents must report blockers before modifying files.
+
+If environment variables appear missing in Claude Code but may exist at Windows level, agents must check the Windows registry through PowerShell before assuming they are unavailable.
+
+## 10. Specific Standards
 
 For detailed standards and guidelines specific to different areas of the project, refer to:
 
@@ -115,41 +252,52 @@ For detailed standards and guidelines specific to different areas of the project
 * [Development Guide](./development_guide.md)
 * [OpenSpec Tasks Mandatory Steps](./openspec-tasks-mandatory-steps.md)
 
-## 7. Token Efficiency and Selective Context Loading
+## 11. Token Efficiency and Selective Context Loading
 
 Agents must minimize unnecessary context loading.
 
 * Do not read every documentation file by default.
 * Always start with `docs/base-standards.md`.
 * Load additional documentation only when it is relevant to the requested task.
-* For backend-only tasks, read only:
 
-  * `docs/backend-standards.md`
-  * `docs/data-model.md`
-  * `docs/api-spec.yml`
-  * `docs/openspec-tasks-mandatory-steps.md`
-  * `ai-specs/agents/backend-developer.md`
-* For frontend-only tasks, read only:
+For backend-only tasks, read only:
 
-  * `docs/frontend-standards.md`
-  * `docs/api-spec.yml`
-  * `docs/openspec-tasks-mandatory-steps.md`
-  * `ai-specs/agents/frontend-developer.md`
-* For documentation-only tasks, read only:
+* `docs/base-standards.md`
+* `docs/backend-standards.md`
+* `docs/data-model.md`
+* `docs/api-spec.yml`
+* `docs/openspec-tasks-mandatory-steps.md`
+* `ai-specs/agents/backend-developer.md`
 
-  * `docs/documentation-standards.md`
-  * The documents being updated
-* For product strategy or requirement refinement, read only:
+For frontend-only tasks, read only:
 
-  * `docs/data-model.md`
-  * `docs/api-spec.yml`
-  * `ai-specs/agents/product-strategy-analyst.md`
+* `docs/base-standards.md`
+* `docs/frontend-standards.md`
+* `docs/api-spec.yml`
+* `docs/openspec-tasks-mandatory-steps.md`
+* `ai-specs/agents/frontend-developer.md`
+
+For documentation-only tasks, read only:
+
+* `docs/base-standards.md`
+* `docs/documentation-standards.md`
+* The documents being updated.
+
+For product strategy or requirement refinement, read only:
+
+* `docs/base-standards.md`
+* `docs/data-model.md`
+* `docs/api-spec.yml`
+* `ai-specs/agents/product-strategy-analyst.md`
+
+Additional context-loading rules:
+
 * For backend-only work, do not load frontend standards unless frontend impact must be analyzed.
 * For frontend-only work, do not load backend standards unless backend or API impact must be analyzed.
 * Load cross-area documentation only when the requested change explicitly affects multiple areas.
 * When a document is large, read only the sections directly relevant to the current task whenever the tool or environment allows partial reading.
 
-## 8. Project Agents
+## 12. Project Agents
 
 For specialized AI agent behavior, refer to:
 
@@ -163,21 +311,29 @@ Use the relevant agent depending on the type of work:
 * Frontend changes: use `frontend-developer.md`
 * Product strategy, market analysis, user personas, value proposition, or MVP scope: use `product-strategy-analyst.md`
 
-## 9. Project Skills
+## 13. Project Skills
 
 * Skills live in `ai-specs/skills`.
 * When a request matches a skill, load and follow the corresponding `SKILL.md` automatically before continuing.
 * Also load any referenced files in the skill folder when the skill requires them.
 * Do not modify skills unless the user explicitly asks for a workflow or skill update.
 
-## 10. Multi-Agent Portability
+Mandatory skill-loading rules:
+
+* Before any large task involving implementation, deployment, GitHub, Jira, Stripe, OAuth, AWS, or OpenSpec, agents MUST load and follow `ai-specs/skills/preflight/SKILL.md`.
+* Before marking any OpenSpec task from a `tasks.md` file as complete, agents MUST load and follow `ai-specs/skills/openspec-verify/SKILL.md`.
+* Before any commit, agents MUST load and follow the required commit skill from `ai-specs/skills`.
+* If multiple skills apply to the same request, agents MUST load all relevant skills before editing code.
+* Agents must mention which skills were loaded before starting implementation.
+
+## 14. Multi-Agent Portability
 
 * Keep reusable AI artifacts in `ai-specs` as the canonical source.
 * Agent-specific paths such as `.claude` and `.cursor` should reference canonical files when possible.
 * Whenever a file is renamed, moved, or deleted, verify that related references remain valid.
 * If symbolic links are used, verify that they remain valid after file moves or folder restructuring.
 
-## 11. Mandatory Spec Updates
+## 15. Mandatory Spec Updates
 
 When a new business or technical change appears after implementation has started, agents must update the relevant specification artifacts before changing code.
 
@@ -188,7 +344,7 @@ Required order:
 3. Verify the implementation against the updated specification.
 4. Do not apply direct code-only fixes when the change affects documented business behavior.
 
-## 12. Documentation Update Requirements
+## 16. Documentation Update Requirements
 
 Agents must update the relevant documentation whenever implementation changes affect documented behavior.
 
@@ -201,7 +357,7 @@ Required documentation updates:
 * Update `docs/development_guide.md` when setup, environment variables, Docker, Prisma, scripts, or testing commands change.
 * Update `docs/documentation-standards.md` when documentation workflow or AI rule update processes change.
 
-## 13. Approval Rules
+## 17. Approval Rules
 
 Agents must not change the following without explicit user approval:
 

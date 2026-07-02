@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/post-edit-check.js",
+            "shell": "bash",
+            "timeout": 30,
+            "statusMessage": "Typechecking/linting edited file..."
+          }
+        ]
+      }
+    ]
+  }
+}
