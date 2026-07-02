@@ -19,6 +19,23 @@ import { cleanLocalCatalog } from '../supplierFeedImporter';
 describe('cleanLocalCatalog schema-drift guard', () => {
   const ROOT_TABLES = ['Product', 'ProductVariant', 'CustomerOrder', 'SupplierOrder'];
 
+  // Checks whether `line` references `model` as a whole word, optionally
+  // followed by "?" (Prisma's optional-relation marker), without building a
+  // regex from a variable (semgrep flags `new RegExp(...)` with interpolated
+  // input as a potential ReDoS vector, even though ROOT_TABLES is a small
+  // fixed literal array here, not user input).
+  function lineReferencesModel(line: string, model: string): boolean {
+    const idx = line.indexOf(model);
+    if (idx === -1) return false;
+
+    const before = line[idx - 1];
+    if (before !== undefined && /[A-Za-z0-9_]/.test(before)) return false;
+
+    let after = idx + model.length;
+    if (line[after] === '?') after += 1;
+    return line[after] === ' ' || line[after] === '\t';
+  }
+
   function deriveModelsRequiringManualCleanup(schemaText: string): Set<string> {
     const requiresManualCleanup = new Set<string>(ROOT_TABLES);
     const modelBlockPattern = /model\s+(\w+)\s*\{([^}]*)\}/g;
@@ -28,7 +45,7 @@ describe('cleanLocalCatalog schema-drift guard', () => {
       const [, modelName, body] = match;
       for (const line of body.split('\n')) {
         if (!/@relation\(/.test(line)) continue;
-        const referencesRoot = ROOT_TABLES.some((root) => new RegExp(`\\b${root}\\??\\s`).test(line));
+        const referencesRoot = ROOT_TABLES.some((root) => lineReferencesModel(line, root));
         if (!referencesRoot) continue;
         if (/onDelete:\s*Cascade/.test(line)) continue; // auto-cleaned by Postgres/Prisma
         requiresManualCleanup.add(modelName);
