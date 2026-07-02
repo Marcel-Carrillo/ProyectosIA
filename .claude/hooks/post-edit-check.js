@@ -13,8 +13,20 @@ function readStdin() {
   }
 }
 
-function run(cmd, args, cwd) {
-  const result = spawnSync(cmd, args, { cwd, shell: true, encoding: "utf8" });
+// Resolves a package's CLI script via its own package.json "bin" field
+// (not require.resolve(pkg/bin/x.js) directly, since packages like eslint
+// restrict subpath access via "exports").
+function resolveBin(pkgName, binName, cwd) {
+  const pkgJsonPath = require.resolve(`${pkgName}/package.json`, { paths: [cwd] });
+  const pkg = require(pkgJsonPath);
+  const binField = typeof pkg.bin === "string" ? pkg.bin : pkg.bin[binName];
+  return path.join(path.dirname(pkgJsonPath), binField);
+}
+
+// Runs a resolved script via the current Node binary directly (no shell),
+// so no argument ever passes through shell interpretation.
+function run(scriptPath, args, cwd) {
+  const result = spawnSync(process.execPath, [scriptPath, ...args], { cwd, encoding: "utf8" });
   return { status: result.status ?? 1, output: (result.stdout || "") + (result.stderr || "") };
 }
 
@@ -42,15 +54,25 @@ if (!subproject) process.exit(0);
 const cwd = path.join(repoRoot, subproject);
 const failures = [];
 
-const tsc = run("npx", ["tsc", "--noEmit", "-p", "tsconfig.json"], cwd);
-if (tsc.status !== 0) {
-  failures.push(`[${subproject} typecheck]\n${tsc.output.trim()}`);
+try {
+  const tscBin = resolveBin("typescript", "tsc", cwd);
+  const tsc = run(tscBin, ["--noEmit", "-p", "tsconfig.json"], cwd);
+  if (tsc.status !== 0) {
+    failures.push(`[${subproject} typecheck]\n${tsc.output.trim()}`);
+  }
+} catch {
+  // typescript not resolvable for this subproject; skip typecheck
 }
 
 if (subproject === "backend") {
-  const eslint = run("npx", ["eslint", JSON.stringify(filePath)], cwd);
-  if (eslint.status !== 0) {
-    failures.push(`[backend lint: ${filePath}]\n${eslint.output.trim()}`);
+  try {
+    const eslintBin = resolveBin("eslint", "eslint", cwd);
+    const eslint = run(eslintBin, [filePath], cwd);
+    if (eslint.status !== 0) {
+      failures.push(`[backend lint: ${filePath}]\n${eslint.output.trim()}`);
+    }
+  } catch {
+    // eslint not resolvable; skip lint
   }
 }
 
