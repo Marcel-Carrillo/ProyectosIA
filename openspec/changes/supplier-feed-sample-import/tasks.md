@@ -70,10 +70,10 @@ This change adds no new or modified HTTP endpoints (no `/api/admin/*` or `/api/p
 
 ## 10. Commit and Create Pull Request (MANDATORY — LAST STEP)
 
-- [ ] 10.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
-- [ ] 10.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/supplier-feed-sample-import/reports/`.
-- [ ] 10.3 Stage all relevant files (fixture, types, mapper, importer, script, package.json, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`.
-- [ ] 10.4 Create commit with Conventional Commit message, e.g. `feat(catalog): add dev-only supplier-feed sample import and local catalog reset`.
-- [ ] 10.5 Push branch: `git push -u origin feature/supplier-feed-sample-import`.
-- [ ] 10.6 Create Pull Request targeting `develop` (never `master`): `gh pr create --base develop --title "feat(catalog): add dev-only supplier-feed sample import" --body "..."`, including summary, OpenSpec change name, and verification status (unit tests, manual script verification, E2E).
-- [ ] 10.7 Report the PR URL in chat.
+- [x] 10.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
+- [x] 10.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/supplier-feed-sample-import/reports/`.
+- [x] 10.3 Stage all relevant files (fixture, types, mapper, importer, script, package.json, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`.
+- [x] 10.4 Create commit with Conventional Commit message, e.g. `feat(catalog): add dev-only supplier-feed sample import and local catalog reset`.
+- [x] 10.5 Push branch: `git push -u origin feature/supplier-feed-sample-import`.
+- [x] 10.6 Create Pull Request targeting `develop` (never `master`): `gh pr create --base develop --title "feat(catalog): add dev-only supplier-feed sample import" --body "..."`, including summary, OpenSpec change name, and verification status (unit tests, manual script verification, E2E).
+- [x] 10.7 Report the PR URL in chat.
