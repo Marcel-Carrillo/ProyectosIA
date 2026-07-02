@@ -16,11 +16,20 @@ function readStdin() {
 // Resolves a package's CLI script via its own package.json "bin" field
 // (not require.resolve(pkg/bin/x.js) directly, since packages like eslint
 // restrict subpath access via "exports").
+// binField comes from an installed devDependency's package.json, not from
+// request/user input, but is still validated to stay inside the package
+// directory so a malicious "bin" field can't resolve outside of it.
 function resolveBin(pkgName, binName, cwd) {
   const pkgJsonPath = require.resolve(`${pkgName}/package.json`, { paths: [cwd] });
+  const pkgDir = path.dirname(pkgJsonPath);
   const pkg = require(pkgJsonPath);
   const binField = typeof pkg.bin === "string" ? pkg.bin : pkg.bin[binName];
-  return path.join(path.dirname(pkgJsonPath), binField);
+  // nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
+  const resolved = path.resolve(pkgDir, binField);
+  if (resolved !== pkgDir && !resolved.startsWith(pkgDir + path.sep)) {
+    throw new Error(`Refusing to run bin outside its package directory: ${resolved}`);
+  }
+  return resolved;
 }
 
 // Runs a resolved script via the current Node binary directly (no shell),
