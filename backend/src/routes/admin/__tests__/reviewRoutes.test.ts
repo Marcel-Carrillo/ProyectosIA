@@ -22,7 +22,7 @@ import { notFoundHandler, globalErrorHandler } from '../../../middleware/errorHa
 const buildApp = () => {
   const app = express();
   app.use(express.json());
-  app.use('/api/admin/reviews', requireAdminAuth, reviewAdminRoutes); // lgtm[js/missing-rate-limiting]
+  app.use('/api/admin/reviews', requireAdminAuth, reviewAdminRoutes); // codeql[js/missing-rate-limiting]
   app.use(notFoundHandler);
   app.use(globalErrorHandler);
   return app;
