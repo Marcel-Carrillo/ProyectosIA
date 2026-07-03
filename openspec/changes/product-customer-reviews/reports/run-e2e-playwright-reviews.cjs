@@ -2,7 +2,7 @@
  * Playwright E2E for product-customer-reviews (tasks 13.1–13.8).
  * Run: node openspec/changes/product-customer-reviews/reports/run-e2e-playwright-reviews.cjs
  */
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const { chromium } = require('playwright');
 
 const BASE = 'http://localhost:3001';
@@ -21,11 +21,17 @@ let reviewId = null;
 let orderId = null;
 let orderItemId = null;
 
+// SQL is passed via stdin to psql (never embedded in the shell command string).
 function psql(sql) {
-  const out = execSync(
-    `docker exec -i ecommerce-db psql -U ecommerceUser -d ecommerceDb -q -t -A -c "${sql.replace(/"/g, '\\"')}"`,
-    { encoding: 'utf8' }
-  ).trim();
+  const result = spawnSync(
+    'docker',
+    ['exec', '-i', 'ecommerce-db', 'psql', '-U', 'ecommerceUser', '-d', 'ecommerceDb', '-q', '-t', '-A'],
+    { input: sql, encoding: 'utf8' }
+  );
+  if (result.status !== 0) {
+    throw new Error(result.stderr || `psql exited with code ${result.status}`);
+  }
+  const out = result.stdout.trim();
   const line = out.split(/\r?\n/).find((l) => l.trim().length > 0) ?? out;
   return line.trim();
 }
