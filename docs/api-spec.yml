@@ -3439,6 +3439,16 @@ components:
           type: string
           nullable: true
           example: Store Brand
+        gtin:
+          type: string
+          nullable: true
+          pattern: '^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$'
+          example: '5901234123457'
+          description: >
+            International trade item identifier (GTIN/EAN/UPC), digits only,
+            length 8, 12, 13, or 14. Modeled at the product level. Used to
+            populate gtin13/gtin in storefront Product structured data when
+            present; never fabricated.
         status:
           $ref: '#/components/schemas/ProductStatus'
         mainImageUrl:
@@ -3559,6 +3569,15 @@ components:
           maxLength: 100
           nullable: true
           example: Store Brand
+        gtin:
+          type: string
+          nullable: true
+          pattern: '^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$'
+          example: '5901234123457'
+          description: >
+            Optional GTIN/EAN/UPC, digits only, length 8, 12, 13, or 14. An
+            empty string normalizes to null. Validated on both create and
+            update.
         status:
           $ref: '#/components/schemas/ProductStatus'
         mainImageUrl:
@@ -3675,6 +3694,11 @@ components:
         brand:
           type: string
           nullable: true
+        gtin:
+          type: string
+          nullable: true
+          example: '5901234123457'
+          description: GTIN/EAN/UPC when known; public catalog data, not supplier-sensitive.
         status:
           type: string
           example: Active

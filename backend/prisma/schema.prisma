@@ -46,6 +46,7 @@ model Product {
   slug         String           @unique @db.VarChar(200)
   description  String?          @db.VarChar(2000)
   brand        String?          @db.VarChar(100)
+  gtin         String?          @db.VarChar(14)
   status       String           @default("Draft")
   mainImageUrl String?          @db.VarChar(500)
   categoryId   Int?

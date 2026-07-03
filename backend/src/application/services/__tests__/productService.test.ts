@@ -177,6 +177,21 @@ describe('ProductService - update lifecycle', () => {
     mockRepo.findById.mockResolvedValue(null);
     await expect(service.update(99, { name: 'X' })).rejects.toBeInstanceOf(ProductNotFoundError);
   });
+
+  it('should reject an invalid-format gtin on update', async () => {
+    const draft = makeProduct({ status: 'Draft' });
+    mockRepo.findById.mockResolvedValue(draft);
+    await expect(service.update(1, { gtin: '12345ABC9012' })).rejects.toBeInstanceOf(ValidationError);
+    expect(mockRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('should normalize an empty-string gtin to null before persisting on update', async () => {
+    const draft = makeProduct({ status: 'Draft' });
+    mockRepo.findById.mockResolvedValueOnce(draft).mockResolvedValueOnce(draft);
+    mockRepo.update.mockResolvedValue(draft);
+    await service.update(1, { gtin: '' });
+    expect(mockRepo.update).toHaveBeenCalledWith(1, expect.objectContaining({ gtin: null }));
+  });
 });
 
 describe('ProductService - softDelete', () => {

@@ -10,6 +10,7 @@ const baseProduct: Product = {
   slug: 'black-midi-dress',
   description: 'An elegant dress',
   brand: 'Store Brand',
+  gtin: null,
   status: 'Active',
   mainImageUrl: 'https://cdn.example.com/dress.jpg',
   categoryId: 1,

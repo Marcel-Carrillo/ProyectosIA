@@ -149,6 +149,11 @@ const ProductPage: React.FC = () => {
     ...(seoImage ? { image: seoImage } : {}),
     ...(product.description ? { description: product.description } : {}),
     ...(product.brand ? { brand: { '@type': 'Brand', name: product.brand } } : {}),
+    ...(product.gtin
+      ? product.gtin.length === 13
+        ? { gtin13: product.gtin }
+        : { gtin: product.gtin }
+      : {}),
     ...(structuredDataVariant
       ? {
           sku: structuredDataVariant.sku,

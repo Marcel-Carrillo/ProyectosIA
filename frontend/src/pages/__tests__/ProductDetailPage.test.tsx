@@ -37,6 +37,7 @@ const makeProduct = (over: Partial<Product> = {}): Product => ({
   slug: 'sample',
   description: null,
   brand: null,
+  gtin: null,
   status: 'Draft',
   mainImageUrl: null,
   categoryId: null,
@@ -110,6 +111,33 @@ describe('ProductDetailPage', () => {
     fireEvent.click(screen.getByTestId('btn-save'));
     await waitFor(() => expect(mockedAdmin.update).toHaveBeenCalled());
     expect(await screen.findByText(/saved successfully/i)).toBeInTheDocument();
+  });
+
+  it('shows the existing gtin value in the input', async () => {
+    setup(makeProduct({ gtin: '5901234123457' }), [variant('Active')]);
+    expect(await screen.findByTestId('input-gtin')).toHaveValue('5901234123457');
+  });
+
+  it('saves an edited gtin value', async () => {
+    setup(makeProduct(), [variant('Active')]);
+    await screen.findByTestId('general-section');
+    mockedAdmin.update.mockResolvedValue({ success: true, data: makeProduct({ gtin: '4006381333931' }), message: '' });
+    fireEvent.change(screen.getByTestId('input-gtin'), { target: { value: '4006381333931' } });
+    fireEvent.click(screen.getByTestId('btn-save'));
+    await waitFor(() =>
+      expect(mockedAdmin.update).toHaveBeenCalledWith(42, expect.objectContaining({ gtin: '4006381333931' })),
+    );
+  });
+
+  it('clears an existing gtin value to null on save', async () => {
+    setup(makeProduct({ gtin: '5901234123457' }), [variant('Active')]);
+    await screen.findByTestId('input-gtin');
+    mockedAdmin.update.mockResolvedValue({ success: true, data: makeProduct({ gtin: null }), message: '' });
+    fireEvent.change(screen.getByTestId('input-gtin'), { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('btn-save'));
+    await waitFor(() =>
+      expect(mockedAdmin.update).toHaveBeenCalledWith(42, expect.objectContaining({ gtin: null })),
+    );
   });
 
   it('redirects to the list when the product is not found', async () => {

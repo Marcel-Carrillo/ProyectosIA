@@ -76,4 +76,41 @@ describe('mapSupplierFeedProduct', () => {
     expect(mapped.description).toBeNull();
     expect(mapped.brand).toBeNull();
   });
+
+  it('maps a valid 13-digit ean to gtin', () => {
+    const mapped = mapSupplierFeedProduct({ ...baseProduct, ean: '5901234123457' });
+
+    expect(mapped.gtin).toBe('5901234123457');
+  });
+
+  it.each([8, 12, 13, 14])('maps a valid %i-digit ean to gtin', (length) => {
+    const ean = '1'.repeat(length);
+    const mapped = mapSupplierFeedProduct({ ...baseProduct, ean });
+
+    expect(mapped.gtin).toBe(ean);
+  });
+
+  it('maps a missing ean to null gtin without throwing', () => {
+    const mapped = mapSupplierFeedProduct(baseProduct);
+
+    expect(mapped.gtin).toBeNull();
+  });
+
+  it('maps an invalid-format ean to null gtin rather than fabricating or throwing', () => {
+    const mapped = mapSupplierFeedProduct({ ...baseProduct, ean: '12345ABC9012' });
+
+    expect(mapped.gtin).toBeNull();
+  });
+
+  it('maps an ean with an invalid length to null gtin', () => {
+    const mapped = mapSupplierFeedProduct({ ...baseProduct, ean: '123456789' });
+
+    expect(mapped.gtin).toBeNull();
+  });
+
+  it('trims whitespace before validating ean', () => {
+    const mapped = mapSupplierFeedProduct({ ...baseProduct, ean: '  5901234123457  ' });
+
+    expect(mapped.gtin).toBe('5901234123457');
+  });
 });

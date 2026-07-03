@@ -64,6 +64,7 @@ A product is the public catalog item. It may have one or more variants depending
 * `slug`: Unique URL-friendly product identifier (max 200 characters); auto-generated from name in kebab-case with up to 5 collision retries
 * `description`: Product description (optional, max 2000 characters)
 * `brand`: Product brand or label name (optional, max 100 characters)
+* `gtin`: International trade item identifier — GTIN/EAN/UPC (optional, digits only, length 8, 12, 13, or 14 characters). Modeled at the product level, not per variant, in this iteration. Used to populate `gtin13`/`gtin` in storefront Product structured data (JSON-LD) when present; omitted from structured data when absent — never fabricated.
 * `status`: Current product status (valid values: Draft, Active, Inactive, Archived)
 * `mainImageUrl`: Main product image URL (optional, max 500 characters)
 * `categoryId`: Foreign key referencing the Category
@@ -77,6 +78,7 @@ A product is the public catalog item. It may have one or more variants depending
 * Slug is auto-generated from name; must be unique and cannot exceed 200 characters
 * Description is optional but cannot exceed 2000 characters
 * Brand is optional but cannot exceed 100 characters
+* GTIN is optional; when provided it must contain only digits and be 8, 12, 13, or 14 characters long (`VALIDATION_ERROR` otherwise); an empty string normalizes to `null` rather than being rejected. Validated on both create and update.
 * Status must be one of: Draft, Active, Inactive, Archived
 * Category reference is optional but must exist in the database if provided
 * A product must have at least one active variant to be set to Active (`PRODUCT_REQUIRES_ACTIVE_VARIANT`)
@@ -763,6 +765,7 @@ erDiagram
         String slug UK
         String description
         String brand
+        String gtin
         String status
         String mainImageUrl
         Int categoryId FK
