@@ -119,6 +119,7 @@ const ProductPage: React.FC = () => {
     name: product.name,
     ...(seoImage ? { image: seoImage } : {}),
     ...(product.description ? { description: product.description } : {}),
+    ...(product.brand ? { brand: { '@type': 'Brand', name: product.brand } } : {}),
     ...(structuredDataVariant
       ? {
           sku: structuredDataVariant.sku,
@@ -127,6 +128,41 @@ const ProductPage: React.FC = () => {
             price: structuredDataVariant.publicPrice,
             priceCurrency: 'EUR',
             availability: 'https://schema.org/InStock',
+            hasMerchantReturnPolicy: {
+              '@type': 'MerchantReturnPolicy',
+              applicableCountry: 'ES',
+              returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+              merchantReturnDays: 30,
+              returnMethod: 'https://schema.org/ReturnByMail',
+              returnFees: 'https://schema.org/ReturnShippingFees',
+            },
+            shippingDetails: {
+              '@type': 'OfferShippingDetails',
+              shippingRate: {
+                '@type': 'MonetaryAmount',
+                value: 8,
+                currency: 'EUR',
+              },
+              shippingDestination: {
+                '@type': 'DefinedRegion',
+                addressCountry: 'ES',
+              },
+              deliveryTime: {
+                '@type': 'ShippingDeliveryTime',
+                handlingTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 0,
+                  maxValue: 1,
+                  unitCode: 'd',
+                },
+                transitTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 2,
+                  maxValue: 4,
+                  unitCode: 'd',
+                },
+              },
+            },
           },
         }
       : {}),
