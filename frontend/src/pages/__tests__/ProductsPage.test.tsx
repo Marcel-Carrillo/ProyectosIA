@@ -18,6 +18,7 @@ const mockProduct: Product = {
   slug: 'red-hoodie',
   description: null,
   brand: null,
+  gtin: null,
   status: 'Active',
   mainImageUrl: null,
   categoryId: 4,

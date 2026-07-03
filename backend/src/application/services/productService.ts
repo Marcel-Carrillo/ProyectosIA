@@ -9,7 +9,7 @@ import {
 import { IProductTranslationRepository, TranslationUpsertData } from '../../domain/repositories/productTranslationRepository';
 import { Product } from '../../domain/models/product';
 import { ProductTranslation } from '../../domain/models/productTranslation';
-import { validateProductData, validateTranslationInput } from '../validator';
+import { validateProductData, validateTranslationInput, validateAndNormalizeGtinField } from '../validator';
 import {
   ProductNotFoundError,
   ProductRequiresActiveVariantError,
@@ -99,6 +99,12 @@ export class ProductService {
       const activeCount = await this.variantRepo.countActiveByProduct(id);
       if (activeCount === 0) throw new ProductRequiresActiveVariantError();
     }
+
+    // ProductService.update() does not run full validateProductData (pre-existing
+    // gap, not introduced here). gtin is validated on its own so PATCH rejects an
+    // invalid-format value the same way POST does, without newly enforcing
+    // name/status rules on update.
+    validateAndNormalizeGtinField(data as Record<string, unknown>);
 
     const { translations, ...productData } = data;
     await this.repo.update(id, productData);

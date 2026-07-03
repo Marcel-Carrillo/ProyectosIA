@@ -39,18 +39,112 @@ export interface ProductImage {
   createdAt: string;
 }
 
+// ─── Reviews ─────────────────────────────────────────────────────────────
+
+export type ReviewStatus = 'Pending' | 'Approved' | 'Rejected';
+
+/** Compact summary embedded directly in GET /api/public/products/:id (Approved-only). */
+export interface ReviewSummary {
+  averageRating: number | null;
+  reviewCount: number;
+}
+
+export interface RatingDistribution {
+  1: number;
+  2: number;
+  3: number;
+  4: number;
+  5: number;
+}
+
+/**
+ * A single Approved review as returned by public read endpoints. Never includes the
+ * reviewer's customerId, moderationNote, or moderatedByAdminUserId — identity is
+ * exposed only as `authorNameSnapshot`.
+ */
+export interface Review {
+  id: number;
+  productId: number;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  authorNameSnapshot: string;
+  createdAt: string;
+}
+
+export interface ReviewListResult {
+  items: Review[];
+  total: number;
+  page: number;
+  pageSize: number;
+  summary: ReviewSummary;
+  distribution: RatingDistribution;
+}
+
+export interface ReviewListResponse {
+  success: boolean;
+  data: ReviewListResult;
+  message: string;
+}
+
+/** GET /api/public/account/products/:productId/review-eligibility (customer auth required). */
+export interface ReviewEligibility {
+  canReview: boolean;
+  reason: 'eligible' | 'not_purchased' | 'already_reviewed';
+}
+
+export interface ReviewEligibilityResponse {
+  success: boolean;
+  data: ReviewEligibility;
+  message: string;
+}
+
+/** Body for POST /api/public/account/reviews. */
+export interface SubmitReviewInput {
+  productId: number;
+  rating: number;
+  title?: string;
+  body?: string;
+}
+
+/** The caller's own review — includes `status` since Pending/Rejected reviews are only visible to their author. */
+export interface OwnReview extends Review {
+  status: ReviewStatus;
+}
+
+export interface SubmitReviewResponse {
+  success: boolean;
+  data: OwnReview;
+  message: string;
+}
+
+export interface OwnReviewListResult {
+  items: OwnReview[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface OwnReviewListResponse {
+  success: boolean;
+  data: OwnReviewListResult;
+  message: string;
+}
+
 export interface Product {
   id: number;
   name: string;
   slug: string;
   description: string | null;
   brand: string | null;
+  gtin: string | null;
   status: ProductStatus;
   mainImageUrl: string | null;
   categoryId: number | null;
   variants?: ProductVariant[];
   images?: ProductImage[];
   translations?: ProductTranslation[];
+  reviewSummary?: ReviewSummary;
   createdAt: string;
   updatedAt: string;
 }
@@ -94,6 +188,7 @@ export interface CreateProductInput {
   name: string;
   description?: string | null;
   brand?: string | null;
+  gtin?: string | null;
   mainImageUrl?: string | null;
   categoryId?: number | null;
   translations?: { locale: SupportedLocale; name: string; description?: string | null }[];
@@ -104,6 +199,7 @@ export interface UpdateProductInput {
   name?: string;
   description?: string | null;
   brand?: string | null;
+  gtin?: string | null;
   status?: ProductStatus;
   mainImageUrl?: string | null;
   categoryId?: number | null;

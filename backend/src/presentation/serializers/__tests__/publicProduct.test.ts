@@ -9,6 +9,7 @@ const makeProduct = () =>
     slug: 'summer-dress',
     description: 'A light dress',
     brand: 'Acme',
+    gtin: '5901234123457',
     status: 'Active',
     mainImageUrl: 'https://img/main.jpg',
     categoryId: 3,
@@ -32,6 +33,7 @@ describe('serializePublicProduct', () => {
         'categoryId',
         'createdAt',
         'description',
+        'gtin',
         'id',
         'images',
         'mainImageUrl',
@@ -56,6 +58,17 @@ describe('serializePublicProduct', () => {
   it('orders images by sortOrder', () => {
     const dto = serializePublicProduct(makeProduct());
     expect(dto.images.map((i) => i.sortOrder)).toEqual([0, 1, 2]);
+  });
+
+  it('includes the gtin value when present', () => {
+    const dto = serializePublicProduct(makeProduct());
+    expect(dto.gtin).toBe('5901234123457');
+  });
+
+  it('includes gtin as null when the product has no gtin', () => {
+    const product = new Product({ id: 1, name: 'Summer Dress', slug: 'summer-dress', status: 'Active' });
+    const dto = serializePublicProduct(product);
+    expect(dto.gtin).toBeNull();
   });
 
   it('returns ES translation when locale is es', () => {

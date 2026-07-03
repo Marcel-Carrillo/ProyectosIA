@@ -22,6 +22,7 @@ const created: Product = {
   slug: 'new',
   description: null,
   brand: null,
+  gtin: null,
   status: 'Draft',
   mainImageUrl: null,
   categoryId: null,
@@ -71,6 +72,39 @@ describe('ProductFormModal', () => {
           expect.objectContaining({ locale: 'es', name: 'Vestido' }),
         ]),
       })),
+    );
+  });
+
+  it('includes gtin in the create payload when provided', async () => {
+    mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
+    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
+    fireEvent.change(screen.getByTestId('input-product-gtin'), { target: { value: '4006381333931' } });
+    fireEvent.click(screen.getByTestId('btn-modal-save'));
+    await waitFor(() =>
+      expect(mocked.create).toHaveBeenCalledWith(expect.objectContaining({ gtin: '4006381333931' })),
+    );
+  });
+
+  it('submits null gtin when the field is left empty', async () => {
+    mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
+    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
+    fireEvent.click(screen.getByTestId('btn-modal-save'));
+    await waitFor(() =>
+      expect(mocked.create).toHaveBeenCalledWith(expect.objectContaining({ gtin: null })),
+    );
+  });
+
+  it('clears a previously entered gtin value before submitting', async () => {
+    mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
+    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
+    fireEvent.change(screen.getByTestId('input-product-gtin'), { target: { value: '4006381333931' } });
+    fireEvent.change(screen.getByTestId('input-product-gtin'), { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('btn-modal-save'));
+    await waitFor(() =>
+      expect(mocked.create).toHaveBeenCalledWith(expect.objectContaining({ gtin: null })),
     );
   });
 });

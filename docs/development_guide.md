@@ -463,6 +463,31 @@ LIBRETRANSLATE_URL=http://localhost:5000 npm run backfill:translations
 
 The script is safe to run multiple times (idempotent) and logs a summary of rows created vs. skipped.
 
+## 📦 Supplier Feed Sample Import (Local Development Only)
+
+Resets the local product catalog and loads a local JSON fixture shaped like a supplier catalog API response, so the admin panel's "product arrives without images → admin completes it" flow can be exercised without any real supplier integration:
+
+```bash
+cd backend
+npm run import:supplier-feed
+```
+
+**What it does:**
+
+1. Reads `backend/prisma/fixtures/supplier-feed.sample.json` and validates it before touching the database — a missing or malformed fixture aborts with a non-zero exit code and no database changes.
+2. Cleans the local database: deletes, in foreign-key-safe order, `StripeWebhookEvent`, `CouponRedemption`, `Refund`, `ReturnRequest`, `Shipment`, `SupplierOrderItem`, `SupplierOrder`, `CustomerOrderItem`, `CustomerOrder`, `WishlistItem`, `ProductImage`, `ProductVariant`, and `Product` rows. `Category`, `Supplier`, `AdminUser`, `Customer`/`CustomerAccount`, and `Coupon` definitions are preserved, so admin/customer login and coupon codes keep working.
+3. Upserts `Supplier` and `Category` rows from the fixture, then creates each `Product` in `Draft` status with `mainImageUrl: null` and zero `ProductImage` rows (even though the fixture carries an `images: []` field) — the product is intentionally incomplete until an admin adds at least one image via the existing `ImageManager` and activates it.
+4. Prints a summary: `{ suppliersUpserted, categoriesUpserted, productsCreated, variantsCreated, imagesCreated: 0 }`.
+
+**Safety guard (hard-blocked outside local development):**
+
+The script refuses to run — with no database changes — unless both of the following hold:
+
+- `NODE_ENV !== 'production'`
+- `DATABASE_URL` resolves to a local host: `localhost`, `127.0.0.1`, or the Docker Compose service name `db`
+
+**Important:** this is a **local development reset tool**, not an incremental sync. Every run deletes all local customer order, supplier order, shipment, return request, refund, and wishlist history along with the product catalog, then reloads the fixture from scratch. Never run this against a shared, staging, or production database.
+
 ## 🧪 Suggested Manual Test Flow
 
 After setup, validate the basic ecommerce flow:

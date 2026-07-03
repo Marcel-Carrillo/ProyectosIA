@@ -64,6 +64,7 @@ A product is the public catalog item. It may have one or more variants depending
 * `slug`: Unique URL-friendly product identifier (max 200 characters); auto-generated from name in kebab-case with up to 5 collision retries
 * `description`: Product description (optional, max 2000 characters)
 * `brand`: Product brand or label name (optional, max 100 characters)
+* `gtin`: International trade item identifier — GTIN/EAN/UPC (optional, digits only, length 8, 12, 13, or 14 characters). Modeled at the product level, not per variant, in this iteration. Used to populate `gtin13`/`gtin` in storefront Product structured data (JSON-LD) when present; omitted from structured data when absent — never fabricated.
 * `status`: Current product status (valid values: Draft, Active, Inactive, Archived)
 * `mainImageUrl`: Main product image URL (optional, max 500 characters)
 * `categoryId`: Foreign key referencing the Category
@@ -77,6 +78,7 @@ A product is the public catalog item. It may have one or more variants depending
 * Slug is auto-generated from name; must be unique and cannot exceed 200 characters
 * Description is optional but cannot exceed 2000 characters
 * Brand is optional but cannot exceed 100 characters
+* GTIN is optional; when provided it must contain only digits and be 8, 12, 13, or 14 characters long (`VALIDATION_ERROR` otherwise); an empty string normalizes to `null` rather than being rejected. Validated on both create and update.
 * Status must be one of: Draft, Active, Inactive, Archived
 * Category reference is optional but must exist in the database if provided
 * A product must have at least one active variant to be set to Active (`PRODUCT_REQUIRES_ACTIVE_VARIANT`)
@@ -102,6 +104,7 @@ Products are soft-deleted by setting `deletedAt = now()` rather than removing th
 * `images`: One-to-many relationship with ProductImage model
 * `translations`: One-to-many relationship with ProductTranslation model (locale-specific name/description)
 * `customerOrderItems`: One-to-many relationship with CustomerOrderItem model through ProductVariant
+* `reviews`: One-to-many relationship with Review model (product-level scope — one review per customer per product)
 
 ### 3. ProductTranslation
 
@@ -605,7 +608,61 @@ Timestamps set automatically on transition:
 * `customerOrderItem`: Many-to-one relationship with CustomerOrderItem model
 * `refunds`: One-to-many relationship with Refund model
 
-### 14. Refund
+### 14. Review
+
+Represents a verified-buyer product review submitted by a customer and moderated by an admin before public visibility.
+
+Reviews are scoped at the **product** level (not per variant): a customer may submit at most one review per product, enforced by a unique constraint on `(customerId, productId)`.
+
+**Fields:**
+
+* `id`: Unique identifier for the review (Primary Key)
+* `productId`: Foreign key referencing the Product
+* `customerId`: Foreign key referencing the Customer — **INTERNAL ONLY on public APIs**
+* `customerOrderItemId`: Optional FK referencing the qualifying paid order line used for purchase verification
+* `rating`: Integer star rating (1–5 inclusive)
+* `title`: Optional review title (max 150 characters)
+* `body`: Optional review body (max 2000 characters, plain text)
+* `authorNameSnapshot`: Display name captured at submission (max 100 characters) — the only reviewer identity exposed on customer-facing APIs
+* `status`: Review status (valid values: Pending, Approved, Rejected)
+* `moderatedByAdminUserId`: Optional FK referencing AdminUser — **admin/internal only**
+* `moderationNote`: Optional internal note (max 500 characters) — **admin/internal only**
+* `moderatedAt`: Date and time when moderation completed (optional)
+* `publishedAt`: Date and time when the review became publicly visible (set on `Approved`)
+* `createdAt`: Date and time when the review was created
+* `updatedAt`: Date and time when the review was last updated
+
+**State Machine:**
+
+```
+Pending → Approved | Rejected
+
+Terminal states: Approved, Rejected (no further transitions allowed)
+```
+
+Timestamps set automatically on transition:
+- `moderatedAt` and `publishedAt` — set when transitioning to `Approved`
+- `moderatedAt` — set when transitioning to `Rejected` (`publishedAt` remains null)
+
+**Validation Rules:**
+
+* Product and customer references are required
+* `rating` must be an integer between 1 and 5
+* `title` is optional, max 150 characters
+* `body` is optional, max 2000 characters
+* Submission requires a verified paid purchase of any variant belonging to the product (`REVIEW_PURCHASE_NOT_VERIFIED`)
+* At most one review per customer per product (`REVIEW_ALREADY_EXISTS` / unique constraint)
+* Only `Approved` reviews appear on public list endpoints, rating summaries, and storefront JSON-LD
+* Public responses use an explicit allow-list (`serializePublicReview` / `serializeOwnReview`) — never expose `customerId`, `moderationNote`, or `moderatedByAdminUserId` on `/api/public/*`
+
+**Relationships:**
+
+* `product`: Many-to-one relationship with Product model
+* `customer`: Many-to-one relationship with Customer model
+* `customerOrderItem`: Optional many-to-one relationship with CustomerOrderItem model
+* `moderatedByAdminUser`: Optional many-to-one relationship with AdminUser model
+
+### 15. Refund
 
 Represents a full or partial refund associated with a customer order.
 
@@ -658,7 +715,7 @@ Terminal states: Completed, Failed, Cancelled (no further transitions allowed)
 * `customerOrder`: Many-to-one relationship with CustomerOrder model
 * `returnRequest`: Optional many-to-one relationship with ReturnRequest model (real DB FK — ON DELETE SET NULL)
 
-### 15. StripeWebhookEvent
+### 16. StripeWebhookEvent
 
 Idempotency log for Stripe webhook events received at `POST /api/public/payments/webhook`.
 
@@ -708,6 +765,7 @@ erDiagram
         String slug UK
         String description
         String brand
+        String gtin
         String status
         String mainImageUrl
         Int categoryId FK
@@ -877,6 +935,24 @@ erDiagram
         DateTime updatedAt
     }
 
+    Review {
+        Int id PK
+        Int productId FK
+        Int customerId FK
+        Int customerOrderItemId FK
+        Int rating
+        String title
+        String body
+        String authorNameSnapshot
+        String status
+        Int moderatedByAdminUserId FK
+        String moderationNote
+        DateTime moderatedAt
+        DateTime publishedAt
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
     Refund {
         Int id PK
         Int customerOrderId FK
@@ -895,7 +971,9 @@ erDiagram
 
     Product ||--o{ ProductVariant : "has"
     Product ||--o{ ProductImage : "has"
+    Product ||--o{ Review : "has"
 
+    Customer ||--o{ Review : "writes"
     Supplier ||--o{ ProductVariant : "provides"
     Supplier ||--o{ SupplierOrder : "receives"
 
@@ -915,9 +993,12 @@ erDiagram
 
     CustomerOrder ||--o{ ReturnRequest : "has"
     CustomerOrderItem ||--o{ ReturnRequest : "returned_as"
+    CustomerOrderItem ||--o{ Review : "verified_by"
 
     CustomerOrder ||--o{ Refund : "has"
     ReturnRequest ||--o{ Refund : "may_generate"
+
+    AdminUser ||--o{ Review : "moderates"
 
     StripeWebhookEvent {
         Int id PK

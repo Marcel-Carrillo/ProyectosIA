@@ -1,0 +1,43 @@
+[
+  {
+    "supplier": { "name": "Atelier Nord", "reference": "SUP-AN-001" },
+    "externalRef": "AN-DRESS-001",
+    "title": "Belted Midi Wrap Dress",
+    "description": "A wrap dress with a self-tie belt, cut from a soft crepe.",
+    "brand": "Atelier Nord",
+    "category": "Dresses",
+    "supplierCost": 18.5,
+    "images": [],
+    "variants": [
+      { "sku": "AN-DRESS-001-S", "size": "S", "publicPrice": 49.99 },
+      { "sku": "AN-DRESS-001-M", "size": "M", "publicPrice": 49.99 }
+    ]
+  },
+  {
+    "supplier": { "name": "Lumen Textiles", "reference": "SUP-LT-014" },
+    "externalRef": "LT-COAT-014",
+    "title": "Oversized Wool Blend Coat",
+    "description": "Structured shoulders, oversized silhouette.",
+    "brand": "Lumen",
+    "category": "Outerwear",
+    "supplierCost": 42.0,
+    "images": [],
+    "variants": [
+      { "sku": "LT-COAT-014-BLK-M", "size": "M", "color": "Black", "publicPrice": 129.0 }
+    ]
+  },
+  {
+    "supplier": { "name": "Atelier Nord", "reference": "SUP-AN-001" },
+    "externalRef": "AN-TOP-002",
+    "title": "Silk Blend Cami Top",
+    "description": "A relaxed-fit cami top in a silk-cotton blend.",
+    "brand": "Atelier Nord",
+    "category": "Tops",
+    "supplierCost": 9.75,
+    "images": [],
+    "variants": [
+      { "sku": "AN-TOP-002-XS", "size": "XS", "color": "Ivory", "publicPrice": 29.99 },
+      { "sku": "AN-TOP-002-S", "size": "S", "color": "Ivory", "publicPrice": 29.99 }
+    ]
+  }
+]

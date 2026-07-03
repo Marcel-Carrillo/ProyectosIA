@@ -9,6 +9,10 @@ import PriceTag from '../../components/storefront/PriceTag';
 import Seo, { SITE_URL } from '../../components/storefront/Seo';
 import { useStorefrontCategories } from '../../hooks/useStorefrontCategories';
 import { useCart } from '../../contexts/CartContext';
+import ProductReviews from '../../components/storefront/ProductReviews';
+import ReviewForm from '../../components/storefront/ReviewForm';
+import { reviewService } from '../../services/reviewService';
+import { Review, RatingDistribution } from '../../types/product';
 
 const SEO_DESCRIPTION_MAX_LENGTH = 155;
 
@@ -30,11 +34,20 @@ const ProductPage: React.FC = () => {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const { links: categoryLinks } = useStorefrontCategories();
 
+  const REVIEWS_PAGE_SIZE = 5;
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsDistribution, setReviewsDistribution] = useState<RatingDistribution | null>(null);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     setIsLoading(true);
     setNotFound(false);
     setError(null);
+    setReviewsPage(1);
 
     productService
       .getById(Number(id))
@@ -54,6 +67,22 @@ const ProductPage: React.FC = () => {
       })
       .finally(() => setIsLoading(false));
   }, [id, i18n.language]);
+
+  useEffect(() => {
+    if (!id) return;
+    setReviewsLoading(true);
+    setReviewsError(null);
+
+    reviewService
+      .listApprovedForProduct(Number(id), { page: reviewsPage, pageSize: REVIEWS_PAGE_SIZE })
+      .then((result) => {
+        setReviews(result.items);
+        setReviewsDistribution(result.distribution);
+        setReviewsTotalPages(Math.max(1, Math.ceil(result.total / result.pageSize)));
+      })
+      .catch(() => setReviewsError('Unable to load reviews. Please try again later.'))
+      .finally(() => setReviewsLoading(false));
+  }, [id, reviewsPage]);
 
   if (isLoading) {
     return (
@@ -119,6 +148,12 @@ const ProductPage: React.FC = () => {
     name: product.name,
     ...(seoImage ? { image: seoImage } : {}),
     ...(product.description ? { description: product.description } : {}),
+    ...(product.brand ? { brand: { '@type': 'Brand', name: product.brand } } : {}),
+    ...(product.gtin
+      ? product.gtin.length === 13
+        ? { gtin13: product.gtin }
+        : { gtin: product.gtin }
+      : {}),
     ...(structuredDataVariant
       ? {
           sku: structuredDataVariant.sku,
@@ -127,7 +162,65 @@ const ProductPage: React.FC = () => {
             price: structuredDataVariant.publicPrice,
             priceCurrency: 'EUR',
             availability: 'https://schema.org/InStock',
+            hasMerchantReturnPolicy: {
+              '@type': 'MerchantReturnPolicy',
+              applicableCountry: 'ES',
+              returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+              merchantReturnDays: 30,
+              returnMethod: 'https://schema.org/ReturnByMail',
+              returnFees: 'https://schema.org/ReturnShippingFees',
+            },
+            shippingDetails: {
+              '@type': 'OfferShippingDetails',
+              shippingRate: {
+                '@type': 'MonetaryAmount',
+                value: 8,
+                currency: 'EUR',
+              },
+              shippingDestination: {
+                '@type': 'DefinedRegion',
+                addressCountry: 'ES',
+              },
+              deliveryTime: {
+                '@type': 'ShippingDeliveryTime',
+                handlingTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 0,
+                  maxValue: 1,
+                  unitCode: 'd',
+                },
+                transitTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 2,
+                  maxValue: 4,
+                  unitCode: 'd',
+                },
+              },
+            },
           },
+        }
+      : {}),
+    ...(!reviewsLoading && !reviewsError && product.reviewSummary && product.reviewSummary.reviewCount >= 1
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: product.reviewSummary.averageRating,
+            reviewCount: product.reviewSummary.reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          review: reviews.map((r) => ({
+            '@type': 'Review',
+            author: { '@type': 'Person', name: r.authorNameSnapshot },
+            reviewRating: {
+              '@type': 'Rating',
+              ratingValue: r.rating,
+              bestRating: 5,
+              worstRating: 1,
+            },
+            ...(r.body ? { reviewBody: r.body } : {}),
+            datePublished: r.createdAt,
+          })),
         }
       : {}),
   };
@@ -233,6 +326,20 @@ const ProductPage: React.FC = () => {
               </dl>
             </div>
           </div>
+        </div>
+
+        <div className="storefront-pdp-reviews">
+          <ProductReviews
+            summary={product.reviewSummary ?? { averageRating: null, reviewCount: 0 }}
+            distribution={reviewsDistribution}
+            reviews={reviews}
+            isLoading={reviewsLoading}
+            error={reviewsError}
+            page={reviewsPage}
+            totalPages={reviewsTotalPages}
+            onPageChange={setReviewsPage}
+          />
+          <ReviewForm productId={product.id} />
         </div>
       </div>
     </div>

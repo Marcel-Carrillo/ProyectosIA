@@ -35,6 +35,7 @@ export interface PublicProductDTO {
   slug: string;
   description: string | null;
   brand: string | null;
+  gtin: string | null;
   status: string;
   mainImageUrl: string | null;
   categoryId: number | null;
@@ -42,6 +43,7 @@ export interface PublicProductDTO {
   images: PublicProductImageDTO[];
   createdAt?: Date;
   updatedAt?: Date;
+  reviewSummary?: { averageRating: number | null; reviewCount: number };
 }
 
 function serializeVariant(variant: ProductVariant): PublicVariantDTO {
@@ -65,7 +67,11 @@ function serializeImage(image: ProductImage): PublicProductImageDTO {
   };
 }
 
-export function serializePublicProduct(product: Product, locale?: string | null): PublicProductDTO {
+export function serializePublicProduct(
+  product: Product,
+  locale?: string | null,
+  reviewSummary?: { averageRating: number | null; reviewCount: number },
+): PublicProductDTO {
   const resolved = resolveProductLocale(product, locale);
 
   const variants = (product.variants ?? [])
@@ -83,6 +89,7 @@ export function serializePublicProduct(product: Product, locale?: string | null)
     slug: product.slug,
     description: resolved.description,
     brand: product.brand ?? null,
+    gtin: product.gtin ?? null,
     status: product.status,
     mainImageUrl: product.mainImageUrl ?? null,
     categoryId: product.categoryId ?? null,
@@ -90,5 +97,6 @@ export function serializePublicProduct(product: Product, locale?: string | null)
     images,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
+    ...(reviewSummary !== undefined && { reviewSummary }),
   };
 }

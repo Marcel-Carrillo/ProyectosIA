@@ -51,6 +51,12 @@ import {
   ReturnRequestItemMismatchError,
   ReturnRequestTransitionInvalidError,
 } from '../infrastructure/repositories/returnRequestRepository';
+import {
+  ReviewNotFoundError,
+  ReviewAlreadyExistsError,
+  ReviewPurchaseNotVerifiedError,
+  ReviewTransitionInvalidError,
+} from '../infrastructure/repositories/reviewRepository';
 import { CustomerOrderItemNotFoundError } from '../infrastructure/repositories/customerOrderRepository';
 import {
   AdminDisabledError,
@@ -167,6 +173,14 @@ export function globalErrorHandler(
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof RefundTransitionInvalidError) {
     statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof ReviewNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof ReviewAlreadyExistsError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof ReviewPurchaseNotVerifiedError) {
+    statusCode = 403; code = err.code; message = err.message;
+  } else if (err instanceof ReviewTransitionInvalidError) {
+    statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof ShipmentNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof ShipmentStatusTransitionInvalidError) {
