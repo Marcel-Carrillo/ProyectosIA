@@ -117,10 +117,10 @@
 
 ## 15. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 15.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
-- [ ] 15.2 Verify all tasks above are `[x]` and all required reports exist under `openspec/changes/product-customer-reviews/reports/`.
-- [ ] 15.3 Stage all relevant files (code, tests, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`.
-- [ ] 15.4 Create a commit with a Conventional Commit message (`feat(catalog): add verified-buyer product reviews with moderation`) referencing this OpenSpec change and test status.
-- [ ] 15.5 Push branch: `git push -u origin feature/product-customer-reviews`.
-- [ ] 15.6 Create PR with `gh pr create --base develop --title "feat(catalog): add verified-buyer product reviews with moderation" --body "..."` including summary, OpenSpec change name, and verification status.
-- [ ] 15.7 Report the PR URL in chat.
+- [x] 15.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
+- [x] 15.2 Verify all tasks above are `[x]` and all required reports exist under `openspec/changes/product-customer-reviews/reports/`.
+- [x] 15.3 Stage all relevant files (code, tests, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`.
+- [x] 15.4 Create a commit with a Conventional Commit message (`feat(catalog): add verified-buyer product reviews with moderation`) referencing this OpenSpec change and test status.
+- [x] 15.5 Push branch: `git push -u origin feature/product-customer-reviews`.
+- [x] 15.6 Create PR with `gh pr create --base develop --title "feat(catalog): add verified-buyer product reviews with moderation" --body "..."` including summary, OpenSpec change name, and verification status.
+- [x] 15.7 Report the PR URL in chat.
