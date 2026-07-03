@@ -856,6 +856,90 @@ export function validateReturnRequestStatusUpdate(data: Record<string, unknown>)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Review validators
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Rejects genuine control characters (null byte, etc.) but deliberately allows
+// ordinary punctuation including '<' and '>' — review text is stored as plain
+// text and rendered through Seo.tsx's existing <script>-escaping mechanism at
+// render time, not sanitized/blacklisted at the input boundary.
+// Built from character codes (not a literal escape sequence in source) to avoid
+// editor/tooling mangling of raw control bytes: matches ASCII 0-8, 11, 12,
+// 14-31, and 127 (DEL) -- i.e. all C0 control codes except tab(9)/LF(10)/CR(13).
+const CONTROL_CHAR_CODES = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+  25, 26, 27, 28, 29, 30, 31, 127,
+];
+const CONTROL_CHARS_PATTERN =
+  '[' + CONTROL_CHAR_CODES.map((c) => String.fromCharCode(c)).join('') + ']';
+const CONTROL_CHARS_REGEX = new RegExp(CONTROL_CHARS_PATTERN);
+
+export function validateReviewData(data: Record<string, unknown>): void {
+  const productId = data['productId'];
+  if (productId === undefined || productId === null) {
+    throw new ValidationError("Field 'productId' is required");
+  }
+  if (!Number.isInteger(productId) || (productId as number) < 1) {
+    throw new ValidationError("Field 'productId' must be a positive integer");
+  }
+
+  const rating = data['rating'];
+  if (rating === undefined || rating === null || rating === '') {
+    throw new ValidationError("Field 'rating' is required");
+  }
+  if (!Number.isInteger(rating) || (rating as number) < 1 || (rating as number) > 5) {
+    throw new ValidationError("Field 'rating' must be an integer between 1 and 5");
+  }
+
+  const title = data['title'];
+  if (title !== undefined && title !== null && title !== '') {
+    if (typeof title !== 'string') {
+      throw new ValidationError("Field 'title' must be a string");
+    }
+    if (title.length > 150) {
+      throw new ValidationError("Field 'title' must not exceed 150 characters");
+    }
+    if (CONTROL_CHARS_REGEX.test(title)) {
+      throw new ValidationError("Field 'title' contains invalid control characters");
+    }
+  }
+
+  const body = data['body'];
+  if (body !== undefined && body !== null && body !== '') {
+    if (typeof body !== 'string') {
+      throw new ValidationError("Field 'body' must be a string");
+    }
+    if (body.length > 2000) {
+      throw new ValidationError("Field 'body' must not exceed 2000 characters");
+    }
+    if (CONTROL_CHARS_REGEX.test(body)) {
+      throw new ValidationError("Field 'body' contains invalid control characters");
+    }
+  }
+}
+
+const REVIEW_MODERATION_STATUSES = ['Approved', 'Rejected'] as const;
+
+export function validateReviewStatusUpdate(data: Record<string, unknown>): void {
+  const status = data['status'];
+  if (status === undefined || status === null || status === '') {
+    throw new ValidationError("Field 'status' is required");
+  }
+  if (!REVIEW_MODERATION_STATUSES.includes(status as (typeof REVIEW_MODERATION_STATUSES)[number])) {
+    throw new ValidationError(
+      `Field 'status' must be one of: ${REVIEW_MODERATION_STATUSES.join(', ')}`
+    );
+  }
+
+  const moderationNote = data['moderationNote'];
+  if (moderationNote !== undefined && moderationNote !== null && moderationNote !== '') {
+    if (typeof moderationNote === 'string' && moderationNote.length > 500) {
+      throw new ValidationError("Field 'moderationNote' must not exceed 500 characters");
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Stripe / Payment error classes
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -57,6 +57,7 @@ model Product {
   variants     ProductVariant[]
   images       ProductImage[]
   translations ProductTranslation[]
+  reviews      Review[]
 }
 
 model ProductVariant {
@@ -103,6 +104,7 @@ model Customer {
   addresses      CustomerAddress[]
   customerOrders CustomerOrder[]
   account        CustomerAccount?
+  reviews        Review[]
 }
 
 model CustomerAddress {
@@ -176,6 +178,7 @@ model CustomerOrderItem {
   updatedAt           DateTime            @updatedAt
   supplierOrderItems  SupplierOrderItem[]
   returnRequests      ReturnRequest[]
+  reviews             Review[]
 
   @@index([customerOrderId])
   @@index([productVariantId])
@@ -290,14 +293,43 @@ model ReturnRequest {
   @@index([createdAt])
 }
 
+model Review {
+  id                     Int                @id @default(autoincrement())
+  productId              Int
+  product                Product            @relation(fields: [productId], references: [id])
+  customerId             Int
+  customer               Customer           @relation(fields: [customerId], references: [id])
+  customerOrderItemId    Int?
+  customerOrderItem      CustomerOrderItem? @relation(fields: [customerOrderItemId], references: [id])
+  rating                 Int
+  title                  String?            @db.VarChar(150)
+  body                   String?            @db.VarChar(2000)
+  authorNameSnapshot     String             @db.VarChar(100)
+  status                 String             @default("Pending") @db.VarChar(20)
+  moderatedByAdminUserId Int?
+  moderatedByAdminUser   AdminUser?         @relation(fields: [moderatedByAdminUserId], references: [id])
+  moderationNote         String?            @db.VarChar(500)
+  moderatedAt            DateTime?
+  publishedAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@unique([customerId, productId])
+  @@index([productId, status])
+  @@index([status])
+  @@index([customerId])
+  @@index([createdAt])
+}
+
 model AdminUser {
-  id            Int                 @id @default(autoincrement())
-  email         String              @unique @db.VarChar(255)
-  passwordHash  String              @db.VarChar(255)
-  status        String              @default("Active")
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  refreshTokens AdminRefreshToken[]
+  id               Int                 @id @default(autoincrement())
+  email            String              @unique @db.VarChar(255)
+  passwordHash     String              @db.VarChar(255)
+  status           String              @default("Active")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  refreshTokens    AdminRefreshToken[]
+  moderatedReviews Review[]
 }
 
 model AdminRefreshToken {

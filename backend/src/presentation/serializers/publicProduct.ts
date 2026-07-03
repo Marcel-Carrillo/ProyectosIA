@@ -43,6 +43,7 @@ export interface PublicProductDTO {
   images: PublicProductImageDTO[];
   createdAt?: Date;
   updatedAt?: Date;
+  reviewSummary?: { averageRating: number | null; reviewCount: number };
 }
 
 function serializeVariant(variant: ProductVariant): PublicVariantDTO {
@@ -66,7 +67,11 @@ function serializeImage(image: ProductImage): PublicProductImageDTO {
   };
 }
 
-export function serializePublicProduct(product: Product, locale?: string | null): PublicProductDTO {
+export function serializePublicProduct(
+  product: Product,
+  locale?: string | null,
+  reviewSummary?: { averageRating: number | null; reviewCount: number },
+): PublicProductDTO {
   const resolved = resolveProductLocale(product, locale);
 
   const variants = (product.variants ?? [])
@@ -92,5 +97,6 @@ export function serializePublicProduct(product: Product, locale?: string | null)
     images,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
+    ...(reviewSummary !== undefined && { reviewSummary }),
   };
 }

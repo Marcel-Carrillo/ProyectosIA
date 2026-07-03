@@ -14,6 +14,11 @@ import {
   addWishlistItem,
   removeWishlistItem,
 } from '../../presentation/controllers/wishlistController';
+import {
+  getReviewEligibility,
+  submitReview,
+  listOwnReviews,
+} from '../../presentation/controllers/reviewAccountController';
 import { requireCustomerAuth } from '../../middleware/requireCustomerAuth';
 
 const accountLimiter = rateLimit({
@@ -40,5 +45,9 @@ router.post('/security/2fa/disable', disable2fa);
 router.get('/wishlist', listWishlist);
 router.post('/wishlist', addWishlistItem);
 router.delete('/wishlist/:productVariantId', removeWishlistItem);
+
+router.get('/products/:productId/review-eligibility', getReviewEligibility);
+router.post('/reviews', submitReview);
+router.get('/reviews', listOwnReviews);
 
 export default router;
