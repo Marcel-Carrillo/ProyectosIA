@@ -1156,6 +1156,41 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/public/products/{id}/reviews:
+    get:
+      summary: List approved product reviews (public storefront)
+      description: >
+        Returns paginated Approved reviews for an Active product, plus an
+        Approved-only rating summary and star distribution. Pending and Rejected
+        reviews are never included. Reviewer identity is exposed only as
+        `authorNameSnapshot` (no email, customerId, or moderation fields).
+      tags:
+        - Public — Catalog
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/PageParam'
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProductReviewsResponse'
+        '404':
+          description: Product not found or not Active (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/public/categories:
     get:
       summary: List categories (public storefront)
@@ -2154,6 +2189,96 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/reviews:
+    get:
+      summary: List reviews for moderation (admin)
+      description: Paginated review queue. Requires admin authentication.
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ReviewStatus'
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/reviews/{id}/status:
+    patch:
+      summary: Moderate a review (admin)
+      description: Transition a Pending review to Approved or Rejected.
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReviewStatusRequest'
+      responses:
+        '200':
+          description: Review status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Review not found (REVIEW_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Invalid transition (REVIEW_TRANSITION_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/reviews/{id}:
+    delete:
+      summary: Delete a review (admin)
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Review deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Review not found (REVIEW_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/admin/return-requests:
     get:
       summary: Get all return requests (admin)
@@ -2543,6 +2668,78 @@ paths:
       responses:
         '200': { description: Wishlist items }
 
+  /api/public/account/products/{productId}/review-eligibility:
+    get:
+      summary: Check review eligibility for a product
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Eligibility result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewEligibilityResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/public/account/reviews:
+    get:
+      summary: List own reviews
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Paginated list of the caller's reviews (includes status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnReviewListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Submit a product review
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitReviewRequest'
+      responses:
+        '201':
+          description: Review created with status Pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnReviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Purchase not verified (REVIEW_PURCHASE_NOT_VERIFIED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate review (REVIEW_ALREADY_EXISTS)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/public/checkout/guest:
     post:
       summary: Guest checkout
@@ -2809,6 +3006,161 @@ components:
         - Delivered
         - Failed
         - Returned
+
+    ReviewStatus:
+      type: string
+      enum: [Pending, Approved, Rejected]
+
+    PublicReview:
+      type: object
+      description: Customer-safe review DTO (no customerId, status, or moderation fields).
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        title: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+        authorNameSnapshot: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    OwnReview:
+      allOf:
+        - $ref: '#/components/schemas/PublicReview'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/ReviewStatus'
+
+    ReviewSummary:
+      type: object
+      properties:
+        averageRating: { type: number, nullable: true }
+        reviewCount: { type: integer }
+
+    RatingDistribution:
+      type: object
+      properties:
+        '1': { type: integer }
+        '2': { type: integer }
+        '3': { type: integer }
+        '4': { type: integer }
+        '5': { type: integer }
+
+    PublicProductReviewsResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublicReview'
+            total: { type: integer }
+            page: { type: integer }
+            pageSize: { type: integer }
+            summary:
+              $ref: '#/components/schemas/ReviewSummary'
+            distribution:
+              $ref: '#/components/schemas/RatingDistribution'
+
+    ReviewEligibilityResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            canReview: { type: boolean }
+            reason:
+              type: string
+              enum: [eligible, not_purchased, already_reviewed]
+
+    SubmitReviewRequest:
+      type: object
+      required: [productId, rating]
+      properties:
+        productId: { type: integer }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        title: { type: string, maxLength: 150 }
+        body: { type: string, maxLength: 2000 }
+
+    OwnReviewResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          $ref: '#/components/schemas/OwnReview'
+
+    OwnReviewListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OwnReview'
+            total: { type: integer }
+            page: { type: integer }
+            pageSize: { type: integer }
+
+    Review:
+      type: object
+      description: Full admin review record.
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        customerId: { type: integer }
+        customerOrderItemId: { type: integer, nullable: true }
+        rating: { type: integer }
+        title: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+        authorNameSnapshot: { type: string }
+        status: { $ref: '#/components/schemas/ReviewStatus' }
+        moderatedByAdminUserId: { type: integer, nullable: true }
+        moderationNote: { type: string, nullable: true }
+        moderatedAt: { type: string, format: date-time, nullable: true }
+        publishedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ReviewListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Review'
+            total: { type: integer }
+            page: { type: integer }
+            pageSize: { type: integer }
+
+    ReviewResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          $ref: '#/components/schemas/Review'
+
+    UpdateReviewStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [Approved, Rejected]
+        moderationNote:
+          type: string
+          maxLength: 500
 
     ReturnRequestStatus:
       type: string
@@ -3347,6 +3699,20 @@ components:
         updatedAt:
           type: string
           format: date-time
+        reviewSummary:
+          type: object
+          description: >
+            Approved-only rating summary. Present on GET /api/public/products/{id}
+            when the product has at least one Approved review; omitted from list
+            responses and when reviewCount is 0.
+          properties:
+            averageRating:
+              type: number
+              nullable: true
+              example: 4.5
+            reviewCount:
+              type: integer
+              example: 12
 
     PublicProductResponse:
       type: object

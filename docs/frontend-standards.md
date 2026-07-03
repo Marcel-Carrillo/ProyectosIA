@@ -875,7 +875,7 @@ This is why `frontend/public/index.html` has no static `meta[name="description"]
 - **Customer account pages**: covered once by `frontend/src/components/storefront/AccountLayout.tsx`.
 - **Customer auth pages** (login/register/forgot/reset password): covered once by `frontend/src/components/storefront/StorefrontAuthPanel.tsx`.
 - **Cart, checkout, order confirmation**: each page renders its own `<Seo noindex>` directly (no shared wrapper).
-- **Catalog, product detail, static content pages**: each renders its own public `<Seo>` with page-specific title/description/canonical (and JSON-LD on the product detail page).
+- **Catalog, product detail, static content pages**: each renders its own public `<Seo>` with page-specific title/description/canonical (and JSON-LD on the product detail page). On the PDP, `aggregateRating` and `review` JSON-LD are emitted only when the product has at least one **Approved** review and the reviews list fetch has completed — never emit placeholder ratings.
 
 When adding a new route, decide which of the above buckets it belongs to (public and indexable vs. private/`noindex`) and either add `<Seo>` directly to the page or confirm it already renders through a shared wrapper — never add a second `Seo` on top of one already provided by a wrapper.
 
