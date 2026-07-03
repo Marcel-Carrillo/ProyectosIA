@@ -117,10 +117,10 @@
 
 ## 16. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 16.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
-- [ ] 16.2 Verify all tasks above are `[x]` and all required reports exist under `openspec/changes/product-gtin-identifier/reports/`.
-- [ ] 16.3 Stage all relevant files (code, tests, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`.
-- [ ] 16.4 Create a commit with a Conventional Commit message (`feat(catalog): add optional product GTIN identifier`) referencing this OpenSpec change and test status.
-- [ ] 16.5 Push branch: `git push -u origin feature/product-gtin-identifier`.
-- [ ] 16.6 Create PR with `gh pr create --base develop --title "feat(catalog): add optional product GTIN identifier" --body "..."` including summary, OpenSpec change name, and verification status.
-- [ ] 16.7 Report the PR URL in chat.
+- [x] 16.1 Loaded and applied `ai-specs/skills/commit/SKILL.md` before running any Git commands.
+- [x] 16.2 Verified all tasks above are `[x]` and all 3 required reports exist under `openspec/changes/product-gtin-identifier/reports/`.
+- [x] 16.3 Staged all relevant files (code, tests, docs, OpenSpec artifacts, `.claude/doc`+session context per repo precedent); explicitly excluded the sibling `openspec/changes/product-customer-reviews/` (separate, unrelated change).
+- [x] 16.4 Created commit `8415e3d` with a Conventional Commit message referencing the OpenSpec change and test status.
+- [x] 16.5 Pushed branch: `git push -u origin feature/product-gtin-identifier`.
+- [x] 16.6 Created PR #64 with `gh pr create --base develop`.
+- [x] 16.7 Reported the PR URL in chat: https://github.com/Marcel-Carrillo/ProyectosIA/pull/64
