@@ -35,6 +35,7 @@ const baseFixtureProduct: SupplierFeedProduct = {
   title: 'Belted Midi Wrap Dress',
   description: 'A wrap dress with a self-tie belt.',
   brand: 'Atelier Nord',
+  ean: '5901234123457',
   category: 'Dresses',
   supplierCost: 18.5,
   images: [],
@@ -110,6 +111,7 @@ describe('importSupplierFeedProducts', () => {
     const createCall = mockPrisma.product.create.mock.calls[0][0];
     expect(createCall.data.status).toBe('Draft');
     expect(createCall.data.mainImageUrl).toBeNull();
+    expect(createCall.data.gtin).toBe('5901234123457');
   });
 
   it('re-activates an existing Inactive supplier instead of creating a duplicate', async () => {
@@ -152,11 +154,32 @@ describe('importSupplierFeedProducts', () => {
 
     expect(mockPrisma.product.update).toHaveBeenCalledTimes(1);
     expect(mockPrisma.product.create).not.toHaveBeenCalled();
+    const updateCall = mockPrisma.product.update.mock.calls[0][0];
+    expect(updateCall.data.gtin).toBe('5901234123457');
     expect(mockPrisma.productVariant.deleteMany).toHaveBeenCalledWith({ where: { productId: 42 } });
     expect(mockPrisma.productVariant.createMany).toHaveBeenCalledTimes(1);
     expect(mockPrisma.productImage.deleteMany).not.toHaveBeenCalled();
     expect(result.productsCreated).toBe(0);
     expect(result.imagesCreated).toBe(0);
+  });
+
+  it('propagates a null gtin on create when the feed entry has no ean', async () => {
+    const mockPrisma = createMockPrisma();
+    mockPrisma.supplier.findFirst.mockResolvedValue(null);
+    mockPrisma.supplier.create.mockResolvedValue({ id: 1 });
+    mockPrisma.category.upsert.mockResolvedValue({ id: 1 });
+    mockPrisma.product.findUnique.mockResolvedValue(null);
+    mockPrisma.product.create.mockResolvedValue({ id: 1 });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { ean: _ean, ...productWithoutEan } = baseFixtureProduct;
+
+    await importSupplierFeedProducts(mockPrisma as unknown as Prisma.TransactionClient, [
+      productWithoutEan as SupplierFeedProduct,
+    ]);
+
+    const createCall = mockPrisma.product.create.mock.calls[0][0];
+    expect(createCall.data.gtin).toBeNull();
   });
 
   it('is idempotent: re-running the import does not create a duplicate product', async () => {

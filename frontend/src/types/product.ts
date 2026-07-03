@@ -45,6 +45,7 @@ export interface Product {
   slug: string;
   description: string | null;
   brand: string | null;
+  gtin: string | null;
   status: ProductStatus;
   mainImageUrl: string | null;
   categoryId: number | null;
@@ -94,6 +95,7 @@ export interface CreateProductInput {
   name: string;
   description?: string | null;
   brand?: string | null;
+  gtin?: string | null;
   mainImageUrl?: string | null;
   categoryId?: number | null;
   translations?: { locale: SupportedLocale; name: string; description?: string | null }[];
@@ -104,6 +106,7 @@ export interface UpdateProductInput {
   name?: string;
   description?: string | null;
   brand?: string | null;
+  gtin?: string | null;
   status?: ProductStatus;
   mainImageUrl?: string | null;
   categoryId?: number | null;

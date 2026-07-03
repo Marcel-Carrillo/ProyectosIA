@@ -17,13 +17,14 @@ type FormData = {
   name: string;
   description: string;
   brand: string;
+  gtin: string;
   categoryId: string;
   mainImageUrl: string;
   nameEs: string;
   descriptionEs: string;
 };
 
-const EMPTY: FormData = { name: '', description: '', brand: '', categoryId: '', mainImageUrl: '', nameEs: '', descriptionEs: '' };
+const EMPTY: FormData = { name: '', description: '', brand: '', gtin: '', categoryId: '', mainImageUrl: '', nameEs: '', descriptionEs: '' };
 
 const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuccess, categories }) => {
   const { t } = useTranslation('admin');
@@ -62,6 +63,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
         name: formData.name.trim(),
         description: formData.description || null,
         brand: formData.brand || null,
+        gtin: formData.gtin || null,
         categoryId: formData.categoryId ? Number(formData.categoryId) : null,
         mainImageUrl: formData.mainImageUrl || null,
         translations: translations.length > 0 ? translations : undefined,
@@ -112,6 +114,18 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
               onChange={(e) => handleChange('brand', e.target.value)}
               data-testid="input-product-brand"
             />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>GTIN</Form.Label>
+            <Form.Control
+              type="text"
+              value={formData.gtin}
+              onChange={(e) => handleChange('gtin', e.target.value)}
+              data-testid="input-product-gtin"
+            />
+            <Form.Text className="text-muted">
+              8, 12, 13, or 14-digit product barcode (EAN/UPC). Leave blank if unknown.
+            </Form.Text>
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Category</Form.Label>

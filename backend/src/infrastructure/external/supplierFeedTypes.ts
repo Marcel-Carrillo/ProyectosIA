@@ -18,6 +18,7 @@ export interface SupplierFeedProduct {
   title: string;
   description: string;
   brand: string;
+  ean?: string;
   category: string;
   supplierCost: number;
   images: string[];

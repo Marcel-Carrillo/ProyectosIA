@@ -10,6 +10,7 @@ export class Product {
   slug: string;
   description?: string | null;
   brand?: string | null;
+  gtin?: string | null;
   status: ProductStatus;
   mainImageUrl?: string | null;
   categoryId?: number | null;
@@ -26,6 +27,7 @@ export class Product {
     slug: string;
     description?: string | null;
     brand?: string | null;
+    gtin?: string | null;
     status?: string;
     mainImageUrl?: string | null;
     categoryId?: number | null;
@@ -41,6 +43,7 @@ export class Product {
     this.slug = data.slug;
     this.description = data.description ?? null;
     this.brand = data.brand ?? null;
+    this.gtin = data.gtin ?? null;
     this.status = (data.status as ProductStatus) ?? 'Draft';
     this.mainImageUrl = data.mainImageUrl ?? null;
     this.categoryId = data.categoryId ?? null;

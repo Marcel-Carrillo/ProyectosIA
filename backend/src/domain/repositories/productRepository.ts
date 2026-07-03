@@ -7,6 +7,7 @@ export interface ProductCreateData {
   slug: string;
   description?: string | null;
   brand?: string | null;
+  gtin?: string | null;
   status?: string;
   mainImageUrl?: string | null;
   categoryId?: number | null;
@@ -17,6 +18,7 @@ export interface ProductUpdateData {
   slug?: string;
   description?: string | null;
   brand?: string | null;
+  gtin?: string | null;
   status?: string;
   mainImageUrl?: string | null;
   categoryId?: number | null;

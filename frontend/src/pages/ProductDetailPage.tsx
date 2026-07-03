@@ -42,6 +42,7 @@ const ProductDetailPage: React.FC = () => {
     name: '',
     description: '',
     brand: '',
+    gtin: '',
     categoryId: '',
     mainImageUrl: '',
     nameEn: '',
@@ -75,6 +76,7 @@ const ProductDetailPage: React.FC = () => {
         name: productRes.data.name,
         description: productRes.data.description ?? '',
         brand: productRes.data.brand ?? '',
+        gtin: productRes.data.gtin ?? '',
         categoryId: productRes.data.categoryId ? String(productRes.data.categoryId) : '',
         mainImageUrl: productRes.data.mainImageUrl ?? '',
         nameEn: readTranslationField(productRes.data.translations, 'en', 'name') || productRes.data.name,
@@ -128,6 +130,7 @@ const ProductDetailPage: React.FC = () => {
         name: formData.name,
         description: formData.description || null,
         brand: formData.brand || null,
+        gtin: formData.gtin || null,
         categoryId: formData.categoryId ? Number(formData.categoryId) : null,
         mainImageUrl: formData.mainImageUrl || null,
         translations: translations.length > 0 ? translations : undefined,
@@ -342,6 +345,22 @@ const ProductDetailPage: React.FC = () => {
                         value={formData.mainImageUrl}
                         onChange={(e) => setFormData((p) => ({ ...p, mainImageUrl: e.target.value }))}
                       />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>GTIN</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.gtin}
+                        onChange={(e) => setFormData((p) => ({ ...p, gtin: e.target.value }))}
+                        data-testid="input-gtin"
+                      />
+                      <Form.Text className="text-muted">
+                        8, 12, 13, or 14-digit product barcode (EAN/UPC). Leave blank if unknown.
+                      </Form.Text>
                     </Form.Group>
                   </Col>
                 </Row>

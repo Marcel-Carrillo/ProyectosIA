@@ -41,6 +41,36 @@ export function validateRequiredFields(
   }
 }
 
+const GTIN_VALID_LENGTHS = [8, 12, 13, 14];
+
+export function isValidGtinFormat(value: string): boolean {
+  return /^\d+$/.test(value) && GTIN_VALID_LENGTHS.includes(value.length);
+}
+
+/**
+ * Validates and normalizes `data['gtin']` in place: trims whitespace, converts an
+ * empty string to `null`, and throws on invalid format/length. Shared between
+ * validateProductData (create) and ProductService.update() so both paths reject
+ * the same malformed GTINs instead of only enforcing the rule on create.
+ */
+export function validateAndNormalizeGtinField(data: Record<string, unknown>): void {
+  const gtin = data['gtin'];
+  if (gtin === undefined || gtin === null) return;
+  if (typeof gtin !== 'string') {
+    throw new ValidationError("Field 'gtin' must be a string");
+  }
+  const trimmed = gtin.trim();
+  if (trimmed === '') {
+    data['gtin'] = null;
+  } else if (!isValidGtinFormat(trimmed)) {
+    throw new ValidationError(
+      "Field 'gtin' must contain only digits and be 8, 12, 13, or 14 characters long"
+    );
+  } else {
+    data['gtin'] = trimmed;
+  }
+}
+
 export function validateProductData(data: Record<string, unknown>): void {
   const name = data['name'];
   if (name === undefined || name === null || name === '') {
@@ -57,6 +87,8 @@ export function validateProductData(data: Record<string, unknown>): void {
       throw new ValidationError(`Field 'status' must be one of: ${validStatuses.join(', ')}`);
     }
   }
+
+  validateAndNormalizeGtinField(data);
 }
 
 const SUPPORTED_LOCALES = ['en', 'es'];

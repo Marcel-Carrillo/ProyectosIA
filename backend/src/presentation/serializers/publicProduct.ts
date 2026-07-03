@@ -35,6 +35,7 @@ export interface PublicProductDTO {
   slug: string;
   description: string | null;
   brand: string | null;
+  gtin: string | null;
   status: string;
   mainImageUrl: string | null;
   categoryId: number | null;
@@ -83,6 +84,7 @@ export function serializePublicProduct(product: Product, locale?: string | null)
     slug: product.slug,
     description: resolved.description,
     brand: product.brand ?? null,
+    gtin: product.gtin ?? null,
     status: product.status,
     mainImageUrl: product.mainImageUrl ?? null,
     categoryId: product.categoryId ?? null,
