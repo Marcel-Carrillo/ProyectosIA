@@ -5,6 +5,7 @@ import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 
 const mockGetById = jest.fn();
 const mockCategoryGetAll = jest.fn();
+const mockListApprovedForProduct = jest.fn();
 
 jest.mock('react-router-dom', () => ({
   useParams: () => ({ id: '1' }),
@@ -13,6 +14,10 @@ jest.mock('react-router-dom', () => ({
 
 jest.mock('../../../contexts/CartContext', () => ({
   useCart: () => ({ addItem: jest.fn() }),
+}));
+
+jest.mock('../../../contexts/CustomerAuthContext', () => ({
+  useCustomerAuth: () => ({ isAuthenticated: false, isLoading: false }),
 }));
 
 jest.mock('../../../services/productService', () => ({
@@ -27,10 +32,24 @@ jest.mock('../../../services/categoryService', () => ({
   },
 }));
 
+jest.mock('../../../services/reviewService', () => ({
+  reviewService: {
+    listApprovedForProduct: (...args: unknown[]) => mockListApprovedForProduct(...args),
+  },
+}));
+
 describe('ProductPage language refetch', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCategoryGetAll.mockResolvedValue([]);
+    mockListApprovedForProduct.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 5,
+      summary: { averageRating: null, reviewCount: 0 },
+      distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    });
     mockGetById.mockResolvedValue({
       data: {
         id: 1,
@@ -41,6 +60,7 @@ describe('ProductPage language refetch', () => {
         status: 'Active',
         mainImageUrl: null,
         categoryId: null,
+        reviewSummary: { averageRating: null, reviewCount: 0 },
         createdAt: '',
         updatedAt: '',
       },
@@ -55,5 +75,146 @@ describe('ProductPage language refetch', () => {
     await i18n.changeLanguage('es');
 
     await waitFor(() => expect(mockGetById).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('ProductPage structured data — reviews', () => {
+  const baseProduct = {
+    id: 1,
+    name: 'Dress',
+    slug: 'dress',
+    description: 'A dress',
+    brand: null,
+    status: 'Active',
+    mainImageUrl: null,
+    categoryId: null,
+    createdAt: '',
+    updatedAt: '',
+  };
+
+  const getProductJsonLd = async () => {
+    const scripts = await waitFor(() => {
+      const found = document.querySelectorAll('script[type="application/ld+json"]');
+      expect(found.length).toBeGreaterThan(0);
+      return found;
+    });
+    return JSON.parse(scripts[0].textContent ?? '{}');
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCategoryGetAll.mockResolvedValue([]);
+  });
+
+  it('omits aggregateRating and review when reviewCount is 0', async () => {
+    mockGetById.mockResolvedValue({
+      data: { ...baseProduct, reviewSummary: { averageRating: null, reviewCount: 0 } },
+    });
+    mockListApprovedForProduct.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 5,
+      summary: { averageRating: null, reviewCount: 0 },
+      distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    });
+
+    renderWithI18n(<ProductPage />, { lng: 'en' });
+    const jsonLd = await getProductJsonLd();
+
+    expect(jsonLd.aggregateRating).toBeUndefined();
+    expect(jsonLd.review).toBeUndefined();
+  });
+
+  it('includes aggregateRating and review when reviewCount >= 1', async () => {
+    mockGetById.mockResolvedValue({
+      data: { ...baseProduct, reviewSummary: { averageRating: 4.5, reviewCount: 2 } },
+    });
+    mockListApprovedForProduct.mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          productId: 1,
+          rating: 5,
+          title: 'Great',
+          body: 'Loved it',
+          authorNameSnapshot: 'María C.',
+          createdAt: '2026-05-01T00:00:00Z',
+        },
+        {
+          id: 2,
+          productId: 1,
+          rating: 4,
+          title: null,
+          body: null,
+          authorNameSnapshot: 'Ana G.',
+          createdAt: '2026-05-02T00:00:00Z',
+        },
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 5,
+      summary: { averageRating: 4.5, reviewCount: 2 },
+      distribution: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 },
+    });
+
+    renderWithI18n(<ProductPage />, { lng: 'en' });
+    const jsonLd = await getProductJsonLd();
+
+    expect(jsonLd.aggregateRating).toEqual({
+      '@type': 'AggregateRating',
+      ratingValue: 4.5,
+      reviewCount: 2,
+      bestRating: 5,
+      worstRating: 1,
+    });
+    expect(jsonLd.review).toHaveLength(2);
+    expect(jsonLd.review[0]).toEqual({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: 'María C.' },
+      reviewRating: { '@type': 'Rating', ratingValue: 5, bestRating: 5, worstRating: 1 },
+      reviewBody: 'Loved it',
+      datePublished: '2026-05-01T00:00:00Z',
+    });
+    // second review has no body — reviewBody key must be entirely absent, not null/''
+    expect(jsonLd.review[1].reviewBody).toBeUndefined();
+  });
+
+  it('renders a review body containing "</script>" and "<" safely in the JSON-LD output', async () => {
+    const dangerousBody = 'Nice <b>fabric</b> but not as described</script><script>alert(1)</script>';
+    mockGetById.mockResolvedValue({
+      data: { ...baseProduct, reviewSummary: { averageRating: 3, reviewCount: 1 } },
+    });
+    mockListApprovedForProduct.mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          productId: 1,
+          rating: 3,
+          title: null,
+          body: dangerousBody,
+          authorNameSnapshot: 'Test User',
+          createdAt: '2026-05-01T00:00:00Z',
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 5,
+      summary: { averageRating: 3, reviewCount: 1 },
+      distribution: { 1: 0, 2: 0, 3: 1, 4: 0, 5: 0 },
+    });
+
+    renderWithI18n(<ProductPage />, { lng: 'en' });
+    const scripts = await waitFor(() => {
+      const found = document.querySelectorAll('script[type="application/ld+json"]');
+      expect(found.length).toBeGreaterThan(0);
+      return found;
+    });
+    // the raw serialized script text must never contain a literal "</script>" sequence
+    expect(scripts[0].textContent).not.toContain('</script>');
+    // but JSON.parse must recover the exact original body (proves it's u003c-escaping,
+    // not HTML-stripping or double-escaping)
+    const parsed = JSON.parse(scripts[0].textContent ?? '{}');
+    expect(parsed.review[0].reviewBody).toBe(dangerousBody);
   });
 });

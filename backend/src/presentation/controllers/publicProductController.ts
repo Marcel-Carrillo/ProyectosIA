@@ -9,6 +9,9 @@ import { ProductTranslationRepository } from '../../infrastructure/repositories/
 import { logger } from '../../infrastructure/logger';
 import { ValidationError } from '../../application/validator';
 import { serializePublicProduct } from '../serializers/publicProduct';
+import { ReviewService } from '../../application/services/reviewService';
+import { ReviewRepository } from '../../infrastructure/repositories/reviewRepository';
+import { CustomerRepository } from '../../infrastructure/repositories/customerRepository';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -28,6 +31,7 @@ const productService = new ProductService(
   new ProductVariantRepository(),
   new ProductTranslationRepository(),
 );
+const reviewService = new ReviewService(new ReviewRepository(), new CustomerRepository());
 
 export async function listPublicProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -82,10 +86,19 @@ export async function getPublicProductById(req: Request, res: Response, next: Ne
       throw new ProductNotFoundError();
     }
 
+    const reviewSummary = await reviewService.getSummaryForProduct(id);
+
     const locale = req.headers?.['accept-language'];
     res.setHeader('Vary', 'Accept-Language');
     logger.info('Public product retrieved', { productId: id });
-    res.json({ success: true, data: serializePublicProduct(product, locale), message: 'Product retrieved successfully' });
+    res.json({
+      success: true,
+      data: serializePublicProduct(product, locale, {
+        averageRating: reviewSummary.averageRating,
+        reviewCount: reviewSummary.reviewCount,
+      }),
+      message: 'Product retrieved successfully',
+    });
   } catch (err) {
     next(err);
   }
