@@ -1703,7 +1703,8 @@ Always pass idempotency keys to Stripe calls to prevent duplicate charges on ret
 
 | Operation | Key format |
 |-----------|-----------|
-| `paymentIntents.create` | `order:{orderNumber}:pi` |
+| `paymentIntents.create` (checkout) | `order:{orderNumber}:pi` |
+| `paymentIntents.create` (customer resume-payment reissue) | `order:{orderId}:pi:resume:{timestamp}` |
 | `refunds.create` | `refund:{refundId}` |
 
 ### Stripe SDK Version

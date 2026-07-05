@@ -331,6 +331,21 @@ const FULFILLMENT_STATUSES = [
 
 const PAID_ORDER_STATUSES = new Set(['Paid', 'Processing', 'Completed', 'Refunded']);
 
+const PAYABLE_PAYMENT_STATUSES = new Set(['Pending', 'Failed']);
+
+export function validatePendingOrderPayable(order: { status: string; paymentStatus: string }): void {
+  if (order.status !== 'PendingPayment' || !PAYABLE_PAYMENT_STATUSES.has(order.paymentStatus)) {
+    throw new OrderNotPayableError();
+  }
+}
+
+export function validatePendingOrderCancellable(order: { status: string }): void {
+  if (order.status === 'Cancelled') return;
+  if (order.status !== 'PendingPayment') {
+    throw new OrderNotCancellableError();
+  }
+}
+
 function validateAddressSnapshotField(
   data: unknown,
   fieldName: string,
@@ -973,5 +988,41 @@ export class RefundStripeError extends Error {
     super(message);
     this.name = 'RefundStripeError';
     Object.setPrototypeOf(this, RefundStripeError.prototype);
+  }
+}
+
+export class OrderNotPayableError extends Error {
+  readonly code = 'ORDER_NOT_PAYABLE' as const;
+  readonly status = 409;
+
+  constructor(message = 'Order is not in a payable state') {
+    super(message);
+    this.name = 'OrderNotPayableError';
+    Object.setPrototypeOf(this, OrderNotPayableError.prototype);
+  }
+}
+
+export class OrderNotCancellableError extends Error {
+  readonly code = 'ORDER_NOT_CANCELLABLE' as const;
+  readonly status = 409;
+
+  constructor(message = 'Order is not in a cancellable state') {
+    super(message);
+    this.name = 'OrderNotCancellableError';
+    Object.setPrototypeOf(this, OrderNotCancellableError.prototype);
+  }
+}
+
+// Internal, payment-layer-only error: thrown by paymentService.cancelPaymentIntent and
+// always caught + translated to OrderNotCancellableError inside customerOrderService.cancelPendingOrder.
+// Must never be wired into errorHandler.ts directly.
+export class PaymentIntentAlreadyCapturedError extends Error {
+  readonly code = 'PAYMENT_INTENT_ALREADY_CAPTURED' as const;
+  readonly status = 409;
+
+  constructor(message = 'PaymentIntent is already captured and cannot be cancelled') {
+    super(message);
+    this.name = 'PaymentIntentAlreadyCapturedError';
+    Object.setPrototypeOf(this, PaymentIntentAlreadyCapturedError.prototype);
   }
 }

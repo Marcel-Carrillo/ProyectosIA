@@ -12,11 +12,19 @@ import { CustomerOrder } from '../../domain/models/customerOrder';
 import {
   validateCustomerOrderCreateData,
   validateCustomerOrderStatusUpdate,
+  validatePendingOrderPayable,
+  validatePendingOrderCancellable,
+  OrderNotCancellableError,
+  PaymentIntentAlreadyCapturedError,
   ValidationError,
 } from '../validator';
 import { CustomerNotFoundError } from '../../infrastructure/repositories/customerRepository';
 import { VariantNotFoundError } from '../../infrastructure/repositories/productVariantRepository';
-import { CustomerOrderNotFoundError } from '../../infrastructure/repositories/customerOrderRepository';
+import {
+  CustomerOrderNotFoundError,
+  CustomerOrderRepository,
+} from '../../infrastructure/repositories/customerOrderRepository';
+import { paymentService } from './paymentService';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -125,4 +133,82 @@ export class CustomerOrderService {
 
     return this.repo.updateStatus(id, statusUpdate);
   }
+
+  async getOrCreatePaymentSession(
+    customerId: number,
+    orderId: number
+  ): Promise<{ order: CustomerOrder; clientSecret: string }> {
+    const order = await this.repo.findById(orderId);
+    if (!order || order.customerId !== customerId) {
+      throw new CustomerOrderNotFoundError();
+    }
+
+    validatePendingOrderPayable(order);
+
+    const { clientSecret, stripePaymentIntentId, reused } =
+      await paymentService.resumePaymentIntent(order);
+
+    if (!reused) {
+      await this.repo.updateStripeFields(order.id!, { stripePaymentIntentId });
+      order.stripePaymentIntentId = stripePaymentIntentId;
+    }
+
+    return { order, clientSecret };
+  }
+
+  async cancelPendingOrder(customerId: number, orderId: number): Promise<CustomerOrder> {
+    const order = await this.repo.findById(orderId);
+    if (!order || order.customerId !== customerId) {
+      throw new CustomerOrderNotFoundError();
+    }
+
+    if (order.status === 'Cancelled') {
+      return order;
+    }
+
+    validatePendingOrderCancellable(order);
+
+    const priorStatus = order.status;
+    const priorFulfillmentStatus = order.fulfillmentStatus;
+
+    await prisma.$transaction(async (tx) => {
+      const fresh = await tx.customerOrder.findUnique({
+        where: { id: order.id },
+        select: { status: true, paymentStatus: true },
+      });
+      if (!fresh) throw new CustomerOrderNotFoundError();
+
+      if (fresh.status !== 'PendingPayment' || fresh.paymentStatus === 'Paid') {
+        throw new OrderNotCancellableError();
+      }
+
+      await tx.customerOrder.update({
+        where: { id: order.id },
+        data: { status: 'Cancelled', fulfillmentStatus: 'Cancelled', cancelledAt: new Date() },
+      });
+    });
+
+    if (order.stripePaymentIntentId) {
+      try {
+        await paymentService.cancelPaymentIntent(order.stripePaymentIntentId);
+      } catch (err) {
+        await prisma.customerOrder.update({
+          where: { id: order.id },
+          data: {
+            status: priorStatus,
+            fulfillmentStatus: priorFulfillmentStatus,
+            cancelledAt: null,
+          },
+        });
+        if (err instanceof PaymentIntentAlreadyCapturedError) {
+          throw new OrderNotCancellableError();
+        }
+        throw err;
+      }
+    }
+
+    return (await this.repo.findById(orderId)) as CustomerOrder;
+  }
 }
+
+export const customerOrderService = new CustomerOrderService(new CustomerOrderRepository());

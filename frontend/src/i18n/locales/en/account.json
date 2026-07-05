@@ -55,6 +55,7 @@
   "orders": {
     "title": "Orders",
     "panelTitle": "Order history",
+    "resumePayment": "Complete payment",
     "empty": {
       "title": "No orders yet",
       "text": "When you place an order, it will appear here."
@@ -67,8 +68,23 @@
     "title": "Order details",
     "titleWithNumber": "Order {{orderNumber}}",
     "back": "← Back to orders",
+    "actions": {
+      "completePayment": "Complete payment",
+      "resuming": "Preparing payment…",
+      "cancelOrder": "Cancel order",
+      "cancelConfirm": "Are you sure you want to cancel this order? This action cannot be undone.",
+      "confirmCancel": "Yes, cancel order",
+      "cancelling": "Cancelling…",
+      "keepOrder": "No, keep order",
+      "backToOrder": "← Back to order"
+    },
     "errors": {
-      "load": "Could not load order details."
+      "load": "Could not load order details.",
+      "resumeFailed": "Could not start payment. Please try again.",
+      "cancelFailed": "Could not cancel the order. Please try again.",
+      "ORDER_NOT_PAYABLE": "This order can no longer be paid.",
+      "ORDER_NOT_CANCELLABLE": "This order can no longer be cancelled.",
+      "CUSTOMER_ORDER_NOT_FOUND": "Order not found."
     },
     "table": {
       "product": "Product",

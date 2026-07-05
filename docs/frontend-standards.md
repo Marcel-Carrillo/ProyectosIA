@@ -1098,6 +1098,10 @@ Checkout is split into two sequential steps:
 
 Never merge these steps or call `stripe.confirmPayment` in the same handler that creates the order.
 
+### Reusing the Payment Pattern Outside Checkout
+
+The same `<Elements>` + `PaymentForm` pattern is reused in the customer account area (`AccountOrderDetailPage.tsx`) to let a customer resume payment on their own `PendingPayment` order. The page lazily loads `stripePromise` via `getStripeConfig()` only once the order is confirmed `PendingPayment` (gated with a `useRef` guard, not a state dependency, to avoid re-fetching on unrelated re-renders), then calls a dedicated account endpoint (`resumeOrderPayment`) to obtain a `clientSecret` before mounting `<Elements>`. On success it navigates to the existing `/order-confirmation/:orderNumber` page, reusing that page's webhook-polling logic rather than assuming synchronous success.
+
 ### Payment Confirmation Pattern
 
 ```typescript
