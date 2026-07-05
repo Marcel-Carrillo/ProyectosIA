@@ -237,15 +237,14 @@ export class CustomerOrderRepository implements ICustomerOrderRepository {
   }
 
   async generateNextOrderNumber(): Promise<string> {
-    const last = await prisma.customerOrder.findFirst({
-      orderBy: { id: 'desc' },
-      select: { orderNumber: true },
-    });
-    let nextNum = 1;
-    if (last?.orderNumber) {
-      const match = last.orderNumber.match(/ORD-(\d+)/);
-      if (match) nextNum = parseInt(match[1], 10) + 1;
-    }
+    // Scan all ORD-* numbers — do not use the latest row by id, because integration/E2E
+    // fixtures may insert custom orderNumber prefixes (ISOLATION-TEST-*, E2E-*, etc.).
+    const result = await prisma.$queryRaw<Array<{ max_num: number | null }>>`
+      SELECT MAX(CAST(SUBSTRING("orderNumber" FROM 5) AS INTEGER)) AS max_num
+      FROM "CustomerOrder"
+      WHERE "orderNumber" ~ '^ORD-[0-9]+$'
+    `;
+    const nextNum = (result[0]?.max_num ?? 0) + 1;
     return `ORD-${String(nextNum).padStart(6, '0')}`;
   }
 
