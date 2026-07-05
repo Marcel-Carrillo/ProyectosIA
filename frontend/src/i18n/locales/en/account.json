@@ -95,6 +95,12 @@
       "subtotal": "Subtotal",
       "shipping": "Shipping",
       "discount": "Discount"
+    },
+    "shipping": {
+      "title": "Shipping",
+      "trackPackage": "Track package",
+      "shippedOn": "Shipped on {{date}}",
+      "deliveredOn": "Delivered on {{date}}"
     }
   },
   "wishlist": {
@@ -134,8 +140,11 @@
     "Failed": "Failed",
     "Pending": "Pending",
     "Processing": "Processing",
+    "Preparing": "Preparing",
     "Shipped": "Shipped",
+    "InTransit": "In transit",
     "Delivered": "Delivered",
+    "Problem": "Issue",
     "Cancelled": "Cancelled",
     "Completed": "Completed",
     "Refunded": "Refunded"

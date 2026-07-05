@@ -3189,7 +3189,7 @@ components:
 
     PublicOrderItem:
       type: object
-      description: Customer-facing order line item. Never includes supplier fields.
+      description: Customer-facing order line item. Never includes supplier fields or internal fulfillmentStatus.
       properties:
         id: { type: integer }
         productVariantId: { type: integer }
@@ -3199,19 +3199,39 @@ components:
         quantity: { type: integer }
         unitPrice: { type: string }
         totalPrice: { type: string }
-        fulfillmentStatus: { type: string }
+
+    PublicShipment:
+      type: object
+      description: >
+        Customer-safe shipment snapshot. Strict allow-list — never includes id,
+        customerOrderId, supplierOrderId, or supplierOrder.
+      properties:
+        status:
+          type: string
+          enum: [Pending, Shipped, InTransit, Delivered, Failed, Returned]
+        carrier: { type: string, nullable: true }
+        trackingNumber: { type: string, nullable: true }
+        trackingUrl: { type: string, nullable: true, format: uri }
+        shippedAt: { type: string, format: date-time, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
 
     PublicOrder:
       type: object
       description: >
         Customer-facing order shape returned by /api/public/account/orders endpoints.
         Never includes stripePaymentIntentId or stripeChargeId (INTERNAL ONLY fields).
+        **BREAKING (internal API surface only):** fulfillmentStatus was removed from this
+        payload; use shippingStatus instead (derived from Shipment rows at read time).
+        List responses include shippingStatus only; detail responses also include shipments[].
       properties:
         id: { type: integer }
         orderNumber: { type: string }
         status: { type: string, enum: [PendingPayment, Paid, Processing, Completed, Cancelled, Refunded] }
         paymentStatus: { type: string, enum: [Pending, Authorized, Paid, Failed, Refunded, PartiallyRefunded] }
-        fulfillmentStatus: { type: string }
+        shippingStatus:
+          type: string
+          enum: [Preparing, Shipped, InTransit, Delivered, Problem]
+          description: Derived customer-facing shipping progress (see data-model.md precedence rules).
         subtotalAmount: { type: string }
         shippingAmount: { type: string }
         discountAmount: { type: string }
@@ -3220,6 +3240,11 @@ components:
         shippingAddressSnapshot: { type: object }
         billingAddressSnapshot: { type: object }
         createdAt: { type: string, format: date-time }
+        shipments:
+          type: array
+          description: Present on GET /orders/:id only (omitted from list items).
+          items:
+            $ref: '#/components/schemas/PublicShipment'
         items:
           type: array
           items:

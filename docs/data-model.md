@@ -546,6 +546,19 @@ In the initial model, shipments may be created when the supplier ships products 
 * `createdAt`: Date and time when the shipment was created
 * `updatedAt`: Date and time when the shipment was last updated
 
+**Customer-facing derived field (`shippingStatus` on account order endpoints):**
+
+The customer account API (`GET /api/public/account/orders`, `GET /api/public/account/orders/:id`) exposes a derived `shippingStatus` on each order, computed at read time from the order's `Shipment[]` rows (not persisted on `CustomerOrder`). Values: `Preparing`, `Shipped`, `InTransit`, `Delivered`, `Problem`. Precedence (first match wins):
+
+1. Empty array, or every shipment `Pending` → `Preparing`
+2. Any shipment `Failed` or `Returned` → `Problem`
+3. Every shipment (non-empty) `Delivered` → `Delivered`
+4. Any shipment `InTransit` → `InTransit`
+5. Any shipment `Shipped` → `Shipped`
+6. Fallback → `Preparing`
+
+Detail responses include a customer-safe `shipments[]` allow-list (`status`, `carrier`, `trackingNumber`, `trackingUrl`, `shippedAt`, `deliveredAt` only). List responses include `shippingStatus` only. Internal `fulfillmentStatus` is **not** exposed on customer account order payloads.
+
 **Validation Rules:**
 
 * Customer order reference is required and must exist in the database
