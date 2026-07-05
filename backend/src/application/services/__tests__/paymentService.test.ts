@@ -2,6 +2,7 @@ import { PaymentService } from '../paymentService';
 import {
   PaymentGatewayUnavailableError,
   PaymentWebhookSignatureInvalidError,
+  PaymentIntentAlreadyCapturedError,
 } from '../../validator';
 import { CustomerOrder } from '../../../domain/models/customerOrder';
 import { StripeWebhookEvent } from '../../../domain/models/stripeWebhookEvent';
@@ -16,11 +17,17 @@ const address = {
 };
 
 const mockCreatePI = jest.fn();
+const mockRetrievePI = jest.fn();
+const mockCancelPI = jest.fn();
 const mockConstructEvent = jest.fn();
 
 jest.mock('../../../infrastructure/stripe/stripeClient', () => ({
   stripe: {
-    paymentIntents: { create: (...args: unknown[]) => mockCreatePI(...args) },
+    paymentIntents: {
+      create: (...args: unknown[]) => mockCreatePI(...args),
+      retrieve: (...args: unknown[]) => mockRetrievePI(...args),
+      cancel: (...args: unknown[]) => mockCancelPI(...args),
+    },
     webhooks: { constructEvent: (...args: unknown[]) => mockConstructEvent(...args) },
   },
 }));
@@ -152,6 +159,125 @@ describe('createPaymentIntent', () => {
     expect(mockCreatePI).toHaveBeenCalledWith(
       expect.objectContaining({ amount: 2999, currency: 'eur' }),
       expect.anything()
+    );
+  });
+});
+
+describe('resumePaymentIntent', () => {
+  it.each(['requires_payment_method', 'requires_confirmation', 'requires_action'])(
+    'reuses the existing PaymentIntent when status is %s and amount matches',
+    async (status) => {
+      mockRetrievePI.mockResolvedValue({
+        id: 'pi_1',
+        status,
+        amount: 2999,
+        client_secret: 'secret_1',
+      });
+      const result = await service.resumePaymentIntent(
+        makeOrder({ stripePaymentIntentId: 'pi_1', totalAmount: '29.99' })
+      );
+      expect(result).toEqual({ clientSecret: 'secret_1', stripePaymentIntentId: 'pi_1', reused: true });
+      expect(mockCreatePI).not.toHaveBeenCalled();
+    }
+  );
+
+  it('reissues a new PaymentIntent when the existing one is canceled', async () => {
+    mockRetrievePI.mockResolvedValue({ id: 'pi_1', status: 'canceled', amount: 2999 });
+    mockCreatePI.mockResolvedValue({ id: 'pi_2', client_secret: 'secret_2' });
+    const result = await service.resumePaymentIntent(
+      makeOrder({ stripePaymentIntentId: 'pi_1', totalAmount: '29.99' })
+    );
+    expect(result).toEqual({ clientSecret: 'secret_2', stripePaymentIntentId: 'pi_2', reused: false });
+    expect(mockCreatePI).toHaveBeenCalled();
+  });
+
+  it('reissues a new PaymentIntent when the existing amount no longer matches totalAmount', async () => {
+    mockRetrievePI.mockResolvedValue({
+      id: 'pi_1',
+      status: 'requires_payment_method',
+      amount: 1000,
+      client_secret: 'secret_1',
+    });
+    mockCreatePI.mockResolvedValue({ id: 'pi_2', client_secret: 'secret_2' });
+    const result = await service.resumePaymentIntent(
+      makeOrder({ stripePaymentIntentId: 'pi_1', totalAmount: '29.99' })
+    );
+    expect(result.reused).toBe(false);
+    expect(mockCreatePI).toHaveBeenCalled();
+  });
+
+  it('creates a new PaymentIntent directly when order has no stripePaymentIntentId', async () => {
+    mockCreatePI.mockResolvedValue({ id: 'pi_new', client_secret: 'secret_new' });
+    const result = await service.resumePaymentIntent(makeOrder({ stripePaymentIntentId: undefined }));
+    expect(mockRetrievePI).not.toHaveBeenCalled();
+    expect(result).toEqual({ clientSecret: 'secret_new', stripePaymentIntentId: 'pi_new', reused: false });
+  });
+
+  it('uses a resume-specific idempotency key distinct from the checkout key', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
+    mockCreatePI.mockResolvedValue({ id: 'pi_new', client_secret: 'secret_new' });
+    await service.resumePaymentIntent(makeOrder({ id: 1, stripePaymentIntentId: undefined }));
+    expect(mockCreatePI).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ idempotencyKey: 'order:1:pi:resume:1700000000000' })
+    );
+    jest.spyOn(Date, 'now').mockRestore();
+  });
+
+  it('throws PaymentGatewayUnavailableError when retrieve rejects', async () => {
+    mockRetrievePI.mockRejectedValue(new Error('network error'));
+    await expect(
+      service.resumePaymentIntent(makeOrder({ stripePaymentIntentId: 'pi_1' }))
+    ).rejects.toThrow(PaymentGatewayUnavailableError);
+  });
+
+  it('throws PaymentGatewayUnavailableError when reused PaymentIntent has no client_secret', async () => {
+    mockRetrievePI.mockResolvedValue({
+      id: 'pi_1',
+      status: 'requires_payment_method',
+      amount: 2999,
+      client_secret: null,
+    });
+    await expect(
+      service.resumePaymentIntent(makeOrder({ stripePaymentIntentId: 'pi_1', totalAmount: '29.99' }))
+    ).rejects.toThrow(PaymentGatewayUnavailableError);
+  });
+
+  it('throws PaymentGatewayUnavailableError when reissue create rejects', async () => {
+    mockRetrievePI.mockResolvedValue({ id: 'pi_1', status: 'canceled', amount: 2999 });
+    mockCreatePI.mockRejectedValue(new Error('network error'));
+    await expect(
+      service.resumePaymentIntent(makeOrder({ stripePaymentIntentId: 'pi_1' }))
+    ).rejects.toThrow(PaymentGatewayUnavailableError);
+  });
+
+  it('throws PaymentGatewayUnavailableError when reissued PaymentIntent has no client_secret', async () => {
+    mockRetrievePI.mockResolvedValue({ id: 'pi_1', status: 'canceled', amount: 2999 });
+    mockCreatePI.mockResolvedValue({ id: 'pi_2', client_secret: null });
+    await expect(
+      service.resumePaymentIntent(makeOrder({ stripePaymentIntentId: 'pi_1' }))
+    ).rejects.toThrow(PaymentGatewayUnavailableError);
+  });
+});
+
+describe('cancelPaymentIntent', () => {
+  it('cancels the PaymentIntent successfully', async () => {
+    mockCancelPI.mockResolvedValue({});
+    await expect(service.cancelPaymentIntent('pi_1')).resolves.toBeUndefined();
+    expect(mockCancelPI).toHaveBeenCalledWith('pi_1');
+  });
+
+  it('throws PaymentIntentAlreadyCapturedError when Stripe reports payment_intent_unexpected_state', async () => {
+    mockCancelPI.mockRejectedValue({ code: 'payment_intent_unexpected_state' });
+    await expect(service.cancelPaymentIntent('pi_1')).rejects.toThrow(
+      PaymentIntentAlreadyCapturedError
+    );
+  });
+
+  it('throws PaymentGatewayUnavailableError for any other Stripe failure', async () => {
+    mockCancelPI.mockRejectedValue({ message: 'network error' });
+    await expect(service.cancelPaymentIntent('pi_1')).rejects.toThrow(
+      PaymentGatewayUnavailableError
     );
   });
 });

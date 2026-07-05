@@ -116,6 +116,28 @@ export async function getMyOrder(id: number) {
   return res.data.data;
 }
 
+export async function resumeOrderPayment(id: number): Promise<{ order: unknown; clientSecret: string }> {
+  const res = await axios.post<{ data: { order: unknown; clientSecret: string } }>(
+    `${API_BASE}/api/public/account/orders/${id}/payment-session`,
+    {},
+    { headers: authHeaders() }
+  );
+  return res.data.data;
+}
+
+export async function cancelOrder(id: number): Promise<unknown> {
+  const res = await axios.post<{ data: unknown }>(
+    `${API_BASE}/api/public/account/orders/${id}/cancel`,
+    {},
+    { headers: authHeaders() }
+  );
+  return res.data.data;
+}
+
+export function extractOrderActionErrorCode(error: unknown): string {
+  return (error as AxiosError<AuthApiError>).response?.data?.error?.code ?? 'UNKNOWN_ERROR';
+}
+
 export function extractCustomerAuthError(error: unknown): string {
   const code = (error as AxiosError<AuthApiError>).response?.data?.error?.code;
   if (code === 'INVALID_CREDENTIALS') return 'Invalid email or password.';

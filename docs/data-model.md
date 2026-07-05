@@ -386,6 +386,8 @@ A customer order is different from a supplier order. The customer order represen
 * A paid order cannot move back to PendingPayment
 * A cancelled order cannot generate new supplier orders
 * Fulfillment status must be updated separately from customer-facing order status
+* A customer may cancel their own order only while `status = PendingPayment`; the owning customer's cancellation request sets `status = Cancelled`, `fulfillmentStatus = Cancelled`, and `cancelledAt = now()`. This customer-initiated transition is re-verified against the current `paymentStatus` immediately before it is committed, to guard against a concurrent `payment_intent.succeeded` webhook — the cancellation is rejected if the order has already become `Paid`
+* A customer may request a new or reused Stripe `clientSecret` to resume payment on their own order only while `status = PendingPayment` and `paymentStatus` is `Pending` or `Failed`
 
 **Relationships:**
 

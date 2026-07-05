@@ -4,6 +4,7 @@ import { CustomerAuthRequest } from '../../middleware/requireCustomerAuth';
 import { toCustomerPublic } from '../../domain/models/customerAccount';
 import { CustomerOrderNotFoundError } from '../../infrastructure/repositories/customerOrderRepository';
 import { customerAuthService } from '../../application/services/customerAuthService';
+import { customerOrderService } from '../../application/services/customerOrderService';
 
 function toPublicOrder(order: {
   id: number;
@@ -127,6 +128,33 @@ export async function getOrderById(req: CustomerAuthRequest, res: Response, next
     });
     if (!order) throw new CustomerOrderNotFoundError();
     res.json({ success: true, data: toPublicOrder(order), message: 'Order retrieved' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resumeOrderPayment(req: CustomerAuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const { order, clientSecret } = await customerOrderService.getOrCreatePaymentSession(
+      req.customer!.customerId,
+      id
+    );
+    res.json({
+      success: true,
+      data: { order: toPublicOrder(order as unknown as Parameters<typeof toPublicOrder>[0]), clientSecret },
+      message: 'Payment session created',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function cancelOrder(req: CustomerAuthRequest, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const order = await customerOrderService.cancelPendingOrder(req.customer!.customerId, id);
+    res.json({ success: true, data: toPublicOrder(order as unknown as Parameters<typeof toPublicOrder>[0]), message: 'Order cancelled' });
   } catch (err) {
     next(err);
   }

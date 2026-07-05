@@ -67,4 +67,28 @@ describe('customer order isolation', () => {
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('CUSTOMER_ORDER_NOT_FOUND');
   });
+
+  it('buyer A cannot resume payment on buyer B order', async () => {
+    if (!orderIdB) {
+      expect(orderIdB).toBeUndefined();
+      return;
+    }
+    const res = await request(app)
+      .post(`/api/public/account/orders/${orderIdB}/payment-session`)
+      .set('Authorization', `Bearer ${tokenA}`);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('CUSTOMER_ORDER_NOT_FOUND');
+  });
+
+  it('buyer A cannot cancel buyer B order', async () => {
+    if (!orderIdB) {
+      expect(orderIdB).toBeUndefined();
+      return;
+    }
+    const res = await request(app)
+      .post(`/api/public/account/orders/${orderIdB}/cancel`)
+      .set('Authorization', `Bearer ${tokenA}`);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('CUSTOMER_ORDER_NOT_FOUND');
+  });
 });

@@ -5,15 +5,45 @@ import { CustomerOrder } from '../../../domain/models/customerOrder';
 import { CustomerNotFoundError } from '../../../infrastructure/repositories/customerRepository';
 import { VariantNotFoundError } from '../../../infrastructure/repositories/productVariantRepository';
 import { CustomerOrderNotFoundError } from '../../../infrastructure/repositories/customerOrderRepository';
-import { OrderStatusTransitionInvalidError } from '../../validator';
+import {
+  OrderStatusTransitionInvalidError,
+  OrderNotPayableError,
+  OrderNotCancellableError,
+  PaymentGatewayUnavailableError,
+  PaymentIntentAlreadyCapturedError,
+} from '../../validator';
 
 const mockCustomerFindUnique = jest.fn();
 const mockVariantFindUnique = jest.fn();
+const mockOrderFindUnique = jest.fn();
+const mockOrderUpdate = jest.fn();
 
 jest.mock('../../../infrastructure/prismaClient', () => ({
   prisma: {
     customer: { findUnique: (...args: unknown[]) => mockCustomerFindUnique(...args) },
     productVariant: { findUnique: (...args: unknown[]) => mockVariantFindUnique(...args) },
+    customerOrder: {
+      findUnique: (...args: unknown[]) => mockOrderFindUnique(...args),
+      update: (...args: unknown[]) => mockOrderUpdate(...args),
+    },
+    $transaction: jest.fn(async (cb: (tx: unknown) => unknown) =>
+      cb({
+        customerOrder: {
+          findUnique: (...args: unknown[]) => mockOrderFindUnique(...args),
+          update: (...args: unknown[]) => mockOrderUpdate(...args),
+        },
+      })
+    ),
+  },
+}));
+
+const mockResumePaymentIntent = jest.fn();
+const mockCancelPaymentIntent = jest.fn();
+
+jest.mock('../paymentService', () => ({
+  paymentService: {
+    resumePaymentIntent: (...args: unknown[]) => mockResumePaymentIntent(...args),
+    cancelPaymentIntent: (...args: unknown[]) => mockCancelPaymentIntent(...args),
   },
 }));
 
@@ -208,5 +238,206 @@ describe('CustomerOrderService - updateStatus', () => {
       1,
       expect.objectContaining({ paymentStatus: 'Paid', paidAt: expect.any(Date) })
     );
+  });
+});
+
+describe('CustomerOrderService - getOrCreatePaymentSession', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns clientSecret without persisting when PaymentIntent was reused', async () => {
+    const order = makeOrder({ customerId: 1, status: 'PendingPayment', paymentStatus: 'Pending' });
+    mockRepo.findById.mockResolvedValue(order);
+    mockResumePaymentIntent.mockResolvedValue({
+      clientSecret: 'cs_1',
+      stripePaymentIntentId: 'pi_1',
+      reused: true,
+    });
+
+    const result = await service.getOrCreatePaymentSession(1, 1);
+
+    expect(result.clientSecret).toBe('cs_1');
+    expect(mockRepo.updateStripeFields).not.toHaveBeenCalled();
+  });
+
+  it('persists new stripePaymentIntentId when PaymentIntent was reissued', async () => {
+    const order = makeOrder({ customerId: 1, status: 'PendingPayment', paymentStatus: 'Pending' });
+    mockRepo.findById.mockResolvedValue(order);
+    mockResumePaymentIntent.mockResolvedValue({
+      clientSecret: 'cs_2',
+      stripePaymentIntentId: 'pi_2',
+      reused: false,
+    });
+
+    await service.getOrCreatePaymentSession(1, 1);
+
+    expect(mockRepo.updateStripeFields).toHaveBeenCalledWith(1, { stripePaymentIntentId: 'pi_2' });
+  });
+
+  it('throws CustomerOrderNotFoundError when order does not exist', async () => {
+    mockRepo.findById.mockResolvedValue(null);
+    await expect(service.getOrCreatePaymentSession(1, 999)).rejects.toBeInstanceOf(
+      CustomerOrderNotFoundError
+    );
+  });
+
+  it('throws CustomerOrderNotFoundError when order belongs to another customer', async () => {
+    mockRepo.findById.mockResolvedValue(makeOrder({ customerId: 2 }));
+    await expect(service.getOrCreatePaymentSession(1, 1)).rejects.toBeInstanceOf(
+      CustomerOrderNotFoundError
+    );
+  });
+
+  it('throws OrderNotPayableError when order status is not PendingPayment', async () => {
+    mockRepo.findById.mockResolvedValue(makeOrder({ customerId: 1, status: 'Paid', paymentStatus: 'Paid' }));
+    await expect(service.getOrCreatePaymentSession(1, 1)).rejects.toBeInstanceOf(OrderNotPayableError);
+  });
+
+  it('throws OrderNotPayableError when paymentStatus is Paid', async () => {
+    mockRepo.findById.mockResolvedValue(
+      makeOrder({ customerId: 1, status: 'PendingPayment', paymentStatus: 'Paid' })
+    );
+    await expect(service.getOrCreatePaymentSession(1, 1)).rejects.toBeInstanceOf(OrderNotPayableError);
+  });
+
+  it('propagates PaymentGatewayUnavailableError from resumePaymentIntent', async () => {
+    mockRepo.findById.mockResolvedValue(
+      makeOrder({ customerId: 1, status: 'PendingPayment', paymentStatus: 'Pending' })
+    );
+    mockResumePaymentIntent.mockRejectedValue(new PaymentGatewayUnavailableError());
+    await expect(service.getOrCreatePaymentSession(1, 1)).rejects.toBeInstanceOf(
+      PaymentGatewayUnavailableError
+    );
+  });
+});
+
+describe('CustomerOrderService - cancelPendingOrder', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('cancels a pending order and cancels its PaymentIntent', async () => {
+    const order = makeOrder({
+      customerId: 1,
+      status: 'PendingPayment',
+      paymentStatus: 'Pending',
+      stripePaymentIntentId: 'pi_1',
+    });
+    mockRepo.findById
+      .mockResolvedValueOnce(order)
+      .mockResolvedValueOnce(makeOrder({ customerId: 1, status: 'Cancelled', fulfillmentStatus: 'Cancelled' }));
+    mockOrderFindUnique.mockResolvedValue({ status: 'PendingPayment', paymentStatus: 'Pending' });
+    mockOrderUpdate.mockResolvedValue({});
+    mockCancelPaymentIntent.mockResolvedValue(undefined);
+
+    const result = await service.cancelPendingOrder(1, 1);
+
+    expect(mockOrderUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'Cancelled', fulfillmentStatus: 'Cancelled' }),
+      })
+    );
+    expect(mockCancelPaymentIntent).toHaveBeenCalledWith('pi_1');
+    expect(result.status).toBe('Cancelled');
+  });
+
+  it('does not call Stripe when order has no stripePaymentIntentId', async () => {
+    const order = makeOrder({
+      customerId: 1,
+      status: 'PendingPayment',
+      paymentStatus: 'Pending',
+      stripePaymentIntentId: null,
+    });
+    mockRepo.findById.mockResolvedValueOnce(order).mockResolvedValueOnce(order);
+    mockOrderFindUnique.mockResolvedValue({ status: 'PendingPayment', paymentStatus: 'Pending' });
+    mockOrderUpdate.mockResolvedValue({});
+
+    await service.cancelPendingOrder(1, 1);
+
+    expect(mockCancelPaymentIntent).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent when order is already Cancelled', async () => {
+    const order = makeOrder({ customerId: 1, status: 'Cancelled' });
+    mockRepo.findById.mockResolvedValue(order);
+
+    const result = await service.cancelPendingOrder(1, 1);
+
+    expect(result).toBe(order);
+    expect(mockOrderUpdate).not.toHaveBeenCalled();
+    expect(mockCancelPaymentIntent).not.toHaveBeenCalled();
+  });
+
+  it('throws CustomerOrderNotFoundError for non-existent order', async () => {
+    mockRepo.findById.mockResolvedValue(null);
+    await expect(service.cancelPendingOrder(1, 999)).rejects.toBeInstanceOf(CustomerOrderNotFoundError);
+  });
+
+  it('throws CustomerOrderNotFoundError for another customer order', async () => {
+    mockRepo.findById.mockResolvedValue(makeOrder({ customerId: 2, status: 'PendingPayment' }));
+    await expect(service.cancelPendingOrder(1, 1)).rejects.toBeInstanceOf(CustomerOrderNotFoundError);
+  });
+
+  it('throws OrderNotCancellableError when outer status is not cancellable', async () => {
+    mockRepo.findById.mockResolvedValue(
+      makeOrder({ customerId: 1, status: 'Paid', paymentStatus: 'Paid' })
+    );
+    await expect(service.cancelPendingOrder(1, 1)).rejects.toBeInstanceOf(OrderNotCancellableError);
+    expect(mockOrderFindUnique).not.toHaveBeenCalled();
+  });
+
+  it('throws OrderNotCancellableError when the webhook wins the race inside the transaction', async () => {
+    const order = makeOrder({ customerId: 1, status: 'PendingPayment', paymentStatus: 'Pending' });
+    mockRepo.findById.mockResolvedValue(order);
+    mockOrderFindUnique.mockResolvedValue({ status: 'Paid', paymentStatus: 'Paid' });
+
+    await expect(service.cancelPendingOrder(1, 1)).rejects.toBeInstanceOf(OrderNotCancellableError);
+    expect(mockOrderUpdate).not.toHaveBeenCalled();
+    expect(mockCancelPaymentIntent).not.toHaveBeenCalled();
+  });
+
+  it('rolls back to prior status when Stripe reports the PaymentIntent already captured', async () => {
+    const order = makeOrder({
+      customerId: 1,
+      status: 'PendingPayment',
+      fulfillmentStatus: 'NotStarted',
+      paymentStatus: 'Pending',
+      stripePaymentIntentId: 'pi_1',
+    });
+    mockRepo.findById.mockResolvedValueOnce(order).mockResolvedValueOnce(order);
+    mockOrderFindUnique.mockResolvedValue({ status: 'PendingPayment', paymentStatus: 'Pending' });
+    mockOrderUpdate.mockResolvedValue({});
+    mockCancelPaymentIntent.mockRejectedValue(new PaymentIntentAlreadyCapturedError());
+
+    await expect(service.cancelPendingOrder(1, 1)).rejects.toBeInstanceOf(OrderNotCancellableError);
+
+    expect(mockOrderUpdate).toHaveBeenCalledTimes(2);
+    expect(mockOrderUpdate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'PendingPayment',
+          fulfillmentStatus: 'NotStarted',
+          cancelledAt: null,
+        }),
+      })
+    );
+  });
+
+  it('rolls back and preserves the original error on a generic Stripe failure', async () => {
+    const order = makeOrder({
+      customerId: 1,
+      status: 'PendingPayment',
+      fulfillmentStatus: 'NotStarted',
+      paymentStatus: 'Pending',
+      stripePaymentIntentId: 'pi_1',
+    });
+    mockRepo.findById.mockResolvedValueOnce(order).mockResolvedValueOnce(order);
+    mockOrderFindUnique.mockResolvedValue({ status: 'PendingPayment', paymentStatus: 'Pending' });
+    mockOrderUpdate.mockResolvedValue({});
+    mockCancelPaymentIntent.mockRejectedValue(new PaymentGatewayUnavailableError());
+
+    await expect(service.cancelPendingOrder(1, 1)).rejects.toBeInstanceOf(
+      PaymentGatewayUnavailableError
+    );
+
+    expect(mockOrderUpdate).toHaveBeenCalledTimes(2);
   });
 });
