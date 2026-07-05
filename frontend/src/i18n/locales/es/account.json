@@ -95,6 +95,12 @@
       "subtotal": "Subtotal",
       "shipping": "Envío",
       "discount": "Descuento"
+    },
+    "shipping": {
+      "title": "Envío",
+      "trackPackage": "Seguir envío",
+      "shippedOn": "Enviado el {{date}}",
+      "deliveredOn": "Entregado el {{date}}"
     }
   },
   "wishlist": {
@@ -134,8 +140,11 @@
     "Failed": "Fallido",
     "Pending": "Pendiente",
     "Processing": "En proceso",
+    "Preparing": "Preparando",
     "Shipped": "Enviado",
+    "InTransit": "En tránsito",
     "Delivered": "Entregado",
+    "Problem": "Incidencia",
     "Cancelled": "Cancelado",
     "Completed": "Completado",
     "Refunded": "Reembolsado"

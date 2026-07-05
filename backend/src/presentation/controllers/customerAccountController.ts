@@ -5,40 +5,92 @@ import { toCustomerPublic } from '../../domain/models/customerAccount';
 import { CustomerOrderNotFoundError } from '../../infrastructure/repositories/customerOrderRepository';
 import { customerAuthService } from '../../application/services/customerAuthService';
 import { customerOrderService } from '../../application/services/customerOrderService';
+import { ShipmentStatus } from '../../domain/models/shipment';
 
-function toPublicOrder(order: {
-  id: number;
-  orderNumber: string;
-  customerId: number;
+export type CustomerShippingStatus = 'Preparing' | 'Shipped' | 'InTransit' | 'Delivered' | 'Problem';
+
+export function deriveShippingStatus(shipments: Array<{ status: ShipmentStatus }>): CustomerShippingStatus {
+  if (shipments.length === 0 || shipments.every((s) => s.status === 'Pending')) {
+    return 'Preparing';
+  }
+  if (shipments.some((s) => s.status === 'Failed' || s.status === 'Returned')) {
+    return 'Problem';
+  }
+  if (shipments.every((s) => s.status === 'Delivered')) {
+    return 'Delivered';
+  }
+  if (shipments.some((s) => s.status === 'InTransit')) {
+    return 'InTransit';
+  }
+  if (shipments.some((s) => s.status === 'Shipped')) {
+    return 'Shipped';
+  }
+  return 'Preparing';
+}
+
+export function toPublicShipment(shipment: {
   status: string;
-  paymentStatus: string;
-  fulfillmentStatus: string;
-  subtotalAmount: { toString(): string };
-  shippingAmount: { toString(): string };
-  discountAmount: { toString(): string };
-  totalAmount: { toString(): string };
-  currency: string;
-  shippingAddressSnapshot: unknown;
-  billingAddressSnapshot: unknown;
-  createdAt: Date;
-  items?: Array<{
-    id: number;
-    productVariantId: number;
-    productNameSnapshot: string;
-    variantSnapshot: unknown;
-    skuSnapshot: string;
-    quantity: number;
-    unitPrice: { toString(): string };
-    totalPrice: { toString(): string };
-    fulfillmentStatus: string;
-  }>;
+  carrier: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
 }) {
+  return {
+    status: shipment.status,
+    carrier: shipment.carrier,
+    trackingNumber: shipment.trackingNumber,
+    trackingUrl: shipment.trackingUrl,
+    shippedAt: shipment.shippedAt,
+    deliveredAt: shipment.deliveredAt,
+  };
+}
+
+export function toPublicOrder(
+  order: {
+    id: number;
+    orderNumber: string;
+    customerId: number;
+    status: string;
+    paymentStatus: string;
+    subtotalAmount: { toString(): string };
+    shippingAmount: { toString(): string };
+    discountAmount: { toString(): string };
+    totalAmount: { toString(): string };
+    currency: string;
+    shippingAddressSnapshot: unknown;
+    billingAddressSnapshot: unknown;
+    createdAt: Date;
+    items?: Array<{
+      id: number;
+      productVariantId: number;
+      productNameSnapshot: string;
+      variantSnapshot: unknown;
+      skuSnapshot: string;
+      quantity: number;
+      unitPrice: { toString(): string };
+      totalPrice: { toString(): string };
+    }>;
+    shipments?: Array<{
+      status: string;
+      carrier: string | null;
+      trackingNumber: string | null;
+      trackingUrl: string | null;
+      shippedAt: Date | null;
+      deliveredAt: Date | null;
+    }>;
+  },
+  options: { includeShipments?: boolean } = {}
+) {
+  const shipments = order.shipments ?? [];
+  const shippingStatus = deriveShippingStatus(shipments as Array<{ status: ShipmentStatus }>);
+
   return {
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
     paymentStatus: order.paymentStatus,
-    fulfillmentStatus: order.fulfillmentStatus,
+    shippingStatus,
     subtotalAmount: order.subtotalAmount.toString(),
     shippingAmount: order.shippingAmount.toString(),
     discountAmount: order.discountAmount.toString(),
@@ -56,8 +108,8 @@ function toPublicOrder(order: {
       quantity: item.quantity,
       unitPrice: item.unitPrice.toString(),
       totalPrice: item.totalPrice.toString(),
-      fulfillmentStatus: item.fulfillmentStatus,
     })),
+    ...(options.includeShipments !== false && { shipments: shipments.map(toPublicShipment) }),
   };
 }
 
@@ -105,13 +157,30 @@ export async function listOrders(req: CustomerAuthRequest, res: Response, next: 
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { items: true },
+        include: {
+          items: true,
+          shipments: {
+            select: {
+              status: true,
+              carrier: true,
+              trackingNumber: true,
+              trackingUrl: true,
+              shippedAt: true,
+              deliveredAt: true,
+            },
+          },
+        },
       }),
       prisma.customerOrder.count({ where: { customerId: req.customer!.customerId } }),
     ]);
     res.json({
       success: true,
-      data: { items: items.map(toPublicOrder), total, page, pageSize },
+      data: {
+        items: items.map((order) => toPublicOrder(order, { includeShipments: false })),
+        total,
+        page,
+        pageSize,
+      },
       message: 'Orders retrieved',
     });
   } catch (err) {
@@ -124,7 +193,19 @@ export async function getOrderById(req: CustomerAuthRequest, res: Response, next
     const id = parseInt(req.params.id as string, 10);
     const order = await prisma.customerOrder.findFirst({
       where: { id, customerId: req.customer!.customerId },
-      include: { items: true },
+      include: {
+        items: true,
+        shipments: {
+          select: {
+            status: true,
+            carrier: true,
+            trackingNumber: true,
+            trackingUrl: true,
+            shippedAt: true,
+            deliveredAt: true,
+          },
+        },
+      },
     });
     if (!order) throw new CustomerOrderNotFoundError();
     res.json({ success: true, data: toPublicOrder(order), message: 'Order retrieved' });

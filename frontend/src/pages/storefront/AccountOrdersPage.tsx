@@ -7,6 +7,9 @@ import { orderStatusLabel } from '../../utils/orderStatusLabel';
 
 function orderBadgeClass(status: string): string {
   const normalized = status.toLowerCase();
+  if (normalized === 'problem') {
+    return 'storefront-account__badge storefront-account__badge--error';
+  }
   if (normalized.includes('deliver') || normalized.includes('complet') || normalized.includes('paid')) {
     return 'storefront-account__badge storefront-account__badge--success';
   }
@@ -18,7 +21,7 @@ function orderBadgeClass(status: string): string {
 
 const AccountOrdersPage: React.FC = () => {
   const { t } = useTranslation('account');
-  const [orders, setOrders] = useState<Array<{ id: number; orderNumber: string; totalAmount: string; status: string }>>([]);
+  const [orders, setOrders] = useState<Array<{ id: number; orderNumber: string; totalAmount: string; status: string; shippingStatus: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,6 +58,14 @@ const AccountOrdersPage: React.FC = () => {
                     <div className="storefront-account__list-meta">
                       <span className="storefront-account__list-price">€{order.totalAmount}</span>
                       <span className={orderBadgeClass(order.status)}>{statusLabel}</span>
+                      {order.status !== 'PendingPayment' && (
+                        <span
+                          className={orderBadgeClass(order.shippingStatus)}
+                          data-testid={`shipping-badge-${order.id}`}
+                        >
+                          {orderStatusLabel(t, order.shippingStatus)}
+                        </span>
+                      )}
                     </div>
                   </Link>
                   {order.status === 'PendingPayment' && (
