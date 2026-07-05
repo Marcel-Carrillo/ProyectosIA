@@ -86,10 +86,10 @@
 
 ## 11. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
-- [ ] 11.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/customer-order-shipment-status/reports/`.
-- [ ] 11.3 Stage all relevant files (backend, frontend, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`, secrets, and any unrelated in-progress changes already present in the working tree from other work.
-- [ ] 11.4 Create a Conventional Commit (e.g. `feat(account): expose derived shipping status on customer orders`) referencing this OpenSpec change and test status.
-- [ ] 11.5 Push the branch: `git push -u origin feature/customer-order-shipment-status`.
-- [ ] 11.6 Create the Pull Request with `gh pr create --base develop ...`, including summary, OpenSpec change name, and verification status (unit/curl/E2E).
-- [ ] 11.7 Report the PR URL in chat.
+- [x] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
+- [x] 11.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/customer-order-shipment-status/reports/`.
+- [x] 11.3 Stage all relevant files (backend, frontend, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`, secrets, and any unrelated in-progress changes already present in the working tree from other work.
+- [x] 11.4 Create a Conventional Commit (e.g. `feat(account): expose derived shipping status on customer orders`) referencing this OpenSpec change and test status.
+- [x] 11.5 Push the branch: `git push -u origin feature/customer-order-shipment-status`.
+- [x] 11.6 Create the Pull Request with `gh pr create --base develop ...`, including summary, OpenSpec change name, and verification status (unit/curl/E2E).
+- [x] 11.7 Report the PR URL in chat.
