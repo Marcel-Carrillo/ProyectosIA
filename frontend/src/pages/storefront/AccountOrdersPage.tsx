@@ -57,6 +57,15 @@ const AccountOrdersPage: React.FC = () => {
                       <span className={orderBadgeClass(order.status)}>{statusLabel}</span>
                     </div>
                   </Link>
+                  {order.status === 'PendingPayment' && (
+                    <Link
+                      to={`/account/orders/${order.id}`}
+                      className="storefront-btn storefront-btn--text storefront-account__list-cta"
+                      data-testid={`resume-cta-${order.id}`}
+                    >
+                      {t('orders.resumePayment')}
+                    </Link>
+                  )}
                 </li>
               );
             })}

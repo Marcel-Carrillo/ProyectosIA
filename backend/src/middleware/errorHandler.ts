@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { ValidationError, TranslationLocaleInvalidError } from '../application/validator';
+import {
+  ValidationError,
+  TranslationLocaleInvalidError,
+  OrderNotPayableError,
+  OrderNotCancellableError,
+} from '../application/validator';
 import {
   ProductNotFoundError,
   ProductSlugConflictError,
@@ -136,6 +141,10 @@ export function globalErrorHandler(
   } else if (err instanceof CustomerOrderNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof OrderNumberConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof OrderNotPayableError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof OrderNotCancellableError) {
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof OrderStatusTransitionInvalidError) {
     statusCode = 422; code = err.code; message = err.message;

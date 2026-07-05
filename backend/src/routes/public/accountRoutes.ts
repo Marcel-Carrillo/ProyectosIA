@@ -5,6 +5,8 @@ import {
   updateProfile,
   listOrders,
   getOrderById,
+  resumeOrderPayment,
+  cancelOrder,
   setup2fa,
   confirm2fa,
   disable2fa,
@@ -37,6 +39,8 @@ router.get('/profile', getProfile);
 router.patch('/profile', updateProfile);
 router.get('/orders', listOrders);
 router.get('/orders/:id', getOrderById);
+router.post('/orders/:id/payment-session', resumeOrderPayment);
+router.post('/orders/:id/cancel', cancelOrder);
 
 router.post('/security/2fa/setup', setup2fa);
 router.post('/security/2fa/confirm', confirm2fa);

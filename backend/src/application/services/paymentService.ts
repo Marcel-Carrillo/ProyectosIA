@@ -10,9 +10,16 @@ import { StripeWebhookEventRepository } from '../../infrastructure/repositories/
 import {
   PaymentGatewayUnavailableError,
   PaymentWebhookSignatureInvalidError,
+  PaymentIntentAlreadyCapturedError,
 } from '../validator';
 import { prisma } from '../../infrastructure/prismaClient';
 import { logger } from '../../infrastructure/logger';
+
+const RESUMABLE_PAYMENT_INTENT_STATUSES = new Set([
+  'requires_payment_method',
+  'requires_confirmation',
+  'requires_action',
+]);
 
 export class PaymentService {
   constructor(
@@ -71,6 +78,77 @@ export class PaymentService {
       clientSecret: intent.client_secret,
       stripePaymentIntentId: intent.id,
     };
+  }
+
+  async resumePaymentIntent(
+    order: CustomerOrder
+  ): Promise<{ clientSecret: string; stripePaymentIntentId: string; reused: boolean }> {
+    const amount = toStripeAmount(new Decimal(order.totalAmount), order.currency);
+
+    if (order.stripePaymentIntentId) {
+      let existing: Stripe.PaymentIntent;
+      try {
+        existing = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+      } catch (err) {
+        logger.error('Stripe PaymentIntent retrieve failed', {
+          orderId: order.id,
+          stripePaymentIntentId: order.stripePaymentIntentId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        throw new PaymentGatewayUnavailableError();
+      }
+
+      if (RESUMABLE_PAYMENT_INTENT_STATUSES.has(existing.status) && existing.amount === amount) {
+        if (!existing.client_secret) {
+          throw new PaymentGatewayUnavailableError('PaymentIntent missing client_secret');
+        }
+        return { clientSecret: existing.client_secret, stripePaymentIntentId: existing.id, reused: true };
+      }
+    }
+
+    let intent: Stripe.PaymentIntent;
+    try {
+      intent = await stripe.paymentIntents.create(
+        {
+          amount,
+          currency: order.currency.toLowerCase(),
+          metadata: {
+            customerOrderId: String(order.id),
+            orderNumber: order.orderNumber,
+          },
+          automatic_payment_methods: { enabled: true },
+        },
+        { idempotencyKey: `order:${order.id}:pi:resume:${Date.now()}` }
+      );
+    } catch (err) {
+      logger.error('Stripe PaymentIntent resume-create failed', {
+        orderNumber: order.orderNumber,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw new PaymentGatewayUnavailableError();
+    }
+
+    if (!intent.client_secret) {
+      throw new PaymentGatewayUnavailableError('PaymentIntent missing client_secret');
+    }
+
+    return { clientSecret: intent.client_secret, stripePaymentIntentId: intent.id, reused: false };
+  }
+
+  async cancelPaymentIntent(stripePaymentIntentId: string): Promise<void> {
+    try {
+      await stripe.paymentIntents.cancel(stripePaymentIntentId);
+    } catch (err) {
+      const stripeErr = err as { code?: string };
+      if (stripeErr?.code === 'payment_intent_unexpected_state') {
+        throw new PaymentIntentAlreadyCapturedError();
+      }
+      logger.error('Stripe PaymentIntent cancel failed', {
+        stripePaymentIntentId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw new PaymentGatewayUnavailableError();
+    }
   }
 
   async handleWebhookEvent(rawBody: Buffer, signature: string): Promise<void> {

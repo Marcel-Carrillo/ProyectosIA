@@ -55,6 +55,7 @@
   "orders": {
     "title": "Pedidos",
     "panelTitle": "Historial de pedidos",
+    "resumePayment": "Completar pago",
     "empty": {
       "title": "Aún no tienes pedidos",
       "text": "Cuando realices un pedido, aparecerá aquí."
@@ -67,8 +68,23 @@
     "title": "Detalle del pedido",
     "titleWithNumber": "Pedido {{orderNumber}}",
     "back": "← Volver a pedidos",
+    "actions": {
+      "completePayment": "Completar pago",
+      "resuming": "Preparando pago…",
+      "cancelOrder": "Cancelar pedido",
+      "cancelConfirm": "¿Seguro que quieres cancelar este pedido? Esta acción no se puede deshacer.",
+      "confirmCancel": "Sí, cancelar pedido",
+      "cancelling": "Cancelando…",
+      "keepOrder": "No, mantener pedido",
+      "backToOrder": "← Volver al pedido"
+    },
     "errors": {
-      "load": "No se pudo cargar el detalle del pedido."
+      "load": "No se pudo cargar el detalle del pedido.",
+      "resumeFailed": "No se pudo iniciar el pago. Inténtalo de nuevo.",
+      "cancelFailed": "No se pudo cancelar el pedido. Inténtalo de nuevo.",
+      "ORDER_NOT_PAYABLE": "Este pedido ya no se puede pagar.",
+      "ORDER_NOT_CANCELLABLE": "Este pedido ya no se puede cancelar.",
+      "CUSTOMER_ORDER_NOT_FOUND": "No se encontró el pedido."
     },
     "table": {
       "product": "Producto",
