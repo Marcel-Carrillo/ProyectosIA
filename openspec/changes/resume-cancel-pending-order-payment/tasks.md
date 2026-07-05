@@ -88,10 +88,10 @@
 
 ## 11. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
-- [ ] 11.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/resume-cancel-pending-order-payment/reports/`.
-- [ ] 11.3 Stage all relevant files (backend, frontend, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`, secrets.
-- [ ] 11.4 Create a Conventional Commit (e.g. `feat(account): allow customer to resume or cancel a pending order payment`) referencing this OpenSpec change and test status.
-- [ ] 11.5 Push the branch: `git push -u origin feature/resume-cancel-pending-order-payment`.
-- [ ] 11.6 Create the Pull Request with `gh pr create --base develop ...`, including summary, OpenSpec change name, and verification status (unit/curl/E2E).
-- [ ] 11.7 Report the PR URL in chat.
+- [x] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any Git commands.
+- [x] 11.2 Verify all tasks above are marked `[x]` and all required reports exist under `openspec/changes/resume-cancel-pending-order-payment/reports/`.
+- [x] 11.3 Stage all relevant files (backend, frontend, docs, OpenSpec artifacts); exclude `.env`, `node_modules/`, `dist/`, `coverage/`, secrets.
+- [x] 11.4 Create a Conventional Commit (e.g. `feat(account): allow customer to resume or cancel a pending order payment`) referencing this OpenSpec change and test status. Evidence: commit `0d65b64`.
+- [x] 11.5 Push the branch: `git push -u origin feature/resume-cancel-pending-order-payment`.
+- [x] 11.6 Create the Pull Request with `gh pr create --base develop ...`, including summary, OpenSpec change name, and verification status (unit/curl/E2E). Evidence: PR #68.
+- [x] 11.7 Report the PR URL in chat. Evidence: https://github.com/Marcel-Carrillo/ProyectosIA/pull/68
