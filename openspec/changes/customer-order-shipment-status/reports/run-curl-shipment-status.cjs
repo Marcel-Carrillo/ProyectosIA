@@ -50,8 +50,8 @@ async function api(method, path, { token, body } = {}) {
 
 function assert(name, condition, detail = '') {
   results.push({ name, ok: !!condition, detail });
-  if (!condition) console.error(`FAIL: ${name}`, detail);
-  else console.log(`OK: ${name}`);
+  if (!condition) console.error('FAIL:', name, detail);
+  else console.log('OK:', name);
 }
 
 (async () => {

@@ -42,8 +42,25 @@ async function api(method, path, body, token) {
   return { status: res.status, json };
 }
 
+function storefrontUrl(pathname) {
+  if (!pathname.startsWith('/')) throw new Error('pathname must start with /');
+  return new URL(pathname, BASE).toString();
+}
+
+function orderDetailPath(orderId) {
+  const id = Number(String(orderId).trim());
+  if (!Number.isInteger(id) || id < 1) throw new Error('Invalid order id');
+  return `/account/orders/${id}`;
+}
+
+async function gotoStorefront(page, pathname) {
+  // E2E harness: pathname comes from fixed routes or numeric order ids validated in orderDetailPath.
+  // nosemgrep: javascript.playwright.security.audit.playwright-goto-injection.playwright-goto-injection
+  await page.goto(storefrontUrl(pathname), { waitUntil: 'networkidle' });
+}
+
 async function loginCustomer(page, email) {
-  await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
+  await gotoStorefront(page, '/login');
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(PASSWORD);
   await page.getByRole('button', { name: /sign in|iniciar sesión/i }).click();
@@ -106,7 +123,7 @@ async function main() {
     await loginCustomer(page, EMAIL);
 
     // 9.2 / 9.3 — shipped order detail
-    await page.goto(`${BASE}/account/orders/${orderShippedId}`, { waitUntil: 'networkidle' });
+    await gotoStorefront(page, orderDetailPath(orderShippedId));
     await page.getByTestId('shipping-section').waitFor({ state: 'visible', timeout: 10000 });
     await page.getByTestId('shipping-status-badge').waitFor({ state: 'visible' });
     const badgeText = await page.getByTestId('shipping-status-badge').textContent();
@@ -117,18 +134,18 @@ async function main() {
     pass('9.2-9.3', `Detail shows shipping section, badge "${badgeText?.trim()}", tracking link`);
 
     // 9.4 — list badge
-    await page.goto(`${BASE}/account/orders`, { waitUntil: 'networkidle' });
-    const shippedRow = page.locator(`a[href="/account/orders/${orderShippedId}"]`).locator('..');
+    await gotoStorefront(page, '/account/orders');
+    const shippedRow = page.locator(`a[href="${orderDetailPath(orderShippedId)}"]`).locator('..');
     await shippedRow.getByText(/enviad|shipped/i).first().waitFor({ state: 'visible', timeout: 10000 });
     pass('9.4', 'Orders list shows shipping badge for paid/shipped order');
 
     // 9.5 — pending payment: no shipping, actions present
-    await page.goto(`${BASE}/account/orders/${orderPendingId}`, { waitUntil: 'networkidle' });
+    await gotoStorefront(page, orderDetailPath(orderPendingId));
     await page.getByTestId('pending-order-actions').waitFor({ state: 'visible', timeout: 10000 });
     if (await page.getByTestId('shipping-section').count()) {
       throw new Error('Shipping section should be hidden for PendingPayment');
     }
-    await page.goto(`${BASE}/account/orders`, { waitUntil: 'networkidle' });
+    await gotoStorefront(page, '/account/orders');
     await page.getByTestId(`resume-cta-${orderPendingId}`).waitFor({ state: 'visible' });
     const pendingRow = page.locator('.storefront-account__list-item').filter({ has: page.getByTestId(`resume-cta-${orderPendingId}`) });
     if (await pendingRow.getByText(/enviad|shipped|preparando|preparing/i).count()) {
@@ -137,7 +154,7 @@ async function main() {
     pass('9.5', 'PendingPayment hides shipping; resume/cancel actions still render');
 
     // 9.6 — problem status
-    await page.goto(`${BASE}/account/orders/${orderProblemId}`, { waitUntil: 'networkidle' });
+    await gotoStorefront(page, orderDetailPath(orderProblemId));
     await page.getByTestId('shipping-section').waitFor({ state: 'visible' });
     const problemBadge = await page.getByTestId('shipping-status-badge').textContent();
     if (!/incidencia|problem/i.test(problemBadge || '')) {
