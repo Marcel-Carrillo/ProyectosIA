@@ -1,0 +1,48 @@
+name: Sync develop after release
+
+# After merging develop → master, master gains a merge commit that develop lacks.
+# GitHub then shows a false diff even though the tree is identical.
+# Fast-forward develop to master so both branches share the same tip when code matches.
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  sync-develop:
+    name: Fast-forward develop to master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          ref: develop
+
+      - name: Align develop with master
+        run: |
+          set -euo pipefail
+          git fetch origin master develop
+
+          DEVELOP_SHA="$(git rev-parse origin/develop)"
+          MASTER_SHA="$(git rev-parse origin/master)"
+
+          if [ "$DEVELOP_SHA" = "$MASTER_SHA" ]; then
+            echo "develop and master already point to the same commit ($MASTER_SHA)."
+            exit 0
+          fi
+
+          if ! git merge-base --is-ancestor origin/develop origin/master; then
+            echo "develop is not an ancestor of master; skipping auto-sync."
+            echo "Merge master into develop manually if a hotfix landed on master only."
+            exit 0
+          fi
+
+          git checkout develop
+          git merge origin/master --ff-only
+          git push origin develop
+          echo "develop fast-forwarded to master ($(git rev-parse --short HEAD))."
