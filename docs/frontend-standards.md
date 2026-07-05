@@ -1132,6 +1132,15 @@ After confirmation, navigate to the order confirmation page with `state: { payme
 - Only `publishableKey` from `GET /api/public/payments/config` may be used on the frontend
 - `stripePaymentIntentId` and `stripeChargeId` are backend-internal — they must not appear in any API response consumed by the frontend
 
+### Account order shipping status (storefront)
+
+`AccountOrderDetailPage` and `AccountOrdersPage` render a customer-facing **shipping status** badge derived from `order.shippingStatus` (`Preparing | Shipped | InTransit | Delivered | Problem`). Rules:
+
+- Gate on `order.status !== 'PendingPayment'` — shipping UI must not compete with the pending-payment resume/cancel actions (which are gated on `status === 'PendingPayment'`).
+- Reuse `orderStatusLabel(t, status)` + `orderBadgeClass(status)` from `AccountOrderDetailPage.tsx` for consistent badge styling (`--success` for Delivered, `--error` for Problem, `--pending` for in-progress states).
+- Detail page only: render `order.shipments[]` with carrier, tracking link (`target="_blank" rel="noopener noreferrer"`), and shipped/delivered dates inside `data-testid="shipping-section"`.
+- List page: show `shippingStatus` badge only; never render the full `shipments[]` array.
+
 ### Testing Stripe Components
 
 Mock `@stripe/react-stripe-js` in unit tests — never use real Stripe.js in Jest:

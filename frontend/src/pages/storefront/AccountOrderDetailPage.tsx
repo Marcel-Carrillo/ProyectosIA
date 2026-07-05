@@ -14,6 +14,15 @@ import { getStripeConfig } from '../../services/paymentService';
 import PaymentForm from '../../components/storefront/PaymentForm';
 import { orderStatusLabel } from '../../utils/orderStatusLabel';
 
+interface Shipment {
+  status: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+}
+
 interface OrderItem {
   id: number;
   productNameSnapshot: string;
@@ -21,7 +30,6 @@ interface OrderItem {
   quantity: number;
   unitPrice: string;
   totalPrice: string;
-  fulfillmentStatus: string;
 }
 
 interface OrderDetail {
@@ -29,7 +37,8 @@ interface OrderDetail {
   orderNumber: string;
   status: string;
   paymentStatus: string;
-  fulfillmentStatus: string;
+  shippingStatus: string;
+  shipments?: Shipment[];
   subtotalAmount: string;
   shippingAmount: string;
   discountAmount: string;
@@ -41,6 +50,9 @@ interface OrderDetail {
 
 function orderBadgeClass(status: string): string {
   const normalized = status.toLowerCase();
+  if (normalized === 'problem') {
+    return 'storefront-account__badge storefront-account__badge--error';
+  }
   if (normalized.includes('deliver') || normalized.includes('complet') || normalized.includes('paid')) {
     return 'storefront-account__badge storefront-account__badge--success';
   }
@@ -251,6 +263,61 @@ const AccountOrderDetailPage: React.FC = () => {
                 {t('orderDetail.actions.backToOrder')}
               </button>
             </div>
+          )}
+        </div>
+      )}
+
+      {order.status !== 'PendingPayment' && (
+        <div className="storefront-account__shipping" data-testid="shipping-section">
+          <h2 className="storefront-account__panel-title">{t('orderDetail.shipping.title')}</h2>
+          <div className="storefront-account__order-meta">
+            <span
+              className={orderBadgeClass(order.shippingStatus)}
+              data-testid="shipping-status-badge"
+            >
+              {orderStatusLabel(t, order.shippingStatus)}
+            </span>
+          </div>
+
+          {order.shipments && order.shipments.length > 0 && (
+            <ul className="storefront-account__shipping-list">
+              {order.shipments.map((shipment, index) => (
+                <li
+                  key={index}
+                  className="storefront-account__shipping-item"
+                  data-testid={`shipment-item-${index}`}
+                >
+                  {shipment.carrier && (
+                    <span className="storefront-account__shipping-carrier">{shipment.carrier}</span>
+                  )}
+                  {shipment.trackingUrl && (
+                    <a
+                      href={shipment.trackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="storefront-account__tracking-link"
+                      data-testid={`tracking-link-${index}`}
+                    >
+                      {shipment.trackingNumber || t('orderDetail.shipping.trackPackage')}
+                    </a>
+                  )}
+                  {shipment.shippedAt && (
+                    <span className="storefront-account__shipping-date">
+                      {t('orderDetail.shipping.shippedOn', {
+                        date: new Date(shipment.shippedAt).toLocaleDateString(),
+                      })}
+                    </span>
+                  )}
+                  {shipment.deliveredAt && (
+                    <span className="storefront-account__shipping-date">
+                      {t('orderDetail.shipping.deliveredOn', {
+                        date: new Date(shipment.deliveredAt).toLocaleDateString(),
+                      })}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}

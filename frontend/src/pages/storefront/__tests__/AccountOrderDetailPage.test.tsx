@@ -52,7 +52,15 @@ const pendingOrder = {
   orderNumber: 'ORD-001',
   status: 'PendingPayment',
   paymentStatus: 'Pending',
-  fulfillmentStatus: 'NotStarted',
+  shippingStatus: 'Preparing',
+  shipments: [] as Array<{
+    status: string;
+    carrier: string | null;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    shippedAt: string | null;
+    deliveredAt: string | null;
+  }>,
   subtotalAmount: '29.99',
   shippingAmount: '0',
   discountAmount: '0',
@@ -143,5 +151,64 @@ describe('AccountOrderDetailPage - pending payment actions', () => {
     expect(mockCancelOrder).not.toHaveBeenCalled();
     expect(screen.queryByTestId('cancel-order-confirm')).not.toBeInTheDocument();
     expect(await screen.findByTestId('btn-cancel-order')).toBeInTheDocument();
+  });
+});
+
+describe('AccountOrderDetailPage - shipping status', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetStripeConfig.mockResolvedValue({ publishableKey: 'pk_test_123', mode: 'test' });
+    mockLoadStripe.mockResolvedValue({});
+  });
+
+  it('hides the shipping section while the order is PendingPayment', async () => {
+    mockGetMyOrder.mockResolvedValue(pendingOrder);
+    renderPage();
+    expect(await screen.findByTestId('btn-resume-payment')).toBeInTheDocument();
+    expect(screen.queryByTestId('shipping-section')).not.toBeInTheDocument();
+  });
+
+  it('shows the shipping badge and a tracking link for a Paid order with a Shipped shipment', async () => {
+    mockGetMyOrder.mockResolvedValue({
+      ...pendingOrder,
+      status: 'Paid',
+      shippingStatus: 'Shipped',
+      shipments: [
+        {
+          status: 'Shipped',
+          carrier: 'GLS',
+          trackingNumber: 'GLS123456',
+          trackingUrl: 'https://tracking.example.com/GLS123456',
+          shippedAt: '2026-07-01T00:00:00.000Z',
+          deliveredAt: null,
+        },
+      ],
+    });
+    renderPage();
+    expect(await screen.findByTestId('shipping-section')).toBeInTheDocument();
+    expect(screen.getByTestId('shipping-status-badge')).toHaveTextContent(/shipped/i);
+    const trackingLink = screen.getByTestId('tracking-link-0');
+    expect(trackingLink).toHaveAttribute('href', 'https://tracking.example.com/GLS123456');
+    expect(trackingLink).toHaveTextContent('GLS123456');
+  });
+
+  it('shows Problem status when a shipment is Failed', async () => {
+    mockGetMyOrder.mockResolvedValue({
+      ...pendingOrder,
+      status: 'Paid',
+      shippingStatus: 'Problem',
+      shipments: [
+        {
+          status: 'Failed',
+          carrier: 'GLS',
+          trackingNumber: null,
+          trackingUrl: null,
+          shippedAt: null,
+          deliveredAt: null,
+        },
+      ],
+    });
+    renderPage();
+    expect(await screen.findByTestId('shipping-status-badge')).toHaveTextContent(/issue/i);
   });
 });
