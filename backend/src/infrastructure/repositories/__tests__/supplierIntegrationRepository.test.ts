@@ -19,7 +19,7 @@ jest.mock('../../prismaClient', () => ({
 const dbRow = {
   id: 1,
   supplierId: 10,
-  provider: 'Spocket',
+  provider: 'CJDropshipping',
   status: 'Disconnected',
   externalAccountRef: null,
   lastVerifiedAt: null,
@@ -68,7 +68,7 @@ describe('SupplierIntegrationRepository', () => {
         update: { externalAccountRef: 'acc-1' },
         create: {
           supplierId: 10,
-          provider: 'Spocket',
+          provider: 'CJDropshipping',
           status: 'Disconnected',
           externalAccountRef: 'acc-1',
         },

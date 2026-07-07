@@ -9,6 +9,8 @@ import {
   SupplierOrderListFilters,
   SupplierOrderListResult,
   GenerateSupplierOrdersResult,
+  SupplierOrderExternalPushData,
+  SupplierOrderExternalStatusData,
 } from '../../domain/repositories/supplierOrderRepository';
 import { CustomerOrderNotFoundError } from './customerOrderRepository';
 
@@ -107,6 +109,14 @@ const orderSelect = {
   trackingNumber: true,
   trackingUrl: true,
   internalNotes: true,
+  externalProvider: true,
+  externalOrderId: true,
+  externalOrderStatus: true,
+  externalTrackingNumber: true,
+  externalTrackingProvider: true,
+  sandbox: true,
+  pushedAt: true,
+  lastStatusSyncedAt: true,
   createdAt: true,
   updatedAt: true,
   supplier: { select: supplierRefSelect },
@@ -376,6 +386,48 @@ export class SupplierOrderRepository implements ISupplierOrderRepository {
       }
       throw err;
     }
+  }
+
+  async findByExternalOrderId(externalOrderId: string): Promise<SupplierOrder | null> {
+    const row = await prisma.supplierOrder.findUnique({
+      where: { externalOrderId },
+      select: orderSelect,
+    });
+    return row ? mapOrder(row) : null;
+  }
+
+  async updateExternalOrder(id: number, data: SupplierOrderExternalPushData): Promise<SupplierOrder | null> {
+    // Conditional on externalOrderId still being null: closes the race where
+    // two concurrent pushOrder() calls both pass the "not yet pushed" check
+    // and would otherwise silently overwrite each other's externalOrderId via
+    // an unconditional update. updateMany + count lets the caller detect the
+    // loser and surface CJ_ORDER_ALREADY_PUSHED instead of corrupting state.
+    const { count } = await prisma.supplierOrder.updateMany({
+      where: { id, externalOrderId: null },
+      data: {
+        externalProvider: data.externalProvider,
+        externalOrderId: data.externalOrderId,
+        sandbox: data.sandbox,
+        pushedAt: data.pushedAt,
+      },
+    });
+    if (count === 0) return null;
+    const row = await prisma.supplierOrder.findUnique({ where: { id }, select: orderSelect });
+    return row ? mapOrder(row) : null;
+  }
+
+  async updateExternalOrderStatus(id: number, data: SupplierOrderExternalStatusData): Promise<SupplierOrder> {
+    const row = await prisma.supplierOrder.update({
+      where: { id },
+      data: {
+        externalOrderStatus: data.externalOrderStatus,
+        ...(data.externalTrackingNumber !== undefined && { externalTrackingNumber: data.externalTrackingNumber }),
+        ...(data.externalTrackingProvider !== undefined && { externalTrackingProvider: data.externalTrackingProvider }),
+        lastStatusSyncedAt: data.lastStatusSyncedAt,
+      },
+      select: orderSelect,
+    });
+    return mapOrder(row);
   }
 
   async recomputeCustomerFulfillmentStatus(customerOrderId: number): Promise<void> {

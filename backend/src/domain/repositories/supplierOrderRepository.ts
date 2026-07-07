@@ -52,13 +52,33 @@ export interface GenerateSupplierOrdersResult {
   created: boolean;
 }
 
+export interface SupplierOrderExternalPushData {
+  externalProvider: string;
+  externalOrderId: string;
+  sandbox: boolean;
+  pushedAt: Date;
+}
+
+export interface SupplierOrderExternalStatusData {
+  externalOrderStatus: string;
+  externalTrackingNumber?: string | null;
+  externalTrackingProvider?: string | null;
+  lastStatusSyncedAt: Date;
+}
+
 export interface ISupplierOrderRepository {
   findAll(filters?: SupplierOrderListFilters): Promise<SupplierOrderListResult>;
   findById(id: number): Promise<SupplierOrder | null>;
   findByCustomerOrderId(customerOrderId: number): Promise<SupplierOrder[]>;
+  findByExternalOrderId(externalOrderId: string): Promise<SupplierOrder | null>;
   create(data: SupplierOrderCreateData): Promise<SupplierOrder>;
   generateFromCustomerOrder(customerOrderId: number): Promise<GenerateSupplierOrdersResult>;
   updateStatus(id: number, data: SupplierOrderStatusUpdateData): Promise<SupplierOrder>;
+  // Returns null when no row was updated because externalOrderId was already
+  // set by a concurrent push between the caller's own check and this write —
+  // the caller must treat that as "already pushed", not silently overwrite it.
+  updateExternalOrder(id: number, data: SupplierOrderExternalPushData): Promise<SupplierOrder | null>;
+  updateExternalOrderStatus(id: number, data: SupplierOrderExternalStatusData): Promise<SupplierOrder>;
   generateNextSupplierOrderNumber(): Promise<string>;
   recomputeCustomerFulfillmentStatus(customerOrderId: number): Promise<void>;
 }

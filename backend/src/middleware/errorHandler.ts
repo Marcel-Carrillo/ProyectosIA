@@ -21,8 +21,11 @@ import { TranslationNotFoundError } from '../infrastructure/repositories/product
 import { SupplierNotFoundError } from '../infrastructure/repositories/supplierRepository';
 import { SupplierIntegrationNotFoundError } from '../infrastructure/repositories/supplierIntegrationRepository';
 import {
-  SpocketConnectionNotReadyError,
-  SpocketApiUnavailableError,
+  CjConnectionNotReadyError,
+  CjApiUnavailableError,
+  CjItemNotMappedError,
+  CjOrderAlreadyPushedError,
+  CjOrderNotPushedError,
 } from '../application/validator';
 import {
   CustomerNotFoundError,
@@ -137,10 +140,16 @@ export function globalErrorHandler(
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof SupplierIntegrationNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
-  } else if (err instanceof SpocketConnectionNotReadyError) {
+  } else if (err instanceof CjConnectionNotReadyError) {
     statusCode = 422; code = err.code; message = err.message;
-  } else if (err instanceof SpocketApiUnavailableError) {
+  } else if (err instanceof CjApiUnavailableError) {
     statusCode = 502; code = err.code; message = err.message;
+  } else if (err instanceof CjItemNotMappedError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjOrderAlreadyPushedError) {
+    statusCode = 409; code = err.code; message = err.message;
+  } else if (err instanceof CjOrderNotPushedError) {
+    statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof CustomerNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof AddressNotFoundError) {
