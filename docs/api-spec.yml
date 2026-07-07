@@ -1045,6 +1045,220 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/suppliers/{supplierId}/spocket/connection:
+    post:
+      summary: Configure Spocket connection (admin)
+      description: >
+        Creates or updates the Spocket connection for a supplier. Only accepts
+        `externalAccountRef` — the Spocket API key is never a request field; it is
+        resolved from server-side environment/SSM configuration and never returned
+        by any endpoint. Returns 201 on first creation, 200 on subsequent updates.
+      tags:
+        - Admin — Spocket Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigureSpocketConnectionRequest'
+      responses:
+        '200':
+          description: Spocket connection updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierIntegrationResponse'
+        '201':
+          description: Spocket connection created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierIntegrationResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: Get Spocket connection status (admin)
+      description: >
+        Returns the Spocket connection status for a supplier. Never includes the
+        Spocket API key or any other credential material.
+      tags:
+        - Admin — Spocket Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Spocket connection retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierIntegrationResponse'
+        '404':
+          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/spocket/connection/verify:
+    post:
+      summary: Verify Spocket connection (admin)
+      description: >
+        Performs a minimal authenticated call against the Spocket API to check
+        connectivity. Always returns 200 — health outcome is reported in the body
+        as `{ healthy, reason? }`. On success sets connection `status=Connected`;
+        on failure sets `status=Error`. `reason` is a fixed, non-sensitive string
+        and never echoes upstream credentials or raw error text.
+      tags:
+        - Admin — Spocket Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Spocket connection verification completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpocketVerifyResponse'
+        '404':
+          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/spocket/sync:
+    post:
+      summary: Trigger Spocket catalog/inventory sync (admin)
+      description: >
+        Pulls the supplier's Spocket catalog (products, variants, cost, stock) and
+        upserts it into internal staging records (`SpocketCatalogItem`), keyed by
+        external reference. Does NOT create, update, or delete any `Product` or
+        `ProductVariant`, and does NOT auto-publish to the public catalog. Requires
+        the connection to have `status=Connected`.
+      tags:
+        - Admin — Spocket Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Spocket catalog sync completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpocketSyncResponse'
+        '404':
+          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Connection is not Connected yet (SPOCKET_CONNECTION_NOT_READY)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Spocket API is unreachable (SPOCKET_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/spocket/catalog:
+    get:
+      summary: List staged Spocket catalog items (admin)
+      description: >
+        Returns paginated staged Spocket catalog items for review before any
+        promotion to the live catalog. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — Spocket Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          description: Number of items per page. Clamped to a maximum of 100.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - in: query
+          name: syncStatus
+          schema:
+            $ref: '#/components/schemas/SpocketSyncStatus'
+      responses:
+        '200':
+          description: Staged Spocket catalog retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpocketCatalogListResponse'
+        '400':
+          description: Invalid syncStatus filter (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/public/products:
     get:
       summary: List products (public storefront)
@@ -4065,6 +4279,186 @@ components:
         message:
           type: string
           example: Suppliers retrieved successfully
+
+    SpocketConnectionStatus:
+      type: string
+      enum:
+        - Disconnected
+        - Connected
+        - Error
+
+    SpocketSyncStatus:
+      type: string
+      enum:
+        - Synced
+        - Failed
+
+    ConfigureSpocketConnectionRequest:
+      type: object
+      properties:
+        externalAccountRef:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: spocket-account-123
+          description: >
+            Spocket-side account reference. Never accepts an API key or credential
+            field — the Spocket API key always comes from server-side configuration.
+
+    SupplierIntegration:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        supplierId:
+          type: integer
+          example: 10
+        provider:
+          type: string
+          example: Spocket
+        status:
+          $ref: '#/components/schemas/SpocketConnectionStatus'
+        externalAccountRef:
+          type: string
+          nullable: true
+          example: spocket-account-123
+        lastVerifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SupplierIntegrationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SupplierIntegration'
+        message:
+          type: string
+          example: Spocket connection retrieved successfully
+
+    SpocketVerifyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            healthy:
+              type: boolean
+              example: false
+            reason:
+              type: string
+              nullable: true
+              example: Spocket rejected the configured credentials or is unreachable
+              description: Fixed, non-sensitive vocabulary only — never echoes upstream credentials or raw error text.
+        message:
+          type: string
+          example: Spocket connection verification completed
+
+    SpocketSyncResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            itemsUpserted:
+              type: integer
+              example: 42
+            itemsFailed:
+              type: integer
+              example: 1
+            syncedAt:
+              type: string
+              format: date-time
+        message:
+          type: string
+          example: Spocket catalog sync completed
+
+    SpocketCatalogItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        externalRef:
+          type: string
+          example: spocket-variant-abc
+        title:
+          type: string
+          example: Example Dress
+        size:
+          type: string
+          nullable: true
+          example: M
+        color:
+          type: string
+          nullable: true
+          example: Black
+        supplierCost:
+          type: string
+          example: '9.99'
+          description: Internal only — never returned by any customer-facing API.
+        stockQuantity:
+          type: integer
+          example: 25
+        syncStatus:
+          $ref: '#/components/schemas/SpocketSyncStatus'
+        syncError:
+          type: string
+          nullable: true
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SpocketCatalogListResult:
+      type: object
+      description: Paginated staged Spocket catalog as returned by GET /api/admin/suppliers/{supplierId}/spocket/catalog
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpocketCatalogItem'
+        total:
+          type: integer
+          example: 5
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+
+    SpocketCatalogListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SpocketCatalogListResult'
+        message:
+          type: string
+          example: Staged Spocket catalog retrieved successfully
 
     Customer:
       type: object

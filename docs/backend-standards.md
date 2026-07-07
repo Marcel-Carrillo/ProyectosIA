@@ -1728,4 +1728,16 @@ Required in non-test environments (validated at startup in `index.ts`):
 
 ---
 
+## External Supplier API Integration Pattern (Spocket)
+
+The first real outbound integration to a supplier's REST API (as opposed to the local-fixture-only `supplier-feed-sample-import`) lives at `backend/src/infrastructure/external/spocketClient.ts` and `spocketTypes.ts`. This is the reference pattern for future supplier integrations:
+
+- **Native `fetch`, not a new HTTP client dependency**: this codebase has no `axios` (or similar) dependency. Use Node 20's built-in `fetch` + `AbortSignal.timeout(ms)` for request timeouts, matching the existing convention in `escuelaJsProductImporter.ts`, `facebookOAuth.ts`, and `mailpitClient.ts`. Do not add a new HTTP client dependency without explicit approval.
+- **Module-level singleton with an env-sourced key + safe placeholder fallback**, mirroring `stripeClient.ts`: `process.env.SPOCKET_API_KEY ?? 'spocket_test_placeholder'`. This lets Jest import the module without a real key; tests that exercise the client mock it directly.
+- **Port interface (`ISpocketClient`) separate from the concrete client**: application services depend on the interface (constructor-injected), not the concrete `spocketClient` import, so they can be unit-tested with a hand-written fake instead of mocking HTTP. This is a deliberate divergence from `paymentService.ts`, which imports the Stripe SDK singleton directly — chosen here because `SpocketApiClient` is a bespoke integration (not a maintained vendor SDK) where the extra indirection buys real testability.
+- **Bounded retry with backoff on `429`/`5xx`**, and a dedicated error class (`SpocketApiError`) whose message is built only from a fixed vocabulary (status code + short reason) — **never** from raw response body text, since upstream error bodies could otherwise leak request headers or other sensitive content into logs.
+- **Environment variables are not hard-required at startup** (unlike Stripe's): absence of `SPOCKET_API_KEY`/`SPOCKET_API_BASE_URL` must not crash the app, since supplier automation is optional infrastructure, not a payment-critical path.
+
+---
+
 This document serves as the foundation for maintaining code quality and consistency across the women's fashion ecommerce backend application. All team members should follow these practices to ensure a maintainable, scalable, and testable codebase.

@@ -1026,3 +1026,44 @@ export class PaymentIntentAlreadyCapturedError extends Error {
     Object.setPrototypeOf(this, PaymentIntentAlreadyCapturedError.prototype);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Spocket integration validators + error classes
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function validateSpocketConnectionData(data: Record<string, unknown>): void {
+  const externalAccountRef = data['externalAccountRef'];
+  if (externalAccountRef !== undefined && externalAccountRef !== null && externalAccountRef !== '') {
+    if (typeof externalAccountRef !== 'string') {
+      throw new ValidationError("Field 'externalAccountRef' must be a string");
+    }
+    if (externalAccountRef.length > 150) {
+      throw new ValidationError("Field 'externalAccountRef' must not exceed 150 characters");
+    }
+  }
+  // No field named apiKey/secret/credential is ever accepted here — the request
+  // body only allows externalAccountRef; the Spocket API key always comes from
+  // environment/SSM configuration, never from a client request.
+}
+
+export class SpocketConnectionNotReadyError extends Error {
+  readonly code = 'SPOCKET_CONNECTION_NOT_READY' as const;
+  readonly status = 422;
+
+  constructor(message = 'Spocket connection must be Connected before syncing') {
+    super(message);
+    this.name = 'SpocketConnectionNotReadyError';
+    Object.setPrototypeOf(this, SpocketConnectionNotReadyError.prototype);
+  }
+}
+
+export class SpocketApiUnavailableError extends Error {
+  readonly code = 'SPOCKET_API_UNAVAILABLE' as const;
+  readonly status = 502;
+
+  constructor(message = 'Spocket API is currently unavailable') {
+    super(message);
+    this.name = 'SpocketApiUnavailableError';
+    Object.setPrototypeOf(this, SpocketApiUnavailableError.prototype);
+  }
+}

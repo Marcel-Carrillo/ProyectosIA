@@ -38,6 +38,7 @@ model Supplier {
   updatedAt       DateTime         @updatedAt
   productVariants ProductVariant[]
   supplierOrders  SupplierOrder[]
+  spocketIntegration SupplierIntegration?
 }
 
 model Product {
@@ -457,4 +458,42 @@ model StripeWebhookEvent {
   @@index([stripeEventId])
   @@index([customerOrderId])
   @@index([createdAt])
+}
+
+model SupplierIntegration {
+  id                 Int                  @id @default(autoincrement())
+  supplierId         Int                  @unique
+  supplier           Supplier             @relation(fields: [supplierId], references: [id])
+  provider           String               @default("Spocket") @db.VarChar(50)
+  status             String               @default("Disconnected") @db.VarChar(20)
+  externalAccountRef String?              @db.VarChar(150)
+  lastVerifiedAt     DateTime?
+  lastSyncedAt       DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  catalogItems       SpocketCatalogItem[]
+
+  @@index([supplierId])
+}
+
+model SpocketCatalogItem {
+  id                    Int                 @id @default(autoincrement())
+  supplierIntegrationId Int
+  supplierIntegration   SupplierIntegration @relation(fields: [supplierIntegrationId], references: [id])
+  externalRef           String              @db.VarChar(150)
+  title                 String              @db.VarChar(150)
+  size                  String?             @db.VarChar(50)
+  color                 String?             @db.VarChar(50)
+  supplierCost          Decimal             @db.Decimal(10, 2)
+  stockQuantity         Int
+  rawPayload            Json
+  syncStatus            String              @default("Synced") @db.VarChar(20)
+  syncError             String?             @db.VarChar(500)
+  lastSyncedAt          DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@unique([supplierIntegrationId, externalRef])
+  @@index([supplierIntegrationId])
+  @@index([syncStatus])
 }
