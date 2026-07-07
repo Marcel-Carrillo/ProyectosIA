@@ -53,6 +53,9 @@ The CJ API key is one store-wide credential (`CJDROPSHIPPING_API_KEY` in env/SSM
 ### 7. Freight quote is a separate, read-only step before push
 `POST .../cj/freight-quote` calls `freightCalculate` and returns the raw list of logistics options (name, days, price) so the admin can pick a `logisticName` to pass into the subsequent push call. This mirrors the real CJ workflow (quote first, then include the chosen `logisticName` in `createOrderV3`) and keeps the (potentially slow, quota-consuming) freight lookup decoupled from the order-creation call.
 
+### 8. `createOrderV3`'s shipping fields are flat, not nested, and EU orders require IOSS fields (discovered live during Step 11)
+The original plan assumed a nested `shippingAddress: { ... }` object on `createOrderV3` — live testing showed CJ actually expects the shipping fields (`shippingCustomerName`, `shippingPhone`, `shippingAddress`, `shippingCity`, `shippingProvince`, `shippingZip`, `shippingCountry`, `shippingCountryCode`) at the **top level** of the request body, not nested. `cjTypes.ts`/`cjOrderPushService.ts` were corrected accordingly. Separately, orders shipping to an EU destination were rejected without `iossType`/`iossNumber` (EU import-VAT compliance); `cjOrderPushService.ts` now sets `iossType: 3, iossNumber: 'CJ-IOSS'` (CJ's own IOSS) whenever the resolved country code is in the EU, and `cjClient.ts` defaults `shopLogisticsType` to `2` (seller logistics) when the caller doesn't supply one. See `reports/2026-07-07-step-11-curl-endpoint-testing.md` for the live evidence.
+
 ## Risks / Trade-offs
 
 - **[Risk] CJ's documented token lifetime (15 days) contradicts the live-observed value (~180 days).** → Mitigation: never hardcode a lifetime; always compute refresh timing from the `accessTokenExpiryDate` field in the actual response, with a safety margin (e.g. refresh when within 24h of the reported expiry).
