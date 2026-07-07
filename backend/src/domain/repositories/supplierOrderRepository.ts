@@ -74,7 +74,10 @@ export interface ISupplierOrderRepository {
   create(data: SupplierOrderCreateData): Promise<SupplierOrder>;
   generateFromCustomerOrder(customerOrderId: number): Promise<GenerateSupplierOrdersResult>;
   updateStatus(id: number, data: SupplierOrderStatusUpdateData): Promise<SupplierOrder>;
-  updateExternalOrder(id: number, data: SupplierOrderExternalPushData): Promise<SupplierOrder>;
+  // Returns null when no row was updated because externalOrderId was already
+  // set by a concurrent push between the caller's own check and this write —
+  // the caller must treat that as "already pushed", not silently overwrite it.
+  updateExternalOrder(id: number, data: SupplierOrderExternalPushData): Promise<SupplierOrder | null>;
   updateExternalOrderStatus(id: number, data: SupplierOrderExternalStatusData): Promise<SupplierOrder>;
   generateNextSupplierOrderNumber(): Promise<string>;
   recomputeCustomerFulfillmentStatus(customerOrderId: number): Promise<void>;

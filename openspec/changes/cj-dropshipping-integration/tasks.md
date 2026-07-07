@@ -110,3 +110,4 @@
 - [x] 14.5 Push branch to remote: `git push -u origin feature/cj-dropshipping-integration`.
 - [x] 14.6 Create Pull Request with `gh pr create --base develop --title "..." --body "..."`, including summary, OpenSpec change name, verification status (unit/curl real-API/E2E-N/A), and open questions from `design.md` as known limitations.
 - [x] 14.7 Report the PR URL in chat.
+- [x] 14.8 (Post-merge-prep, 2026-07-08) Ran the adversarial review (`ai-specs/skills/adversarial-review/SKILL.md`, independent fresh-context subagent) against PR #79. Initial verdict: FAIL (3 Majors: log-based body.message leak, destructive migration mislabeled safe, order-push idempotency race). All 3 fixed and re-verified (701/701 unit tests, lint clean); one Minor (no SupplierOrder.status guard on push) deferred as a documented follow-up. Final verdict: PASS WITH GAPS. See `reports/2026-07-08-adversarial-review.md`.

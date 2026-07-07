@@ -181,7 +181,8 @@ describe('CjApiClient', () => {
       expect(result).toEqual([]);
     });
 
-    it('should_never_leak_response_body_content_into_the_thrown_error_message', async () => {
+    it('should_never_leak_response_body_content_into_the_thrown_error_message_or_the_logs', async () => {
+      const writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
       fetchMock.mockResolvedValue(
         envelopeResponse(500, { code: 500, result: false, success: false, message: 'Bearer super-secret-leak', data: null })
       );
@@ -192,6 +193,10 @@ describe('CjApiClient', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(CjApiError);
         expect((err as Error).message).not.toContain('super-secret-leak');
+      } finally {
+        const loggedOutput = writeSpy.mock.calls.map((call) => String(call[0])).join('\n');
+        expect(loggedOutput).not.toContain('super-secret-leak');
+        writeSpy.mockRestore();
       }
     }, 10000);
   });

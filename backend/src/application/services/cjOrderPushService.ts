@@ -73,11 +73,12 @@ export class CjOrderPushService {
 
     const products = await this.resolveVids(order, integration.id);
     const address = await this.resolveShippingAddress(order);
+    const countryCode = resolveCountryCode(address.country);
 
     try {
       return await this.cjClient.calculateFreight({
         startCountryCode: 'CN',
-        endCountryCode: resolveCountryCode(address.country),
+        endCountryCode: countryCode,
         products,
       });
     } catch (err) {
@@ -99,13 +100,13 @@ export class CjOrderPushService {
 
     const products = await this.resolveVids(order, integration.id);
     const address = await this.resolveShippingAddress(order);
+    const countryCode = resolveCountryCode(address.country);
 
     let result;
     try {
       // Note: createOrder's params type has NO isSandbox field at all — cjClient
       // forces it server-side (design.md Decision 5). There is no code path
       // here that could pass one through.
-      const countryCode = resolveCountryCode(address.country);
       result = await this.cjClient.createOrder({
         orderNumber: order.supplierOrderNumber,
         logisticName: input.logisticName,
@@ -131,12 +132,25 @@ export class CjOrderPushService {
     }
 
     logger.info('Supplier order pushed to CJ Dropshipping', { supplierOrderId, externalOrderId: result.orderId });
-    return this.supplierOrderRepo.updateExternalOrder(supplierOrderId, {
+    const updated = await this.supplierOrderRepo.updateExternalOrder(supplierOrderId, {
       externalProvider: 'CJDropshipping',
       externalOrderId: result.orderId,
       sandbox: true,
       pushedAt: new Date(),
     });
+    if (!updated) {
+      // Another push won the race between our own check above and this write
+      // (e.g. a double-click or client-side retry). The CJ order created just
+      // now is orphaned from our side — logged for manual reconciliation
+      // since automatically cancelling a just-created sandbox order is out of
+      // scope for this increment.
+      logger.error('CJ Dropshipping order push race: order was already pushed concurrently', {
+        supplierOrderId,
+        orphanedExternalOrderId: result.orderId,
+      });
+      throw new CjOrderAlreadyPushedError();
+    }
+    return updated;
   }
 
   async getOrderStatus(supplierOrderId: number): Promise<SupplierOrder> {

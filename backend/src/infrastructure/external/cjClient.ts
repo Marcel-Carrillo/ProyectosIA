@@ -143,10 +143,11 @@ async function requestWithRetry<T>(path: string, init: RequestInit): Promise<T> 
     const retryable = response.status === 429 || response.status >= 500;
     if (!retryable || attempt === MAX_RETRIES) {
       if (body && body.success !== true) {
+        // Never log the raw upstream body.message — same reasoning as
+        // CjApiError's fixed vocabulary (it could echo request data back).
         logger.warn('CJ Dropshipping API logical failure', {
           path,
           code: body.code,
-          message: body.message,
         });
       }
       if (response.status === 401 || response.status === 403) {

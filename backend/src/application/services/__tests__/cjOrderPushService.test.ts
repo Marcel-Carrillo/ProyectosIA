@@ -178,6 +178,21 @@ describe('CjOrderPushService', () => {
       expect(cjClient.createOrder).not.toHaveBeenCalled();
     });
 
+    it('should_throw_CjOrderAlreadyPushedError_when_a_concurrent_push_wins_the_race', async () => {
+      // updateExternalOrder returning null means another request pushed this
+      // same SupplierOrder between our own "not yet pushed" check and this
+      // write — the conditional update in the repository lost the race.
+      supplierOrderRepo.findById.mockResolvedValue(makeOrder());
+      integrationRepo.findBySupplierId.mockResolvedValue(new SupplierIntegration({ id: 1, supplierId: 1, status: 'Connected' }));
+      catalogRepo.findByExternalRef.mockResolvedValue(makeCatalogItem());
+      cjClient.createOrder.mockResolvedValue({ orderId: 'cj-order-1' });
+      supplierOrderRepo.updateExternalOrder.mockResolvedValue(null);
+
+      await expect(service.pushOrder(1, { logisticName: 'CJPacket Ordinary' })).rejects.toBeInstanceOf(
+        CjOrderAlreadyPushedError
+      );
+    });
+
     it('should_throw_CjApiUnavailableError_on_client_failure_and_never_update_external_order', async () => {
       supplierOrderRepo.findById.mockResolvedValue(makeOrder());
       integrationRepo.findBySupplierId.mockResolvedValue(new SupplierIntegration({ id: 1, supplierId: 1, status: 'Connected' }));

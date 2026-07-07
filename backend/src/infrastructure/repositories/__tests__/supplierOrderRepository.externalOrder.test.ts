@@ -2,12 +2,14 @@ import { SupplierOrderRepository } from '../supplierOrderRepository';
 
 const mockFindUnique = jest.fn();
 const mockUpdate = jest.fn();
+const mockUpdateMany = jest.fn();
 
 jest.mock('../../prismaClient', () => ({
   prisma: {
     supplierOrder: {
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
       update: (...args: unknown[]) => mockUpdate(...args),
+      updateMany: (...args: unknown[]) => mockUpdateMany(...args),
     },
   },
 }));
@@ -70,9 +72,10 @@ describe('SupplierOrderRepository - external order fields', () => {
   });
 
   describe('updateExternalOrder', () => {
-    it('should_persist_provider_orderId_sandbox_and_pushedAt', async () => {
+    it('should_persist_provider_orderId_sandbox_and_pushedAt_when_the_conditional_update_matches_a_row', async () => {
       const pushedAt = new Date('2026-02-01');
-      mockUpdate.mockResolvedValue({
+      mockUpdateMany.mockResolvedValue({ count: 1 });
+      mockFindUnique.mockResolvedValue({
         ...dbRow,
         externalProvider: 'CJDropshipping',
         externalOrderId: 'cj-order-1',
@@ -87,13 +90,27 @@ describe('SupplierOrderRepository - external order fields', () => {
         pushedAt,
       });
 
-      expect(result.externalOrderId).toBe('cj-order-1');
-      expect(mockUpdate).toHaveBeenCalledWith(
+      expect(result?.externalOrderId).toBe('cj-order-1');
+      expect(mockUpdateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 1 },
+          where: { id: 1, externalOrderId: null },
           data: { externalProvider: 'CJDropshipping', externalOrderId: 'cj-order-1', sandbox: true, pushedAt },
         })
       );
+    });
+
+    it('should_return_null_without_reading_the_row_when_externalOrderId_was_already_set_concurrently', async () => {
+      mockUpdateMany.mockResolvedValue({ count: 0 });
+
+      const result = await repo.updateExternalOrder(1, {
+        externalProvider: 'CJDropshipping',
+        externalOrderId: 'cj-order-2',
+        sandbox: true,
+        pushedAt: new Date('2026-02-01'),
+      });
+
+      expect(result).toBeNull();
+      expect(mockFindUnique).not.toHaveBeenCalled();
     });
   });
 
