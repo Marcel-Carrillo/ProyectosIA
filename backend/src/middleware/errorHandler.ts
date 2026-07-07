@@ -19,6 +19,11 @@ import {
 import { ImageNotFoundError } from '../infrastructure/repositories/productImageRepository';
 import { TranslationNotFoundError } from '../infrastructure/repositories/productTranslationRepository';
 import { SupplierNotFoundError } from '../infrastructure/repositories/supplierRepository';
+import { SupplierIntegrationNotFoundError } from '../infrastructure/repositories/supplierIntegrationRepository';
+import {
+  SpocketConnectionNotReadyError,
+  SpocketApiUnavailableError,
+} from '../application/validator';
 import {
   CustomerNotFoundError,
   CustomerEmailConflictError,
@@ -130,6 +135,12 @@ export function globalErrorHandler(
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof SupplierNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof SupplierIntegrationNotFoundError) {
+    statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof SpocketConnectionNotReadyError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof SpocketApiUnavailableError) {
+    statusCode = 502; code = err.code; message = err.message;
   } else if (err instanceof CustomerNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof AddressNotFoundError) {

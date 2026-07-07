@@ -759,6 +759,64 @@ Prevents double-processing of the same webhook if Stripe retries delivery.
 
 * `customerOrder`: Optional many-to-one relationship with CustomerOrder model
 
+### 17. SupplierIntegration
+
+Represents a single supplier's connection to an external dropshipping provider (e.g. Spocket). One connection per `Supplier`. This is the foundation for future supplier automation — it does not push orders or receive webhooks (see `spocket-catalog-sync` for the read-only catalog pull; order push and webhooks are out of scope until a future change).
+
+**Fields:**
+
+* `id`: Unique identifier (Primary Key)
+* `supplierId`: Foreign key referencing the Supplier (unique — one connection per supplier)
+* `provider`: Integration provider name (e.g. `Spocket`, max 50 characters)
+* `status`: Connection health status (valid values: Disconnected, Connected, Error)
+* `externalAccountRef`: Provider-side account reference (optional, max 150 characters) — **INTERNAL ONLY, never returned by any customer-facing API**
+* `lastVerifiedAt`: Timestamp of the last connection verification attempt (optional)
+* `lastSyncedAt`: Timestamp of the last successful catalog sync (optional)
+* `createdAt` / `updatedAt`: Standard timestamps
+
+**Validation Rules:**
+
+* `supplierId` must reference an existing supplier and is unique (one connection per supplier)
+* `status` must be one of: Disconnected, Connected, Error
+* `externalAccountRef` is optional but cannot exceed 150 characters
+* The provider's API key/credential is **never** persisted on this model — it is resolved from environment/SSM configuration (`SPOCKET_API_KEY`) at request time and never appears in any API response or log line
+
+**Relationships:**
+
+* `supplier`: Many-to-one relationship with Supplier model
+* `catalogItems`: One-to-many relationship with SpocketCatalogItem model
+
+### 18. SpocketCatalogItem
+
+Staging record for a product/variant pulled from a supplier's Spocket catalog. Strictly separate from the live public catalog (`Product`/`ProductVariant`) — an administrator must explicitly promote staged data through the existing admin product/variant flow; nothing here is auto-published.
+
+**Fields:**
+
+* `id`: Unique identifier (Primary Key)
+* `supplierIntegrationId`: Foreign key referencing the SupplierIntegration
+* `externalRef`: Spocket-side product/variant reference (max 150 characters) — unique per `supplierIntegrationId`
+* `title`: Product title as reported by Spocket (max 150 characters)
+* `size` / `color`: Variant attributes (optional, max 50 characters each)
+* `supplierCost`: Cost reported by Spocket (must be >= 0) — **INTERNAL ONLY, never returned by any customer-facing API**
+* `stockQuantity`: Stock quantity reported by Spocket (must be >= 0)
+* `rawPayload`: Raw Spocket response payload for the item (JSON), kept for troubleshooting/re-mapping
+* `syncStatus`: Per-item sync outcome (valid values: Synced, Failed)
+* `syncError`: Non-sensitive error summary when `syncStatus = Failed` (optional, max 500 characters)
+* `lastSyncedAt`: Timestamp of the sync run that produced/updated this row
+* `createdAt` / `updatedAt`: Standard timestamps
+
+**Validation Rules:**
+
+* `(supplierIntegrationId, externalRef)` is unique — sync upserts are idempotent per item
+* `supplierCost` must be greater than or equal to 0
+* `stockQuantity` must be a non-negative integer
+* `syncStatus` must be one of: Synced, Failed
+* Never exposed through any `/api/public/*` or customer-facing response; only accessible via admin endpoints
+
+**Relationships:**
+
+* `supplierIntegration`: Many-to-one relationship with SupplierIntegration model
+
 ## Entity Relationship Diagram
 
 ```mermaid
@@ -1024,6 +1082,38 @@ erDiagram
     }
 
     CustomerOrder ||--o{ StripeWebhookEvent : "tracked_by"
+
+    SupplierIntegration {
+        Int id PK
+        Int supplierId FK, UK
+        String provider
+        String status
+        String externalAccountRef
+        DateTime lastVerifiedAt
+        DateTime lastSyncedAt
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    SpocketCatalogItem {
+        Int id PK
+        Int supplierIntegrationId FK
+        String externalRef
+        String title
+        String size
+        String color
+        Decimal supplierCost
+        Int stockQuantity
+        Json rawPayload
+        String syncStatus
+        String syncError
+        DateTime lastSyncedAt
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    Supplier ||--o| SupplierIntegration : "connects_via"
+    SupplierIntegration ||--o{ SpocketCatalogItem : "stages"
 ```
 
 ## Key Design Principles
