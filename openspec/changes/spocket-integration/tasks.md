@@ -97,10 +97,10 @@
 
 ## 13. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 13.1 Load and apply `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
-- [ ] 13.2 Verify all tasks above are marked `[x]` and required reports exist under `openspec/changes/spocket-integration/reports/`.
-- [ ] 13.3 Stage all relevant files (Prisma schema/migration, domain/application/infrastructure/presentation code, tests, docs, OpenSpec artifacts) — exclude `.env`, `node_modules/`, `dist/`, `coverage/`.
-- [ ] 13.4 Create commit with Conventional Commit message (e.g., `feat(suppliers): add Spocket connection and read-only catalog sync`), including OpenSpec change name and test verification status.
-- [ ] 13.5 Push branch to remote: `git push -u origin feature/spocket-integration`.
-- [ ] 13.6 Create Pull Request with `gh pr create --base develop --title "..." --body "..."`, including summary, OpenSpec change name, verification status (unit/curl/E2E-N/A), and open questions from `design.md` as known limitations.
-- [ ] 13.7 Report the PR URL in chat.
+- [x] 13.1 Load and apply `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
+- [x] 13.2 Verify all tasks above are marked `[x]` and required reports exist under `openspec/changes/spocket-integration/reports/`.
+- [x] 13.3 Stage all relevant files (Prisma schema/migration, domain/application/infrastructure/presentation code, tests, docs, OpenSpec artifacts) — exclude `.env`, `node_modules/`, `dist/`, `coverage/`.
+- [x] 13.4 Create commit with Conventional Commit message (e.g., `feat(suppliers): add Spocket connection and read-only catalog sync`), including OpenSpec change name and test verification status. (Commit `5a80ea2`.)
+- [x] 13.5 Push branch to remote: `git push -u origin feature/spocket-integration`.
+- [x] 13.6 Create Pull Request with `gh pr create --base develop --title "..." --body "..."`, including summary, OpenSpec change name, verification status (unit/curl/E2E-N/A), and open questions from `design.md` as known limitations. (PR #77.)
+- [x] 13.7 Report the PR URL in chat. (https://github.com/Marcel-Carrillo/ProyectosIA/pull/77)
