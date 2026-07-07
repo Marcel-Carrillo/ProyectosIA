@@ -38,7 +38,7 @@ model Supplier {
   updatedAt       DateTime         @updatedAt
   productVariants ProductVariant[]
   supplierOrders  SupplierOrder[]
-  spocketIntegration SupplierIntegration?
+  cjIntegration SupplierIntegration?
 }
 
 model Product {
@@ -200,6 +200,14 @@ model SupplierOrder {
   trackingNumber      String?             @db.VarChar(100)
   trackingUrl         String?             @db.VarChar(500)
   internalNotes       String?             @db.VarChar(2000)
+  externalProvider         String?             @db.VarChar(50)
+  externalOrderId          String?             @unique @db.VarChar(150)
+  externalOrderStatus      String?             @db.VarChar(50)
+  externalTrackingNumber   String?             @db.VarChar(100)
+  externalTrackingProvider String?             @db.VarChar(100)
+  sandbox                  Boolean             @default(true)
+  pushedAt                 DateTime?
+  lastStatusSyncedAt       DateTime?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   items               SupplierOrderItem[]
@@ -464,28 +472,37 @@ model SupplierIntegration {
   id                 Int                  @id @default(autoincrement())
   supplierId         Int                  @unique
   supplier           Supplier             @relation(fields: [supplierId], references: [id])
-  provider           String               @default("Spocket") @db.VarChar(50)
+  provider           String               @default("CJDropshipping") @db.VarChar(50)
   status             String               @default("Disconnected") @db.VarChar(20)
   externalAccountRef String?              @db.VarChar(150)
   lastVerifiedAt     DateTime?
   lastSyncedAt       DateTime?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
-  catalogItems       SpocketCatalogItem[]
+  catalogItems       CjCatalogItem[]
 
   @@index([supplierId])
 }
 
-model SpocketCatalogItem {
+// externalRef is CJ Dropshipping's `vid` (variant id) — the canonical unique key
+// used by application code. `pid`/`vid` are kept as separate, CJ-native-named
+// fields for readability when cross-referencing raw CJ API docs/responses.
+model CjCatalogItem {
   id                    Int                 @id @default(autoincrement())
   supplierIntegrationId Int
   supplierIntegration   SupplierIntegration @relation(fields: [supplierIntegrationId], references: [id])
   externalRef           String              @db.VarChar(150)
+  pid                   String?             @db.VarChar(150)
+  vid                   String?             @db.VarChar(150)
+  sku                   String?             @db.VarChar(100)
+  categoryId            String?             @db.VarChar(100)
   title                 String              @db.VarChar(150)
   size                  String?             @db.VarChar(50)
   color                 String?             @db.VarChar(50)
   supplierCost          Decimal             @db.Decimal(10, 2)
+  sellPrice             Decimal?            @db.Decimal(10, 2)
   stockQuantity         Int
+  warehouseInventoryNum Int?
   rawPayload            Json
   syncStatus            String              @default("Synced") @db.VarChar(20)
   syncError             String?             @db.VarChar(500)

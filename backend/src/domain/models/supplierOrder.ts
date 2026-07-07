@@ -67,6 +67,18 @@ export class SupplierOrder {
   trackingNumber?: string | null;
   trackingUrl?: string | null;
   internalNotes?: string | null;
+  // External CJ Dropshipping order fields — intentionally separate from the
+  // internal status/tracking fields above (design.md Decision 4): these track
+  // the *external* CJ order's own lifecycle, never mixed with the internal,
+  // manually-driven fulfillment status.
+  externalProvider?: string | null;
+  externalOrderId?: string | null;
+  externalOrderStatus?: string | null;
+  externalTrackingNumber?: string | null;
+  externalTrackingProvider?: string | null;
+  sandbox: boolean;
+  pushedAt?: Date | null;
+  lastStatusSyncedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
   items?: SupplierOrderItem[];
@@ -86,6 +98,14 @@ export class SupplierOrder {
     trackingNumber?: string | null;
     trackingUrl?: string | null;
     internalNotes?: string | null;
+    externalProvider?: string | null;
+    externalOrderId?: string | null;
+    externalOrderStatus?: string | null;
+    externalTrackingNumber?: string | null;
+    externalTrackingProvider?: string | null;
+    sandbox?: boolean;
+    pushedAt?: Date | null;
+    lastStatusSyncedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
     items?: SupplierOrderItem[];
@@ -104,6 +124,14 @@ export class SupplierOrder {
     this.trackingNumber = data.trackingNumber ?? null;
     this.trackingUrl = data.trackingUrl ?? null;
     this.internalNotes = data.internalNotes ?? null;
+    this.externalProvider = data.externalProvider ?? null;
+    this.externalOrderId = data.externalOrderId ?? null;
+    this.externalOrderStatus = data.externalOrderStatus ?? null;
+    this.externalTrackingNumber = data.externalTrackingNumber ?? null;
+    this.externalTrackingProvider = data.externalTrackingProvider ?? null;
+    this.sandbox = data.sandbox ?? true;
+    this.pushedAt = data.pushedAt ?? null;
+    this.lastStatusSyncedAt = data.lastStatusSyncedAt ?? null;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
     this.items = data.items;
