@@ -1,23 +1,23 @@
 import { ISupplierIntegrationRepository } from '../../domain/repositories/supplierIntegrationRepository';
-import { ISpocketClient } from '../../infrastructure/external/spocketTypes';
+import { ICjClient } from '../../infrastructure/external/cjTypes';
 import { SupplierIntegration } from '../../domain/models/supplierIntegration';
-import { validateSpocketConnectionData } from '../validator';
+import { validateCjConnectionData } from '../validator';
 import { SupplierIntegrationNotFoundError } from '../../infrastructure/repositories/supplierIntegrationRepository';
 import { SupplierNotFoundError } from '../../infrastructure/repositories/supplierRepository';
 import { prisma } from '../../infrastructure/prismaClient';
 import { logger } from '../../infrastructure/logger';
 
-export class SpocketConnectionService {
+export class CjConnectionService {
   constructor(
     private readonly repo: ISupplierIntegrationRepository,
-    private readonly spocketClient: ISpocketClient
+    private readonly cjClient: ICjClient
   ) {}
 
   async configureConnection(
     supplierId: number,
     data: Record<string, unknown>
   ): Promise<{ integration: SupplierIntegration; created: boolean }> {
-    validateSpocketConnectionData(data);
+    validateCjConnectionData(data);
 
     const supplier = await prisma.supplier.findUnique({ where: { id: supplierId } });
     if (!supplier) throw new SupplierNotFoundError();
@@ -40,12 +40,12 @@ export class SpocketConnectionService {
     const now = new Date();
     let result;
     try {
-      result = await this.spocketClient.verifyConnection();
+      result = await this.cjClient.verifyConnection();
     } catch (err) {
       // Any unexpected client error (e.g. a malformed response body) is treated
       // the same as an unhealthy connection — the spec requires this endpoint to
       // always return 200 { healthy, reason }, never a 500.
-      logger.warn('Spocket connection verification threw unexpectedly', {
+      logger.warn('CJ Dropshipping connection verification threw unexpectedly', {
         supplierId,
         errorName: err instanceof Error ? err.name : 'unknown',
       });
@@ -59,7 +59,7 @@ export class SpocketConnectionService {
 
     await this.repo.updateStatus(integration.id, { status: 'Error', lastVerifiedAt: now });
     // Fixed, non-sensitive vocabulary only — never forward raw client/upstream text.
-    logger.warn('Spocket connection verification failed', { supplierId });
-    return { healthy: false, reason: 'Spocket rejected the configured credentials or is unreachable' };
+    logger.warn('CJ Dropshipping connection verification failed', { supplierId });
+    return { healthy: false, reason: 'CJ Dropshipping rejected the configured credentials or is unreachable' };
   }
 }

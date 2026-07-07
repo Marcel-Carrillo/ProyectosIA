@@ -6,11 +6,11 @@ import {
 } from '../../domain/repositories/supplierIntegrationRepository';
 
 export class SupplierIntegrationNotFoundError extends Error {
-  readonly code = 'SPOCKET_CONNECTION_NOT_FOUND' as const;
+  readonly code = 'CJ_CONNECTION_NOT_FOUND' as const;
   readonly status = 404;
 
   constructor() {
-    super('Spocket connection not found');
+    super('CJ Dropshipping connection not found');
     this.name = 'SupplierIntegrationNotFoundError';
     Object.setPrototypeOf(this, SupplierIntegrationNotFoundError.prototype);
   }
@@ -35,7 +35,7 @@ export class SupplierIntegrationRepository implements ISupplierIntegrationReposi
       update: { externalAccountRef: data.externalAccountRef ?? null },
       create: {
         supplierId,
-        provider: 'Spocket',
+        provider: 'CJDropshipping',
         status: 'Disconnected',
         externalAccountRef: data.externalAccountRef ?? null,
       },

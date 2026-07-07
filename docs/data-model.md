@@ -470,6 +470,14 @@ A single customer order may generate multiple supplier orders if products belong
 * `trackingNumber`: Tracking number provided by the supplier or carrier (optional, max 100 characters)
 * `trackingUrl`: Tracking URL (optional, max 500 characters)
 * `internalNotes`: Internal notes for administrators (optional, max 2000 characters)
+* `externalProvider`: External dropshipping provider name when pushed (e.g. `CJDropshipping`, optional, max 50 characters) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
+* `externalOrderId`: Provider-side order identifier after a successful push (optional, unique, max 150 characters) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
+* `externalOrderStatus`: Provider-reported order status from the last status sync (optional, max 50 characters) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
+* `externalTrackingNumber`: Provider-reported tracking number (optional, max 100 characters) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
+* `externalTrackingProvider`: Provider-reported logistics/carrier name (optional, max 100 characters) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
+* `sandbox`: Whether the external order was created in the provider's sandbox mode (default: `true`) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
+* `pushedAt`: Timestamp when the order was successfully pushed to the external provider (optional) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
+* `lastStatusSyncedAt`: Timestamp of the last pull-based status sync from the external provider (optional) — **INTERNAL ONLY, never returned by any `/api/public/*` response**
 * `createdAt`: Date and time when the supplier order was created
 * `updatedAt`: Date and time when the supplier order was last updated
 
@@ -761,13 +769,13 @@ Prevents double-processing of the same webhook if Stripe retries delivery.
 
 ### 17. SupplierIntegration
 
-Represents a single supplier's connection to an external dropshipping provider (e.g. Spocket). One connection per `Supplier`. This is the foundation for future supplier automation — it does not push orders or receive webhooks (see `spocket-catalog-sync` for the read-only catalog pull; order push and webhooks are out of scope until a future change).
+Represents a single supplier's connection to an external dropshipping provider (CJ Dropshipping). One connection per `Supplier`. Tracks connection health and catalog sync timestamps; CJ API credentials are store-wide (not per-supplier) and resolved from environment configuration at request time.
 
 **Fields:**
 
 * `id`: Unique identifier (Primary Key)
 * `supplierId`: Foreign key referencing the Supplier (unique — one connection per supplier)
-* `provider`: Integration provider name (e.g. `Spocket`, max 50 characters)
+* `provider`: Integration provider name (default: `CJDropshipping`, max 50 characters)
 * `status`: Connection health status (valid values: Disconnected, Connected, Error)
 * `externalAccountRef`: Provider-side account reference (optional, max 150 characters) — **INTERNAL ONLY, never returned by any customer-facing API**
 * `lastVerifiedAt`: Timestamp of the last connection verification attempt (optional)
@@ -779,27 +787,33 @@ Represents a single supplier's connection to an external dropshipping provider (
 * `supplierId` must reference an existing supplier and is unique (one connection per supplier)
 * `status` must be one of: Disconnected, Connected, Error
 * `externalAccountRef` is optional but cannot exceed 150 characters
-* The provider's API key/credential is **never** persisted on this model — it is resolved from environment/SSM configuration (`SPOCKET_API_KEY`) at request time and never appears in any API response or log line
+* The provider's API key/credential is **never** persisted on this model — it is resolved from environment/SSM configuration (`CJDROPSHIPPING_API_KEY`) at request time and never appears in any API response or log line
 
 **Relationships:**
 
 * `supplier`: Many-to-one relationship with Supplier model
-* `catalogItems`: One-to-many relationship with SpocketCatalogItem model
+* `catalogItems`: One-to-many relationship with CjCatalogItem model
 
-### 18. SpocketCatalogItem
+### 18. CjCatalogItem
 
-Staging record for a product/variant pulled from a supplier's Spocket catalog. Strictly separate from the live public catalog (`Product`/`ProductVariant`) — an administrator must explicitly promote staged data through the existing admin product/variant flow; nothing here is auto-published.
+Staging record for a product/variant pulled from a supplier's CJ Dropshipping catalog. Strictly separate from the live public catalog (`Product`/`ProductVariant`) — an administrator must explicitly promote staged data through the existing admin product/variant flow; nothing here is auto-published.
 
 **Fields:**
 
 * `id`: Unique identifier (Primary Key)
 * `supplierIntegrationId`: Foreign key referencing the SupplierIntegration
-* `externalRef`: Spocket-side product/variant reference (max 150 characters) — unique per `supplierIntegrationId`
-* `title`: Product title as reported by Spocket (max 150 characters)
-* `size` / `color`: Variant attributes (optional, max 50 characters each)
-* `supplierCost`: Cost reported by Spocket (must be >= 0) — **INTERNAL ONLY, never returned by any customer-facing API**
-* `stockQuantity`: Stock quantity reported by Spocket (must be >= 0)
-* `rawPayload`: Raw Spocket response payload for the item (JSON), kept for troubleshooting/re-mapping
+* `externalRef`: CJ Dropshipping variant identifier (`vid`) — canonical unique key per `supplierIntegrationId` (max 150 characters)
+* `pid`: CJ Dropshipping product identifier (optional, max 150 characters) — **INTERNAL ONLY on admin list responses; stored for cross-referencing CJ API docs**
+* `vid`: CJ Dropshipping variant identifier (optional, max 150 characters) — **INTERNAL ONLY on admin list responses; mirrors `externalRef`**
+* `sku`: CJ variant SKU (optional, max 100 characters)
+* `categoryId`: CJ category identifier (optional, max 100 characters) — **INTERNAL ONLY on admin list responses**
+* `title`: Product title as reported by CJ Dropshipping (max 150 characters)
+* `size` / `color`: Variant attributes parsed from CJ variant properties (optional, max 50 characters each)
+* `supplierCost`: Cost reported by CJ Dropshipping (must be >= 0) — **INTERNAL ONLY, never returned by any customer-facing API**
+* `sellPrice`: CJ-reported sell price (optional, must be >= 0 if provided) — **INTERNAL ONLY on admin list responses**
+* `stockQuantity`: Stock quantity reported by CJ Dropshipping (must be >= 0)
+* `warehouseInventoryNum`: CJ warehouse inventory count (optional, non-negative integer) — **INTERNAL ONLY on admin list responses**
+* `rawPayload`: Raw CJ Dropshipping response payload for the item (JSON), kept for troubleshooting/re-mapping — **INTERNAL ONLY, never returned by any API response**
 * `syncStatus`: Per-item sync outcome (valid values: Synced, Failed)
 * `syncError`: Non-sensitive error summary when `syncStatus = Failed` (optional, max 500 characters)
 * `lastSyncedAt`: Timestamp of the sync run that produced/updated this row
@@ -811,7 +825,7 @@ Staging record for a product/variant pulled from a supplier's Spocket catalog. S
 * `supplierCost` must be greater than or equal to 0
 * `stockQuantity` must be a non-negative integer
 * `syncStatus` must be one of: Synced, Failed
-* Never exposed through any `/api/public/*` or customer-facing response; only accessible via admin endpoints
+* Never exposed through any `/api/public/*` or customer-facing response; only accessible via admin endpoints. Admin list responses use an explicit allow-list (`serializeCjCatalogItem`) that omits `supplierIntegrationId`, `pid`, `vid`, `categoryId`, `sellPrice`, `warehouseInventoryNum`, and `rawPayload`.
 
 **Relationships:**
 
@@ -963,6 +977,14 @@ erDiagram
         String trackingNumber
         String trackingUrl
         String internalNotes
+        String externalProvider
+        String externalOrderId UK
+        String externalOrderStatus
+        String externalTrackingNumber
+        String externalTrackingProvider
+        Boolean sandbox
+        DateTime pushedAt
+        DateTime lastStatusSyncedAt
         DateTime createdAt
         DateTime updatedAt
     }
@@ -1095,15 +1117,21 @@ erDiagram
         DateTime updatedAt
     }
 
-    SpocketCatalogItem {
+    CjCatalogItem {
         Int id PK
         Int supplierIntegrationId FK
         String externalRef
+        String pid
+        String vid
+        String sku
+        String categoryId
         String title
         String size
         String color
         Decimal supplierCost
+        Decimal sellPrice
         Int stockQuantity
+        Int warehouseInventoryNum
         Json rawPayload
         String syncStatus
         String syncError
@@ -1113,7 +1141,7 @@ erDiagram
     }
 
     Supplier ||--o| SupplierIntegration : "connects_via"
-    SupplierIntegration ||--o{ SpocketCatalogItem : "stages"
+    SupplierIntegration ||--o{ CjCatalogItem : "stages"
 ```
 
 ## Key Design Principles

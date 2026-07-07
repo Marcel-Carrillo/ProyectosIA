@@ -1045,16 +1045,16 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/admin/suppliers/{supplierId}/spocket/connection:
+  /api/admin/suppliers/{supplierId}/cj/connection:
     post:
-      summary: Configure Spocket connection (admin)
+      summary: Configure CJ Dropshipping connection (admin)
       description: >
-        Creates or updates the Spocket connection for a supplier. Only accepts
-        `externalAccountRef` — the Spocket API key is never a request field; it is
+        Creates or updates the CJ Dropshipping connection for a supplier. Only accepts
+        `externalAccountRef` — the CJ Dropshipping API key is never a request field; it is
         resolved from server-side environment/SSM configuration and never returned
         by any endpoint. Returns 201 on first creation, 200 on subsequent updates.
       tags:
-        - Admin — Spocket Integration
+        - Admin — CJ Dropshipping Integration
       parameters:
         - in: path
           name: supplierId
@@ -1067,16 +1067,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConfigureSpocketConnectionRequest'
+              $ref: '#/components/schemas/ConfigureCjConnectionRequest'
       responses:
         '200':
-          description: Spocket connection updated successfully
+          description: CJ Dropshipping connection updated successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SupplierIntegrationResponse'
         '201':
-          description: Spocket connection created successfully
+          description: CJ Dropshipping connection created successfully
           content:
             application/json:
               schema:
@@ -1097,12 +1097,12 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
     get:
-      summary: Get Spocket connection status (admin)
+      summary: Get CJ Dropshipping connection status (admin)
       description: >
-        Returns the Spocket connection status for a supplier. Never includes the
-        Spocket API key or any other credential material.
+        Returns the CJ Dropshipping connection status for a supplier. Never includes the
+        CJ Dropshipping API key or any other credential material.
       tags:
-        - Admin — Spocket Integration
+        - Admin — CJ Dropshipping Integration
       parameters:
         - in: path
           name: supplierId
@@ -1112,13 +1112,13 @@ paths:
             minimum: 1
       responses:
         '200':
-          description: Spocket connection retrieved successfully
+          description: CJ Dropshipping connection retrieved successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SupplierIntegrationResponse'
         '404':
-          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
           content:
             application/json:
               schema:
@@ -1126,17 +1126,17 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/admin/suppliers/{supplierId}/spocket/connection/verify:
+  /api/admin/suppliers/{supplierId}/cj/connection/verify:
     post:
-      summary: Verify Spocket connection (admin)
+      summary: Verify CJ Dropshipping connection (admin)
       description: >
-        Performs a minimal authenticated call against the Spocket API to check
+        Performs a minimal authenticated call against the CJ Dropshipping API to check
         connectivity. Always returns 200 — health outcome is reported in the body
         as `{ healthy, reason? }`. On success sets connection `status=Connected`;
         on failure sets `status=Error`. `reason` is a fixed, non-sensitive string
         and never echoes upstream credentials or raw error text.
       tags:
-        - Admin — Spocket Integration
+        - Admin — CJ Dropshipping Integration
       parameters:
         - in: path
           name: supplierId
@@ -1146,13 +1146,13 @@ paths:
             minimum: 1
       responses:
         '200':
-          description: Spocket connection verification completed
+          description: CJ Dropshipping connection verification completed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SpocketVerifyResponse'
+                $ref: '#/components/schemas/CjVerifyResponse'
         '404':
-          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
           content:
             application/json:
               schema:
@@ -1160,17 +1160,17 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/admin/suppliers/{supplierId}/spocket/sync:
+  /api/admin/suppliers/{supplierId}/cj/sync:
     post:
-      summary: Trigger Spocket catalog/inventory sync (admin)
+      summary: Trigger CJ Dropshipping catalog/inventory sync (admin)
       description: >
-        Pulls the supplier's Spocket catalog (products, variants, cost, stock) and
-        upserts it into internal staging records (`SpocketCatalogItem`), keyed by
-        external reference. Does NOT create, update, or delete any `Product` or
+        Pulls the supplier's CJ Dropshipping catalog (products, variants, cost, stock) and
+        upserts it into internal staging records (`CjCatalogItem`), keyed by
+        external reference (`vid`). Does NOT create, update, or delete any `Product` or
         `ProductVariant`, and does NOT auto-publish to the public catalog. Requires
         the connection to have `status=Connected`.
       tags:
-        - Admin — Spocket Integration
+        - Admin — CJ Dropshipping Integration
       parameters:
         - in: path
           name: supplierId
@@ -1180,25 +1180,25 @@ paths:
             minimum: 1
       responses:
         '200':
-          description: Spocket catalog sync completed
+          description: CJ Dropshipping catalog sync completed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SpocketSyncResponse'
+                $ref: '#/components/schemas/CjSyncResponse'
         '404':
-          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '422':
-          description: Connection is not Connected yet (SPOCKET_CONNECTION_NOT_READY)
+          description: Connection is not Connected yet (CJ_CONNECTION_NOT_READY)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '502':
-          description: Spocket API is unreachable (SPOCKET_API_UNAVAILABLE)
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
           content:
             application/json:
               schema:
@@ -1206,14 +1206,14 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/admin/suppliers/{supplierId}/spocket/catalog:
+  /api/admin/suppliers/{supplierId}/cj/catalog:
     get:
-      summary: List staged Spocket catalog items (admin)
+      summary: List staged CJ Dropshipping catalog items (admin)
       description: >
-        Returns paginated staged Spocket catalog items for review before any
+        Returns paginated staged CJ Dropshipping catalog items for review before any
         promotion to the live catalog. Never exposed on `/api/public/*`.
       tags:
-        - Admin — Spocket Integration
+        - Admin — CJ Dropshipping Integration
       parameters:
         - in: path
           name: supplierId
@@ -1236,14 +1236,14 @@ paths:
         - in: query
           name: syncStatus
           schema:
-            $ref: '#/components/schemas/SpocketSyncStatus'
+            $ref: '#/components/schemas/CjSyncStatus'
       responses:
         '200':
-          description: Staged Spocket catalog retrieved successfully
+          description: Staged CJ Dropshipping catalog retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SpocketCatalogListResponse'
+                $ref: '#/components/schemas/CjCatalogListResponse'
         '400':
           description: Invalid syncStatus filter (VALIDATION_ERROR)
           content:
@@ -1251,7 +1251,148 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Spocket connection not found (SPOCKET_CONNECTION_NOT_FOUND)
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/cj/freight-quote:
+    post:
+      summary: Quote CJ Dropshipping freight for a supplier order (admin)
+      description: >
+        Calls CJ Dropshipping's freight calculation using the supplier order's shipping
+        destination and line items mapped to staged `CjCatalogItem` variants (`vid`).
+        Returns available logistics options without creating an order. Never exposed on
+        `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: CJ Dropshipping freight quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjFreightQuoteResponse'
+        '404':
+          description: Supplier order not found (SUPPLIER_ORDER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Item lacks staged CJ mapping (CJ_ITEM_NOT_MAPPED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/cj/push:
+    post:
+      summary: Push a supplier order to CJ Dropshipping (admin, sandbox)
+      description: >
+        Creates a CJ Dropshipping order via the provider API using the chosen
+        `logisticName` from a prior freight quote. The server always forces
+        `isSandbox: 1` in this increment (gated by `CJ_SANDBOX_ORDERS`); the request
+        body accepts only `logisticName` — an `isSandbox` field is rejected with
+        `VALIDATION_ERROR`. On success persists `externalProvider`, `externalOrderId`,
+        `sandbox`, and `pushedAt` on the supplier order. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CjOrderPushRequest'
+      responses:
+        '201':
+          description: Supplier order pushed to CJ Dropshipping successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier order not found (SUPPLIER_ORDER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Order already pushed (CJ_ORDER_ALREADY_PUSHED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Item lacks staged CJ mapping (CJ_ITEM_NOT_MAPPED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/cj/order:
+    get:
+      summary: Pull CJ Dropshipping order status for a pushed supplier order (admin)
+      description: >
+        Calls CJ Dropshipping's order detail endpoint using the supplier order's
+        `externalOrderId`, persists `externalOrderStatus`, `externalTrackingNumber`,
+        `externalTrackingProvider`, and `lastStatusSyncedAt`, and returns the updated
+        supplier order. Pull-based only — no inbound webhook in this increment. Never
+        exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: CJ Dropshipping order status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          description: Supplier order not found (SUPPLIER_ORDER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Order was never pushed (CJ_ORDER_NOT_PUSHED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
           content:
             application/json:
               schema:
@@ -4280,30 +4421,30 @@ components:
           type: string
           example: Suppliers retrieved successfully
 
-    SpocketConnectionStatus:
+    CjConnectionStatus:
       type: string
       enum:
         - Disconnected
         - Connected
         - Error
 
-    SpocketSyncStatus:
+    CjSyncStatus:
       type: string
       enum:
         - Synced
         - Failed
 
-    ConfigureSpocketConnectionRequest:
+    ConfigureCjConnectionRequest:
       type: object
       properties:
         externalAccountRef:
           type: string
           maxLength: 150
           nullable: true
-          example: spocket-account-123
+          example: cj-account-123
           description: >
-            Spocket-side account reference. Never accepts an API key or credential
-            field — the Spocket API key always comes from server-side configuration.
+            CJ Dropshipping-side account reference. Never accepts an API key or credential
+            field — the CJ Dropshipping API key always comes from server-side configuration.
 
     SupplierIntegration:
       type: object
@@ -4316,13 +4457,13 @@ components:
           example: 10
         provider:
           type: string
-          example: Spocket
+          example: CJDropshipping
         status:
-          $ref: '#/components/schemas/SpocketConnectionStatus'
+          $ref: '#/components/schemas/CjConnectionStatus'
         externalAccountRef:
           type: string
           nullable: true
-          example: spocket-account-123
+          example: cj-account-123
         lastVerifiedAt:
           type: string
           format: date-time
@@ -4348,9 +4489,9 @@ components:
           $ref: '#/components/schemas/SupplierIntegration'
         message:
           type: string
-          example: Spocket connection retrieved successfully
+          example: CJ Dropshipping connection retrieved successfully
 
-    SpocketVerifyResponse:
+    CjVerifyResponse:
       type: object
       properties:
         success:
@@ -4365,13 +4506,13 @@ components:
             reason:
               type: string
               nullable: true
-              example: Spocket rejected the configured credentials or is unreachable
+              example: CJ Dropshipping rejected the configured credentials or is unreachable
               description: Fixed, non-sensitive vocabulary only — never echoes upstream credentials or raw error text.
         message:
           type: string
-          example: Spocket connection verification completed
+          example: CJ Dropshipping connection verification completed
 
-    SpocketSyncResponse:
+    CjSyncResponse:
       type: object
       properties:
         success:
@@ -4391,9 +4532,9 @@ components:
               format: date-time
         message:
           type: string
-          example: Spocket catalog sync completed
+          example: CJ Dropshipping catalog sync completed
 
-    SpocketCatalogItem:
+    CjCatalogItem:
       type: object
       properties:
         id:
@@ -4401,10 +4542,15 @@ components:
           example: 1
         externalRef:
           type: string
-          example: spocket-variant-abc
+          example: CJVID123456
+          description: CJ Dropshipping variant id (`vid`) — canonical staging key.
         title:
           type: string
           example: Example Dress
+        sku:
+          type: string
+          nullable: true
+          example: CJ-SKU-001
         size:
           type: string
           nullable: true
@@ -4421,7 +4567,7 @@ components:
           type: integer
           example: 25
         syncStatus:
-          $ref: '#/components/schemas/SpocketSyncStatus'
+          $ref: '#/components/schemas/CjSyncStatus'
         syncError:
           type: string
           nullable: true
@@ -4430,14 +4576,14 @@ components:
           format: date-time
           nullable: true
 
-    SpocketCatalogListResult:
+    CjCatalogListResult:
       type: object
-      description: Paginated staged Spocket catalog as returned by GET /api/admin/suppliers/{supplierId}/spocket/catalog
+      description: Paginated staged CJ Dropshipping catalog as returned by GET /api/admin/suppliers/{supplierId}/cj/catalog
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/SpocketCatalogItem'
+            $ref: '#/components/schemas/CjCatalogItem'
         total:
           type: integer
           example: 5
@@ -4448,17 +4594,63 @@ components:
           type: integer
           example: 20
 
-    SpocketCatalogListResponse:
+    CjCatalogListResponse:
       type: object
       properties:
         success:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/SpocketCatalogListResult'
+          $ref: '#/components/schemas/CjCatalogListResult'
         message:
           type: string
-          example: Staged Spocket catalog retrieved successfully
+          example: Staged CJ Dropshipping catalog retrieved successfully
+
+    CjFreightOption:
+      type: object
+      properties:
+        logisticName:
+          type: string
+          example: CJPacket Ordinary
+        logisticAging:
+          type: string
+          example: '4-8'
+          description: Estimated delivery window in days.
+        logisticPrice:
+          type: number
+          format: double
+          example: 8.95
+        totalPostageFee:
+          type: number
+          format: double
+          example: 7.31
+
+    CjFreightQuoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CjFreightOption'
+        message:
+          type: string
+          example: CJ Dropshipping freight quote retrieved successfully
+
+    CjOrderPushRequest:
+      type: object
+      required:
+        - logisticName
+      properties:
+        logisticName:
+          type: string
+          example: CJPacket Ordinary
+          description: >
+            Logistics option chosen from a prior freight quote. The request body
+            accepts only this field — `isSandbox` is server-controlled and rejected
+            if present.
 
     Customer:
       type: object
@@ -5035,6 +5227,45 @@ components:
           type: string
           nullable: true
           example: Internal supplier order notes
+        externalProvider:
+          type: string
+          nullable: true
+          example: CJDropshipping
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalOrderId:
+          type: string
+          nullable: true
+          example: CJORDER987654
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalOrderStatus:
+          type: string
+          nullable: true
+          example: CREATED
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalTrackingNumber:
+          type: string
+          nullable: true
+          example: CJTRK123456789
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalTrackingProvider:
+          type: string
+          nullable: true
+          example: CJPacket Ordinary
+          description: Admin-only — never returned by any `/api/public/*` response.
+        sandbox:
+          type: boolean
+          example: true
+          description: Admin-only — never returned by any `/api/public/*` response.
+        pushedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Admin-only — never returned by any `/api/public/*` response.
+        lastStatusSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Admin-only — never returned by any `/api/public/*` response.
         items:
           type: array
           items:

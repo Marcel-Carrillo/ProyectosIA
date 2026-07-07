@@ -1028,10 +1028,10 @@ export class PaymentIntentAlreadyCapturedError extends Error {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Spocket integration validators + error classes
+// CJ Dropshipping integration validators + error classes
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function validateSpocketConnectionData(data: Record<string, unknown>): void {
+export function validateCjConnectionData(data: Record<string, unknown>): void {
   const externalAccountRef = data['externalAccountRef'];
   if (externalAccountRef !== undefined && externalAccountRef !== null && externalAccountRef !== '') {
     if (typeof externalAccountRef !== 'string') {
@@ -1042,28 +1042,75 @@ export function validateSpocketConnectionData(data: Record<string, unknown>): vo
     }
   }
   // No field named apiKey/secret/credential is ever accepted here — the request
-  // body only allows externalAccountRef; the Spocket API key always comes from
-  // environment/SSM configuration, never from a client request.
+  // body only allows externalAccountRef; the CJ Dropshipping API key always
+  // comes from environment/SSM configuration, never from a client request.
 }
 
-export class SpocketConnectionNotReadyError extends Error {
-  readonly code = 'SPOCKET_CONNECTION_NOT_READY' as const;
+// Validates the order-push request body accepts ONLY logisticName. There is no
+// `isSandbox` field anywhere in this validator, so nothing downstream can ever
+// read one — sandbox mode is always forced server-side (design.md Decision 5).
+export function validateCjOrderPushData(data: Record<string, unknown>): { logisticName: string } {
+  const logisticName = data['logisticName'];
+  if (typeof logisticName !== 'string' || logisticName.trim().length === 0) {
+    throw new ValidationError("Field 'logisticName' is required and must be a non-empty string");
+  }
+  if ('isSandbox' in data) {
+    throw new ValidationError("Field 'isSandbox' is not accepted — sandbox mode is always forced server-side");
+  }
+  return { logisticName };
+}
+
+export class CjConnectionNotReadyError extends Error {
+  readonly code = 'CJ_CONNECTION_NOT_READY' as const;
   readonly status = 422;
 
-  constructor(message = 'Spocket connection must be Connected before syncing') {
+  constructor(message = 'CJ Dropshipping connection must be Connected before syncing') {
     super(message);
-    this.name = 'SpocketConnectionNotReadyError';
-    Object.setPrototypeOf(this, SpocketConnectionNotReadyError.prototype);
+    this.name = 'CjConnectionNotReadyError';
+    Object.setPrototypeOf(this, CjConnectionNotReadyError.prototype);
   }
 }
 
-export class SpocketApiUnavailableError extends Error {
-  readonly code = 'SPOCKET_API_UNAVAILABLE' as const;
+export class CjApiUnavailableError extends Error {
+  readonly code = 'CJ_API_UNAVAILABLE' as const;
   readonly status = 502;
 
-  constructor(message = 'Spocket API is currently unavailable') {
+  constructor(message = 'CJ Dropshipping API is currently unavailable') {
     super(message);
-    this.name = 'SpocketApiUnavailableError';
-    Object.setPrototypeOf(this, SpocketApiUnavailableError.prototype);
+    this.name = 'CjApiUnavailableError';
+    Object.setPrototypeOf(this, CjApiUnavailableError.prototype);
+  }
+}
+
+export class CjItemNotMappedError extends Error {
+  readonly code = 'CJ_ITEM_NOT_MAPPED' as const;
+  readonly status = 422;
+
+  constructor(message = 'Supplier order item has no corresponding staged CJ Dropshipping variant') {
+    super(message);
+    this.name = 'CjItemNotMappedError';
+    Object.setPrototypeOf(this, CjItemNotMappedError.prototype);
+  }
+}
+
+export class CjOrderAlreadyPushedError extends Error {
+  readonly code = 'CJ_ORDER_ALREADY_PUSHED' as const;
+  readonly status = 409;
+
+  constructor(message = 'Supplier order has already been pushed to CJ Dropshipping') {
+    super(message);
+    this.name = 'CjOrderAlreadyPushedError';
+    Object.setPrototypeOf(this, CjOrderAlreadyPushedError.prototype);
+  }
+}
+
+export class CjOrderNotPushedError extends Error {
+  readonly code = 'CJ_ORDER_NOT_PUSHED' as const;
+  readonly status = 422;
+
+  constructor(message = 'Supplier order has not been pushed to CJ Dropshipping yet') {
+    super(message);
+    this.name = 'CjOrderNotPushedError';
+    Object.setPrototypeOf(this, CjOrderNotPushedError.prototype);
   }
 }

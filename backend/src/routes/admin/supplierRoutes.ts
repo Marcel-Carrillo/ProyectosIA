@@ -6,7 +6,7 @@ import {
   updateSupplier,
   deleteSupplier,
 } from '../../presentation/controllers/supplierController';
-import spocketRouter from './spocketRoutes';
+import cjRouter from './cjRoutes';
 
 const supplierRouter = Router();
 
@@ -16,7 +16,7 @@ supplierRouter.get('/:id', getSupplierById);
 supplierRouter.patch('/:id', updateSupplier);
 supplierRouter.delete('/:id', deleteSupplier);
 
-// Nested Spocket connection/sync routes: /api/admin/suppliers/:supplierId/spocket/*
-supplierRouter.use('/:supplierId/spocket', spocketRouter);
+// Nested CJ Dropshipping connection/sync routes: /api/admin/suppliers/:supplierId/cj/*
+supplierRouter.use('/:supplierId/cj', cjRouter);
 
 export default supplierRouter;

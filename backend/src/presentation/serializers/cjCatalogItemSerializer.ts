@@ -1,9 +1,10 @@
-import { SpocketCatalogItem } from '../../domain/models/spocketCatalogItem';
+import { CjCatalogItem } from '../../domain/models/cjCatalogItem';
 
-export interface SpocketCatalogItemResponseDTO {
+export interface CjCatalogItemResponseDTO {
   id: number | undefined;
   externalRef: string;
   title: string;
+  sku: string | null;
   size: string | null;
   color: string | null;
   supplierCost: string;
@@ -13,15 +14,17 @@ export interface SpocketCatalogItemResponseDTO {
   lastSyncedAt: Date | null | undefined;
 }
 
-// Explicit allow-list matching the documented `SpocketCatalogItem` schema in
-// docs/api-spec.yml — deliberately excludes `supplierIntegrationId` and
-// `rawPayload` (raw upstream Spocket payload), which are internal-only and were
-// never part of the documented admin API contract.
-export function serializeSpocketCatalogItem(item: SpocketCatalogItem): SpocketCatalogItemResponseDTO {
+// Explicit allow-list matching the documented `CjCatalogItem` fields in the
+// cj-catalog-sync spec — deliberately excludes `supplierIntegrationId`, `pid`,
+// `vid`, `categoryId`, `sellPrice`, `warehouseInventoryNum`, and `rawPayload`
+// (raw upstream CJ payload), which are internal-only and not part of the
+// documented admin API contract.
+export function serializeCjCatalogItem(item: CjCatalogItem): CjCatalogItemResponseDTO {
   return {
     id: item.id,
     externalRef: item.externalRef,
     title: item.title,
+    sku: item.sku ?? null,
     size: item.size ?? null,
     color: item.color ?? null,
     supplierCost: item.supplierCost,

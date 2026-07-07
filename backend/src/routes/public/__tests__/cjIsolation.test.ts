@@ -1,10 +1,10 @@
 /**
- * Spocket-data isolation regression test (spec requirement "Spocket connection
- * endpoints are admin-only" / "Staged Spocket data ... never exposed on
- * customer-facing APIs"). Mirrors supplierIsolation.test.ts: mounts a REAL
- * public router (productPublicRoutes) so the app has genuine routing behavior,
- * rather than an empty app where every path would 404 regardless of whether
- * isolation is actually correct.
+ * CJ Dropshipping data isolation regression test (spec requirement "CJ
+ * connection/order-push endpoints are admin-only" / "Staged CJ data ... never
+ * exposed on customer-facing APIs"). Mirrors supplierIsolation.test.ts: mounts a
+ * REAL public router (productPublicRoutes) so the app has genuine routing
+ * behavior, rather than an empty app where every path would 404 regardless of
+ * whether isolation is actually correct.
  */
 import request from 'supertest';
 import express from 'express';
@@ -27,23 +27,26 @@ const buildApp = () => {
   app.use(express.json());
   // Real public router mounted at its real path, exactly as in index.ts.
   app.use('/api/public/products', productPublicRoutes);
-  // Spocket endpoints only exist under /api/admin/suppliers/:supplierId/spocket/*
-  // — intentionally not mounted anywhere under /api/public/*.
+  // CJ endpoints only exist under /api/admin/suppliers/:supplierId/cj/* and
+  // /api/admin/supplier-orders/:id/cj/* — intentionally not mounted anywhere
+  // under /api/public/*.
   app.use(notFoundHandler);
   app.use(globalErrorHandler);
   return app;
 };
 
-describe('Spocket data isolation — /api/public/* routes', () => {
+describe('CJ Dropshipping data isolation — /api/public/* routes', () => {
   beforeEach(() => jest.clearAllMocks());
 
   const candidatePaths = [
-    '/api/public/suppliers/1/spocket/connection',
-    '/api/public/suppliers/1/spocket/connection/verify',
-    '/api/public/suppliers/1/spocket/sync',
-    '/api/public/suppliers/1/spocket/catalog',
-    '/api/public/products/1/spocket/connection',
-    '/api/public/spocket/catalog',
+    '/api/public/suppliers/1/cj/connection',
+    '/api/public/suppliers/1/cj/connection/verify',
+    '/api/public/suppliers/1/cj/sync',
+    '/api/public/suppliers/1/cj/catalog',
+    '/api/public/supplier-orders/1/cj/freight-quote',
+    '/api/public/supplier-orders/1/cj/order',
+    '/api/public/products/1/cj/connection',
+    '/api/public/cj/catalog',
   ];
 
   it.each(candidatePaths)('GET %s returns 404 (route does not exist)', async (path) => {
@@ -52,8 +55,13 @@ describe('Spocket data isolation — /api/public/* routes', () => {
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
-  it('POST /api/public/suppliers/1/spocket/sync returns 404', async () => {
-    const res = await request(buildApp()).post('/api/public/suppliers/1/spocket/sync');
+  it('POST /api/public/suppliers/1/cj/sync returns 404', async () => {
+    const res = await request(buildApp()).post('/api/public/suppliers/1/cj/sync');
+    expect(res.status).toBe(404);
+  });
+
+  it('POST /api/public/supplier-orders/1/cj/push returns 404', async () => {
+    const res = await request(buildApp()).post('/api/public/supplier-orders/1/cj/push');
     expect(res.status).toBe(404);
   });
 

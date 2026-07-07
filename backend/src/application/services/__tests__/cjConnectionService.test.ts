@@ -1,6 +1,6 @@
 import { SupplierIntegration } from '../../../domain/models/supplierIntegration';
 import { ISupplierIntegrationRepository } from '../../../domain/repositories/supplierIntegrationRepository';
-import { ISpocketClient } from '../../../infrastructure/external/spocketTypes';
+import { ICjClient } from '../../../infrastructure/external/cjTypes';
 
 const mockSupplierFindUnique = jest.fn();
 
@@ -10,7 +10,7 @@ jest.mock('../../../infrastructure/prismaClient', () => ({
   },
 }));
 
-import { SpocketConnectionService } from '../spocketConnectionService';
+import { CjConnectionService } from '../cjConnectionService';
 import { SupplierIntegrationNotFoundError } from '../../../infrastructure/repositories/supplierIntegrationRepository';
 import { SupplierNotFoundError } from '../../../infrastructure/repositories/supplierRepository';
 
@@ -23,10 +23,22 @@ function makeIntegration(overrides: Partial<ConstructorParameters<typeof Supplie
   });
 }
 
-describe('SpocketConnectionService', () => {
+function makeMockCjClient(): jest.Mocked<ICjClient> {
+  return {
+    verifyConnection: jest.fn(),
+    fetchCategories: jest.fn(),
+    fetchCatalog: jest.fn(),
+    fetchVariants: jest.fn(),
+    calculateFreight: jest.fn(),
+    createOrder: jest.fn(),
+    getOrderDetail: jest.fn(),
+  };
+}
+
+describe('CjConnectionService', () => {
   let mockRepo: jest.Mocked<ISupplierIntegrationRepository>;
-  let mockSpocketClient: jest.Mocked<ISpocketClient>;
-  let service: SpocketConnectionService;
+  let mockCjClient: jest.Mocked<ICjClient>;
+  let service: CjConnectionService;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -36,11 +48,8 @@ describe('SpocketConnectionService', () => {
       updateStatus: jest.fn(),
       updateLastSyncedAt: jest.fn(),
     };
-    mockSpocketClient = {
-      verifyConnection: jest.fn(),
-      fetchCatalog: jest.fn(),
-    };
-    service = new SpocketConnectionService(mockRepo, mockSpocketClient);
+    mockCjClient = makeMockCjClient();
+    service = new CjConnectionService(mockRepo, mockCjClient);
   });
 
   describe('configureConnection', () => {
@@ -85,48 +94,38 @@ describe('SpocketConnectionService', () => {
     it('should_throw_when_not_found', async () => {
       mockRepo.findBySupplierId.mockResolvedValue(null);
 
-      await expect(service.getConnection(999)).rejects.toBeInstanceOf(
-        SupplierIntegrationNotFoundError
-      );
+      await expect(service.getConnection(999)).rejects.toBeInstanceOf(SupplierIntegrationNotFoundError);
     });
   });
 
   describe('verifyConnection', () => {
     it('should_mark_connected_and_return_healthy_true_on_success', async () => {
       mockRepo.findBySupplierId.mockResolvedValue(makeIntegration());
-      mockSpocketClient.verifyConnection.mockResolvedValue({ healthy: true, externalAccountRef: 'acc-1' });
+      mockCjClient.verifyConnection.mockResolvedValue({ healthy: true });
 
       const result = await service.verifyConnection(10);
 
       expect(result).toEqual({ healthy: true });
-      expect(mockRepo.updateStatus).toHaveBeenCalledWith(
-        1,
-        expect.objectContaining({ status: 'Connected' })
-      );
+      expect(mockRepo.updateStatus).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'Connected' }));
     });
 
     it('should_mark_error_and_return_a_fixed_non_sensitive_reason_on_failure', async () => {
       mockRepo.findBySupplierId.mockResolvedValue(makeIntegration());
-      mockSpocketClient.verifyConnection.mockResolvedValue({ healthy: false });
+      mockCjClient.verifyConnection.mockResolvedValue({ healthy: false });
 
       const result = await service.verifyConnection(10);
 
       expect(result.healthy).toBe(false);
       expect(result.reason).toBeDefined();
-      expect(result.reason).not.toMatch(/spocket_test|api[_-]?key|bearer/i);
-      expect(mockRepo.updateStatus).toHaveBeenCalledWith(
-        1,
-        expect.objectContaining({ status: 'Error' })
-      );
+      expect(result.reason).not.toMatch(/cj_test|api[_-]?key|bearer|cj-access-token/i);
+      expect(mockRepo.updateStatus).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'Error' }));
     });
 
-    it('should_throw_and_never_call_spocket_client_when_connection_is_missing', async () => {
+    it('should_throw_and_never_call_cj_client_when_connection_is_missing', async () => {
       mockRepo.findBySupplierId.mockResolvedValue(null);
 
-      await expect(service.verifyConnection(999)).rejects.toBeInstanceOf(
-        SupplierIntegrationNotFoundError
-      );
-      expect(mockSpocketClient.verifyConnection).not.toHaveBeenCalled();
+      await expect(service.verifyConnection(999)).rejects.toBeInstanceOf(SupplierIntegrationNotFoundError);
+      expect(mockCjClient.verifyConnection).not.toHaveBeenCalled();
     });
   });
 });

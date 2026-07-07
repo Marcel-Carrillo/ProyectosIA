@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { SpocketCatalogSyncService } from '../../application/services/spocketCatalogSyncService';
+import { CjCatalogSyncService } from '../../application/services/cjCatalogSyncService';
 import { SupplierIntegrationRepository } from '../../infrastructure/repositories/supplierIntegrationRepository';
-import { SpocketCatalogItemRepository } from '../../infrastructure/repositories/spocketCatalogItemRepository';
-import { spocketClient } from '../../infrastructure/external/spocketClient';
+import { CjCatalogItemRepository } from '../../infrastructure/repositories/cjCatalogItemRepository';
+import { cjClient } from '../../infrastructure/external/cjClient';
 import { logger } from '../../infrastructure/logger';
 import { ValidationError } from '../../application/validator';
-import { serializeSpocketCatalogItem } from '../serializers/spocketCatalogItemSerializer';
+import { serializeCjCatalogItem } from '../serializers/cjCatalogItemSerializer';
 
 function parseSupplierIdParam(value: string): number {
   const id = parseInt(value, 10);
@@ -13,18 +13,18 @@ function parseSupplierIdParam(value: string): number {
   return id;
 }
 
-const spocketCatalogSyncService = new SpocketCatalogSyncService(
+const cjCatalogSyncService = new CjCatalogSyncService(
   new SupplierIntegrationRepository(),
-  new SpocketCatalogItemRepository(),
-  spocketClient
+  new CjCatalogItemRepository(),
+  cjClient
 );
 
 export async function sync(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const supplierId = parseSupplierIdParam(req.params['supplierId'] as string);
-    const result = await spocketCatalogSyncService.syncCatalog(supplierId);
-    logger.info('Spocket catalog sync completed', { supplierId, ...result });
-    res.json({ success: true, data: result, message: 'Spocket catalog sync completed' });
+    const result = await cjCatalogSyncService.syncCatalog(supplierId);
+    logger.info('CJ Dropshipping catalog sync completed', { supplierId, ...result });
+    res.json({ success: true, data: result, message: 'CJ Dropshipping catalog sync completed' });
   } catch (err) {
     next(err);
   }
@@ -39,13 +39,13 @@ export async function listCatalog(req: Request, res: Response, next: NextFunctio
       throw new ValidationError("Query param 'syncStatus' must be one of: Synced, Failed");
     }
 
-    const result = await spocketCatalogSyncService.listStagedCatalog(supplierId, {
+    const result = await cjCatalogSyncService.listStagedCatalog(supplierId, {
       page: page ? parseInt(String(page), 10) : undefined,
       pageSize: pageSize ? parseInt(String(pageSize), 10) : undefined,
       syncStatus: syncStatus as string | undefined,
     });
-    const data = { ...result, items: result.items.map(serializeSpocketCatalogItem) };
-    res.json({ success: true, data, message: 'Staged Spocket catalog retrieved successfully' });
+    const data = { ...result, items: result.items.map(serializeCjCatalogItem) };
+    res.json({ success: true, data, message: 'Staged CJ Dropshipping catalog retrieved successfully' });
   } catch (err) {
     next(err);
   }

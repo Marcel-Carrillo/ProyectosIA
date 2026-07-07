@@ -24,7 +24,7 @@ export class SupplierIntegration {
   }) {
     this.id = data.id;
     this.supplierId = data.supplierId;
-    this.provider = data.provider ?? 'Spocket';
+    this.provider = data.provider ?? 'CJDropshipping';
     this.status = (data.status as SupplierIntegrationStatus) ?? 'Disconnected';
     this.externalAccountRef = data.externalAccountRef ?? null;
     this.lastVerifiedAt = data.lastVerifiedAt ?? null;
