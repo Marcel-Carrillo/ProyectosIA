@@ -11,6 +11,9 @@ describe('customer order isolation', () => {
   let tokenA: string;
   let tokenB: string;
   let orderIdB: number;
+  let supplierId: number;
+  let supplierOrderId: number;
+  let shipmentId: number;
 
   beforeAll(async () => {
     const regA = await request(app)
@@ -75,6 +78,7 @@ describe('customer order isolation', () => {
 
     {
       const supplier = await prisma.supplier.create({ data: { name: 'Test Supplier' } });
+      supplierId = supplier.id;
       const supplierOrder = await prisma.supplierOrder.create({
         data: {
           supplierOrderNumber: `SO-TEST-${Date.now()}`,
@@ -82,7 +86,8 @@ describe('customer order isolation', () => {
           supplierId: supplier.id,
         },
       });
-      await prisma.shipment.create({
+      supplierOrderId = supplierOrder.id;
+      const shipment = await prisma.shipment.create({
         data: {
           customerOrderId: orderIdB,
           supplierOrderId: supplierOrder.id,
@@ -93,7 +98,23 @@ describe('customer order isolation', () => {
           shippedAt: new Date(),
         },
       });
+      shipmentId = shipment.id;
     }
+  });
+
+  afterAll(async () => {
+    // This suite hits the real database (not mocked) to exercise genuine
+    // isolation behavior across two real accounts/orders — clean up
+    // everything it created so repeated runs don't leak rows into dev/CI.
+    // FK-safe order: Shipment -> SupplierOrder -> Supplier -> CustomerOrder
+    // (cascades CustomerOrderItem) -> CustomerAccount (cascades refresh/reset
+    // tokens + wishlist items) -> Customer.
+    if (shipmentId) await prisma.shipment.deleteMany({ where: { id: shipmentId } });
+    if (supplierOrderId) await prisma.supplierOrder.deleteMany({ where: { id: supplierOrderId } });
+    if (supplierId) await prisma.supplier.deleteMany({ where: { id: supplierId } });
+    if (orderIdB) await prisma.customerOrder.deleteMany({ where: { id: orderIdB } });
+    await prisma.customerAccount.deleteMany({ where: { email: { in: [emailA, emailB] } } });
+    await prisma.customer.deleteMany({ where: { email: { in: [emailA, emailB] } } });
   });
 
   it('rejects unauthenticated account routes', async () => {
