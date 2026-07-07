@@ -94,6 +94,20 @@ stripe listen --forward-to http://localhost:3000/api/public/payments/webhook
 | `4000 0000 0000 9995` | Declined |
 | `4000 0025 0000 3155` | 3DS required |
 
+**Spocket Integration Variables** (`backend/.env`):
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `SPOCKET_API_KEY` | Spocket API key — **never exposed to clients or logs** | No — falls back to a safe placeholder so the app runs without it |
+| `SPOCKET_API_BASE_URL` | Spocket API base URL | No — defaults to `https://api.spocket.co/placeholder` |
+
+```env
+SPOCKET_API_KEY=spocket_test_replace_with_your_spocket_api_key
+SPOCKET_API_BASE_URL=https://api.spocket.co
+```
+
+Without a real key, `POST /api/admin/suppliers/:supplierId/spocket/connection/verify` and `POST /api/admin/suppliers/:supplierId/spocket/sync` will report the connection as unhealthy/not-ready — this is expected in local dev unless real Spocket credentials are configured.
+
 **Frontend Environment** (`frontend/.env.development`):
 
 ```env

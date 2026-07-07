@@ -16,7 +16,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci
-COPY tsconfig.json ./
+COPY tsconfig.json jest.config.js jest.setup.js .eslintrc.json ./
 # src/ is bind-mounted at runtime for hot-reload; copy here only as fallback
 COPY src ./src
 COPY entrypoint.sh ./entrypoint.sh
