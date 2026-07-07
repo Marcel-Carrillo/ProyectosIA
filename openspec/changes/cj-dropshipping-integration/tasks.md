@@ -103,10 +103,10 @@
 
 ## 14. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
-- [ ] 14.2 Verify all tasks above are marked `[x]` and required reports exist under `openspec/changes/cj-dropshipping-integration/reports/`.
-- [ ] 14.3 Stage all relevant files (Prisma schema/migration, renamed and new domain/application/infrastructure/presentation code, tests, docs, OpenSpec artifacts) — exclude `.env`, `node_modules/`, `dist/`, `coverage/`. Double-check `backend/.env` (containing the real `CJDROPSHIPPING_API_KEY`) is NOT staged.
-- [ ] 14.4 Create commit with Conventional Commit message (e.g., `feat(suppliers): replace Spocket placeholder with real CJ Dropshipping integration and sandbox order push`), including OpenSpec change name and test verification status.
-- [ ] 14.5 Push branch to remote: `git push -u origin feature/cj-dropshipping-integration`.
-- [ ] 14.6 Create Pull Request with `gh pr create --base develop --title "..." --body "..."`, including summary, OpenSpec change name, verification status (unit/curl real-API/E2E-N/A), and open questions from `design.md` as known limitations.
-- [ ] 14.7 Report the PR URL in chat.
+- [x] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
+- [x] 14.2 Verify all tasks above are marked `[x]` and required reports exist under `openspec/changes/cj-dropshipping-integration/reports/`.
+- [x] 14.3 Stage all relevant files (Prisma schema/migration, renamed and new domain/application/infrastructure/presentation code, tests, docs, OpenSpec artifacts) — exclude `.env`, `node_modules/`, `dist/`, `coverage/`. Double-check `backend/.env` (containing the real `CJDROPSHIPPING_API_KEY`) is NOT staged.
+- [x] 14.4 Create commit with Conventional Commit message (e.g., `feat(suppliers): replace Spocket placeholder with real CJ Dropshipping integration and sandbox order push`), including OpenSpec change name and test verification status.
+- [x] 14.5 Push branch to remote: `git push -u origin feature/cj-dropshipping-integration`.
+- [x] 14.6 Create Pull Request with `gh pr create --base develop --title "..." --body "..."`, including summary, OpenSpec change name, verification status (unit/curl real-API/E2E-N/A), and open questions from `design.md` as known limitations.
+- [x] 14.7 Report the PR URL in chat.
