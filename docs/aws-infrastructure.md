@@ -49,6 +49,7 @@ Todos en `/ecommerce/prod/` como `SecureString`:
 | `STRIPE_SECRET_KEY` | Clave secreta Stripe |
 | `STRIPE_PUBLISHABLE_KEY` | Clave pública Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Secret de webhook Stripe |
+| `CJDROPSHIPPING_API_KEY` | Clave real de la API de CJ Dropshipping — misma cuenta/key que en dev (no hay separación dev/prod en CJ); referenciada en `serverless.yml` con fallback `''` para no romper el deploy si faltara |
 
 Ver o editar un parámetro:
 ```bash
