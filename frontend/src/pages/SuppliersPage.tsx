@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Table, Button, Alert, Modal, Form, Row, Col } from 'react-bootstrap';
 import { supplierService, extractSupplierErrorMessage } from '../services/supplierService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -170,6 +170,13 @@ const SuppliersPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="admin-card-row__actions">
+                  <Link
+                    to={`/suppliers/${s.id}/cj-catalog`}
+                    className="btn btn-outline-secondary admin-touch-btn"
+                    data-testid={`btn-cj-catalog-${s.id}`}
+                  >
+                    CJ Catalog
+                  </Link>
                   <Button
                     variant="outline-primary"
                     className="admin-touch-btn"
@@ -213,6 +220,13 @@ const SuppliersPage: React.FC = () => {
                       <StatusBadge status={s.status} />
                     </td>
                     <td>
+                      <Link
+                        to={`/suppliers/${s.id}/cj-catalog`}
+                        className="btn btn-sm btn-outline-secondary me-2"
+                        data-testid={`btn-cj-catalog-${s.id}`}
+                      >
+                        CJ Catalog
+                      </Link>
                       <Button
                         size="sm"
                         variant="outline-primary"

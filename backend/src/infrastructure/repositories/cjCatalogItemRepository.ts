@@ -6,7 +6,38 @@ import {
   CjCatalogItemUpsertInput,
   CjCatalogItemListFilters,
   CjCatalogItemListResult,
+  CjCatalogItemListItem,
+  CjPromotionState,
 } from '../../domain/repositories/cjCatalogItemRepository';
+
+// A newly-promoted Product defaults to Draft unless `activate: true` was
+// requested (matching this codebase's existing pattern of Draft products
+// with Active variants — see ProductService.create()). Draft products are
+// never served by any /api/public/* route, so "Active" here must require
+// BOTH the variant AND its parent Product to be Active — checking the
+// variant alone would misreport a promoted-but-not-yet-activated item as
+// live on the storefront.
+function derivePromotionState(promotedVariant: { status: string; product: { status: string } } | null): CjPromotionState {
+  if (!promotedVariant) return 'NotPromoted';
+  return promotedVariant.status === 'Active' && promotedVariant.product.status === 'Active' ? 'Active' : 'Inactive';
+}
+
+function promotionStateWhere(
+  promotionState: CjPromotionState
+): Pick<Prisma.CjCatalogItemWhereInput, 'promotedVariant'> {
+  switch (promotionState) {
+    case 'NotPromoted':
+      return { promotedVariant: null };
+    case 'Active':
+      return { promotedVariant: { is: { status: 'Active', product: { status: 'Active' } } } };
+    case 'Inactive':
+      return {
+        promotedVariant: {
+          is: { OR: [{ status: { not: 'Active' } }, { product: { status: { not: 'Active' } } }] },
+        },
+      };
+  }
+}
 
 export class CjCatalogItemRepository implements ICjCatalogItemRepository {
   async upsertMany(
@@ -61,10 +92,14 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
 
     const where: Prisma.CjCatalogItemWhereInput = { supplierIntegrationId };
     if (filters.syncStatus) where.syncStatus = filters.syncStatus;
+    if (filters.promotionState) Object.assign(where, promotionStateWhere(filters.promotionState));
 
     const [rows, total] = await prisma.$transaction([
       prisma.cjCatalogItem.findMany({
         where,
+        include: {
+          promotedVariant: { select: { id: true, productId: true, status: true, product: { select: { status: true } } } },
+        },
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
@@ -72,19 +107,21 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
       prisma.cjCatalogItem.count({ where }),
     ]);
 
-    return {
-      items: rows.map(
-        (r) =>
-          new CjCatalogItem({
-            ...r,
-            supplierCost: r.supplierCost.toString(),
-            sellPrice: r.sellPrice?.toString() ?? null,
-          })
-      ),
-      total,
-      page,
-      pageSize,
-    };
+    const items: CjCatalogItemListItem[] = rows.map((r) => {
+      const { promotedVariant, ...itemFields } = r;
+      return {
+        item: new CjCatalogItem({
+          ...itemFields,
+          supplierCost: itemFields.supplierCost.toString(),
+          sellPrice: itemFields.sellPrice?.toString() ?? null,
+        }),
+        promotionState: derivePromotionState(promotedVariant),
+        productId: promotedVariant?.productId ?? null,
+        productVariantId: promotedVariant?.id ?? null,
+      };
+    });
+
+    return { items, total, page, pageSize };
   }
 
   async findByExternalRef(supplierIntegrationId: number, externalRef: string): Promise<CjCatalogItem | null> {
@@ -94,5 +131,21 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
     return row
       ? new CjCatalogItem({ ...row, supplierCost: row.supplierCost.toString(), sellPrice: row.sellPrice?.toString() ?? null })
       : null;
+  }
+
+  async findById(id: number): Promise<CjCatalogItem | null> {
+    const row = await prisma.cjCatalogItem.findUnique({ where: { id } });
+    return row
+      ? new CjCatalogItem({ ...row, supplierCost: row.supplierCost.toString(), sellPrice: row.sellPrice?.toString() ?? null })
+      : null;
+  }
+
+  async findManyByIds(ids: number[]): Promise<CjCatalogItem[]> {
+    if (ids.length === 0) return [];
+    const rows = await prisma.cjCatalogItem.findMany({ where: { id: { in: ids } } });
+    return rows.map(
+      (row) =>
+        new CjCatalogItem({ ...row, supplierCost: row.supplierCost.toString(), sellPrice: row.sellPrice?.toString() ?? null })
+    );
   }
 }

@@ -95,8 +95,8 @@ describe('CjCatalogItemRepository', () => {
 
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(20);
-      expect(result.items[0].externalRef).toBe('ext-1');
-      expect(result.items[0].sellPrice).toBe('19.99');
+      expect(result.items[0]?.item.externalRef).toBe('ext-1');
+      expect(result.items[0]?.item.sellPrice).toBe('19.99');
     });
 
     it('should_filter_by_syncStatus_when_provided', async () => {
@@ -128,6 +128,133 @@ describe('CjCatalogItemRepository', () => {
       const result = await repo.findByExternalRef(5, 'missing');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('findBySupplierIntegrationId - promotionState derivation', () => {
+    it('should_derive_NotPromoted_when_no_linked_variant', async () => {
+      mockTransaction.mockResolvedValue([[{ ...dbRow, promotedVariant: null }], 1]);
+
+      const result = await repo.findBySupplierIntegrationId(5);
+
+      expect(result.items[0].promotionState).toBe('NotPromoted');
+      expect(result.items[0].productId).toBeNull();
+      expect(result.items[0].productVariantId).toBeNull();
+    });
+
+    it('should_derive_Active_when_linked_variant_AND_parent_product_are_both_Active', async () => {
+      mockTransaction.mockResolvedValue([
+        [{ ...dbRow, promotedVariant: { id: 9, productId: 4, status: 'Active', product: { status: 'Active' } } }],
+        1,
+      ]);
+
+      const result = await repo.findBySupplierIntegrationId(5);
+
+      expect(result.items[0].promotionState).toBe('Active');
+      expect(result.items[0].productId).toBe(4);
+      expect(result.items[0].productVariantId).toBe(9);
+    });
+
+    it('should_derive_Inactive_when_linked_variant_status_is_not_Active', async () => {
+      mockTransaction.mockResolvedValue([
+        [{ ...dbRow, promotedVariant: { id: 9, productId: 4, status: 'Inactive', product: { status: 'Active' } } }],
+        1,
+      ]);
+
+      const result = await repo.findBySupplierIntegrationId(5);
+
+      expect(result.items[0].promotionState).toBe('Inactive');
+      expect(result.items[0].productId).toBe(4);
+      expect(result.items[0].productVariantId).toBe(9);
+    });
+
+    it('should_derive_Inactive_when_variant_is_Active_but_parent_product_is_still_Draft', async () => {
+      // Regression: a newly-promoted product defaults to Draft (visible
+      // nowhere publicly) even though its variant is created Active — must
+      // not be misreported as Active.
+      mockTransaction.mockResolvedValue([
+        [{ ...dbRow, promotedVariant: { id: 9, productId: 4, status: 'Active', product: { status: 'Draft' } } }],
+        1,
+      ]);
+
+      const result = await repo.findBySupplierIntegrationId(5);
+
+      expect(result.items[0].promotionState).toBe('Inactive');
+    });
+
+    it('should_apply_promotionState_where_clause_for_NotPromoted_filter', async () => {
+      mockTransaction.mockResolvedValue([[], 0]);
+
+      await repo.findBySupplierIntegrationId(5, { promotionState: 'NotPromoted' });
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { supplierIntegrationId: 5, promotedVariant: null } })
+      );
+    });
+
+    it('should_apply_promotionState_where_clause_for_Active_filter', async () => {
+      mockTransaction.mockResolvedValue([[], 0]);
+
+      await repo.findBySupplierIntegrationId(5, { promotionState: 'Active' });
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { supplierIntegrationId: 5, promotedVariant: { is: { status: 'Active', product: { status: 'Active' } } } },
+        })
+      );
+    });
+
+    it('should_apply_promotionState_where_clause_for_Inactive_filter', async () => {
+      mockTransaction.mockResolvedValue([[], 0]);
+
+      await repo.findBySupplierIntegrationId(5, { promotionState: 'Inactive' });
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            supplierIntegrationId: 5,
+            promotedVariant: { is: { OR: [{ status: { not: 'Active' } }, { product: { status: { not: 'Active' } } }] } },
+          },
+        })
+      );
+    });
+  });
+
+  describe('findById', () => {
+    it('should_return_item_when_found', async () => {
+      mockFindUnique.mockResolvedValue(dbRow);
+
+      const result = await repo.findById(1);
+
+      expect(result?.id).toBe(1);
+      expect(mockFindUnique).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+
+    it('should_return_null_when_not_found', async () => {
+      mockFindUnique.mockResolvedValue(null);
+
+      const result = await repo.findById(999);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('findManyByIds', () => {
+    it('should_return_matching_items', async () => {
+      mockFindMany.mockResolvedValue([dbRow]);
+
+      const result = await repo.findManyByIds([1]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.id).toBe(1);
+      expect(mockFindMany).toHaveBeenCalledWith({ where: { id: { in: [1] } } });
+    });
+
+    it('should_return_empty_array_without_querying_when_ids_is_empty', async () => {
+      const result = await repo.findManyByIds([]);
+
+      expect(result).toEqual([]);
+      expect(mockFindMany).not.toHaveBeenCalled();
     });
   });
 });

@@ -30,19 +30,28 @@ export async function sync(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
+const VALID_PROMOTION_STATES = ['NotPromoted', 'Active', 'Inactive'] as const;
+
 export async function listCatalog(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const supplierId = parseSupplierIdParam(req.params['supplierId'] as string);
-    const { page, pageSize, syncStatus } = req.query;
+    const { page, pageSize, syncStatus, promotionState } = req.query;
 
     if (syncStatus !== undefined && syncStatus !== 'Synced' && syncStatus !== 'Failed') {
       throw new ValidationError("Query param 'syncStatus' must be one of: Synced, Failed");
+    }
+    if (
+      promotionState !== undefined &&
+      !VALID_PROMOTION_STATES.includes(promotionState as (typeof VALID_PROMOTION_STATES)[number])
+    ) {
+      throw new ValidationError("Query param 'promotionState' must be one of: NotPromoted, Active, Inactive");
     }
 
     const result = await cjCatalogSyncService.listStagedCatalog(supplierId, {
       page: page ? parseInt(String(page), 10) : undefined,
       pageSize: pageSize ? parseInt(String(pageSize), 10) : undefined,
       syncStatus: syncStatus as string | undefined,
+      promotionState: promotionState as (typeof VALID_PROMOTION_STATES)[number] | undefined,
     });
     const data = { ...result, items: result.items.map(serializeCjCatalogItem) };
     res.json({ success: true, data, message: 'Staged CJ Dropshipping catalog retrieved successfully' });

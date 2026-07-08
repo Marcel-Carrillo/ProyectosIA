@@ -101,14 +101,21 @@ stripe listen --forward-to http://localhost:3000/api/public/payments/webhook
 | `CJDROPSHIPPING_API_KEY` | CJ Dropshipping API key — **never exposed to clients or logs** | No — falls back to a safe placeholder so the app runs without it |
 | `CJ_API_BASE_URL` | CJ Dropshipping API base URL | No — defaults to `https://developers.cjdropshipping.com/api2.0/v1` |
 | `CJ_SANDBOX_ORDERS` | When `true` (default), every supplier-order push forces `isSandbox: 1` on CJ order creation | No — defaults to `true` |
+| `CJ_SYNC_MAX_PAGES` / `CJ_CATALOG_PAGE_SIZE` | Cap catalog sync pages/page-size. Default to 500/100 when unset. **Only uncomment for local curl/manual verification against the live API** (rate-limit avoidance) — never leave set, they cripple real catalog syncs to a single tiny page | No |
+| `CJ_DEFAULT_MARKUP_MULTIPLIER` | Default markup applied to `CjCatalogItem.supplierCost` when an admin promotes an item without an explicit `publicPrice`. Promotion never publishes at raw cost — if this is unset and no explicit price is given, promotion fails with `CJ_PROMOTION_PRICE_REQUIRED` | No, but required in practice for bulk promotion without per-item prices |
 
 ```env
 CJDROPSHIPPING_API_KEY=cj_test_replace_with_your_cj_dropshipping_api_key
 CJ_API_BASE_URL=https://developers.cjdropshipping.com/api2.0/v1
 CJ_SANDBOX_ORDERS=true
+CJ_DEFAULT_MARKUP_MULTIPLIER=2.5
 ```
 
 Without a real key, `POST /api/admin/suppliers/:supplierId/cj/connection/verify` and `POST /api/admin/suppliers/:supplierId/cj/sync` will report the connection as unhealthy/not-ready — this is expected in local dev unless real CJ Dropshipping credentials are configured.
+
+**Promote → activate/deactivate workflow**: once a supplier's catalog is synced, browse it in the admin panel at `/suppliers/:supplierId/cj-catalog`. Select one or more `Synced` items (items sharing the same CJ product id are grouped into a single `Product` on promotion), choose a category, and promote — this creates real `Product`/`ProductVariant` records linked back to the staged `CjCatalogItem`. Use the page's Activate/Deactivate actions to toggle storefront visibility at any time; the link to the original CJ item is never lost, so an item can be reactivated or promoted again (idempotently) later.
+
+**Note on the `frontend` Docker service**: unlike `backend` (which bind-mounts `backend/src`), the `frontend` service has no source bind mount — its image is built once from `frontend/src` at `docker compose build` time. After changing frontend code, run `docker compose build frontend && docker compose up -d --force-recreate frontend` to see the change reflected in Docker Compose; a plain `docker compose restart frontend` will not pick it up.
 
 **Frontend Environment** (`frontend/.env.development`):
 

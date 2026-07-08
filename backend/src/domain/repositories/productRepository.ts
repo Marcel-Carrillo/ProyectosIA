@@ -62,6 +62,7 @@ export interface ProductVariantCreateData {
   supplierCost?: number | null;
   stockPolicy: string;
   status?: string;
+  cjCatalogItemId?: number | null;
 }
 
 export interface ProductVariantUpdateData {
@@ -81,6 +82,7 @@ export interface IProductVariantRepository {
   findByProduct(productId: number): Promise<ProductVariant[]>;
   findById(id: number): Promise<ProductVariant | null>;
   findBySku(sku: string): Promise<ProductVariant | null>;
+  findByCjCatalogItemId(cjCatalogItemId: number): Promise<ProductVariant | null>;
   countActiveByProduct(productId: number): Promise<number>;
   create(data: ProductVariantCreateData): Promise<ProductVariant>;
   update(id: number, data: ProductVariantUpdateData): Promise<ProductVariant>;

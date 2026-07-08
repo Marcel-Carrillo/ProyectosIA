@@ -12,6 +12,7 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CategoriesPage from './pages/CategoriesPage';
 import SuppliersPage from './pages/SuppliersPage';
+import CjCatalogPage from './pages/CjCatalogPage';
 import CustomersPage from './pages/CustomersPage';
 import CustomerOrdersPage from './pages/CustomerOrdersPage';
 import CustomerOrderDetailPage from './pages/CustomerOrderDetailPage';
@@ -171,6 +172,7 @@ const App: React.FC = () => {
                 <Route path="products/:id" element={<ProductDetailPage />} />
                 <Route path="categories" element={<CategoriesPage />} />
                 <Route path="suppliers" element={<SuppliersPage />} />
+                <Route path="suppliers/:supplierId/cj-catalog" element={<CjCatalogPage />} />
                 <Route path="customers" element={<CustomersPage />} />
                 <Route path="customer-orders" element={<CustomerOrdersPage />} />
                 <Route path="customer-orders/:id" element={<CustomerOrderDetailPage />} />

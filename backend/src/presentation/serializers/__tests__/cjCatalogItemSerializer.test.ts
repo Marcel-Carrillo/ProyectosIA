@@ -24,7 +24,7 @@ describe('serializeCjCatalogItem', () => {
       lastSyncedAt: new Date('2026-01-01'),
     });
 
-    const dto = serializeCjCatalogItem(item);
+    const dto = serializeCjCatalogItem({ item, promotionState: 'NotPromoted', productId: null, productVariantId: null });
 
     expect(dto).toEqual({
       id: 1,
@@ -38,6 +38,9 @@ describe('serializeCjCatalogItem', () => {
       syncStatus: 'Synced',
       syncError: null,
       lastSyncedAt: item.lastSyncedAt,
+      promotionState: 'NotPromoted',
+      productId: null,
+      productVariantId: null,
     });
     expect(dto).not.toHaveProperty('supplierIntegrationId');
     expect(dto).not.toHaveProperty('rawPayload');
@@ -61,11 +64,29 @@ describe('serializeCjCatalogItem', () => {
       syncStatus: 'Failed',
     });
 
-    const dto = serializeCjCatalogItem(item);
+    const dto = serializeCjCatalogItem({ item, promotionState: 'NotPromoted', productId: null, productVariantId: null });
 
     expect(dto.sku).toBeNull();
     expect(dto.size).toBeNull();
     expect(dto.color).toBeNull();
     expect(dto.syncError).toBeNull();
+  });
+
+  it('should_include_promotionState_productId_productVariantId_when_promoted', () => {
+    const item = new CjCatalogItem({
+      supplierIntegrationId: 5,
+      externalRef: 'ext-3',
+      title: 'Coat',
+      supplierCost: '15.00',
+      stockQuantity: 2,
+      rawPayload: {},
+      syncStatus: 'Synced',
+    });
+
+    const dto = serializeCjCatalogItem({ item, promotionState: 'Active', productId: 20, productVariantId: 50 });
+
+    expect(dto.promotionState).toBe('Active');
+    expect(dto.productId).toBe(20);
+    expect(dto.productVariantId).toBe(50);
   });
 });

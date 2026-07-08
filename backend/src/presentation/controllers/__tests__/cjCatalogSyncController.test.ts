@@ -95,7 +95,12 @@ describe('cjCatalogSyncController', () => {
         rawPayload: { secretUpstreamField: 'should-not-leak' },
         syncStatus: 'Synced',
       });
-      mockListStagedCatalog.mockResolvedValue({ items: [item], total: 1, page: 1, pageSize: 20 });
+      mockListStagedCatalog.mockResolvedValue({
+        items: [{ item, promotionState: 'NotPromoted', productId: null, productVariantId: null }],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      });
       const req = { params: { supplierId: '10' }, query: {} } as unknown as Request;
       const res = mockRes();
 
@@ -104,6 +109,61 @@ describe('cjCatalogSyncController', () => {
       const payload = JSON.stringify((res.json as jest.Mock).mock.calls[0][0]);
       expect(payload).not.toMatch(/supplierIntegrationId|rawPayload|secretUpstreamField|pid|vid|categoryId/);
       expect(payload).toMatch(/ext-1/);
+    });
+
+    it('should_include_promotionState_productId_productVariantId_in_serialized_output', async () => {
+      const item = new CjCatalogItem({
+        id: 1,
+        supplierIntegrationId: 5,
+        externalRef: 'ext-1',
+        title: 'Dress',
+        supplierCost: '9.99',
+        stockQuantity: 3,
+        rawPayload: {},
+        syncStatus: 'Synced',
+      });
+      mockListStagedCatalog.mockResolvedValue({
+        items: [{ item, promotionState: 'Active', productId: 20, productVariantId: 50 }],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      });
+      const req = { params: { supplierId: '10' }, query: {} } as unknown as Request;
+      const res = mockRes();
+
+      await listCatalog(req, res, mockNext);
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            items: [expect.objectContaining({ promotionState: 'Active', productId: 20, productVariantId: 50 })],
+          }),
+        })
+      );
+    });
+
+    it('should_accept_and_pass_through_promotionState_filter', async () => {
+      mockListStagedCatalog.mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20 });
+      const req = {
+        params: { supplierId: '10' },
+        query: { promotionState: 'NotPromoted' },
+      } as unknown as Request;
+
+      await listCatalog(req, mockRes(), mockNext);
+
+      expect(mockListStagedCatalog).toHaveBeenCalledWith(10, expect.objectContaining({ promotionState: 'NotPromoted' }));
+    });
+
+    it('should_reject_invalid_promotionState_value', async () => {
+      const req = {
+        params: { supplierId: '10' },
+        query: { promotionState: 'Bogus' },
+      } as unknown as Request;
+
+      await listCatalog(req, mockRes(), mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({ code: 'VALIDATION_ERROR' }));
+      expect(mockListStagedCatalog).not.toHaveBeenCalled();
     });
 
     it('should_call_next_with_validation_error_for_invalid_syncStatus_without_calling_service', async () => {

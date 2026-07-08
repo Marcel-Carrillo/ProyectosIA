@@ -1,0 +1,280 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import CjCatalogPage from '../CjCatalogPage';
+
+const mockListCatalog = jest.fn();
+const mockPromote = jest.fn();
+const mockActivate = jest.fn();
+const mockDeactivate = jest.fn();
+const mockGetAllCategories = jest.fn();
+
+jest.mock('../../services/cjCatalogService', () => ({
+  cjCatalogService: {
+    listCatalog: (...args: unknown[]) => mockListCatalog(...args),
+    promote: (...args: unknown[]) => mockPromote(...args),
+    activate: (...args: unknown[]) => mockActivate(...args),
+    deactivate: (...args: unknown[]) => mockDeactivate(...args),
+  },
+  extractCjCatalogErrorMessage: jest.requireActual('../../services/cjCatalogService').extractCjCatalogErrorMessage,
+  mapCjCatalogError: jest.requireActual('../../services/cjCatalogService').mapCjCatalogError,
+}));
+
+jest.mock('../../services/categoryService', () => ({
+  categoryService: {
+    getAll: (...args: unknown[]) => mockGetAllCategories(...args),
+  },
+}));
+
+function renderPage() {
+  return render(
+    <MemoryRouter initialEntries={['/suppliers/3/cj-catalog']}>
+      <Routes>
+        <Route path="/suppliers/:supplierId/cj-catalog" element={<CjCatalogPage />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+const notPromotedItem = {
+  id: 1,
+  externalRef: 'vid-1',
+  title: 'Black Dress',
+  sku: 'CJ-vid-1',
+  size: 'M',
+  color: 'Black',
+  supplierCost: '10.00',
+  stockQuantity: 5,
+  syncStatus: 'Synced' as const,
+  syncError: null,
+  lastSyncedAt: '2026-01-01T00:00:00.000Z',
+  promotionState: 'NotPromoted' as const,
+  productId: null,
+  productVariantId: null,
+};
+
+const activeItem = {
+  ...notPromotedItem,
+  id: 2,
+  externalRef: 'vid-2',
+  title: 'Red Dress',
+  promotionState: 'Active' as const,
+  productId: 20,
+  productVariantId: 50,
+};
+
+const inactiveItem = {
+  ...notPromotedItem,
+  id: 3,
+  externalRef: 'vid-3',
+  title: 'Blue Dress',
+  promotionState: 'Inactive' as const,
+  productId: 21,
+  productVariantId: 51,
+};
+
+const failedItem = {
+  ...notPromotedItem,
+  id: 4,
+  externalRef: 'vid-4',
+  title: 'Broken Item',
+  syncStatus: 'Failed' as const,
+};
+
+describe('CjCatalogPage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAllCategories.mockResolvedValue([
+      { id: 1, name: 'Dresses', description: null, imageUrl: null, status: 'Active', parentId: null, createdAt: '', updatedAt: '' },
+    ]);
+  });
+
+  it('shows a loading state while fetching', async () => {
+    mockListCatalog.mockReturnValue(new Promise(() => {}));
+    renderPage();
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+  });
+
+  it('renders a NotPromoted item with an enabled checkbox and no product link', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+    renderPage();
+
+    const card = await screen.findByTestId('cj-catalog-card-row-1');
+    expect(within(card).getByText('Black Dress')).toBeInTheDocument();
+    expect(within(card).getByTestId('promotion-badge-1')).toHaveTextContent('NotPromoted');
+    const checkbox = within(card).getByTestId('checkbox-select-1') as HTMLInputElement;
+    expect(checkbox.disabled).toBe(false);
+  });
+
+  it('renders Active and Inactive items with product links and the correct action button', async () => {
+    mockListCatalog.mockResolvedValue({
+      data: { items: [activeItem, inactiveItem], total: 2, page: 1, pageSize: 20 },
+    });
+    renderPage();
+
+    const activeCard = await screen.findByTestId('cj-catalog-card-row-2');
+    expect(within(activeCard).getByTestId('promotion-badge-2')).toHaveTextContent('Active');
+    expect(within(activeCard).getByTestId('btn-deactivate-2')).toBeInTheDocument();
+    expect(within(activeCard).queryByTestId('btn-activate-2')).not.toBeInTheDocument();
+
+    const inactiveCard = screen.getByTestId('cj-catalog-card-row-3');
+    expect(within(inactiveCard).getByTestId('promotion-badge-3')).toHaveTextContent('Inactive');
+    expect(within(inactiveCard).getByTestId('btn-activate-3')).toBeInTheDocument();
+    expect(within(inactiveCard).queryByTestId('btn-deactivate-3')).not.toBeInTheDocument();
+
+    const productLinks = screen.getAllByRole('link', { name: '20' });
+    expect(productLinks[0]).toHaveAttribute('href', '/products/20');
+  });
+
+  it('disables the checkbox for items that failed sync', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [failedItem], total: 1, page: 1, pageSize: 20 } });
+    renderPage();
+
+    const card = await screen.findByTestId('cj-catalog-card-row-4');
+    const checkbox = within(card).getByTestId('checkbox-select-4') as HTMLInputElement;
+    expect(checkbox.disabled).toBe(true);
+  });
+
+  it('shows the empty state when there are no items', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+    renderPage();
+
+    expect(await screen.findByTestId('empty-state')).toBeInTheDocument();
+  });
+
+  it('shows an error message when the list fetch fails', async () => {
+    mockListCatalog.mockRejectedValue({ response: { data: { error: { code: 'CJ_CONNECTION_NOT_FOUND' } } } });
+    renderPage();
+
+    expect(await screen.findByText(/No CJ Dropshipping connection/i)).toBeInTheDocument();
+  });
+
+  it('refetches with the sync status filter applied', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+    renderPage();
+    await screen.findByTestId('empty-state');
+
+    fireEvent.change(screen.getByTestId('filter-sync-status'), { target: { value: 'Failed' } });
+
+    await waitFor(() =>
+      expect(mockListCatalog).toHaveBeenLastCalledWith(3, expect.objectContaining({ syncStatus: 'Failed', page: 1 }))
+    );
+  });
+
+  it('shows and updates the bulk-action bar on selection, and clears it on select-all toggle', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-1');
+
+    fireEvent.click(within(card).getByTestId('checkbox-select-1'));
+    expect(await screen.findByTestId('bulk-action-bar')).toHaveTextContent('1 selected');
+
+    fireEvent.click(screen.getByTestId('checkbox-select-all'));
+    expect(screen.queryByTestId('bulk-action-bar')).not.toBeInTheDocument();
+  });
+
+  it('clears the selection after a successful refetch', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-1');
+
+    fireEvent.click(within(card).getByTestId('checkbox-select-1'));
+    await screen.findByTestId('bulk-action-bar');
+
+    fireEvent.change(screen.getByTestId('filter-sync-status'), { target: { value: 'Failed' } });
+
+    await waitFor(() => expect(screen.queryByTestId('bulk-action-bar')).not.toBeInTheDocument());
+  });
+
+  it('opens the promote modal with only the selected items', async () => {
+    mockListCatalog.mockResolvedValue({
+      data: { items: [notPromotedItem, { ...notPromotedItem, id: 5, title: 'Green Dress' }], total: 2, page: 1, pageSize: 20 },
+    });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-1');
+
+    fireEvent.click(within(card).getByTestId('checkbox-select-1'));
+    fireEvent.click(await screen.findByTestId('btn-promote-selected'));
+
+    const modal = await screen.findByTestId('modal-promote-cj');
+    expect(within(modal).getByTestId('promote-items-table')).toHaveTextContent('Black Dress');
+    expect(within(modal).getByTestId('promote-items-table')).not.toHaveTextContent('Green Dress');
+  });
+
+  it('promotes successfully, closes the modal, and refetches the list', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+    mockPromote.mockResolvedValue({ data: {} });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-1');
+
+    fireEvent.click(within(card).getByTestId('checkbox-select-1'));
+    fireEvent.click(await screen.findByTestId('btn-promote-selected'));
+    const modal = await screen.findByTestId('modal-promote-cj');
+
+    fireEvent.change(within(modal).getByTestId('select-promote-category'), { target: { value: '1' } });
+    fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
+
+    await waitFor(() =>
+      expect(mockPromote).toHaveBeenCalledWith(
+        3,
+        expect.objectContaining({ categoryId: 1, items: [{ cjCatalogItemId: 1, publicPrice: undefined, compareAtPrice: undefined }] })
+      )
+    );
+    await waitFor(() => expect(screen.queryByTestId('modal-promote-cj')).not.toBeInTheDocument());
+    expect(mockListCatalog).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows a mapped error and keeps the modal open when promote fails', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+    mockPromote.mockRejectedValue({ response: { data: { error: { code: 'CJ_PROMOTION_CATEGORY_REQUIRED' } } } });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-1');
+
+    fireEvent.click(within(card).getByTestId('checkbox-select-1'));
+    fireEvent.click(await screen.findByTestId('btn-promote-selected'));
+    const modal = await screen.findByTestId('modal-promote-cj');
+
+    fireEvent.change(within(modal).getByTestId('select-promote-category'), { target: { value: '1' } });
+    fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
+
+    expect(await within(modal).findByText(/Select a category before promoting/i)).toBeInTheDocument();
+    expect(screen.getByTestId('modal-promote-cj')).toBeInTheDocument();
+    expect(mockListCatalog).toHaveBeenCalledTimes(1);
+  });
+
+  it('activates an Inactive item and refetches', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [inactiveItem], total: 1, page: 1, pageSize: 20 } });
+    mockActivate.mockResolvedValue({ data: { productId: 21, productVariantId: 51 } });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-3');
+
+    fireEvent.click(within(card).getByTestId('btn-activate-3'));
+
+    await waitFor(() => expect(mockActivate).toHaveBeenCalledWith(3, 3));
+    await waitFor(() => expect(mockListCatalog).toHaveBeenCalledTimes(2));
+  });
+
+  it('deactivates an Active item and refetches', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [activeItem], total: 1, page: 1, pageSize: 20 } });
+    mockDeactivate.mockResolvedValue({ data: { productId: 20, productVariantId: 50 } });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-2');
+
+    fireEvent.click(within(card).getByTestId('btn-deactivate-2'));
+
+    await waitFor(() => expect(mockDeactivate).toHaveBeenCalledWith(3, 2));
+    await waitFor(() => expect(mockListCatalog).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows an action error without refetching when deactivate fails', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [activeItem], total: 1, page: 1, pageSize: 20 } });
+    mockDeactivate.mockRejectedValue({ response: { data: { error: { code: 'CJ_CATALOG_ITEM_NOT_PROMOTED' } } } });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-2');
+
+    fireEvent.click(within(card).getByTestId('btn-deactivate-2'));
+
+    expect(await screen.findByTestId('action-error')).toHaveTextContent(/not been promoted/i);
+    expect(mockListCatalog).toHaveBeenCalledTimes(1);
+  });
+});

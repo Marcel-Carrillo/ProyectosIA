@@ -1741,6 +1741,13 @@ The outbound integration to CJ Dropshipping's REST API lives at `backend/src/inf
 - **Bounded retry with backoff on `429`/`5xx`**, and a dedicated error class (`CjApiError`) whose message is built only from a fixed vocabulary (status code + short reason) — **never** from raw response body text, since upstream error bodies could otherwise leak request headers or other sensitive content into logs.
 - **Environment variables are not hard-required at startup** (unlike Stripe's): absence of `CJDROPSHIPPING_API_KEY`/`CJ_API_BASE_URL`/`CJ_SANDBOX_ORDERS` must not crash the app, since supplier automation is optional infrastructure, not a payment-critical path.
 
+### Derived State via Relation Join (Pattern)
+
+When a status needs to reflect *another* table's live state rather than being a fact about the row itself (e.g. `CjCatalogItem.promotionState` reflecting whether a linked `ProductVariant`/`Product` are `Active`), compute it at read time via a Prisma relation `include` + a pure mapping function — do not add a column for it. Two rules keep this correct:
+
+1. **Apply the same condition to both `count()` and `findMany()`.** A derived-state filter (e.g. `?promotionState=Active`) must be expressed as a Prisma `where` clause on the relation (`{ promotedVariant: { is: { status: 'Active', product: { status: 'Active' } } } }`), never as a post-query JS `.filter()` — otherwise pagination `total` and the returned page silently disagree.
+2. **Derive from every field the state actually depends on, not just the nearest one.** A one-hop join (checking only the linked row) can under- or over-report if the *true* condition spans two hops (here: both the `ProductVariant.status` *and* its parent `Product.status`, since a `Draft` product is invisible on every public route regardless of its variant's status). Write the derivation function to explicitly enumerate every field it depends on, and cover the "linked but one hop away from what you'd expect" case with a dedicated test.
+
 ---
 
 This document serves as the foundation for maintaining code quality and consistency across the women's fashion ecommerce backend application. All team members should follow these practices to ensure a maintainable, scalable, and testable codebase.
