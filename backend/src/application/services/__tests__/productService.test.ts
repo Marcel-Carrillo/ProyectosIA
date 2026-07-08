@@ -35,6 +35,7 @@ const mockVariantRepo: jest.Mocked<IProductVariantRepository> = {
   findByProduct: jest.fn(),
   findById: jest.fn(),
   findBySku: jest.fn(),
+  findByCjCatalogItemId: jest.fn(),
   countActiveByProduct: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),

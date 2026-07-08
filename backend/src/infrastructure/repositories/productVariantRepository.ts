@@ -39,6 +39,10 @@ export class VariantComparePriceInvalidError extends Error {
   }
 }
 
+// INTERNAL-ONLY fields (supplierId/supplierReference/supplierCost, and now
+// cjCatalogItemId) are deliberately omitted from this select — this is the
+// single point that keeps them out of every read path built on top of it,
+// admin and public alike. Never add cjCatalogItemId here.
 const variantSelect = {
   id: true,
   productId: true,
@@ -87,6 +91,14 @@ export class ProductVariantRepository implements IProductVariantRepository {
     });
   }
 
+  async findByCjCatalogItemId(cjCatalogItemId: number): Promise<ProductVariant | null> {
+    const row = await prisma.productVariant.findFirst({
+      where: { cjCatalogItemId, deletedAt: null },
+      select: variantSelect,
+    });
+    return row ? new ProductVariant(row) : null;
+  }
+
   async create(data: ProductVariantCreateData): Promise<ProductVariant> {
     const existing = await this.findBySku(data.sku);
     if (existing) throw new VariantSkuConflictError();
@@ -104,6 +116,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
         supplierCost: data.supplierCost ?? null,
         stockPolicy: data.stockPolicy,
         status: data.status ?? 'Active',
+        cjCatalogItemId: data.cjCatalogItemId ?? null,
       },
       select: variantSelect,
     });

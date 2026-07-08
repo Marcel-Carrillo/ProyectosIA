@@ -1237,6 +1237,11 @@ paths:
           name: syncStatus
           schema:
             $ref: '#/components/schemas/CjSyncStatus'
+        - in: query
+          name: promotionState
+          description: Filter by derived promotion status (see CjCatalogItem schema).
+          schema:
+            $ref: '#/components/schemas/CjPromotionState'
       responses:
         '200':
           description: Staged CJ Dropshipping catalog retrieved successfully
@@ -1245,7 +1250,154 @@ paths:
               schema:
                 $ref: '#/components/schemas/CjCatalogListResponse'
         '400':
-          description: Invalid syncStatus filter (VALIDATION_ERROR)
+          description: Invalid syncStatus/promotionState filter (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/catalog/promote:
+    post:
+      summary: Promote staged CJ Dropshipping catalog items to real products (admin)
+      description: >
+        Promotes one or many staged `CjCatalogItem` records into real `Product`/`ProductVariant`
+        records. Items sharing the same CJ product id (`pid`) are grouped into a single `Product`
+        with one `ProductVariant` per item. Transactional and idempotent — re-promoting an
+        already-linked item resolves to the existing variant instead of duplicating it (returns
+        `200` when every requested item was already promoted, `201` when at least one new record
+        was created). Rate-limited. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CjPromoteRequest'
+      responses:
+        '200':
+          description: All requested items were already promoted (idempotent, no new records created)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjPromoteResponse'
+        '201':
+          description: At least one Product/ProductVariant was newly created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjPromoteResponse'
+        '422':
+          description: >
+            Validation failure — missing/invalid categoryId (CJ_PROMOTION_CATEGORY_REQUIRED),
+            unresolved price (CJ_PROMOTION_PRICE_REQUIRED), a Failed-sync item
+            (CJ_CATALOG_ITEM_SYNC_FAILED_CANNOT_PROMOTE), or one or more invalid items in a bulk
+            request (CJ_PROMOTION_VALIDATION_FAILED, includes a per-item `itemErrors` list).
+            No records are persisted when any item is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjPromotionValidationErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/catalog/{cjCatalogItemId}/activate:
+    post:
+      summary: Activate a promoted CJ catalog item's storefront visibility (admin)
+      description: >
+        Sets the linked `ProductVariant.status` and its parent `Product.status` to `Active`,
+        making the promoted product visible on `/api/public/products`. Never exposed on
+        `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: path
+          name: cjCatalogItemId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: CJ catalog item activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjActionResponse'
+        '422':
+          description: Item has not been promoted to a product variant (CJ_CATALOG_ITEM_NOT_PROMOTED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/catalog/{cjCatalogItemId}/deactivate:
+    post:
+      summary: Deactivate a promoted CJ catalog item's storefront visibility (admin)
+      description: >
+        Sets the linked `ProductVariant.status` to `Inactive`, hiding it from
+        `/api/public/products`. The parent `Product`'s own status is left untouched, and
+        `ProductVariant.cjCatalogItemId` is never cleared — the item can be reactivated later
+        using the same link. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: path
+          name: cjCatalogItemId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: CJ catalog item deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjActionResponse'
+        '422':
+          description: Item has not been promoted to a product variant (CJ_CATALOG_ITEM_NOT_PROMOTED)
           content:
             application/json:
               schema:
@@ -4575,6 +4727,23 @@ components:
           type: string
           format: date-time
           nullable: true
+        promotionState:
+          $ref: '#/components/schemas/CjPromotionState'
+        productId:
+          type: integer
+          nullable: true
+          description: Set once this item has been promoted; null when promotionState is NotPromoted.
+        productVariantId:
+          type: integer
+          nullable: true
+          description: Set once this item has been promoted; null when promotionState is NotPromoted.
+
+    CjPromotionState:
+      type: string
+      enum: [NotPromoted, Active, Inactive]
+      description: >
+        Derived (not stored) from whether a ProductVariant links back to this item and whether
+        both that variant and its parent Product are Active. See CjCatalogItem in docs/data-model.md.
 
     CjCatalogListResult:
       type: object
@@ -4605,6 +4774,142 @@ components:
         message:
           type: string
           example: Staged CJ Dropshipping catalog retrieved successfully
+
+    CjPromoteItemInput:
+      type: object
+      required: [cjCatalogItemId]
+      properties:
+        cjCatalogItemId:
+          type: integer
+          minimum: 1
+        publicPrice:
+          type: number
+          minimum: 0
+          description: Explicit price; if omitted, falls back to supplierCost * CJ_DEFAULT_MARKUP_MULTIPLIER.
+        compareAtPrice:
+          type: number
+          minimum: 0
+
+    CjPromoteRequest:
+      type: object
+      required: [items, categoryId]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CjPromoteItemInput'
+        categoryId:
+          type: integer
+          minimum: 1
+        activate:
+          type: boolean
+          default: false
+          description: When true, the newly-created Product is set to Active instead of Draft.
+
+    CjPromotedVariantResult:
+      type: object
+      properties:
+        cjCatalogItemId:
+          type: integer
+        productId:
+          type: integer
+        productVariantId:
+          type: integer
+        sku:
+          type: string
+          example: CJ-1584907074402791424
+        wasAlreadyPromoted:
+          type: boolean
+          description: True when this item was already linked and no new record was created (idempotent path).
+
+    CjPromoteResult:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              variantIds:
+                type: array
+                items:
+                  type: integer
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/CjPromotedVariantResult'
+        createdAny:
+          type: boolean
+          description: False when every requested item was already promoted (controller returns 200 instead of 201).
+
+    CjPromoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CjPromoteResult'
+        message:
+          type: string
+          example: CJ catalog items promoted successfully
+
+    CjActionResult:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productVariantId:
+          type: integer
+
+    CjActionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CjActionResult'
+        message:
+          type: string
+          example: CJ catalog item activated
+
+    CjPromotionItemError:
+      type: object
+      properties:
+        cjCatalogItemId:
+          type: integer
+        code:
+          type: string
+          example: CJ_PROMOTION_PRICE_REQUIRED
+        message:
+          type: string
+
+    CjPromotionValidationErrorResponse:
+      type: object
+      description: >
+        The only error response in this API with a payload field beyond message/code — carries
+        one entry per invalid item in a bulk promote request.
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: One or more items failed promotion validation
+            code:
+              type: string
+              example: CJ_PROMOTION_VALIDATION_FAILED
+            itemErrors:
+              type: array
+              items:
+                $ref: '#/components/schemas/CjPromotionItemError'
 
     CjFreightOption:
       type: object

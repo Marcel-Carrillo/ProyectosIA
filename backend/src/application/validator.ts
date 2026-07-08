@@ -1114,3 +1114,155 @@ export class CjOrderNotPushedError extends Error {
     Object.setPrototypeOf(this, CjOrderNotPushedError.prototype);
   }
 }
+
+export class CjCatalogItemNotPromotedError extends Error {
+  readonly code = 'CJ_CATALOG_ITEM_NOT_PROMOTED' as const;
+  readonly status = 422;
+
+  constructor(message = 'CJ catalog item has not been promoted to a product variant') {
+    super(message);
+    this.name = 'CjCatalogItemNotPromotedError';
+    Object.setPrototypeOf(this, CjCatalogItemNotPromotedError.prototype);
+  }
+}
+
+export class CjPromotionPriceRequiredError extends Error {
+  readonly code = 'CJ_PROMOTION_PRICE_REQUIRED' as const;
+  readonly status = 422;
+
+  constructor(message = 'publicPrice is required: no explicit price given and CJ_DEFAULT_MARKUP_MULTIPLIER is not configured') {
+    super(message);
+    this.name = 'CjPromotionPriceRequiredError';
+    Object.setPrototypeOf(this, CjPromotionPriceRequiredError.prototype);
+  }
+}
+
+export class CjPromotionCategoryRequiredError extends Error {
+  readonly code = 'CJ_PROMOTION_CATEGORY_REQUIRED' as const;
+  readonly status = 422;
+
+  constructor(message = 'A valid categoryId is required to promote CJ catalog items') {
+    super(message);
+    this.name = 'CjPromotionCategoryRequiredError';
+    Object.setPrototypeOf(this, CjPromotionCategoryRequiredError.prototype);
+  }
+}
+
+export class CjCatalogItemSyncFailedCannotPromoteError extends Error {
+  readonly code = 'CJ_CATALOG_ITEM_SYNC_FAILED_CANNOT_PROMOTE' as const;
+  readonly status = 422;
+
+  constructor(message = 'CJ catalog item failed to sync and cannot be promoted') {
+    super(message);
+    this.name = 'CjCatalogItemSyncFailedCannotPromoteError';
+    Object.setPrototypeOf(this, CjCatalogItemSyncFailedCannotPromoteError.prototype);
+  }
+}
+
+export class CjCatalogItemNotFoundError extends Error {
+  readonly code = 'CJ_CATALOG_ITEM_NOT_FOUND' as const;
+  readonly status = 422;
+
+  constructor(message = 'CJ catalog item not found for this supplier') {
+    super(message);
+    this.name = 'CjCatalogItemNotFoundError';
+    Object.setPrototypeOf(this, CjCatalogItemNotFoundError.prototype);
+  }
+}
+
+export interface CjPromotionItemError {
+  cjCatalogItemId: number;
+  code: string;
+  message: string;
+}
+
+// Aggregate error carrying a per-item error list. Bulk promotion pre-validates
+// every requested item before opening a transaction (design.md Risk mitigation);
+// when any item fails, this single error reports all of them at once instead of
+// only the first, so the admin can fix every problem in one round trip.
+export class CjPromotionValidationError extends Error {
+  readonly code = 'CJ_PROMOTION_VALIDATION_FAILED' as const;
+  readonly status = 422;
+  readonly itemErrors: CjPromotionItemError[];
+
+  constructor(itemErrors: CjPromotionItemError[]) {
+    super('One or more items failed promotion validation');
+    this.name = 'CjPromotionValidationError';
+    this.itemErrors = itemErrors;
+    Object.setPrototypeOf(this, CjPromotionValidationError.prototype);
+  }
+}
+
+export interface CjPromotionItemInput {
+  cjCatalogItemId: number;
+  publicPrice?: number;
+  compareAtPrice?: number;
+}
+
+export interface CjPromotionRequestInput {
+  items: CjPromotionItemInput[];
+  categoryId?: number;
+  activate?: boolean;
+}
+
+// categoryId is intentionally NOT required here: a missing or non-existent
+// category both surface as CjPromotionCategoryRequiredError (422) thrown by
+// the service layer after a DB lookup, per the capability spec's literal
+// wording ("a missing or invalid categoryId" -> the same error code). This
+// validator only rejects structurally malformed input (400 ValidationError).
+export function validateCjPromotionData(data: Record<string, unknown>): CjPromotionRequestInput {
+  const rawItems = data['items'];
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    throw new ValidationError("Field 'items' is required and must be a non-empty array");
+  }
+
+  const items: CjPromotionItemInput[] = rawItems.map((rawItem, index) => {
+    if (typeof rawItem !== 'object' || rawItem === null) {
+      throw new ValidationError(`Item at index ${index} must be an object`);
+    }
+    const item = rawItem as Record<string, unknown>;
+    const cjCatalogItemId = item['cjCatalogItemId'];
+    if (typeof cjCatalogItemId !== 'number' || !Number.isInteger(cjCatalogItemId) || cjCatalogItemId <= 0) {
+      throw new ValidationError(`Item at index ${index}: 'cjCatalogItemId' must be a positive integer`);
+    }
+
+    let publicPrice: number | undefined;
+    if (item['publicPrice'] !== undefined) {
+      const value = item['publicPrice'];
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        throw new ValidationError(`Item at index ${index}: 'publicPrice' must be a positive number`);
+      }
+      publicPrice = value;
+    }
+
+    let compareAtPrice: number | undefined;
+    if (item['compareAtPrice'] !== undefined) {
+      const value = item['compareAtPrice'];
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        throw new ValidationError(`Item at index ${index}: 'compareAtPrice' must be a positive number`);
+      }
+      compareAtPrice = value;
+    }
+
+    return { cjCatalogItemId, publicPrice, compareAtPrice };
+  });
+
+  const rawCategoryId = data['categoryId'];
+  let categoryId: number | undefined;
+  if (rawCategoryId !== undefined && rawCategoryId !== null) {
+    if (typeof rawCategoryId !== 'number' || !Number.isInteger(rawCategoryId) || rawCategoryId <= 0) {
+      throw new ValidationError("Field 'categoryId' must be a positive integer when provided");
+    }
+    categoryId = rawCategoryId;
+  }
+
+  let activate: boolean | undefined;
+  if (data['activate'] !== undefined) {
+    if (typeof data['activate'] !== 'boolean') {
+      throw new ValidationError("Field 'activate' must be a boolean when provided");
+    }
+    activate = data['activate'];
+  }
+
+  return { items, categoryId, activate };
+}

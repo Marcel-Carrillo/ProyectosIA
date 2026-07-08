@@ -19,14 +19,28 @@ export interface CjCatalogItemUpsertInput {
   lastSyncedAt: Date;
 }
 
+export type CjPromotionState = 'NotPromoted' | 'Active' | 'Inactive';
+
 export interface CjCatalogItemListFilters {
   page?: number;
   pageSize?: number;
   syncStatus?: string;
+  promotionState?: CjPromotionState;
+}
+
+// One staged catalog item plus its derived promotion status. promotionState is
+// never persisted on CjCatalogItem itself — it's computed from whether a
+// ProductVariant links back to this row via cjCatalogItemId (see
+// infrastructure/repositories/cjCatalogItemRepository.ts).
+export interface CjCatalogItemListItem {
+  item: CjCatalogItem;
+  promotionState: CjPromotionState;
+  productId: number | null;
+  productVariantId: number | null;
 }
 
 export interface CjCatalogItemListResult {
-  items: CjCatalogItem[];
+  items: CjCatalogItemListItem[];
   total: number;
   page: number;
   pageSize: number;
@@ -42,4 +56,6 @@ export interface ICjCatalogItemRepository {
     filters?: CjCatalogItemListFilters
   ): Promise<CjCatalogItemListResult>;
   findByExternalRef(supplierIntegrationId: number, externalRef: string): Promise<CjCatalogItem | null>;
+  findById(id: number): Promise<CjCatalogItem | null>;
+  findManyByIds(ids: number[]): Promise<CjCatalogItem[]>;
 }

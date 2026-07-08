@@ -169,6 +169,7 @@ Examples:
 * `supplierId`: Foreign key referencing the Supplier (optional) — **INTERNAL ONLY, never returned by API**
 * `supplierReference`: Supplier product reference (optional, max 150 characters) — **INTERNAL ONLY, never returned by API**
 * `supplierCost`: Internal supplier cost — **INTERNAL ONLY, never returned by API**
+* `cjCatalogItemId`: Foreign key referencing the `CjCatalogItem` this variant was promoted from (optional, unique) — **INTERNAL ONLY, never returned by API**. Nullable+unique; `ON DELETE SET NULL` (a promoted variant survives even if its source staging row is ever deleted, since `CjCatalogItem` rows are disposable/re-syncable). Never cleared once set, including on deactivation — it is the permanent link back to the CJ origin that allows reactivating or re-syncing cost/stock later.
 * `stockPolicy`: Stock policy (valid values: SupplierManaged, InternalStock, Hybrid)
 * `status`: Variant status (valid values: Active, Inactive, OutOfStock, Archived)
 * `deletedAt`: Soft-delete timestamp — null means active, non-null means deleted
@@ -188,12 +189,13 @@ Examples:
 
 **Supplier Field Protection (CRITICAL):**
 
-The fields `supplierId`, `supplierReference`, and `supplierCost` are stored in the database but **must never appear in any API response**. This is enforced at the Prisma repository layer via a `variantSelect` constant that explicitly omits these fields from all read operations. Automated tests assert their absence on every variant query and controller response.
+The fields `supplierId`, `supplierReference`, `supplierCost`, and `cjCatalogItemId` are stored in the database but **must never appear in any API response**. This is enforced at the Prisma repository layer via a `variantSelect` constant that explicitly omits these fields from all read operations. Automated tests assert their absence on every variant query and controller response.
 
 **Relationships:**
 
 * `product`: Many-to-one relationship with Product model
 * `supplier`: Many-to-one relationship with Supplier model
+* `cjCatalogItem`: One-to-one relationship with CjCatalogItem model (the origin staging record, if this variant was promoted from CJ)
 * `customerOrderItems`: One-to-many relationship with CustomerOrderItem model
 * `supplierOrderItems`: One-to-many relationship with SupplierOrderItem model
 
@@ -796,7 +798,17 @@ Represents a single supplier's connection to an external dropshipping provider (
 
 ### 18. CjCatalogItem
 
-Staging record for a product/variant pulled from a supplier's CJ Dropshipping catalog. Strictly separate from the live public catalog (`Product`/`ProductVariant`) — an administrator must explicitly promote staged data through the existing admin product/variant flow; nothing here is auto-published.
+Staging record for a product/variant pulled from a supplier's CJ Dropshipping catalog. Strictly separate from the live public catalog (`Product`/`ProductVariant`) — an administrator must explicitly promote staged data via `POST /api/admin/suppliers/:supplierId/cj/catalog/promote` (see the `cj-catalog-promotion` capability); nothing here is auto-published. The public catalog is expected to be populated exclusively through this promotion flow going forward, not through manual seeding.
+
+**Promotion status (`promotionState`) — derived, not stored:**
+
+Admin list responses (`GET .../cj/catalog`) include a derived `promotionState` (`NotPromoted` | `Active` | `Inactive`) computed at read time from whether a `ProductVariant` links back to this row (`ProductVariant.cjCatalogItemId`) and, if so, **both** that variant's `status` and its parent `Product`'s `status`:
+
+* No linked variant → `NotPromoted`.
+* Linked variant `status = Active` **and** parent `Product` `status = Active` → `Active` (genuinely visible on the storefront).
+* Linked variant exists but either the variant or its parent `Product` is not `Active` → `Inactive`.
+
+This is intentionally never persisted as a column on `CjCatalogItem` — it stays a pure, disposable mirror of the CJ API, and the derived value is always consistent with the actual `Product`/`ProductVariant` state. A newly-promoted `Product` defaults to `Draft` unless the admin passes `activate: true`, while its `ProductVariant` is always created `Active` (matching this codebase's existing pattern of Draft products with Active variants) — so `promotionState` **must** check both, not the variant alone, or a Draft (not-yet-published) promotion would be misreported as `Active`.
 
 **Fields:**
 
@@ -830,6 +842,7 @@ Staging record for a product/variant pulled from a supplier's CJ Dropshipping ca
 **Relationships:**
 
 * `supplierIntegration`: Many-to-one relationship with SupplierIntegration model
+* `promotedVariant`: One-to-one relationship with ProductVariant model (inverse of `ProductVariant.cjCatalogItemId`) — null until an admin promotes this item
 
 ## Entity Relationship Diagram
 
@@ -872,6 +885,7 @@ erDiagram
         Int supplierId FK
         String supplierReference
         Decimal supplierCost
+        Int cjCatalogItemId FK
         String stockPolicy
         String status
         DateTime deletedAt
@@ -1142,6 +1156,7 @@ erDiagram
 
     Supplier ||--o| SupplierIntegration : "connects_via"
     SupplierIntegration ||--o{ CjCatalogItem : "stages"
+    CjCatalogItem ||--o| ProductVariant : "promoted_to"
 ```
 
 ## Key Design Principles

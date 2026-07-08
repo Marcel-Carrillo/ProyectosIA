@@ -103,6 +103,8 @@ describe('CjOrderPushService', () => {
       upsertMany: jest.fn(),
       findBySupplierIntegrationId: jest.fn(),
       findByExternalRef: jest.fn(),
+      findById: jest.fn(),
+      findManyByIds: jest.fn(),
     };
     cjClient = makeMockCjClient();
     service = new CjOrderPushService(supplierOrderRepo, integrationRepo, catalogRepo, cjClient);

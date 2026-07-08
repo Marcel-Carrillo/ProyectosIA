@@ -26,6 +26,12 @@ import {
   CjItemNotMappedError,
   CjOrderAlreadyPushedError,
   CjOrderNotPushedError,
+  CjCatalogItemNotPromotedError,
+  CjPromotionPriceRequiredError,
+  CjPromotionCategoryRequiredError,
+  CjCatalogItemSyncFailedCannotPromoteError,
+  CjCatalogItemNotFoundError,
+  CjPromotionValidationError,
 } from '../application/validator';
 import {
   CustomerNotFoundError,
@@ -118,6 +124,18 @@ export function globalErrorHandler(
   let code = 'INTERNAL_ERROR';
   let message = 'Internal server error';
 
+  // CjPromotionValidationError carries a per-item error list beyond
+  // message/code — the only error in this handler that needs an extra
+  // response field, so it returns early instead of falling into the shared
+  // `res.status(...).json(...)` at the bottom.
+  if (err instanceof CjPromotionValidationError) {
+    res.status(err.status).json({
+      success: false,
+      error: { message: err.message, code: err.code, itemErrors: err.itemErrors },
+    });
+    return;
+  }
+
   if (err instanceof ValidationError) {
     statusCode = 400;
     code = err.code;
@@ -149,6 +167,16 @@ export function globalErrorHandler(
   } else if (err instanceof CjOrderAlreadyPushedError) {
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof CjOrderNotPushedError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjCatalogItemNotPromotedError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjPromotionPriceRequiredError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjPromotionCategoryRequiredError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjCatalogItemSyncFailedCannotPromoteError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjCatalogItemNotFoundError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof CustomerNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
