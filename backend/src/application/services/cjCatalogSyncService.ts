@@ -3,6 +3,7 @@ import {
   ICjCatalogItemRepository,
   CjCatalogItemUpsertInput,
   CjCatalogItemListResult,
+  CjPromotionState,
 } from '../../domain/repositories/cjCatalogItemRepository';
 import { ICjClient } from '../../infrastructure/external/cjTypes';
 import { CjApiError } from '../../infrastructure/external/cjClient';
@@ -122,7 +123,15 @@ export class CjCatalogSyncService {
               size,
               color,
               supplierCost: variant.variantSellPrice.toFixed(2),
-              sellPrice: product.sellPrice != null ? product.sellPrice.toFixed(2) : null,
+              // CJ's real API does not reliably return sellPrice as a number
+              // (observed as a numeric string on some catalog entries despite
+              // the documented/typed contract) — coerce defensively rather
+              // than trusting the declared type, mirroring the
+              // Number.isFinite(variantSellPrice) guard above.
+              sellPrice:
+                product.sellPrice != null && Number.isFinite(Number(product.sellPrice))
+                  ? Number(product.sellPrice).toFixed(2)
+                  : null,
               stockQuantity,
               warehouseInventoryNum: product.warehouseInventoryNum ?? null,
               rawPayload: { product, variant },
@@ -169,7 +178,7 @@ export class CjCatalogSyncService {
 
   async listStagedCatalog(
     supplierId: number,
-    params: { page?: number; pageSize?: number; syncStatus?: string }
+    params: { page?: number; pageSize?: number; syncStatus?: string; promotionState?: CjPromotionState }
   ): Promise<CjCatalogItemListResult> {
     const integration = await this.integrationRepo.findBySupplierId(supplierId);
     if (!integration || !integration.id) throw new SupplierIntegrationNotFoundError();

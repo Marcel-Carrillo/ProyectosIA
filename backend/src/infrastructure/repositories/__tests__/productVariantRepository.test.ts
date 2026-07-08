@@ -55,3 +55,97 @@ describe('variantSelect - supplier fields absent from selectable fields', () => 
     expect(fieldNames).not.toContain('supplierCost');
   });
 });
+
+describe('ProductVariantRepository - findByCjCatalogItemId / create with cjCatalogItemId link', () => {
+  const mockFindFirst = jest.fn();
+  const mockCreate = jest.fn();
+
+  jest.mock('../../prismaClient', () => ({
+    prisma: {
+      productVariant: {
+        findFirst: (...args: unknown[]) => mockFindFirst(...args),
+        create: (...args: unknown[]) => mockCreate(...args),
+      },
+    },
+  }));
+
+  const dbRow = {
+    id: 1,
+    productId: 10,
+    sku: 'CJ-vid-1',
+    size: null,
+    color: null,
+    publicPrice: { toString: () => '29.99' },
+    compareAtPrice: null,
+    stockPolicy: 'SupplierManaged',
+    status: 'Active',
+    deletedAt: null,
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-01'),
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should_return_variant_when_findByCjCatalogItemId_finds_a_match', async () => {
+    mockFindFirst.mockResolvedValue(dbRow);
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    const result = await repo.findByCjCatalogItemId(42);
+
+    expect(result?.id).toBe(1);
+    expect(mockFindFirst).toHaveBeenCalledWith({
+      where: { cjCatalogItemId: 42, deletedAt: null },
+      select: expect.not.objectContaining({ cjCatalogItemId: true }),
+    });
+  });
+
+  it('should_return_null_when_findByCjCatalogItemId_finds_no_match', async () => {
+    mockFindFirst.mockResolvedValue(null);
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    const result = await repo.findByCjCatalogItemId(999);
+
+    expect(result).toBeNull();
+  });
+
+  it('should_persist_cjCatalogItemId_when_creating_a_variant_with_a_link', async () => {
+    mockFindFirst.mockResolvedValue(null); // findBySku pre-check inside create()
+    mockCreate.mockResolvedValue(dbRow);
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    await repo.create({
+      productId: 10,
+      sku: 'CJ-vid-1',
+      publicPrice: 29.99,
+      stockPolicy: 'SupplierManaged',
+      cjCatalogItemId: 42,
+    });
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ cjCatalogItemId: 42 }) })
+    );
+  });
+
+  it('should_default_cjCatalogItemId_to_null_when_not_provided_on_create', async () => {
+    mockFindFirst.mockResolvedValue(null);
+    mockCreate.mockResolvedValue(dbRow);
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    await repo.create({
+      productId: 10,
+      sku: 'SKU-002',
+      publicPrice: 29.99,
+      stockPolicy: 'SupplierManaged',
+    });
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ cjCatalogItemId: null }) })
+    );
+  });
+});

@@ -66,6 +66,8 @@ describe('CjCatalogSyncService', () => {
       upsertMany: jest.fn(),
       findBySupplierIntegrationId: jest.fn(),
       findByExternalRef: jest.fn(),
+      findById: jest.fn(),
+      findManyByIds: jest.fn(),
     };
     cjClient = makeMockCjClient();
     service = new CjCatalogSyncService(integrationRepo, catalogRepo, cjClient);
@@ -184,6 +186,29 @@ describe('CjCatalogSyncService', () => {
       integrationRepo.findBySupplierId.mockResolvedValue(null);
 
       await expect(service.syncCatalog(999)).rejects.toBeInstanceOf(SupplierIntegrationNotFoundError);
+    });
+
+    it('should_coerce_a_string_sellPrice_instead_of_failing_the_item', async () => {
+      // Regression: the real CJ API has been observed returning `sellPrice`
+      // as a numeric string on some catalog entries despite the documented
+      // `number` type — a naive `.toFixed()` call previously failed every
+      // single item in a live sync.
+      integrationRepo.findBySupplierId.mockResolvedValue(makeIntegration());
+      cjClient.fetchCatalog.mockResolvedValue(
+        singlePageListV2([{ id: 'p1', nameEn: 'Dress', sellPrice: '19.99' as unknown as number }])
+      );
+      cjClient.fetchVariants.mockResolvedValue([
+        { vid: 'v1', pid: 'p1', variantSku: 'SKU-1', variantSellPrice: 10 },
+      ]);
+      catalogRepo.upsertMany.mockResolvedValue({ upserted: 1 });
+
+      const result = await service.syncCatalog(10);
+
+      expect(result.itemsFailed).toBe(0);
+      expect(catalogRepo.upsertMany).toHaveBeenCalledWith(
+        1,
+        expect.arrayContaining([expect.objectContaining({ syncStatus: 'Synced', sellPrice: '19.99' })])
+      );
     });
   });
 

@@ -20,6 +20,11 @@ const VARIANT: Record<string, string> = {
   Archived: 'dark',
   // Supplier-only status
   Blocked: 'danger',
+  // CJ catalog item syncStatus
+  Synced: 'success',
+  Failed: 'danger',
+  // CJ catalog item promotionState-only value (Active/Inactive above are reused)
+  NotPromoted: 'secondary',
 };
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status, ...rest }) => (

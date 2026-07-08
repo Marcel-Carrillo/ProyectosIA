@@ -76,6 +76,8 @@ model ProductVariant {
   supplierCost      Decimal?  @db.Decimal(10, 2)
   stockPolicy       String    @default("SupplierManaged")
   status            String    @default("Active")
+  cjCatalogItemId   Int?      @unique
+  cjCatalogItem     CjCatalogItem? @relation(fields: [cjCatalogItemId], references: [id])
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -509,6 +511,7 @@ model CjCatalogItem {
   lastSyncedAt          DateTime?
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
+  promotedVariant       ProductVariant?
 
   @@unique([supplierIntegrationId, externalRef])
   @@index([supplierIntegrationId])

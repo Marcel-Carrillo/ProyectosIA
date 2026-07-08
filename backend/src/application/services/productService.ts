@@ -141,7 +141,10 @@ export class ProductService {
       .replace(/^-|-$/g, '');
   }
 
-  private async resolveUniqueSlug(name: string): Promise<string> {
+  // Public: reused by CjCatalogPromotionService when creating a new Product
+  // from a promoted CJ catalog item group, to keep slug-generation logic
+  // in one place rather than duplicating it.
+  async resolveUniqueSlug(name: string): Promise<string> {
     const base = this.generateSlug(name);
     let slug = base;
     for (let attempt = 2; attempt <= 6; attempt++) {
