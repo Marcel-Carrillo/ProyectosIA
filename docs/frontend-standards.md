@@ -398,6 +398,16 @@ refundService.ts
 * **Test IDs**: `order-search`, `order-date-from`, `order-date-to`, `order-link-{id}`, `order-status-timeline`, `order-status-control`, `btn-save-status`.
 * **Testing**: RTL page tests under `frontend/src/pages/__tests__/CustomerOrdersPage.test.tsx` and `CustomerOrderDetailPage.test.tsx`; Cypress `frontend/cypress/e2e/customer-orders.cy.ts`.
 
+#### CJ connection admin panel patterns
+
+* **Service**: `frontend/src/services/cjConnectionService.ts` calls `/api/admin/suppliers/:supplierId/cj/{connection,connection/verify,sync}` — a sibling to `cjCatalogService.ts` (catalog listing/promotion), not an extension of it, since the two resources (`SupplierIntegration` vs `CjCatalogItem`) have distinct error-code vocabularies. Exports `mapCjConnectionError`/`extractCjConnectionErrorMessage`/`extractCjConnectionErrorCode`.
+* **429 rate-limit handling**: `express-rate-limit`'s default response on `POST .../cj/connection/verify` is a **plain-text body with no error code** (not `{ error: { code } }`), unlike every other admin error response in this codebase. `mapCjConnectionError(code, httpStatus)` takes an explicit `httpStatus` and checks `httpStatus === 429` *before* the code switch, since `code` will be empty on a 429.
+* **Types**: `frontend/src/types/cjConnection.ts` — `SupplierIntegrationStatus = 'Disconnected' | 'Connected' | 'Error'`, `CjConnection`, `CjConfigureConnectionRequest` (`externalAccountRef` is the *only* field — never an API-key/credential field; the CJ Dropshipping API key is server-side config and must never appear in a request body or the UI), `CjVerifyResult`, `CjSyncResult`.
+* **Components**: `CjConnectionPanel` (status display + Verify/Sync actions) and `CjConnectionModal` (configure/edit `externalAccountRef` only) under `frontend/src/components/admin/`, both rendered from `CjCatalogPage`.
+* **Gating rule**: on `CjCatalogPage`, `GET .../cj/connection` returning `404 CJ_CONNECTION_NOT_FOUND` renders only the panel's "not configured" state (with a "Configure connection" CTA) — the existing catalog list/filters/promote UI is not rendered and `listCatalog` is never called in this state. Once any connection exists (any `status`, including `Error`), the catalog list renders normally below the panel; only the panel's own "Sync catalog" action is additionally gated on `status === 'Connected'`.
+* **No auto-verify, no polling**: "Verify" and "Sync" are explicit user-triggered actions only, each with a disabled/loading state while in flight — `verify` mutates persisted `status` as a side effect and is rate-limited, so it must never be called automatically or in a retry loop.
+* **Testing**: `frontend/src/services/__tests__/cjConnectionService.test.ts`, `frontend/src/components/admin/__tests__/{CjConnectionPanel,CjConnectionModal}.test.tsx`, extended `frontend/src/pages/__tests__/CjCatalogPage.test.tsx` (not-configured gating, configure/verify/sync success and failure paths, 429 handling, sync-disabled-unless-Connected).
+
 ## UI/UX Standards
 
 ### Bootstrap Integration
