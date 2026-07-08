@@ -104,8 +104,8 @@
 
 - [x] 13.1 Loaded and applied `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
 - [x] 13.2 Verified all tasks above (1–12) are `[x]`; all 3 reports exist under `openspec/changes/cj-catalog-promotion/reports/` (steps 9, 10, 11) plus the E2E screenshot.
-- [ ] 13.3 Stage all relevant files (Prisma schema/migration, domain/application/infrastructure/presentation code, frontend code, tests, docs, OpenSpec artifacts) — exclude `.env`, `node_modules/`, `dist/`, `coverage/`. Double-check no `.env` file is staged.
-- [ ] 13.4 Create commit with Conventional Commit message (e.g., `feat(suppliers): add CJ catalog promotion and storefront activation toggle`), including OpenSpec change name and test verification status.
-- [ ] 13.5 Push branch to remote: `git push -u origin feature/cj-catalog-promotion`.
-- [ ] 13.6 Create Pull Request with `gh pr create --base develop --title "..." --body "..."`, including summary, OpenSpec change name, verification status (unit/curl/E2E), and any open questions from `design.md` as known limitations.
-- [ ] 13.7 Report the PR URL in chat.
+- [x] 13.3 Staged all relevant files; confirmed no `.env`/`.env.docker` staged (both correctly gitignored).
+- [x] 13.4 Created commit `46ab753` with Conventional Commit message, OpenSpec change name, and test verification status.
+- [x] 13.5 Pushed branch to remote: `git push -u origin feature/cj-catalog-promotion`.
+- [x] 13.6 Created Pull Request #81 (`gh pr create --base develop`) with summary, OpenSpec change name, verification status, and known limitations.
+- [x] 13.7 Reported the PR URL in chat: https://github.com/Marcel-Carrillo/ProyectosIA/pull/81
