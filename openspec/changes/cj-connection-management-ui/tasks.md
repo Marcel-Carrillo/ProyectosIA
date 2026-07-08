@@ -89,7 +89,7 @@
 - [x] 13.1 Loaded and applied `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
 - [x] 13.2 Verified all tasks above (1–12) are `[x]`; all report files exist under `openspec/changes/cj-connection-management-ui/reports/` (steps 9, 10, 11) plus the E2E screenshot.
 - [x] 13.3 Staged all relevant files; confirmed no `.env`/`.env.docker` staged.
-- [ ] 13.4 Created commit with Conventional Commit message, OpenSpec change name, and test verification status.
-- [ ] 13.5 Pushed branch to remote: `git push -u origin feature/cj-connection-management-ui`.
-- [ ] 13.6 Created Pull Request (`gh pr create --base develop`) with summary, OpenSpec change name, verification status, and known limitations.
-- [ ] 13.7 Reported the PR URL in chat.
+- [x] 13.4 Created commit with Conventional Commit message, OpenSpec change name, and test verification status.
+- [x] 13.5 Pushed branch to remote: `git push -u origin feature/cj-connection-management-ui`.
+- [x] 13.6 Created Pull Request (`gh pr create --base develop`) with summary, OpenSpec change name, verification status, and known limitations.
+- [x] 13.7 Reported the PR URL in chat.
