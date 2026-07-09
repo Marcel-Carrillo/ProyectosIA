@@ -468,6 +468,129 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/products/{id}/translations:
+    get:
+      summary: List translations for product (admin)
+      description: Returns all translation rows for the product (all locales).
+      tags:
+        - Admin — Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Translations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductTranslation'
+                  message: { type: string }
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/products/{id}/translations/{locale}:
+    put:
+      summary: Upsert product translation (admin)
+      description: >
+        Creates or updates the translation for the given locale.
+        Supported locales: `en`, `es`. Returns `TRANSLATION_LOCALE_INVALID` (HTTP 422) for unsupported locales.
+      tags:
+        - Admin — Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: locale
+          required: true
+          schema:
+            type: string
+            enum: [en, es]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 150
+                description:
+                  type: string
+                  maxLength: 2000
+                  nullable: true
+                source:
+                  type: string
+                  enum: [manual, import, machine]
+                  default: manual
+      responses:
+        '200':
+          description: Translation upserted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    $ref: '#/components/schemas/ProductTranslation'
+                  message: { type: string }
+        '404':
+          description: Product not found (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Invalid locale (TRANSLATION_LOCALE_INVALID) or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete product translation (admin)
+      description: Deletes the translation for the given locale. Returns 404 if the locale row does not exist.
+      tags:
+        - Admin — Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: locale
+          required: true
+          schema:
+            type: string
+            enum: [en, es]
+      responses:
+        '204':
+          description: Translation deleted
+        '404':
+          description: Product or translation not found (PRODUCT_NOT_FOUND / TRANSLATION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/admin/products/{id}/variants:
     get:
       summary: List variants for product (admin)
@@ -922,6 +1045,513 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/suppliers/{supplierId}/cj/connection:
+    post:
+      summary: Configure CJ Dropshipping connection (admin)
+      description: >
+        Creates or updates the CJ Dropshipping connection for a supplier. Only accepts
+        `externalAccountRef` — the CJ Dropshipping API key is never a request field; it is
+        resolved from server-side environment/SSM configuration and never returned
+        by any endpoint. Returns 201 on first creation, 200 on subsequent updates.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigureCjConnectionRequest'
+      responses:
+        '200':
+          description: CJ Dropshipping connection updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierIntegrationResponse'
+        '201':
+          description: CJ Dropshipping connection created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierIntegrationResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier not found (SUPPLIER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: Get CJ Dropshipping connection status (admin)
+      description: >
+        Returns the CJ Dropshipping connection status for a supplier. Never includes the
+        CJ Dropshipping API key or any other credential material.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: CJ Dropshipping connection retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierIntegrationResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/connection/verify:
+    post:
+      summary: Verify CJ Dropshipping connection (admin)
+      description: >
+        Performs a minimal authenticated call against the CJ Dropshipping API to check
+        connectivity. Always returns 200 — health outcome is reported in the body
+        as `{ healthy, reason? }`. On success sets connection `status=Connected`;
+        on failure sets `status=Error`. `reason` is a fixed, non-sensitive string
+        and never echoes upstream credentials or raw error text.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: CJ Dropshipping connection verification completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjVerifyResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/sync:
+    post:
+      summary: Trigger CJ Dropshipping catalog/inventory sync (admin)
+      description: >
+        Pulls the supplier's CJ Dropshipping catalog (products, variants, cost, stock) and
+        upserts it into internal staging records (`CjCatalogItem`), keyed by
+        external reference (`vid`). Does NOT create, update, or delete any `Product` or
+        `ProductVariant`, and does NOT auto-publish to the public catalog. Requires
+        the connection to have `status=Connected`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: CJ Dropshipping catalog sync completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjSyncResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Connection is not Connected yet (CJ_CONNECTION_NOT_READY)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/catalog:
+    get:
+      summary: List staged CJ Dropshipping catalog items (admin)
+      description: >
+        Returns paginated staged CJ Dropshipping catalog items for review before any
+        promotion to the live catalog. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          description: Number of items per page. Clamped to a maximum of 100.
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - in: query
+          name: syncStatus
+          schema:
+            $ref: '#/components/schemas/CjSyncStatus'
+        - in: query
+          name: promotionState
+          description: Filter by derived promotion status (see CjCatalogItem schema).
+          schema:
+            $ref: '#/components/schemas/CjPromotionState'
+      responses:
+        '200':
+          description: Staged CJ Dropshipping catalog retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjCatalogListResponse'
+        '400':
+          description: Invalid syncStatus/promotionState filter (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/catalog/promote:
+    post:
+      summary: Promote staged CJ Dropshipping catalog items to real products (admin)
+      description: >
+        Promotes one or many staged `CjCatalogItem` records into real `Product`/`ProductVariant`
+        records. Items sharing the same CJ product id (`pid`) are grouped into a single `Product`
+        with one `ProductVariant` per item. Transactional and idempotent — re-promoting an
+        already-linked item resolves to the existing variant instead of duplicating it (returns
+        `200` when every requested item was already promoted, `201` when at least one new record
+        was created). Rate-limited. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CjPromoteRequest'
+      responses:
+        '200':
+          description: All requested items were already promoted (idempotent, no new records created)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjPromoteResponse'
+        '201':
+          description: At least one Product/ProductVariant was newly created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjPromoteResponse'
+        '422':
+          description: >
+            Validation failure — missing/invalid categoryId (CJ_PROMOTION_CATEGORY_REQUIRED),
+            unresolved price (CJ_PROMOTION_PRICE_REQUIRED), a Failed-sync item
+            (CJ_CATALOG_ITEM_SYNC_FAILED_CANNOT_PROMOTE), or one or more invalid items in a bulk
+            request (CJ_PROMOTION_VALIDATION_FAILED, includes a per-item `itemErrors` list).
+            No records are persisted when any item is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjPromotionValidationErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/catalog/{cjCatalogItemId}/activate:
+    post:
+      summary: Activate a promoted CJ catalog item's storefront visibility (admin)
+      description: >
+        Sets the linked `ProductVariant.status` and its parent `Product.status` to `Active`,
+        making the promoted product visible on `/api/public/products`. Never exposed on
+        `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: path
+          name: cjCatalogItemId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: CJ catalog item activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjActionResponse'
+        '422':
+          description: Item has not been promoted to a product variant (CJ_CATALOG_ITEM_NOT_PROMOTED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/catalog/{cjCatalogItemId}/deactivate:
+    post:
+      summary: Deactivate a promoted CJ catalog item's storefront visibility (admin)
+      description: >
+        Sets the linked `ProductVariant.status` to `Inactive`, hiding it from
+        `/api/public/products`. The parent `Product`'s own status is left untouched, and
+        `ProductVariant.cjCatalogItemId` is never cleared — the item can be reactivated later
+        using the same link. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: path
+          name: cjCatalogItemId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: CJ catalog item deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjActionResponse'
+        '422':
+          description: Item has not been promoted to a product variant (CJ_CATALOG_ITEM_NOT_PROMOTED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/cj/freight-quote:
+    post:
+      summary: Quote CJ Dropshipping freight for a supplier order (admin)
+      description: >
+        Calls CJ Dropshipping's freight calculation using the supplier order's shipping
+        destination and line items mapped to staged `CjCatalogItem` variants (`vid`).
+        Returns available logistics options without creating an order. Never exposed on
+        `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: CJ Dropshipping freight quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjFreightQuoteResponse'
+        '404':
+          description: Supplier order not found (SUPPLIER_ORDER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Item lacks staged CJ mapping (CJ_ITEM_NOT_MAPPED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/cj/push:
+    post:
+      summary: Push a supplier order to CJ Dropshipping (admin, sandbox)
+      description: >
+        Creates a CJ Dropshipping order via the provider API using the chosen
+        `logisticName` from a prior freight quote. The server always forces
+        `isSandbox: 1` in this increment (gated by `CJ_SANDBOX_ORDERS`); the request
+        body accepts only `logisticName` — an `isSandbox` field is rejected with
+        `VALIDATION_ERROR`. On success persists `externalProvider`, `externalOrderId`,
+        `sandbox`, and `pushedAt` on the supplier order. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CjOrderPushRequest'
+      responses:
+        '201':
+          description: Supplier order pushed to CJ Dropshipping successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '400':
+          description: Validation error (VALIDATION_ERROR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier order not found (SUPPLIER_ORDER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Order already pushed (CJ_ORDER_ALREADY_PUSHED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Item lacks staged CJ mapping (CJ_ITEM_NOT_MAPPED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/supplier-orders/{id}/cj/order:
+    get:
+      summary: Pull CJ Dropshipping order status for a pushed supplier order (admin)
+      description: >
+        Calls CJ Dropshipping's order detail endpoint using the supplier order's
+        `externalOrderId`, persists `externalOrderStatus`, `externalTrackingNumber`,
+        `externalTrackingProvider`, and `lastStatusSyncedAt`, and returns the updated
+        supplier order. Pull-based only — no inbound webhook in this increment. Never
+        exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: CJ Dropshipping order status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          description: Supplier order not found (SUPPLIER_ORDER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Order was never pushed (CJ_ORDER_NOT_PUSHED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/public/products:
     get:
       summary: List products (public storefront)
@@ -931,9 +1561,21 @@ paths:
         Responses are serialized with a customer-safe allow-list and NEVER include
         supplier data (`supplierId`, `supplierReference`, `supplierCost`),
         `deletedAt`, or internal notes. Only Active variants are returned.
+        The `name` and `description` fields are resolved using the locale fallback
+        chain: requested locale → `en` translation → `Product.name`.
+        Search always matches the English `Product.name` (localized search is deferred).
       tags:
         - Public — Catalog
       parameters:
+        - in: header
+          name: Accept-Language
+          description: >
+            BCP 47 language tag for product content locale (e.g. `es`, `en`, `es-ES`).
+            Region subtags are stripped (`es-ES` → `es`). Unknown locales default to `en`.
+            Supported values: `en`, `es`.
+          schema:
+            type: string
+            example: es
         - in: query
           name: categoryId
           schema:
@@ -967,6 +1609,12 @@ paths:
       responses:
         '200':
           description: Products retrieved successfully
+          headers:
+            Vary:
+              description: Instructs caches to vary on Accept-Language
+              schema:
+                type: string
+                example: Accept-Language
           content:
             application/json:
               schema:
@@ -981,17 +1629,66 @@ paths:
         Returns a single Active product with its Active variants and images
         ordered by sortOrder, serialized with the customer-safe allow-list.
         Non-existent or non-Active products return 404.
+        The `name` and `description` fields are resolved using the locale fallback
+        chain: requested locale → `en` translation → `Product.name`.
       tags:
         - Public — Catalog
       parameters:
         - $ref: '#/components/parameters/IdPathParam'
+        - in: header
+          name: Accept-Language
+          description: "BCP 47 language tag for product content locale. Supported values: `en`, `es`."
+          schema:
+            type: string
+            example: es
       responses:
         '200':
           description: Product retrieved successfully
+          headers:
+            Vary:
+              description: Instructs caches to vary on Accept-Language
+              schema:
+                type: string
+                example: Accept-Language
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicProductResponse'
+        '404':
+          description: Product not found or not Active (PRODUCT_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/public/products/{id}/reviews:
+    get:
+      summary: List approved product reviews (public storefront)
+      description: >
+        Returns paginated Approved reviews for an Active product, plus an
+        Approved-only rating summary and star distribution. Pending and Rejected
+        reviews are never included. Reviewer identity is exposed only as
+        `authorNameSnapshot` (no email, customerId, or moderation fields).
+      tags:
+        - Public — Catalog
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/PageParam'
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProductReviewsResponse'
         '404':
           description: Product not found or not Active (PRODUCT_NOT_FOUND)
           content:
@@ -1999,6 +2696,96 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/reviews:
+    get:
+      summary: List reviews for moderation (admin)
+      description: Paginated review queue. Requires admin authentication.
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ReviewStatus'
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/reviews/{id}/status:
+    patch:
+      summary: Moderate a review (admin)
+      description: Transition a Pending review to Approved or Rejected.
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReviewStatusRequest'
+      responses:
+        '200':
+          description: Review status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Review not found (REVIEW_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Invalid transition (REVIEW_TRANSITION_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/reviews/{id}:
+    delete:
+      summary: Delete a review (admin)
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Review deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Review not found (REVIEW_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/admin/return-requests:
     get:
       summary: Get all return requests (admin)
@@ -2304,9 +3091,11 @@ paths:
   /api/public/auth/register:
     post:
       summary: Register customer account
+      description: Creates a new customer account. On success, asynchronously generates a single-use 15% welcome coupon (WELCOME- prefix) and sends a branded welcome email. SMTP failure does not affect the 201 response.
       tags: [Customer Auth]
       responses:
         '201': { description: Account created with accessToken and refresh cookie }
+        '409': { description: Email already registered (ACCOUNT_EMAIL_CONFLICT) }
 
   /api/public/auth/login:
     post:
@@ -2314,6 +3103,60 @@ paths:
       tags: [Customer Auth]
       responses:
         '200': { description: Session or mfaRequired + mfaToken when 2FA enabled }
+
+  /api/public/auth/oauth/providers:
+    get:
+      summary: List configured OAuth providers
+      description: Returns which OAuth providers are enabled based on server env vars. Used by frontend to conditionally render social login buttons.
+      tags: [Customer Auth]
+      responses:
+        '200':
+          description: Provider availability map
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      google: { type: boolean }
+                      apple: { type: boolean }
+                      facebook: { type: boolean }
+
+  /api/public/auth/google:
+    get:
+      summary: Start Google OAuth flow
+      description: Redirects the browser to Google's consent screen. Sets an `oauth_state` CSRF cookie. Requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to be set; returns 501 otherwise.
+      tags: [Customer Auth]
+      responses:
+        '302': { description: Redirect to Google consent URL }
+        '501': { description: OAuth not configured (OAUTH_NOT_CONFIGURED) }
+
+  /api/public/auth/google/callback:
+    get:
+      summary: Google OAuth callback
+      description: |
+        Handles the redirect from Google. Validates the `oauth_state` CSRF cookie. On success:
+        - Finds or creates a CustomerAccount (links googleId to existing email-matched account).
+        - Issues an access token and refresh cookie.
+        - Triggers welcome coupon + email for new accounts.
+        - Redirects to `FRONTEND_URL/account?token=<accessToken>`.
+        The frontend reads `?token=` from the URL, stores it as the access token, and cleans the URL.
+      tags: [Customer Auth]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '302': { description: Redirect to frontend /account?token=<accessToken> with refresh cookie set }
+        '400': { description: Invalid OAuth state or missing code (OAUTH_VERIFICATION_FAILED) }
 
   /api/public/account/profile:
     get:
@@ -2331,6 +3174,156 @@ paths:
       security: [{ CustomerBearer: [] }]
       responses:
         '200': { description: Wishlist items }
+
+  /api/public/account/products/{productId}/review-eligibility:
+    get:
+      summary: Check review eligibility for a product
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Eligibility result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewEligibilityResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/public/account/reviews:
+    get:
+      summary: List own reviews
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Paginated list of the caller's reviews (includes status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnReviewListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Submit a product review
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitReviewRequest'
+      responses:
+        '201':
+          description: Review created with status Pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnReviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Purchase not verified (REVIEW_PURCHASE_NOT_VERIFIED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate review (REVIEW_ALREADY_EXISTS)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/public/account/orders/{id}/payment-session:
+    post:
+      summary: Resume payment on the caller's own PendingPayment order
+      description: >
+        Returns a Stripe clientSecret for the order, reusing the existing PaymentIntent
+        when it is still payable and its amount matches the order total, or reissuing a
+        new PaymentIntent otherwise. Only allowed while the order's own status is
+        PendingPayment and paymentStatus is Pending or Failed. Never returns
+        stripePaymentIntentId or stripeChargeId.
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payment session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      order: { $ref: '#/components/schemas/PublicOrder' }
+                      clientSecret: { type: string }
+                  message: { type: string }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Order not found or not owned by the caller (CUSTOMER_ORDER_NOT_FOUND)
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Order is not in a payable state (ORDER_NOT_PAYABLE)
+          $ref: '#/components/responses/Conflict'
+
+  /api/public/account/orders/{id}/cancel:
+    post:
+      summary: Cancel the caller's own PendingPayment order
+      description: >
+        Sets status=Cancelled, fulfillmentStatus=Cancelled, and cancelledAt on the
+        caller's own order, and cancels its associated Stripe PaymentIntent. Only
+        allowed while the order's own status is PendingPayment; idempotent if the
+        order is already Cancelled. The paymentStatus is re-verified immediately
+        before committing to guard against a concurrent payment_intent.succeeded webhook.
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Order cancelled (or already Cancelled — idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: '#/components/schemas/PublicOrder' }
+                  message: { type: string }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Order not found or not owned by the caller (CUSTOMER_ORDER_NOT_FOUND)
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Order is not in a cancellable state (ORDER_NOT_CANCELLABLE)
+          $ref: '#/components/responses/Conflict'
 
   /api/public/checkout/guest:
     post:
@@ -2480,20 +3473,6 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
 
-    Unauthorized:
-      description: Unauthorized — missing or invalid authentication token
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-
-    UnprocessableEntity:
-      description: Business rule violation — the request is well-formed but cannot be processed
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-
   schemas:
     HealthResponse:
       type: object
@@ -2612,6 +3591,224 @@ components:
         - Delivered
         - Failed
         - Returned
+
+    ReviewStatus:
+      type: string
+      enum: [Pending, Approved, Rejected]
+
+    PublicReview:
+      type: object
+      description: Customer-safe review DTO (no customerId, status, or moderation fields).
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        title: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+        authorNameSnapshot: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    OwnReview:
+      allOf:
+        - $ref: '#/components/schemas/PublicReview'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/ReviewStatus'
+
+    ReviewSummary:
+      type: object
+      properties:
+        averageRating: { type: number, nullable: true }
+        reviewCount: { type: integer }
+
+    RatingDistribution:
+      type: object
+      properties:
+        '1': { type: integer }
+        '2': { type: integer }
+        '3': { type: integer }
+        '4': { type: integer }
+        '5': { type: integer }
+
+    PublicProductReviewsResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublicReview'
+            total: { type: integer }
+            page: { type: integer }
+            pageSize: { type: integer }
+            summary:
+              $ref: '#/components/schemas/ReviewSummary'
+            distribution:
+              $ref: '#/components/schemas/RatingDistribution'
+
+    ReviewEligibilityResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            canReview: { type: boolean }
+            reason:
+              type: string
+              enum: [eligible, not_purchased, already_reviewed]
+
+    SubmitReviewRequest:
+      type: object
+      required: [productId, rating]
+      properties:
+        productId: { type: integer }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        title: { type: string, maxLength: 150 }
+        body: { type: string, maxLength: 2000 }
+
+    OwnReviewResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          $ref: '#/components/schemas/OwnReview'
+
+    OwnReviewListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OwnReview'
+            total: { type: integer }
+            page: { type: integer }
+            pageSize: { type: integer }
+
+    PublicOrderItem:
+      type: object
+      description: Customer-facing order line item. Never includes supplier fields or internal fulfillmentStatus.
+      properties:
+        id: { type: integer }
+        productVariantId: { type: integer }
+        productNameSnapshot: { type: string }
+        variantSnapshot: { type: object }
+        skuSnapshot: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: string }
+        totalPrice: { type: string }
+
+    PublicShipment:
+      type: object
+      description: >
+        Customer-safe shipment snapshot. Strict allow-list — never includes id,
+        customerOrderId, supplierOrderId, or supplierOrder.
+      properties:
+        status:
+          type: string
+          enum: [Pending, Shipped, InTransit, Delivered, Failed, Returned]
+        carrier: { type: string, nullable: true }
+        trackingNumber: { type: string, nullable: true }
+        trackingUrl: { type: string, nullable: true, format: uri }
+        shippedAt: { type: string, format: date-time, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+
+    PublicOrder:
+      type: object
+      description: >
+        Customer-facing order shape returned by /api/public/account/orders endpoints.
+        Never includes stripePaymentIntentId or stripeChargeId (INTERNAL ONLY fields).
+        **BREAKING (internal API surface only):** fulfillmentStatus was removed from this
+        payload; use shippingStatus instead (derived from Shipment rows at read time).
+        List responses include shippingStatus only; detail responses also include shipments[].
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+        status: { type: string, enum: [PendingPayment, Paid, Processing, Completed, Cancelled, Refunded] }
+        paymentStatus: { type: string, enum: [Pending, Authorized, Paid, Failed, Refunded, PartiallyRefunded] }
+        shippingStatus:
+          type: string
+          enum: [Preparing, Shipped, InTransit, Delivered, Problem]
+          description: Derived customer-facing shipping progress (see data-model.md precedence rules).
+        subtotalAmount: { type: string }
+        shippingAmount: { type: string }
+        discountAmount: { type: string }
+        totalAmount: { type: string }
+        currency: { type: string }
+        shippingAddressSnapshot: { type: object }
+        billingAddressSnapshot: { type: object }
+        createdAt: { type: string, format: date-time }
+        shipments:
+          type: array
+          description: Present on GET /orders/:id only (omitted from list items).
+          items:
+            $ref: '#/components/schemas/PublicShipment'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicOrderItem'
+
+    Review:
+      type: object
+      description: Full admin review record.
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        customerId: { type: integer }
+        customerOrderItemId: { type: integer, nullable: true }
+        rating: { type: integer }
+        title: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+        authorNameSnapshot: { type: string }
+        status: { $ref: '#/components/schemas/ReviewStatus' }
+        moderatedByAdminUserId: { type: integer, nullable: true }
+        moderationNote: { type: string, nullable: true }
+        moderatedAt: { type: string, format: date-time, nullable: true }
+        publishedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ReviewListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Review'
+            total: { type: integer }
+            page: { type: integer }
+            pageSize: { type: integer }
+
+    ReviewResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          $ref: '#/components/schemas/Review'
+
+    UpdateReviewStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [Approved, Rejected]
+        moderationNote:
+          type: string
+          maxLength: 500
 
     ReturnRequestStatus:
       type: string
@@ -2788,12 +3985,49 @@ components:
           type: string
           format: date-time
 
+    ProductTranslation:
+      type: object
+      description: Locale-specific name and description override for a product.
+      properties:
+        id:
+          type: integer
+          example: 1
+        productId:
+          type: integer
+          example: 1
+        locale:
+          type: string
+          enum: [en, es]
+          example: es
+        name:
+          type: string
+          maxLength: 150
+          example: Vestido de Verano
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          example: Un vestido ligero para el verano
+        source:
+          type: string
+          enum: [manual, import, machine]
+          example: manual
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
     ProductVariant:
       type: object
       description: >
-        Represents a sellable variant of a product. Note: supplierId, supplierReference,
-        and supplierCost are stored in the database but are NEVER included in API responses.
-        These fields are excluded at the Prisma select layer as a security invariant.
+        Represents a sellable variant of a product as returned by ADMIN endpoints.
+        Includes read-only supplier sourcing fields (supplierId, supplierReference,
+        supplierCost, supplierName) so administrators can see cost and margin next
+        to the public price. These fields are NEVER included in customer-facing
+        responses (see PublicProductVariant) and are ignored on write requests to
+        the variant endpoints.
       properties:
         id:
           type: integer
@@ -2825,6 +4059,31 @@ components:
           $ref: '#/components/schemas/StockPolicy'
         status:
           $ref: '#/components/schemas/ProductVariantStatus'
+        supplierId:
+          type: integer
+          nullable: true
+          readOnly: true
+          example: 1
+          description: Admin-only. Never present on customer-facing responses.
+        supplierReference:
+          type: string
+          nullable: true
+          readOnly: true
+          example: SUP-BLACK-DRESS-S
+          description: Admin-only. Never present on customer-facing responses.
+        supplierCost:
+          type: number
+          format: decimal
+          nullable: true
+          readOnly: true
+          example: 24.99
+          description: Admin-only. Never present on customer-facing responses.
+        supplierName:
+          type: string
+          nullable: true
+          readOnly: true
+          example: CJ Dropshipping
+          description: Admin-only. Resolved from the supplier relation.
         deletedAt:
           type: string
           format: date-time
@@ -3140,6 +4399,20 @@ components:
         updatedAt:
           type: string
           format: date-time
+        reviewSummary:
+          type: object
+          description: >
+            Approved-only rating summary. Present on GET /api/public/products/{id}
+            when the product has at least one Approved review; omitted from list
+            responses and when reviewCount is 0.
+          properties:
+            averageRating:
+              type: number
+              nullable: true
+              example: 4.5
+            reviewCount:
+              type: integer
+              example: 12
 
     PublicProductResponse:
       type: object
@@ -3327,6 +4600,403 @@ components:
         message:
           type: string
           example: Suppliers retrieved successfully
+
+    CjConnectionStatus:
+      type: string
+      enum:
+        - Disconnected
+        - Connected
+        - Error
+
+    CjSyncStatus:
+      type: string
+      enum:
+        - Synced
+        - Failed
+
+    ConfigureCjConnectionRequest:
+      type: object
+      properties:
+        externalAccountRef:
+          type: string
+          maxLength: 150
+          nullable: true
+          example: cj-account-123
+          description: >
+            CJ Dropshipping-side account reference. Never accepts an API key or credential
+            field — the CJ Dropshipping API key always comes from server-side configuration.
+
+    SupplierIntegration:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        supplierId:
+          type: integer
+          example: 10
+        provider:
+          type: string
+          example: CJDropshipping
+        status:
+          $ref: '#/components/schemas/CjConnectionStatus'
+        externalAccountRef:
+          type: string
+          nullable: true
+          example: cj-account-123
+        lastVerifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+        catalogSyncCursorPage:
+          type: integer
+          description: Last catalog page fully processed by the most recent sync (0 = never synced). The next sync run continues from cursorPage + 1, not page 1.
+          example: 2
+        catalogSyncTotalPages:
+          type: integer
+          nullable: true
+          description: The totalPages value last observed from the supplier's catalog listing.
+        catalogSyncWrappedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the sync cursor last wrapped back to page 1 after reaching the end of the catalog.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SupplierIntegrationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/SupplierIntegration'
+        message:
+          type: string
+          example: CJ Dropshipping connection retrieved successfully
+
+    CjVerifyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            healthy:
+              type: boolean
+              example: false
+            reason:
+              type: string
+              nullable: true
+              example: CJ Dropshipping rejected the configured credentials or is unreachable
+              description: Fixed, non-sensitive vocabulary only — never echoes upstream credentials or raw error text.
+        message:
+          type: string
+          example: CJ Dropshipping connection verification completed
+
+    CjSyncResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            itemsUpserted:
+              type: integer
+              example: 42
+            itemsFailed:
+              type: integer
+              example: 1
+            syncedAt:
+              type: string
+              format: date-time
+        message:
+          type: string
+          example: CJ Dropshipping catalog sync completed
+
+    CjCatalogItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        externalRef:
+          type: string
+          example: CJVID123456
+          description: CJ Dropshipping variant id (`vid`) — canonical staging key.
+        title:
+          type: string
+          example: Example Dress
+        sku:
+          type: string
+          nullable: true
+          example: CJ-SKU-001
+        size:
+          type: string
+          nullable: true
+          example: M
+        color:
+          type: string
+          nullable: true
+          example: Black
+        supplierCost:
+          type: string
+          example: '9.99'
+          description: Internal only — never returned by any customer-facing API.
+        stockQuantity:
+          type: integer
+          example: 25
+        syncStatus:
+          $ref: '#/components/schemas/CjSyncStatus'
+        syncError:
+          type: string
+          nullable: true
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+        promotionState:
+          $ref: '#/components/schemas/CjPromotionState'
+        productId:
+          type: integer
+          nullable: true
+          description: Set once this item has been promoted; null when promotionState is NotPromoted.
+        productVariantId:
+          type: integer
+          nullable: true
+          description: Set once this item has been promoted; null when promotionState is NotPromoted.
+
+    CjPromotionState:
+      type: string
+      enum: [NotPromoted, Active, Inactive]
+      description: >
+        Derived (not stored) from whether a ProductVariant links back to this item and whether
+        both that variant and its parent Product are Active. See CjCatalogItem in docs/data-model.md.
+
+    CjCatalogListResult:
+      type: object
+      description: Paginated staged CJ Dropshipping catalog as returned by GET /api/admin/suppliers/{supplierId}/cj/catalog
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CjCatalogItem'
+        total:
+          type: integer
+          example: 5
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+
+    CjCatalogListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CjCatalogListResult'
+        message:
+          type: string
+          example: Staged CJ Dropshipping catalog retrieved successfully
+
+    CjPromoteItemInput:
+      type: object
+      required: [cjCatalogItemId]
+      properties:
+        cjCatalogItemId:
+          type: integer
+          minimum: 1
+        publicPrice:
+          type: number
+          minimum: 0
+          description: Explicit price; if omitted, falls back to supplierCost * CJ_DEFAULT_MARKUP_MULTIPLIER.
+        compareAtPrice:
+          type: number
+          minimum: 0
+
+    CjPromoteRequest:
+      type: object
+      required: [items, categoryId]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CjPromoteItemInput'
+        categoryId:
+          type: integer
+          minimum: 1
+        activate:
+          type: boolean
+          default: false
+          description: When true, the newly-created Product is set to Active instead of Draft.
+
+    CjPromotedVariantResult:
+      type: object
+      properties:
+        cjCatalogItemId:
+          type: integer
+        productId:
+          type: integer
+        productVariantId:
+          type: integer
+        sku:
+          type: string
+          example: CJ-1584907074402791424
+        wasAlreadyPromoted:
+          type: boolean
+          description: True when this item was already linked and no new record was created (idempotent path).
+
+    CjPromoteResult:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              variantIds:
+                type: array
+                items:
+                  type: integer
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/CjPromotedVariantResult'
+        createdAny:
+          type: boolean
+          description: False when every requested item was already promoted (controller returns 200 instead of 201).
+
+    CjPromoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CjPromoteResult'
+        message:
+          type: string
+          example: CJ catalog items promoted successfully
+
+    CjActionResult:
+      type: object
+      properties:
+        productId:
+          type: integer
+        productVariantId:
+          type: integer
+
+    CjActionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CjActionResult'
+        message:
+          type: string
+          example: CJ catalog item activated
+
+    CjPromotionItemError:
+      type: object
+      properties:
+        cjCatalogItemId:
+          type: integer
+        code:
+          type: string
+          example: CJ_PROMOTION_PRICE_REQUIRED
+        message:
+          type: string
+
+    CjPromotionValidationErrorResponse:
+      type: object
+      description: >
+        The only error response in this API with a payload field beyond message/code — carries
+        one entry per invalid item in a bulk promote request.
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: One or more items failed promotion validation
+            code:
+              type: string
+              example: CJ_PROMOTION_VALIDATION_FAILED
+            itemErrors:
+              type: array
+              items:
+                $ref: '#/components/schemas/CjPromotionItemError'
+
+    CjFreightOption:
+      type: object
+      properties:
+        logisticName:
+          type: string
+          example: CJPacket Ordinary
+        logisticAging:
+          type: string
+          example: '4-8'
+          description: Estimated delivery window in days.
+        logisticPrice:
+          type: number
+          format: double
+          example: 8.95
+        totalPostageFee:
+          type: number
+          format: double
+          example: 7.31
+
+    CjFreightQuoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CjFreightOption'
+        message:
+          type: string
+          example: CJ Dropshipping freight quote retrieved successfully
+
+    CjOrderPushRequest:
+      type: object
+      required:
+        - logisticName
+      properties:
+        logisticName:
+          type: string
+          example: CJPacket Ordinary
+          description: >
+            Logistics option chosen from a prior freight quote. The request body
+            accepts only this field — `isSandbox` is server-controlled and rejected
+            if present.
 
     Customer:
       type: object
@@ -3903,6 +5573,45 @@ components:
           type: string
           nullable: true
           example: Internal supplier order notes
+        externalProvider:
+          type: string
+          nullable: true
+          example: CJDropshipping
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalOrderId:
+          type: string
+          nullable: true
+          example: CJORDER987654
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalOrderStatus:
+          type: string
+          nullable: true
+          example: CREATED
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalTrackingNumber:
+          type: string
+          nullable: true
+          example: CJTRK123456789
+          description: Admin-only — never returned by any `/api/public/*` response.
+        externalTrackingProvider:
+          type: string
+          nullable: true
+          example: CJPacket Ordinary
+          description: Admin-only — never returned by any `/api/public/*` response.
+        sandbox:
+          type: boolean
+          example: true
+          description: Admin-only — never returned by any `/api/public/*` response.
+        pushedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Admin-only — never returned by any `/api/public/*` response.
+        lastStatusSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Admin-only — never returned by any `/api/public/*` response.
         items:
           type: array
           items:
