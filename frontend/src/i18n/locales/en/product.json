@@ -1,1 +1,44 @@
-{}
+{
+  "variant": {
+    "size": "Size",
+    "color": "Color",
+    "sizeOption": "Size {{value}}",
+    "colorOption": "Color {{value}}",
+    "unavailable": "(unavailable)"
+  },
+  "gallery": {
+    "imagesLabel": "Product images",
+    "imageN": "Image {{n}}",
+    "thumbAlt": "{{name}} thumbnail {{n}}"
+  },
+  "grid": {
+    "loading": "Loading products",
+    "emptyTitle": "No products found",
+    "emptyText": "Try adjusting your filters or search term."
+  },
+  "reviews": {
+    "title": "Customer reviews",
+    "ratingLabel": "Rating: {{rating}} out of 5",
+    "loading": "Loading reviews...",
+    "emptyTitle": "No reviews yet",
+    "emptyText": "Be the first to review this product.",
+    "form": {
+      "title": "Write a review",
+      "loginPrefix": "Log in",
+      "loginSuffix": "to write a review. Only customers who purchased this product can review it.",
+      "checkingEligibility": "Checking review eligibility...",
+      "eligibilityError": "Unable to check review eligibility.",
+      "thanks": "Thanks for your review! It is pending moderation and will appear once approved.",
+      "alreadyReviewed": "You have already reviewed this product.",
+      "purchaseRequired": "Only customers who purchased this product can write a review.",
+      "ratingLabel": "Rating",
+      "starLabel_one": "{{count}} star",
+      "starLabel_other": "{{count}} stars",
+      "selectRating": "Please select a star rating.",
+      "titleLabel": "Title (optional)",
+      "reviewLabel": "Review (optional)",
+      "submitting": "Submitting...",
+      "submit": "Submit review"
+    }
+  }
+}

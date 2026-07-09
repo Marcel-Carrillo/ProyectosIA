@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
@@ -10,6 +11,7 @@ import { PublicOrder } from '../../types/auth';
 import PaymentForm from '../../components/storefront/PaymentForm';
 import PriceTag from '../../components/storefront/PriceTag';
 import Seo from '../../components/storefront/Seo';
+import { apiErrorKey } from '../../utils/apiErrorKey';
 
 const emptyAddress = {
   fullName: '',
@@ -20,18 +22,10 @@ const emptyAddress = {
   country: 'Spain',
 };
 
-const ADDRESS_LABELS: Record<keyof typeof emptyAddress, string> = {
-  fullName: 'Full name',
-  streetLine1: 'Street address',
-  city: 'City',
-  province: 'Province',
-  postalCode: 'Postal code',
-  country: 'Country',
-};
-
 type Step = 'details' | 'payment';
 
 const CheckoutPage: React.FC = () => {
+  const { t } = useTranslation('checkout');
   const { items, clearCart } = useCart();
   const { isAuthenticated, customer } = useCustomerAuth();
   const navigate = useNavigate();
@@ -57,7 +51,7 @@ const CheckoutPage: React.FC = () => {
   useEffect(() => {
     getStripeConfig()
       .then(({ publishableKey }) => setStripePromise(loadStripe(publishableKey)))
-      .catch(() => setError('Payment provider unavailable. Please try again later.'));
+      .catch(() => setError(t('errors.PAYMENT_GATEWAY_UNAVAILABLE', { ns: 'common' })));
   }, []);
 
   if (!items.length && step === 'details') return <Navigate to="/cart" replace />;
@@ -70,7 +64,7 @@ const CheckoutPage: React.FC = () => {
       setError('');
     } else {
       setDiscount(0);
-      setError(result.reason ? `Coupon: ${result.reason}` : 'Invalid coupon');
+      setError(result.reason ? t('couponReason', { reason: result.reason }) : t('couponInvalid'));
     }
   };
 
@@ -82,7 +76,6 @@ const CheckoutPage: React.FC = () => {
       items: items.map((i) => ({ productVariantId: i.productVariantId, quantity: i.quantity })),
       shippingAddressSnapshot: shipping,
       billingAddressSnapshot: billing,
-      shippingAmount: '0',
       couponCode: couponCode || undefined,
     };
     try {
@@ -97,8 +90,8 @@ const CheckoutPage: React.FC = () => {
           });
       setPendingOrder(result);
       setStep('payment');
-    } catch {
-      setError('Order creation failed. Please try again.');
+    } catch (err) {
+      setError(t(apiErrorKey(err), { ns: 'common' }));
     } finally {
       setSubmitting(false);
     }
@@ -114,9 +107,9 @@ const CheckoutPage: React.FC = () => {
   if (step === 'payment' && pendingOrder?.clientSecret && stripePromise) {
     return (
       <div className="storefront-checkout storefront-animate-fade-up">
-        <Seo title="Payment | Mavile" noindex />
+        <Seo title={t('seo.payment')} noindex />
         <p className="storefront-checkout__eyebrow">Mavile</p>
-        <h1 className="storefront-checkout__title">Payment</h1>
+        <h1 className="storefront-checkout__title">{t('paymentTitle')}</h1>
         {error && <p className="storefront-auth__error" role="alert">{error}</p>}
         <div className="storefront-checkout__card">
           <Elements stripe={stripePromise} options={{ clientSecret: pendingOrder.clientSecret }}>
@@ -132,7 +125,7 @@ const CheckoutPage: React.FC = () => {
           className="storefront-btn storefront-btn--text"
           onClick={() => { setStep('details'); setError(''); }}
         >
-          Back to details
+          {t('backToDetails')}
         </button>
       </div>
     );
@@ -140,27 +133,27 @@ const CheckoutPage: React.FC = () => {
 
   return (
     <div className="storefront-checkout storefront-animate-fade-up">
-      <Seo title="Checkout | Mavile" noindex />
+      <Seo title={t('seo.checkout')} noindex />
       <p className="storefront-checkout__eyebrow">Mavile</p>
-      <h1 className="storefront-checkout__title">Checkout</h1>
+      <h1 className="storefront-checkout__title">{t('title')}</h1>
 
       {error && <p className="storefront-auth__error" role="alert">{error}</p>}
 
       <form onSubmit={handleDetailsSubmit} className="storefront-checkout__form">
         {!isAuthenticated && (
           <section className="storefront-checkout__section">
-            <h2 className="storefront-checkout__section-title">Contact</h2>
+            <h2 className="storefront-checkout__section-title">{t('contact')}</h2>
             <div className="storefront-checkout__grid">
               <label className="storefront-field storefront-field--wide">
-                <span className="storefront-field__label">Email</span>
+                <span className="storefront-field__label">{t('field.email')}</span>
                 <input className="storefront-field__input" value={guest.email} onChange={(e) => setGuest({ ...guest, email: e.target.value })} required />
               </label>
               <label className="storefront-field">
-                <span className="storefront-field__label">First name</span>
+                <span className="storefront-field__label">{t('field.firstName')}</span>
                 <input className="storefront-field__input" value={guest.firstName} onChange={(e) => setGuest({ ...guest, firstName: e.target.value })} required />
               </label>
               <label className="storefront-field">
-                <span className="storefront-field__label">Last name</span>
+                <span className="storefront-field__label">{t('field.lastName')}</span>
                 <input className="storefront-field__input" value={guest.lastName} onChange={(e) => setGuest({ ...guest, lastName: e.target.value })} required />
               </label>
             </div>
@@ -169,16 +162,19 @@ const CheckoutPage: React.FC = () => {
 
         {isAuthenticated && customer && (
           <p className="storefront-checkout__note">
-            Checking out as {customer.firstName} {customer.lastName} ({customer.email})
+            {t('checkingOutAs', {
+              name: `${customer.firstName} ${customer.lastName}`,
+              email: customer.email,
+            })}
           </p>
         )}
 
         <section className="storefront-checkout__section">
-          <h2 className="storefront-checkout__section-title">Shipping address</h2>
+          <h2 className="storefront-checkout__section-title">{t('shippingAddress')}</h2>
           <div className="storefront-checkout__grid">
             {(Object.keys(emptyAddress) as Array<keyof typeof emptyAddress>).map((key) => (
               <label className="storefront-field" key={key}>
-                <span className="storefront-field__label">{ADDRESS_LABELS[key]}</span>
+                <span className="storefront-field__label">{t(`field.${key}`)}</span>
                 <input
                   className="storefront-field__input"
                   value={shipping[key]}
@@ -191,11 +187,11 @@ const CheckoutPage: React.FC = () => {
         </section>
 
         <section className="storefront-checkout__section">
-          <h2 className="storefront-checkout__section-title">Billing address</h2>
+          <h2 className="storefront-checkout__section-title">{t('billingAddress')}</h2>
           <div className="storefront-checkout__grid">
             {(Object.keys(emptyAddress) as Array<keyof typeof emptyAddress>).map((key) => (
               <label className="storefront-field" key={`bill-${key}`}>
-                <span className="storefront-field__label">{ADDRESS_LABELS[key]}</span>
+                <span className="storefront-field__label">{t(`field.${key}`)}</span>
                 <input
                   className="storefront-field__input"
                   value={billing[key]}
@@ -208,14 +204,14 @@ const CheckoutPage: React.FC = () => {
         </section>
 
         <section className="storefront-checkout__section">
-          <h2 className="storefront-checkout__section-title">Coupon</h2>
+          <h2 className="storefront-checkout__section-title">{t('coupon')}</h2>
           <div className="storefront-checkout__coupon">
             <label className="storefront-field storefront-field--grow">
-              <span className="storefront-field__label">Code</span>
+              <span className="storefront-field__label">{t('couponCode')}</span>
               <input className="storefront-field__input" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
             </label>
             <button type="button" className="storefront-btn storefront-btn--secondary" onClick={applyCoupon}>
-              Apply
+              {t('applyCoupon')}
             </button>
           </div>
         </section>
@@ -223,16 +219,16 @@ const CheckoutPage: React.FC = () => {
         <aside className="storefront-checkout__summary">
           <dl>
             <div className="storefront-cart__summary-row">
-              <dt>Subtotal</dt>
+              <dt>{t('subtotal')}</dt>
               <dd><PriceTag publicPrice={subtotal} /></dd>
             </div>
             <div className="storefront-cart__summary-row">
-              <dt>Discount</dt>
+              <dt>{t('discount')}</dt>
               <dd><PriceTag publicPrice={discount} /></dd>
             </div>
           </dl>
           <div className="storefront-cart__summary-total">
-            <dt>Total</dt>
+            <dt>{t('total')}</dt>
             <dd><PriceTag publicPrice={total} /></dd>
           </div>
         </aside>
@@ -243,10 +239,10 @@ const CheckoutPage: React.FC = () => {
           disabled={submitting}
           data-testid="btn-continue-to-payment"
         >
-          {submitting ? 'Preparing order…' : 'Continue to payment'}
+          {submitting ? t('preparingOrder') : t('continueToPayment')}
         </button>
 
-        <Link to="/cart" className="storefront-btn storefront-btn--text">Back to cart</Link>
+        <Link to="/cart" className="storefront-btn storefront-btn--text">{t('backToCart')}</Link>
       </form>
     </div>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import PaymentForm from '../PaymentForm';
 
 const mockConfirmPayment = jest.fn();
@@ -23,27 +24,27 @@ describe('PaymentForm', () => {
   });
 
   it('renders PaymentElement and pay button', () => {
-    render(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
+    renderWithI18n(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
     expect(screen.getByTestId('payment-element')).toBeInTheDocument();
     expect(screen.getByTestId('btn-pay')).toBeInTheDocument();
   });
 
   it('disables button while stripe is loading (null)', () => {
     mockUseStripe.mockReturnValue(null);
-    render(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
+    renderWithI18n(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
     expect(screen.getByTestId('btn-pay')).toBeDisabled();
   });
 
   it('calls onSuccess when payment succeeds', async () => {
     mockConfirmPayment.mockResolvedValue({ paymentIntent: { status: 'succeeded' }, error: null });
-    render(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
+    renderWithI18n(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
     fireEvent.submit(screen.getByRole('button', { name: /pay now/i }).closest('form')!);
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
   });
 
   it('calls onError and shows alert when Stripe returns error', async () => {
     mockConfirmPayment.mockResolvedValue({ error: { message: 'Card declined' }, paymentIntent: null });
-    render(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
+    renderWithI18n(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
     fireEvent.submit(screen.getByRole('button', { name: /pay now/i }).closest('form')!);
     await waitFor(() => expect(onError).toHaveBeenCalledWith('Card declined'));
     expect(screen.getByTestId('payment-error')).toHaveTextContent('Card declined');
@@ -51,7 +52,7 @@ describe('PaymentForm', () => {
 
   it('calls onError when confirmPayment throws', async () => {
     mockConfirmPayment.mockRejectedValue(new Error('Network'));
-    render(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
+    renderWithI18n(<PaymentForm orderNumber="ORD-001" onSuccess={onSuccess} onError={onError} />);
     fireEvent.submit(screen.getByRole('button', { name: /pay now/i }).closest('form')!);
     await waitFor(() => expect(onError).toHaveBeenCalled());
   });

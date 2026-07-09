@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import Pagination from '../Pagination';
 import { Review, ReviewSummary, RatingDistribution } from '../../types/product';
 
@@ -16,9 +18,10 @@ interface ProductReviewsProps {
 const STAR_VALUES = [1, 2, 3, 4, 5] as const;
 
 function StarsDisplay({ rating }: { rating: number }) {
+  const { t } = useTranslation('product');
   const rounded = Math.round(rating);
   return (
-    <span className="storefront-reviews__stars" role="img" aria-label={`Rating: ${rating} out of 5`}>
+    <span className="storefront-reviews__stars" role="img" aria-label={t('reviews.ratingLabel', { rating })}>
       {STAR_VALUES.map((v) => (
         <span
           key={v}
@@ -34,7 +37,7 @@ function StarsDisplay({ rating }: { rating: number }) {
 
 function formatReviewDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+    return new Date(iso).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' });
   } catch {
     return iso;
   }
@@ -50,22 +53,23 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
   totalPages,
   onPageChange,
 }) => {
+  const { t } = useTranslation('product');
   return (
     <section className="storefront-reviews" aria-labelledby="reviews-heading">
-      <h2 id="reviews-heading" className="storefront-reviews__title">Customer reviews</h2>
+      <h2 id="reviews-heading" className="storefront-reviews__title">{t('reviews.title')}</h2>
 
       {error && (
         <p className="storefront-alert" role="alert">{error}</p>
       )}
 
       {!error && isLoading && (
-        <p className="storefront-reviews__loading" data-testid="reviews-loading">Loading reviews...</p>
+        <p className="storefront-reviews__loading" data-testid="reviews-loading">{t('reviews.loading')}</p>
       )}
 
       {!error && !isLoading && summary.reviewCount === 0 && (
         <div className="storefront-empty" data-testid="reviews-empty-state">
-          <p className="storefront-empty__title">No reviews yet</p>
-          <p>Be the first to review this product.</p>
+          <p className="storefront-empty__title">{t('reviews.emptyTitle')}</p>
+          <p>{t('reviews.emptyText')}</p>
         </div>
       )}
 

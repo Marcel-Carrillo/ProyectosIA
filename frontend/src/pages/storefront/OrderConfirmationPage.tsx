@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { PublicOrder } from '../../types/auth';
 import { getOrderPaymentStatus } from '../../services/paymentService';
@@ -8,6 +9,7 @@ const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_ATTEMPTS = 15;
 
 const OrderConfirmationPage: React.FC = () => {
+  const { t } = useTranslation('checkout');
   const { orderNumber } = useParams<{ orderNumber: string }>();
   const location = useLocation();
   const locationState = location.state as { order?: PublicOrder; paymentStatus?: string } | null;
@@ -68,50 +70,53 @@ const OrderConfirmationPage: React.FC = () => {
 
   return (
     <div className="storefront-confirmation storefront-animate-fade-up">
-      <Seo title="Order confirmation | Mavile" noindex />
+      <Seo title={t('confirmation.seoTitle')} noindex />
       <p className="storefront-confirmation__eyebrow">Mavile</p>
       <h1 className="storefront-confirmation__title">
-        {paid ? 'Payment confirmed' : 'Thank you for your order'}
+        {paid ? t('confirmation.paymentConfirmed') : t('confirmation.thankYou')}
       </h1>
 
       {stillWaiting && (
         <div className="storefront-confirmation__polling" data-testid="payment-polling">
           <span className="storefront-confirmation__spinner" aria-hidden />
-          <span>Confirming payment…</span>
+          <span>{t('confirmation.confirmingPayment')}</span>
         </div>
       )}
 
       {paid && (
         <p className="storefront-confirmation__success" data-testid="payment-success">
-          Your payment was received. We will ship your order shortly.
+          {t('confirmation.paymentReceived')}
         </p>
       )}
 
       {failed && (
         <p className="storefront-auth__error" data-testid="payment-failed">
-          Payment failed. Please <Link to="/cart">return to cart</Link> and try again.
+          {t('confirmation.paymentFailedPrefix')}{' '}
+          <Link to="/cart">{t('confirmation.paymentFailedLink')}</Link>{' '}
+          {t('confirmation.paymentFailedSuffix')}
         </p>
       )}
 
       {pollTimeout && !paid && (
         <p className="storefront-confirmation__warning" data-testid="payment-timeout">
-          Payment confirmation is taking longer than expected. Check your{' '}
-          <Link to="/account/orders">order history</Link> for the latest status.
+          {t('confirmation.timeoutPrefix')}{' '}
+          <Link to="/account/orders">{t('confirmation.timeoutLink')}</Link>{' '}
+          {t('confirmation.timeoutSuffix')}
         </p>
       )}
 
       <p className="storefront-confirmation__meta">
-        Order number: <strong>{displayOrderNumber}</strong>
+        {t('confirmation.orderNumber')} <strong>{displayOrderNumber}</strong>
       </p>
       {order && (
         <p className="storefront-confirmation__meta">
-          Total: €{order.totalAmount}
+          {t('confirmation.total', { amount: order.totalAmount })}
         </p>
       )}
 
       <div className="storefront-confirmation__links">
-        <Link to="/catalog" className="storefront-btn storefront-btn--text">Continue shopping</Link>
-        <Link to="/account/orders" className="storefront-btn storefront-btn--text">My orders</Link>
+        <Link to="/catalog" className="storefront-btn storefront-btn--text">{t('confirmation.continueShopping')}</Link>
+        <Link to="/account/orders" className="storefront-btn storefront-btn--text">{t('confirmation.myOrders')}</Link>
       </div>
     </div>
   );

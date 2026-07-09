@@ -1,1 +1,44 @@
-{}
+{
+  "variant": {
+    "size": "Talla",
+    "color": "Color",
+    "sizeOption": "Talla {{value}}",
+    "colorOption": "Color {{value}}",
+    "unavailable": "(no disponible)"
+  },
+  "gallery": {
+    "imagesLabel": "Imágenes del producto",
+    "imageN": "Imagen {{n}}",
+    "thumbAlt": "{{name}} miniatura {{n}}"
+  },
+  "grid": {
+    "loading": "Cargando productos",
+    "emptyTitle": "No se han encontrado productos",
+    "emptyText": "Prueba a ajustar los filtros o el término de búsqueda."
+  },
+  "reviews": {
+    "title": "Opiniones de clientes",
+    "ratingLabel": "Valoración: {{rating}} de 5",
+    "loading": "Cargando opiniones...",
+    "emptyTitle": "Aún no hay opiniones",
+    "emptyText": "Sé el primero en opinar sobre este producto.",
+    "form": {
+      "title": "Escribe una opinión",
+      "loginPrefix": "Inicia sesión",
+      "loginSuffix": "para escribir una opinión. Solo los clientes que compraron este producto pueden opinar.",
+      "checkingEligibility": "Comprobando si puedes opinar...",
+      "eligibilityError": "No se ha podido comprobar si puedes opinar.",
+      "thanks": "¡Gracias por tu opinión! Está pendiente de moderación y aparecerá cuando sea aprobada.",
+      "alreadyReviewed": "Ya has opinado sobre este producto.",
+      "purchaseRequired": "Solo los clientes que compraron este producto pueden escribir una opinión.",
+      "ratingLabel": "Valoración",
+      "starLabel_one": "{{count}} estrella",
+      "starLabel_other": "{{count}} estrellas",
+      "selectRating": "Selecciona una valoración con estrellas.",
+      "titleLabel": "Título (opcional)",
+      "reviewLabel": "Opinión (opcional)",
+      "submitting": "Enviando...",
+      "submit": "Enviar opinión"
+    }
+  }
+}

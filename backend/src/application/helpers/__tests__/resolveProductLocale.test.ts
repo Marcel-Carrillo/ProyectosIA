@@ -18,10 +18,11 @@ function makeTranslation(locale: string, name: string, description?: string | nu
 }
 
 describe('normalizeLocale', () => {
-  it('returns en for undefined', () => expect(normalizeLocale(undefined)).toBe('en'));
-  it('returns en for null', () => expect(normalizeLocale(null)).toBe('en'));
-  it('returns en for empty string', () => expect(normalizeLocale('')).toBe('en'));
-  it('returns en for unknown locale fr', () => expect(normalizeLocale('fr')).toBe('en'));
+  // The store's default language is Spanish — mirror the storefront fallback.
+  it('returns es for undefined', () => expect(normalizeLocale(undefined)).toBe('es'));
+  it('returns es for null', () => expect(normalizeLocale(null)).toBe('es'));
+  it('returns es for empty string', () => expect(normalizeLocale('')).toBe('es'));
+  it('returns es for unknown locale fr', () => expect(normalizeLocale('fr')).toBe('es'));
   it('strips region tag es-ES', () => expect(normalizeLocale('es-ES')).toBe('es'));
   it('strips region tag es-419', () => expect(normalizeLocale('es-419')).toBe('es'));
   it('handles en-US', () => expect(normalizeLocale('en-US')).toBe('en'));
@@ -52,10 +53,16 @@ describe('resolveProductLocale', () => {
     expect(result).toEqual({ name: 'Test Product', description: 'English description', locale: 'en' });
   });
 
-  it('falls back to Product.name for unknown locale fr', () => {
+  it('resolves unknown locale fr to the Spanish default, then falls back to Product.name', () => {
     const product = makeProduct({ translations: [] });
     const result = resolveProductLocale(product, 'fr');
     expect(result).toEqual({ name: 'Test Product', description: 'English description', locale: 'en' });
+  });
+
+  it('serves the Spanish translation when no locale is requested', () => {
+    const product = makeProduct({ translations: [makeTranslation('es', 'Producto ES', 'Desc ES')] });
+    const result = resolveProductLocale(product, undefined);
+    expect(result).toEqual({ name: 'Producto ES', description: 'Desc ES', locale: 'es' });
   });
 
   it('uses Product.name when translations is undefined', () => {

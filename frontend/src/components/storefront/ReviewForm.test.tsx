@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithI18n } from '../../test-utils/renderWithI18n';
 import { MemoryRouter } from 'react-router-dom';
 import ReviewForm from './ReviewForm';
 import { reviewService } from '../../services/reviewService';
@@ -20,7 +21,7 @@ jest.mock('../../services/reviewService', () => ({
 
 const mockedReviewService = reviewService as jest.Mocked<typeof reviewService>;
 
-const renderForm = () => render(<MemoryRouter><ReviewForm productId={1} /></MemoryRouter>);
+const renderForm = () => renderWithI18n(<MemoryRouter><ReviewForm productId={1} /></MemoryRouter>);
 
 beforeEach(() => {
   jest.clearAllMocks();
