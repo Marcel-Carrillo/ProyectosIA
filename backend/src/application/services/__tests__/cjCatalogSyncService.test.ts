@@ -6,8 +6,8 @@ import { ICjClient } from '../../../infrastructure/external/cjTypes';
 import { SupplierIntegrationNotFoundError } from '../../../infrastructure/repositories/supplierIntegrationRepository';
 import { CjConnectionNotReadyError, CjApiUnavailableError } from '../../validator';
 
-function makeIntegration(status: 'Disconnected' | 'Connected' | 'Error' = 'Connected') {
-  return new SupplierIntegration({ id: 1, supplierId: 10, status });
+function makeIntegration(status: 'Disconnected' | 'Connected' | 'Error' = 'Connected', catalogSyncCursorPage = 0) {
+  return new SupplierIntegration({ id: 1, supplierId: 10, status, catalogSyncCursorPage });
 }
 
 function makeMockCjClient(): jest.Mocked<ICjClient> {
@@ -61,6 +61,7 @@ describe('CjCatalogSyncService', () => {
       upsert: jest.fn(),
       updateStatus: jest.fn(),
       updateLastSyncedAt: jest.fn(),
+      updateCatalogSyncCursor: jest.fn(),
     };
     catalogRepo = {
       upsertMany: jest.fn(),
@@ -210,6 +211,130 @@ describe('CjCatalogSyncService', () => {
         expect.arrayContaining([expect.objectContaining({ syncStatus: 'Synced', sellPrice: '19.99' })])
       );
     });
+
+    it('should_start_pagination_at_cursorPage_plus_one_when_a_non_zero_cursor_exists', async () => {
+      integrationRepo.findBySupplierId.mockResolvedValue(makeIntegration('Connected', 5));
+      cjClient.fetchCatalog.mockResolvedValue({
+        pageSize: 100,
+        pageNumber: 6,
+        totalRecords: 20,
+        totalPages: 20,
+        content: [{ productList: [] }],
+      });
+      catalogRepo.upsertMany.mockResolvedValue({ upserted: 0 });
+
+      await service.syncCatalog(10);
+
+      expect(cjClient.fetchCatalog).toHaveBeenCalledWith(6, expect.any(Number));
+    });
+
+    it('should_wrap_around_and_reset_cursor_to_zero_when_the_window_reaches_totalPages_exactly', async () => {
+      integrationRepo.findBySupplierId.mockResolvedValue(makeIntegration('Connected', 0));
+      cjClient.fetchCatalog.mockResolvedValue({
+        pageSize: 100,
+        pageNumber: 1,
+        totalRecords: 1,
+        totalPages: 1,
+        content: [{ productList: [] }],
+      });
+      catalogRepo.upsertMany.mockResolvedValue({ upserted: 0 });
+
+      await service.syncCatalog(10);
+
+      expect(integrationRepo.updateCatalogSyncCursor).toHaveBeenCalledWith(1, {
+        cursorPage: 0,
+        totalPages: 1,
+        wrappedAt: expect.any(Date),
+      });
+    });
+
+    it('should_wrap_around_when_the_configured_window_overshoots_totalPages', async () => {
+      process.env['CJ_SYNC_MAX_PAGES'] = '5';
+      try {
+        const localService = new CjCatalogSyncService(integrationRepo, catalogRepo, cjClient);
+        integrationRepo.findBySupplierId.mockResolvedValue(makeIntegration('Connected', 0));
+        cjClient.fetchCatalog.mockResolvedValue({
+          pageSize: 100,
+          pageNumber: 1,
+          totalRecords: 2,
+          totalPages: 2,
+          content: [{ productList: [] }],
+        });
+        catalogRepo.upsertMany.mockResolvedValue({ upserted: 0 });
+
+        await localService.syncCatalog(10);
+
+        expect(cjClient.fetchCatalog).toHaveBeenCalledTimes(2);
+        expect(integrationRepo.updateCatalogSyncCursor).toHaveBeenCalledWith(1, {
+          cursorPage: 0,
+          totalPages: 2,
+          wrappedAt: expect.any(Date),
+        });
+      } finally {
+        delete process.env['CJ_SYNC_MAX_PAGES'];
+      }
+    });
+
+    it('should_persist_the_window_end_page_as_the_new_cursor_without_wrapping_when_totalPages_is_larger', async () => {
+      process.env['CJ_SYNC_MAX_PAGES'] = '2';
+      try {
+        const localService = new CjCatalogSyncService(integrationRepo, catalogRepo, cjClient);
+        integrationRepo.findBySupplierId.mockResolvedValue(makeIntegration('Connected', 0));
+        cjClient.fetchCatalog.mockResolvedValue({
+          pageSize: 100,
+          pageNumber: 1,
+          totalRecords: 20,
+          totalPages: 20,
+          content: [{ productList: [] }],
+        });
+        catalogRepo.upsertMany.mockResolvedValue({ upserted: 0 });
+
+        await localService.syncCatalog(10);
+
+        expect(cjClient.fetchCatalog).toHaveBeenCalledTimes(2);
+        expect(integrationRepo.updateCatalogSyncCursor).toHaveBeenCalledWith(1, {
+          cursorPage: 2,
+          totalPages: 20,
+        });
+      } finally {
+        delete process.env['CJ_SYNC_MAX_PAGES'];
+      }
+    });
+
+    it.each(['0', '-1', 'not-a-number', ''])(
+      'should_fall_back_to_the_safe_default_window_when_CJ_SYNC_MAX_PAGES_is_invalid (%p)',
+      async (invalidValue) => {
+        // Regression: a misconfigured SSM value (empty/zero/negative/non-numeric)
+        // must not silently make endPage < startPage, which would make the sync
+        // loop never execute and freeze the cursor forever with no error.
+        process.env['CJ_SYNC_MAX_PAGES'] = invalidValue;
+        try {
+          const localService = new CjCatalogSyncService(integrationRepo, catalogRepo, cjClient);
+          integrationRepo.findBySupplierId.mockResolvedValue(makeIntegration('Connected', 0));
+          cjClient.fetchCatalog.mockResolvedValue({
+            pageSize: 100,
+            pageNumber: 1,
+            totalRecords: 1,
+            totalPages: 1,
+            content: [{ productList: [] }],
+          });
+          catalogRepo.upsertMany.mockResolvedValue({ upserted: 0 });
+
+          await localService.syncCatalog(10);
+
+          // Falls back to the default (500), so the loop still runs at least
+          // once and the cursor genuinely advances (here, wraps at totalPages:1).
+          expect(cjClient.fetchCatalog).toHaveBeenCalledTimes(1);
+          expect(integrationRepo.updateCatalogSyncCursor).toHaveBeenCalledWith(1, {
+            cursorPage: 0,
+            totalPages: 1,
+            wrappedAt: expect.any(Date),
+          });
+        } finally {
+          delete process.env['CJ_SYNC_MAX_PAGES'];
+        }
+      }
+    );
   });
 
   describe('listStagedCatalog', () => {

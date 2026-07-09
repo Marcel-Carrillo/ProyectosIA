@@ -15,4 +15,8 @@ export interface ISupplierIntegrationRepository {
     data: { status: 'Connected' | 'Error'; lastVerifiedAt: Date }
   ): Promise<SupplierIntegration>;
   updateLastSyncedAt(id: number, lastSyncedAt: Date): Promise<SupplierIntegration>;
+  updateCatalogSyncCursor(
+    id: number,
+    data: { cursorPage: number; totalPages: number; wrappedAt?: Date }
+  ): Promise<SupplierIntegration>;
 }

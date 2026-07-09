@@ -36,6 +36,7 @@ export interface CjProductDto {
   sellPrice: number;
   categoryId: string;
   warehouseInventoryNum?: number;
+  bigImage?: string;
 }
 
 export interface CjVariantDto {
@@ -46,6 +47,7 @@ export interface CjVariantDto {
   variantWeight?: number;
   variantSellPrice: number;
   inventoryNum?: number;
+  variantImage?: string;
 }
 
 export interface CjListV2Response {

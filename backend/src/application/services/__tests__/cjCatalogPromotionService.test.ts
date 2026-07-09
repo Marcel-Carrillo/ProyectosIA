@@ -12,11 +12,14 @@ import { SupplierIntegrationNotFoundError } from '../../../infrastructure/reposi
 import { CjCatalogItemNotPromotedError, CjPromotionValidationError } from '../../validator';
 
 const mockProductCreate = jest.fn();
+const mockProductUpdate = jest.fn();
 const mockVariantCreate = jest.fn();
+const mockProductImageCreate = jest.fn();
 const mockTransaction = jest.fn(async (cb: (tx: unknown) => unknown) => {
   const tx = {
-    product: { create: mockProductCreate },
+    product: { create: mockProductCreate, update: mockProductUpdate },
     productVariant: { create: mockVariantCreate },
+    productImage: { create: mockProductImageCreate },
   };
   return cb(tx);
 });
@@ -99,11 +102,15 @@ describe('CjCatalogPromotionService', () => {
       upsert: jest.fn(),
       updateStatus: jest.fn(),
       updateLastSyncedAt: jest.fn(),
+      updateCatalogSyncCursor: jest.fn(),
     };
     productService = {
       resolveUniqueSlug: jest.fn().mockResolvedValue('test-dress'),
       update: jest.fn(),
     };
+
+    mockProductUpdate.mockResolvedValue({});
+    mockProductImageCreate.mockResolvedValue({});
 
     integrationRepo.findBySupplierId.mockResolvedValue(new SupplierIntegration({ id: 7, supplierId: 3 }));
     categoryRepo.findById.mockResolvedValue(new Category({ id: 1, name: 'Dresses' }));
@@ -143,6 +150,108 @@ describe('CjCatalogPromotionService', () => {
       );
       expect(result.createdAny).toBe(true);
       expect(result.variants[0]).toMatchObject({ cjCatalogItemId: 1, productId: 20, productVariantId: 50, wasAlreadyPromoted: false });
+    });
+
+    it('should_set_mainImageUrl_and_create_a_sortOrder_zero_image_when_a_new_product_has_a_product_image', async () => {
+      const item = buildCatalogItem({ rawPayload: { product: { bigImage: 'https://img/p.jpg' }, variant: {} } });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      expect(mockProductUpdate).toHaveBeenCalledWith({ where: { id: 20 }, data: { mainImageUrl: 'https://img/p.jpg' } });
+      expect(mockProductImageCreate).toHaveBeenCalledWith({
+        data: { productId: 20, url: 'https://img/p.jpg', altText: 'Test Dress', sortOrder: 0 },
+      });
+    });
+
+    it('should_create_an_additional_image_for_a_variant_whose_image_differs_from_the_product_image', async () => {
+      const item1 = buildCatalogItem({
+        id: 1,
+        externalRef: 'vid-1',
+        vid: 'vid-1',
+        rawPayload: { product: { bigImage: 'A' }, variant: {} },
+      });
+      const item2 = buildCatalogItem({
+        id: 2,
+        externalRef: 'vid-2',
+        vid: 'vid-2',
+        rawPayload: { product: {}, variant: { variantImage: 'B' } },
+      });
+      catalogRepo.findManyByIds.mockResolvedValue([item1, item2]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValueOnce({ id: 51 }).mockResolvedValueOnce({ id: 52 });
+
+      await service.promote(3, {
+        items: [
+          { cjCatalogItemId: 1, publicPrice: 39.99 },
+          { cjCatalogItemId: 2, publicPrice: 39.99 },
+        ],
+        categoryId: 1,
+      });
+
+      expect(mockProductImageCreate).toHaveBeenCalledTimes(2);
+      expect(mockProductImageCreate).toHaveBeenNthCalledWith(1, {
+        data: { productId: 20, url: 'A', altText: 'Test Dress', sortOrder: 0 },
+      });
+      expect(mockProductImageCreate).toHaveBeenNthCalledWith(2, {
+        data: { productId: 20, url: 'B', altText: 'Test Dress', sortOrder: 1 },
+      });
+    });
+
+    it('should_set_mainImageUrl_from_the_first_variant_image_when_no_product_image_exists', async () => {
+      // Regression: previously a product with only variant-level images ended
+      // up with a ProductImage row but a permanently-null mainImageUrl.
+      const item = buildCatalogItem({ rawPayload: { product: {}, variant: { variantImage: 'https://img/v.jpg' } } });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      expect(mockProductUpdate).toHaveBeenCalledWith({ where: { id: 20 }, data: { mainImageUrl: 'https://img/v.jpg' } });
+      expect(mockProductImageCreate).toHaveBeenCalledWith({
+        data: { productId: 20, url: 'https://img/v.jpg', altText: 'Test Dress', sortOrder: 0 },
+      });
+    });
+
+    it('should_not_duplicate_the_image_when_the_variant_image_exactly_matches_the_product_image', async () => {
+      const item = buildCatalogItem({ rawPayload: { product: { bigImage: 'A' }, variant: { variantImage: 'A' } } });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      expect(mockProductImageCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should_create_no_images_when_no_image_data_is_present', async () => {
+      const item = buildCatalogItem();
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      const result = await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      expect(mockProductUpdate).not.toHaveBeenCalled();
+      expect(mockProductImageCreate).not.toHaveBeenCalled();
+      expect(result.createdAny).toBe(true);
+    });
+
+    it('should_never_copy_supplierCost_into_any_public_facing_field', async () => {
+      const item = buildCatalogItem({ rawPayload: { product: { bigImage: 'A' }, variant: { variantImage: 'B' } } });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      expect(mockProductUpdate.mock.calls[0][0].data).not.toHaveProperty('supplierCost');
+      for (const call of mockProductImageCreate.mock.calls) {
+        expect(call[0].data).not.toHaveProperty('supplierCost');
+      }
     });
 
     it('should_group_items_sharing_the_same_pid_into_a_single_product', async () => {
@@ -258,11 +367,21 @@ describe('CjCatalogPromotionService', () => {
       expect(mockVariantCreate).not.toHaveBeenCalled();
       expect(result.createdAny).toBe(false);
       expect(result.variants[0]).toMatchObject({ cjCatalogItemId: 1, productId: 20, productVariantId: 50, wasAlreadyPromoted: true });
+      // Idempotency guarantee for image capture: the re-promotion path never
+      // enters the transaction's image-creation code at all (groups.size===0
+      // here, so prisma.$transaction is never even called).
+      expect(mockProductUpdate).not.toHaveBeenCalled();
+      expect(mockProductImageCreate).not.toHaveBeenCalled();
     });
 
     it('should_join_the_existing_product_when_a_mixed_group_has_one_already_promoted_and_one_new_item', async () => {
       const item1 = buildCatalogItem({ id: 1, externalRef: 'vid-1', vid: 'vid-1' });
-      const item2 = buildCatalogItem({ id: 2, externalRef: 'vid-2', vid: 'vid-2' });
+      const item2 = buildCatalogItem({
+        id: 2,
+        externalRef: 'vid-2',
+        vid: 'vid-2',
+        rawPayload: { product: {}, variant: { variantImage: 'https://img/v2.jpg' } },
+      });
       catalogRepo.findManyByIds.mockResolvedValue([item1, item2]);
       variantRepo.findByCjCatalogItemId.mockImplementation(async (id: number) =>
         id === 1 ? buildVariant({ id: 50, productId: 20 }) : null
@@ -287,6 +406,11 @@ describe('CjCatalogPromotionService', () => {
           expect.objectContaining({ cjCatalogItemId: 2, wasAlreadyPromoted: false, productId: 20 }),
         ])
       );
+      // Deliberate scope cut (design.md D4 / tasks.md 6.2): image capture only
+      // applies to brand-new products, not to a new variant joining an
+      // already-existing product from a prior partial promotion — even though
+      // item2 has a variantImage available, no image row is created for it.
+      expect(mockProductImageCreate).not.toHaveBeenCalled();
     });
   });
 

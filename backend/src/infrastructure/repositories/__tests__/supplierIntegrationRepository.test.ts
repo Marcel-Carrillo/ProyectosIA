@@ -1,6 +1,7 @@
 import {
   SupplierIntegrationRepository,
 } from '../supplierIntegrationRepository';
+import { SupplierIntegration } from '../../../domain/models/supplierIntegration';
 
 const mockFindUnique = jest.fn();
 const mockUpsert = jest.fn();
@@ -125,6 +126,40 @@ describe('SupplierIntegrationRepository', () => {
         where: { id: 1 },
         data: { lastSyncedAt: syncedAt },
       });
+    });
+  });
+
+  describe('updateCatalogSyncCursor', () => {
+    it('should_update_cursorPage_and_totalPages_without_touching_wrappedAt_when_wrappedAt_is_omitted', async () => {
+      mockUpdate.mockResolvedValue({ ...dbRow, catalogSyncCursorPage: 3, catalogSyncTotalPages: 10 });
+
+      await repo.updateCatalogSyncCursor(1, { cursorPage: 3, totalPages: 10 });
+
+      expect(mockUpdate).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { catalogSyncCursorPage: 3, catalogSyncTotalPages: 10 },
+      });
+    });
+
+    it('should_set_wrappedAt_when_provided', async () => {
+      const wrappedAt = new Date('2026-04-01');
+      mockUpdate.mockResolvedValue({ ...dbRow, catalogSyncCursorPage: 0, catalogSyncTotalPages: 10, catalogSyncWrappedAt: wrappedAt });
+
+      await repo.updateCatalogSyncCursor(1, { cursorPage: 0, totalPages: 10, wrappedAt });
+
+      expect(mockUpdate).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { catalogSyncCursorPage: 0, catalogSyncTotalPages: 10, catalogSyncWrappedAt: wrappedAt },
+      });
+    });
+
+    it('should_return_a_SupplierIntegration_domain_instance', async () => {
+      mockUpdate.mockResolvedValue({ ...dbRow, catalogSyncCursorPage: 7, catalogSyncTotalPages: 20 });
+
+      const result = await repo.updateCatalogSyncCursor(1, { cursorPage: 7, totalPages: 20 });
+
+      expect(result).toBeInstanceOf(SupplierIntegration);
+      expect(result.catalogSyncCursorPage).toBe(7);
     });
   });
 });
