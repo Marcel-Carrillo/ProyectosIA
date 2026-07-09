@@ -103,17 +103,23 @@ stripe listen --forward-to http://localhost:3000/api/public/payments/webhook
 | `CJ_SANDBOX_ORDERS` | When `true` (default), every supplier-order push forces `isSandbox: 1` on CJ order creation | No — defaults to `true` |
 | `CJ_SYNC_MAX_PAGES` / `CJ_CATALOG_PAGE_SIZE` | Cap catalog sync pages/page-size. Default to 500/100 when unset. **Only uncomment for local curl/manual verification against the live API** (rate-limit avoidance) — never leave set, they cripple real catalog syncs to a single tiny page | No |
 | `CJ_DEFAULT_MARKUP_MULTIPLIER` | Default markup applied to `CjCatalogItem.supplierCost` when an admin promotes an item without an explicit `publicPrice`. Promotion never publishes at raw cost — if this is unset and no explicit price is given, promotion fails with `CJ_PROMOTION_PRICE_REQUIRED` | No, but required in practice for bulk promotion without per-item prices |
+| `CJ_DEFAULT_CATEGORY_ID` | `Category.id` used by the scheduled `supplierAutoProvision` job (see below) when auto-promoting newly synced items with no human available to pick a category. Must reference an **existing** `Category` row | No — but auto-promotion is skipped (logged) for a run if unset/invalid |
+| `SUPPLIER_AUTO_PROVISION_ENABLED` | Kill-switch for the scheduled `supplierAutoProvision` job. Must be exactly `'true'` to run; anything else is a no-op | No — defaults to disabled |
 
 ```env
 CJDROPSHIPPING_API_KEY=cj_test_replace_with_your_cj_dropshipping_api_key
 CJ_API_BASE_URL=https://developers.cjdropshipping.com/api2.0/v1
 CJ_SANDBOX_ORDERS=true
 CJ_DEFAULT_MARKUP_MULTIPLIER=2.5
+CJ_DEFAULT_CATEGORY_ID=
+SUPPLIER_AUTO_PROVISION_ENABLED=false
 ```
 
 Without a real key, `POST /api/admin/suppliers/:supplierId/cj/connection/verify` and `POST /api/admin/suppliers/:supplierId/cj/sync` will report the connection as unhealthy/not-ready — this is expected in local dev unless real CJ Dropshipping credentials are configured.
 
 **Promote → activate/deactivate workflow**: once a supplier's catalog is synced, browse it in the admin panel at `/suppliers/:supplierId/cj-catalog`. Select one or more `Synced` items (items sharing the same CJ product id are grouped into a single `Product` on promotion), choose a category, and promote — this creates real `Product`/`ProductVariant` records linked back to the staged `CjCatalogItem`. Use the page's Activate/Deactivate actions to toggle storefront visibility at any time; the link to the original CJ item is never lost, so an item can be reactivated or promoted again (idempotently) later.
+
+**Scheduled auto-provisioning job** (`backend/src/jobs/supplierAutoProvisionHandler.ts`): runs once every 24 hours in production (AWS EventBridge, `rate(1 day)` — see `backend/serverless.yml`'s `supplierAutoProvision` function) and automates the manual connect → verify → sync → promote flow above end to end for any configured supplier provider (CJ Dropshipping today). It auto-creates the `Supplier`/`SupplierIntegration` the first time it detects a configured API key with none provisioned yet, then re-syncs and auto-promotes on every run. Auto-promoted products are always created **Draft** (never auto-activated) using `CJ_DEFAULT_CATEGORY_ID` and the existing markup-based pricing — an admin still reviews price and clicks Activate manually. It has no HTTP route by design; to run it manually (support/debugging or local testing), invoke `handler()` from `backend/src/jobs/supplierAutoProvisionHandler.ts` directly (e.g. via a one-off `ts-node` script loading `dotenv/config`) with `SUPPLIER_AUTO_PROVISION_ENABLED=true` and a valid `CJ_DEFAULT_CATEGORY_ID` set. One-time setup required before enabling in any environment: create a fallback `Category` (e.g. "Uncategorized") via the existing admin Category management flow and set its id as `CJ_DEFAULT_CATEGORY_ID`.
 
 **Note on the `frontend` Docker service**: unlike `backend` (which bind-mounts `backend/src`), the `frontend` service has no source bind mount — its image is built once from `frontend/src` at `docker compose build` time. After changing frontend code, run `docker compose build frontend && docker compose up -d --force-recreate frontend` to see the change reflected in Docker Compose; a plain `docker compose restart frontend` will not pick it up.
 

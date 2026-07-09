@@ -108,6 +108,21 @@ describe('CjCatalogItemRepository', () => {
         expect.objectContaining({ where: { supplierIntegrationId: 5, syncStatus: 'Failed' } })
       );
     });
+
+    it('should_order_by_createdAt_desc_with_an_id_tiebreaker_for_stable_pagination', async () => {
+      // All rows from one syncCatalog batch share the same createdAt (upsertMany
+      // runs in a single transaction) — createdAt alone is not a stable sort key
+      // across pages, so a secondary key is required to avoid skipping or
+      // repeating rows when a caller (e.g. the auto-provisioning pipeline) pages
+      // through more than one page of results.
+      mockTransaction.mockResolvedValue([[], 0]);
+
+      await repo.findBySupplierIntegrationId(5);
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: [{ createdAt: 'desc' }, { id: 'asc' }] })
+      );
+    });
   });
 
   describe('findByExternalRef', () => {

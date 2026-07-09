@@ -23,6 +23,7 @@ Browser
 | S3 bucket | `PROD_S3_BUCKET` (secret GitHub) | Frontend build |
 | API Gateway | `g54xfd8lja` | Proxy a Lambda |
 | Lambda | `ecommerce-backend-prod-app` | Express via serverless-http |
+| Lambda | `ecommerce-backend-prod-supplierAutoProvision` | Job programado (EventBridge `rate(1 day)`), sin API Gateway ni ruta HTTP — solo invocable por IAM/EventBridge. Automatiza el flujo manual de conexión/verificación/sync/promoción de CJ Dropshipping (ver `docs/development_guide.md`) |
 | RDS | `ecommerce-prod-db` | PostgreSQL 16, `db.t3.micro`, publicly accessible |
 | RDS endpoint | `ecommerce-prod-db.c7qigw4as957.eu-north-1.rds.amazonaws.com` | Puerto 5432 |
 | RDS master user | `marcel` | Password en SSM |
@@ -50,6 +51,8 @@ Todos en `/ecommerce/prod/` como `SecureString`:
 | `STRIPE_PUBLISHABLE_KEY` | Clave pública Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Secret de webhook Stripe |
 | `CJDROPSHIPPING_API_KEY` | Clave real de la API de CJ Dropshipping — misma cuenta/key que en dev (no hay separación dev/prod en CJ); referenciada en `serverless.yml` con fallback `''` para no romper el deploy si faltara |
+| `CJ_DEFAULT_CATEGORY_ID` | `Category.id` fijo usado por el job programado `supplierAutoProvision` al auto-promover ítems sin intervención humana. Debe crearse manualmente una categoría (ej. "Uncategorized") antes de habilitar el job en producción; fallback `''` — si falta o es inválida, el sync persiste pero la promoción se omite (logueado) |
+| `SUPPLIER_AUTO_PROVISION_ENABLED` | Kill-switch del job `supplierAutoProvision`. Debe ser exactamente `'true'` para ejecutar; fallback `'false'` (deshabilitado por defecto) |
 
 Ver o editar un parámetro:
 ```bash
