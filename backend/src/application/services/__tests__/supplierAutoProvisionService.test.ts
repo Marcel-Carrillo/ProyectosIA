@@ -2,7 +2,7 @@ jest.mock('../../../infrastructure/prismaClient', () => ({
   prisma: {
     supplier: { findFirst: jest.fn() },
     supplierIntegration: { findFirst: jest.fn() },
-    $transaction: jest.fn(),
+    $queryRaw: jest.fn(),
   },
 }));
 
@@ -15,7 +15,7 @@ import { SupplierProviderDescriptor } from '../../providers/providerRegistry';
 
 const mockSupplierFindFirst = prisma.supplier.findFirst as jest.Mock;
 const mockIntegrationFindFirst = prisma.supplierIntegration.findFirst as jest.Mock;
-const mockTransaction = prisma.$transaction as jest.Mock;
+const mockQueryRaw = prisma.$queryRaw as unknown as jest.Mock;
 
 function makeDescriptor(overrides: Partial<SupplierProviderDescriptor> = {}): jest.Mocked<SupplierProviderDescriptor> {
   return {
@@ -32,7 +32,6 @@ describe('SupplierAutoProvisionService', () => {
   let mockConfigureConnection: jest.Mock;
   let supplierService: SupplierService;
   let connectionService: CjConnectionService;
-  let mockTxQueryRaw: jest.Mock;
   const ORIGINAL_ENV = process.env;
 
   beforeEach(() => {
@@ -46,18 +45,12 @@ describe('SupplierAutoProvisionService', () => {
 
     mockSupplierFindFirst.mockResolvedValue(null); // no orphan by default
 
-    // Default lock behavior: acquire succeeds, unlock succeeds. $transaction
-    // just invokes the callback with a `tx` object exposing $queryRaw, mirroring
-    // Prisma's interactive-transaction API (used here purely to pin the lock's
-    // acquire/release calls to a single connection, not for atomicity).
-    mockTxQueryRaw = jest.fn().mockImplementation((strings: TemplateStringsArray) => {
+    // Default: lock acquired, unlock succeeds.
+    mockQueryRaw.mockImplementation((strings: TemplateStringsArray) => {
       const text = strings.join('');
       if (text.includes('pg_try_advisory_lock')) return Promise.resolve([{ locked: true }]);
       return Promise.resolve([]);
     });
-    mockTransaction.mockImplementation(async (callback: (tx: { $queryRaw: jest.Mock }) => Promise<unknown>) =>
-      callback({ $queryRaw: mockTxQueryRaw })
-    );
   });
 
   afterAll(() => {
@@ -263,13 +256,13 @@ describe('SupplierAutoProvisionService', () => {
         .fn()
         .mockResolvedValue({ verifyHealthy: true, itemsUpserted: 1, itemsFailed: 0, variantsCreated: 1, alreadyPromoted: 0 }),
     });
-    mockTransaction
-      .mockImplementationOnce(async () => {
-        throw new Error('connection lost during lock acquisition');
-      })
-      .mockImplementationOnce(async (callback: (tx: { $queryRaw: jest.Mock }) => Promise<unknown>) =>
-        callback({ $queryRaw: mockTxQueryRaw })
-      );
+    mockQueryRaw
+      .mockImplementationOnce(() => Promise.reject(new Error('connection lost during lock acquisition')))
+      .mockImplementation((strings: TemplateStringsArray) => {
+        const text = strings.join('');
+        if (text.includes('pg_try_advisory_lock')) return Promise.resolve([{ locked: true }]);
+        return Promise.resolve([]);
+      });
     const service = new SupplierAutoProvisionService(supplierService, connectionService, [failing, succeeding]);
 
     const result = await service.run();
@@ -280,7 +273,7 @@ describe('SupplierAutoProvisionService', () => {
   });
 
   it('should_skip_a_provider_when_its_advisory_lock_is_already_held', async () => {
-    mockTxQueryRaw.mockResolvedValue([{ locked: false }]);
+    mockQueryRaw.mockResolvedValue([{ locked: false }]);
     const descriptor = makeDescriptor();
     const service = new SupplierAutoProvisionService(supplierService, connectionService, [descriptor]);
 
@@ -293,7 +286,7 @@ describe('SupplierAutoProvisionService', () => {
       skipReason: 'LOCKED',
       provisioned: false,
     });
-    expect(mockTxQueryRaw).toHaveBeenCalledTimes(1);
+    expect(mockQueryRaw).toHaveBeenCalledTimes(1);
   });
 
   it('should_release_the_lock_even_when_runPipeline_throws', async () => {
@@ -303,23 +296,6 @@ describe('SupplierAutoProvisionService', () => {
 
     await service.run();
 
-    expect(mockTxQueryRaw).toHaveBeenCalledTimes(2);
-  });
-
-  it('should_acquire_and_release_the_lock_within_the_same_transaction_callback', async () => {
-    // Guards against regressing to two independent $queryRaw calls outside a
-    // shared connection (the exact bug this transaction wrapping fixes).
-    mockIntegrationFindFirst.mockResolvedValue({ id: 1, supplierId: 9, provider: 'CJDropshipping' });
-    const descriptor = makeDescriptor({
-      runPipeline: jest
-        .fn()
-        .mockResolvedValue({ verifyHealthy: true, itemsUpserted: 0, itemsFailed: 0, variantsCreated: 0, alreadyPromoted: 0 }),
-    });
-    const service = new SupplierAutoProvisionService(supplierService, connectionService, [descriptor]);
-
-    await service.run();
-
-    expect(mockTransaction).toHaveBeenCalledTimes(1);
-    expect(mockTxQueryRaw).toHaveBeenCalledTimes(2); // acquire + release, same tx/connection
+    expect(mockQueryRaw).toHaveBeenCalledTimes(2);
   });
 });

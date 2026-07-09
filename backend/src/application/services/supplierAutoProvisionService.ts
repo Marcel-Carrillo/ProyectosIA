@@ -3,7 +3,6 @@ import { CjConnectionService } from './cjConnectionService';
 import { SupplierProviderDescriptor } from '../providers/providerRegistry';
 import { prisma } from '../../infrastructure/prismaClient';
 import { logger } from '../../infrastructure/logger';
-import { Prisma } from '@prisma/client';
 
 export type ProviderSkipReason = 'NOT_CONFIGURED' | 'LOCKED';
 
@@ -25,19 +24,6 @@ export interface SupplierAutoProvisionRunResult {
   enabled: boolean;
   providers: ProviderRunOutcome[];
 }
-
-// Advisory locks are session-scoped in Postgres: pg_try_advisory_lock and
-// pg_advisory_unlock must run on the SAME physical connection, or the unlock
-// silently no-ops and the lock is never released. Prisma's default pool does
-// not guarantee that two independent $queryRaw calls share a connection, so
-// the whole acquire -> critical section -> release span runs inside a single
-// $transaction, which pins one connection for its entire duration. The large
-// timeout accommodates the pipeline's external CJ API calls (pagination,
-// rate-limit backoff) — this transaction is a connection-pinning device, not
-// an atomicity boundary; ensureSupplierProvisioned/runPipeline's real writes
-// still go through the module-level prisma singleton on their own connections.
-const LOCK_TRANSACTION_TIMEOUT_MS = 890_000;
-const LOCK_TRANSACTION_MAX_WAIT_MS = 10_000;
 
 export class SupplierAutoProvisionService {
   constructor(
@@ -68,24 +54,19 @@ export class SupplierAutoProvisionService {
     }
 
     try {
-      return await prisma.$transaction(
-        async (tx) => {
-          const acquired = await this.tryAcquireLock(tx, descriptor.key);
-          if (!acquired) {
-            logger.warn('Supplier auto-provisioning skipped: advisory lock already held', { provider: descriptor.key });
-            return { provider: descriptor.key, skipped: true, skipReason: 'LOCKED' as const, provisioned: false };
-          }
+      const acquired = await this.tryAcquireLock(descriptor.key);
+      if (!acquired) {
+        logger.warn('Supplier auto-provisioning skipped: advisory lock already held', { provider: descriptor.key });
+        return { provider: descriptor.key, skipped: true, skipReason: 'LOCKED', provisioned: false };
+      }
 
-          try {
-            const { supplierId, provisioned } = await this.ensureSupplierProvisioned(descriptor);
-            const pipelineResult = await descriptor.runPipeline(supplierId);
-            return { provider: descriptor.key, skipped: false, provisioned, ...pipelineResult };
-          } finally {
-            await this.releaseLock(tx, descriptor.key);
-          }
-        },
-        { timeout: LOCK_TRANSACTION_TIMEOUT_MS, maxWait: LOCK_TRANSACTION_MAX_WAIT_MS }
-      );
+      try {
+        const { supplierId, provisioned } = await this.ensureSupplierProvisioned(descriptor);
+        const pipelineResult = await descriptor.runPipeline(supplierId);
+        return { provider: descriptor.key, skipped: false, provisioned, ...pipelineResult };
+      } finally {
+        await this.releaseLock(descriptor.key);
+      }
     } catch (err) {
       logger.error('Supplier auto-provisioning failed for provider', {
         provider: descriptor.key,
@@ -131,14 +112,30 @@ export class SupplierAutoProvisionService {
     return { supplierId, provisioned: !orphan };
   }
 
-  private async tryAcquireLock(tx: Prisma.TransactionClient, key: string): Promise<boolean> {
-    const rows = await tx.$queryRaw<Array<{ locked: boolean }>>`
+  // Lock acquire/release are two independent prisma.$queryRaw calls against
+  // the module-level prisma singleton, NOT wrapped in an interactive
+  // prisma.$transaction. An earlier version of this code pinned both calls
+  // inside a single $transaction to guarantee they shared one physical
+  // connection (Postgres advisory locks are session-scoped). That was
+  // reverted after live production testing: AWS Lambda freezes the execution
+  // environment's CPU immediately once the handler's promise resolves, and
+  // this consistently left Prisma's interactive transaction connection in
+  // Postgres as "idle in transaction" forever — the COMMIT/ROLLBACK never
+  // actually completed server-side, permanently holding the advisory lock
+  // and requiring a manual pg_terminate_backend to recover. That failure mode
+  // is worse than the narrower risk being guarded against (acquire/release
+  // landing on different pooled connections), which is bounded in practice —
+  // this job runs once a day with a generous connection pool
+  // (DATABASE_URL's connection_limit), and any stale session-held lock is
+  // released as soon as that connection's Lambda container is recycled.
+  private async tryAcquireLock(key: string): Promise<boolean> {
+    const rows = await prisma.$queryRaw<Array<{ locked: boolean }>>`
       SELECT pg_try_advisory_lock(hashtext(${key})) AS locked
     `;
     return rows[0]?.locked === true;
   }
 
-  private async releaseLock(tx: Prisma.TransactionClient, key: string): Promise<void> {
-    await tx.$queryRaw`SELECT pg_advisory_unlock(hashtext(${key}))`;
+  private async releaseLock(key: string): Promise<void> {
+    await prisma.$queryRaw`SELECT pg_advisory_unlock(hashtext(${key}))`;
   }
 }
