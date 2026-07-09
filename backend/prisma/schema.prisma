@@ -436,7 +436,9 @@ model CouponRedemption {
   couponId        Int
   coupon          Coupon        @relation(fields: [couponId], references: [id])
   customerOrderId Int           @unique
-  customerOrder   CustomerOrder @relation(fields: [customerOrderId], references: [id])
+  // Cascade so the checkout rollback path (order deleted after a Stripe
+  // failure) never hits an FK violation and leaves a zombie PendingPayment order.
+  customerOrder   CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
   discountAmount  Decimal       @db.Decimal(10, 2)
   createdAt       DateTime      @default(now())
 
