@@ -8,6 +8,9 @@ export class SupplierIntegration {
   externalAccountRef?: string | null;
   lastVerifiedAt?: Date | null;
   lastSyncedAt?: Date | null;
+  catalogSyncCursorPage: number;
+  catalogSyncTotalPages?: number | null;
+  catalogSyncWrappedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 
@@ -19,6 +22,9 @@ export class SupplierIntegration {
     externalAccountRef?: string | null;
     lastVerifiedAt?: Date | null;
     lastSyncedAt?: Date | null;
+    catalogSyncCursorPage?: number | null;
+    catalogSyncTotalPages?: number | null;
+    catalogSyncWrappedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -29,6 +35,9 @@ export class SupplierIntegration {
     this.externalAccountRef = data.externalAccountRef ?? null;
     this.lastVerifiedAt = data.lastVerifiedAt ?? null;
     this.lastSyncedAt = data.lastSyncedAt ?? null;
+    this.catalogSyncCursorPage = data.catalogSyncCursorPage ?? 0;
+    this.catalogSyncTotalPages = data.catalogSyncTotalPages ?? null;
+    this.catalogSyncWrappedAt = data.catalogSyncWrappedAt ?? null;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
   }

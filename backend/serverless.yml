@@ -34,17 +34,17 @@ provider:
     CJ_DEFAULT_MARKUP_MULTIPLIER: '2.5'
     CJ_DEFAULT_CATEGORY_ID: ${ssm:/ecommerce/prod/CJ_DEFAULT_CATEGORY_ID, ''}
     SUPPLIER_AUTO_PROVISION_ENABLED: ${ssm:/ecommerce/prod/SUPPLIER_AUTO_PROVISION_ENABLED, 'false'}
-    # Caps supplierAutoProvision's per-run catalog sync so one invocation
-    # finishes well within the Lambda's 900s timeout instead of syncing the
-    # entire (very large) CJ catalog in one run. syncCatalog makes one
-    # fetchVariants call PER PRODUCT on every page (not just one call per
-    # page), so both page count AND page size must stay small — at the
-    # observed ~1 call/sec effective throughput, unbounded defaults
-    # (500 pages x 100/page) cannot complete within 900s. Sync is
-    # incremental across daily runs by design — this does not need to be
-    # unbounded.
-    CJ_SYNC_MAX_PAGES: ${ssm:/ecommerce/prod/CJ_SYNC_MAX_PAGES, '5'}
-    CJ_CATALOG_PAGE_SIZE: ${ssm:/ecommerce/prod/CJ_CATALOG_PAGE_SIZE, '20'}
+    # Bounds supplierAutoProvision's per-run catalog sync window (design.md D2
+    # in openspec/changes/cj-catalog-cursor-and-media). Cost is
+    # calls = pages * (1 + pageSize) — one fetchCatalog call per page PLUS one
+    # fetchVariants call per product — so both page count AND page size drive
+    # runtime. At ~1.46s/product observed in production, 3 pages x 100/page
+    # (300 products/run) completes in ~442s, comfortably under the 900s Lambda
+    # timeout. syncCatalog now advances via a persisted per-connection cursor
+    # (SupplierIntegration.catalogSyncCursorPage) rather than always restarting
+    # at page 1, wrapping back to page 1 once the catalog end is reached.
+    CJ_SYNC_MAX_PAGES: ${ssm:/ecommerce/prod/CJ_SYNC_MAX_PAGES, '3'}
+    CJ_CATALOG_PAGE_SIZE: ${ssm:/ecommerce/prod/CJ_CATALOG_PAGE_SIZE, '100'}
 
 functions:
   app:

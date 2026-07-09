@@ -26,35 +26,35 @@ model Category {
 }
 
 model Supplier {
-  id              Int              @id @default(autoincrement())
-  name            String           @db.VarChar(150)
-  contactName     String?          @db.VarChar(150)
-  contactEmail    String?          @db.VarChar(255)
-  contactPhone    String?          @db.VarChar(30)
-  website         String?          @db.VarChar(500)
-  notes           String?          @db.VarChar(2000)
-  status          String           @default("Active")
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id              Int                  @id @default(autoincrement())
+  name            String               @db.VarChar(150)
+  contactName     String?              @db.VarChar(150)
+  contactEmail    String?              @db.VarChar(255)
+  contactPhone    String?              @db.VarChar(30)
+  website         String?              @db.VarChar(500)
+  notes           String?              @db.VarChar(2000)
+  status          String               @default("Active")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
   productVariants ProductVariant[]
   supplierOrders  SupplierOrder[]
-  cjIntegration SupplierIntegration?
+  cjIntegration   SupplierIntegration?
 }
 
 model Product {
-  id           Int              @id @default(autoincrement())
-  name         String           @db.VarChar(150)
-  slug         String           @unique @db.VarChar(200)
-  description  String?          @db.VarChar(2000)
-  brand        String?          @db.VarChar(100)
-  gtin         String?          @db.VarChar(14)
-  status       String           @default("Draft")
-  mainImageUrl String?          @db.VarChar(500)
+  id           Int                  @id @default(autoincrement())
+  name         String               @db.VarChar(150)
+  slug         String               @unique @db.VarChar(200)
+  description  String?              @db.VarChar(2000)
+  brand        String?              @db.VarChar(100)
+  gtin         String?              @db.VarChar(14)
+  status       String               @default("Draft")
+  mainImageUrl String?              @db.VarChar(500)
   categoryId   Int?
-  category     Category?        @relation(fields: [categoryId], references: [id])
+  category     Category?            @relation(fields: [categoryId], references: [id])
   deletedAt    DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
   variants     ProductVariant[]
   images       ProductImage[]
   translations ProductTranslation[]
@@ -62,28 +62,28 @@ model Product {
 }
 
 model ProductVariant {
-  id                Int       @id @default(autoincrement())
-  productId         Int
-  product           Product   @relation(fields: [productId], references: [id])
-  sku               String    @unique @db.VarChar(100)
-  size              String?   @db.VarChar(50)
-  color             String?   @db.VarChar(50)
-  publicPrice       Decimal   @db.Decimal(10, 2)
-  compareAtPrice    Decimal?  @db.Decimal(10, 2)
-  supplierId        Int?
-  supplier          Supplier? @relation(fields: [supplierId], references: [id])
-  supplierReference String?   @db.VarChar(150)
-  supplierCost      Decimal?  @db.Decimal(10, 2)
-  stockPolicy       String    @default("SupplierManaged")
-  status            String    @default("Active")
-  cjCatalogItemId   Int?      @unique
-  cjCatalogItem     CjCatalogItem? @relation(fields: [cjCatalogItemId], references: [id])
-  deletedAt         DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  customerOrderItems  CustomerOrderItem[]
-  supplierOrderItems  SupplierOrderItem[]
-  wishlistItems       WishlistItem[]
+  id                 Int                 @id @default(autoincrement())
+  productId          Int
+  product            Product             @relation(fields: [productId], references: [id])
+  sku                String              @unique @db.VarChar(100)
+  size               String?             @db.VarChar(50)
+  color              String?             @db.VarChar(50)
+  publicPrice        Decimal             @db.Decimal(10, 2)
+  compareAtPrice     Decimal?            @db.Decimal(10, 2)
+  supplierId         Int?
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id])
+  supplierReference  String?             @db.VarChar(150)
+  supplierCost       Decimal?            @db.Decimal(10, 2)
+  stockPolicy        String              @default("SupplierManaged")
+  status             String              @default("Active")
+  cjCatalogItemId    Int?                @unique
+  cjCatalogItem      CjCatalogItem?      @relation(fields: [cjCatalogItemId], references: [id])
+  deletedAt          DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  customerOrderItems CustomerOrderItem[]
+  supplierOrderItems SupplierOrderItem[]
+  wishlistItems      WishlistItem[]
 }
 
 model ProductImage {
@@ -97,13 +97,13 @@ model ProductImage {
 }
 
 model Customer {
-  id        Int               @id @default(autoincrement())
-  firstName String            @db.VarChar(100)
-  lastName  String            @db.VarChar(100)
-  email     String            @unique @db.VarChar(255)
-  phone     String?           @db.VarChar(30)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id             Int               @id @default(autoincrement())
+  firstName      String            @db.VarChar(100)
+  lastName       String            @db.VarChar(100)
+  email          String            @unique @db.VarChar(255)
+  phone          String?           @db.VarChar(30)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   addresses      CustomerAddress[]
   customerOrders CustomerOrder[]
   account        CustomerAccount?
@@ -165,17 +165,17 @@ model CustomerOrder {
 }
 
 model CustomerOrderItem {
-  id                  Int            @id @default(autoincrement())
+  id                  Int                 @id @default(autoincrement())
   customerOrderId     Int
-  customerOrder       CustomerOrder  @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
+  customerOrder       CustomerOrder       @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
   productVariantId    Int
-  productVariant      ProductVariant @relation(fields: [productVariantId], references: [id])
-  productNameSnapshot String         @db.VarChar(150)
+  productVariant      ProductVariant      @relation(fields: [productVariantId], references: [id])
+  productNameSnapshot String              @db.VarChar(150)
   variantSnapshot     Json
-  skuSnapshot         String         @db.VarChar(100)
+  skuSnapshot         String              @db.VarChar(100)
   quantity            Int
-  unitPrice           Decimal        @db.Decimal(10, 2)
-  totalPrice          Decimal        @db.Decimal(10, 2)
+  unitPrice           Decimal             @db.Decimal(10, 2)
+  totalPrice          Decimal             @db.Decimal(10, 2)
   fulfillmentStatus   String              @default("NotStarted")
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
@@ -188,20 +188,20 @@ model CustomerOrderItem {
 }
 
 model SupplierOrder {
-  id                  Int                 @id @default(autoincrement())
-  supplierOrderNumber String              @unique @db.VarChar(50)
-  customerOrderId     Int
-  customerOrder       CustomerOrder       @relation(fields: [customerOrderId], references: [id])
-  supplierId          Int
-  supplier            Supplier            @relation(fields: [supplierId], references: [id])
-  status              String              @default("Draft")
-  requestedAt         DateTime?
-  confirmedAt         DateTime?
-  shippedAt           DateTime?
-  deliveredAt         DateTime?
-  trackingNumber      String?             @db.VarChar(100)
-  trackingUrl         String?             @db.VarChar(500)
-  internalNotes       String?             @db.VarChar(2000)
+  id                       Int                 @id @default(autoincrement())
+  supplierOrderNumber      String              @unique @db.VarChar(50)
+  customerOrderId          Int
+  customerOrder            CustomerOrder       @relation(fields: [customerOrderId], references: [id])
+  supplierId               Int
+  supplier                 Supplier            @relation(fields: [supplierId], references: [id])
+  status                   String              @default("Draft")
+  requestedAt              DateTime?
+  confirmedAt              DateTime?
+  shippedAt                DateTime?
+  deliveredAt              DateTime?
+  trackingNumber           String?             @db.VarChar(100)
+  trackingUrl              String?             @db.VarChar(500)
+  internalNotes            String?             @db.VarChar(2000)
   externalProvider         String?             @db.VarChar(50)
   externalOrderId          String?             @unique @db.VarChar(150)
   externalOrderStatus      String?             @db.VarChar(50)
@@ -210,10 +210,10 @@ model SupplierOrder {
   sandbox                  Boolean             @default(true)
   pushedAt                 DateTime?
   lastStatusSyncedAt       DateTime?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  items               SupplierOrderItem[]
-  shipments           Shipment[]
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  items                    SupplierOrderItem[]
+  shipments                Shipment[]
 
   @@index([customerOrderId])
   @@index([supplierId])
@@ -242,17 +242,17 @@ model SupplierOrderItem {
 }
 
 model Refund {
-  id                       Int           @id @default(autoincrement())
+  id                       Int            @id @default(autoincrement())
   customerOrderId          Int
-  customerOrder            CustomerOrder @relation(fields: [customerOrderId], references: [id])
+  customerOrder            CustomerOrder  @relation(fields: [customerOrderId], references: [id])
   returnRequestId          Int?
   returnRequest            ReturnRequest? @relation(fields: [returnRequestId], references: [id])
-  amount                   Decimal       @db.Decimal(10, 2)
-  reason                   String?       @db.VarChar(500)
-  status                   String        @default("Pending")
-  paymentProviderReference String?       @db.VarChar(150)
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
+  amount                   Decimal        @db.Decimal(10, 2)
+  reason                   String?        @db.VarChar(500)
+  status                   String         @default("Pending")
+  paymentProviderReference String?        @db.VarChar(150)
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
   processedAt              DateTime?
 
   @@index([customerOrderId])
@@ -357,21 +357,21 @@ model AdminRefreshToken {
 }
 
 model CustomerAccount {
-  id            Int                     @id @default(autoincrement())
-  customerId    Int                     @unique
-  customer      Customer                @relation(fields: [customerId], references: [id])
-  email         String                  @unique @db.VarChar(255)
-  passwordHash  String?                 @db.VarChar(255)
-  authProvider  String                  @default("local") @db.VarChar(20)
-  googleId      String?                 @unique @db.VarChar(255)
-  appleId       String?                 @unique @db.VarChar(255)
-  facebookId    String?                 @unique @db.VarChar(255)
-  status        String                  @default("Active")
-  totpSecret    String?                 @db.VarChar(255)
-  totpEnabled   Boolean                 @default(false)
+  id            Int                    @id @default(autoincrement())
+  customerId    Int                    @unique
+  customer      Customer               @relation(fields: [customerId], references: [id])
+  email         String                 @unique @db.VarChar(255)
+  passwordHash  String?                @db.VarChar(255)
+  authProvider  String                 @default("local") @db.VarChar(20)
+  googleId      String?                @unique @db.VarChar(255)
+  appleId       String?                @unique @db.VarChar(255)
+  facebookId    String?                @unique @db.VarChar(255)
+  status        String                 @default("Active")
+  totpSecret    String?                @db.VarChar(255)
+  totpEnabled   Boolean                @default(false)
   lastLoginAt   DateTime?
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
   refreshTokens CustomerRefreshToken[]
   resetTokens   PasswordResetToken[]
   wishlistItems WishlistItem[]
@@ -404,12 +404,12 @@ model PasswordResetToken {
 }
 
 model WishlistItem {
-  id               Int             @id @default(autoincrement())
+  id                Int             @id @default(autoincrement())
   customerAccountId Int
-  customerAccount  CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Cascade)
-  productVariantId Int
-  productVariant   ProductVariant  @relation(fields: [productVariantId], references: [id])
-  createdAt        DateTime        @default(now())
+  customerAccount   CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Cascade)
+  productVariantId  Int
+  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id])
+  createdAt         DateTime        @default(now())
 
   @@unique([customerAccountId, productVariantId])
   @@index([customerAccountId])
@@ -471,17 +471,20 @@ model StripeWebhookEvent {
 }
 
 model SupplierIntegration {
-  id                 Int                  @id @default(autoincrement())
-  supplierId         Int                  @unique
-  supplier           Supplier             @relation(fields: [supplierId], references: [id])
-  provider           String               @default("CJDropshipping") @db.VarChar(50)
-  status             String               @default("Disconnected") @db.VarChar(20)
-  externalAccountRef String?              @db.VarChar(150)
-  lastVerifiedAt     DateTime?
-  lastSyncedAt       DateTime?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  catalogItems       CjCatalogItem[]
+  id                    Int             @id @default(autoincrement())
+  supplierId            Int             @unique
+  supplier              Supplier        @relation(fields: [supplierId], references: [id])
+  provider              String          @default("CJDropshipping") @db.VarChar(50)
+  status                String          @default("Disconnected") @db.VarChar(20)
+  externalAccountRef    String?         @db.VarChar(150)
+  lastVerifiedAt        DateTime?
+  lastSyncedAt          DateTime?
+  catalogSyncCursorPage Int             @default(0)
+  catalogSyncTotalPages Int?
+  catalogSyncWrappedAt  DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  catalogItems          CjCatalogItem[]
 
   @@index([supplierId])
 }
