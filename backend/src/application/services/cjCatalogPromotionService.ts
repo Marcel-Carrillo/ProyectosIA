@@ -19,6 +19,20 @@ import { setProductMainImage, createProductImageRecord } from './cjProductImageS
 
 const DEFAULT_MARKUP_ENV = 'CJ_DEFAULT_MARKUP_MULTIPLIER';
 
+// Prisma's default interactive-transaction timeout is 5000ms. A single
+// promote() call can create dozens to a few hundred Product/ProductVariant/
+// ProductImage rows in one transaction (the automated auto-provisioning job
+// can promote up to ~300 items per run — see cj-catalog-cursor-and-media's
+// throughput study), which reliably exceeds that default under real network
+// latency to RDS ("Transaction already closed" errors observed live in
+// production). Raising the timeout here is safe, unlike the advisory-lock
+// transaction that was reverted in supplierAutoProvisionService.ts (see
+// cj-catalog-auto-provisioning's incident report): this transaction performs
+// only synchronous DB writes with no external API calls in between, so it
+// cannot be caught mid-flight by a Lambda execution-environment freeze the
+// way that a transaction spanning CJ API calls could.
+const PROMOTE_TRANSACTION_OPTIONS = { timeout: 120_000 };
+
 export interface PromotedVariantResult {
   cjCatalogItemId: number;
   productId: number;
@@ -245,7 +259,7 @@ export class CjCatalogPromotionService {
 
           productsResult.push({ productId, variantIds });
         }
-      });
+      }, PROMOTE_TRANSACTION_OPTIONS);
     }
 
     for (const [cjCatalogItemId, linked] of alreadyLinked) {
