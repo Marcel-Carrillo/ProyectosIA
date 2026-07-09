@@ -1,12 +1,14 @@
 import 'dotenv/config';
 import express from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { healthRoutes, categoryRoutes } from './routes';
+import { healthRoutes } from './routes';
 import productAdminRoutes from './routes/admin/productRoutes';
+import categoryAdminRoutes from './routes/admin/categoryRoutes';
 import supplierAdminRoutes from './routes/admin/supplierRoutes';
 import customerAdminRoutes from './routes/admin/customerRoutes';
 import customerOrderAdminRoutes from './routes/admin/customerOrderRoutes';
@@ -66,6 +68,10 @@ if (process.env.NODE_ENV !== 'test') {
 
 export const app = express();
 
+// Security headers. CSP is disabled: this API serves JSON (no HTML to
+// protect) and a default CSP would break the Swagger UI served in dev.
+app.use(helmet({ contentSecurityPolicy: false }));
+
 // Trust exactly one proxy hop in prod (API Gateway/CloudFront); loopback only in dev
 // (CRA dev proxy). Prevents express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
 app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
@@ -94,16 +100,20 @@ app.use(
 app.use(express.json());
 app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET || 'change-me-in-production'));
 
-const swaggerDocument = yaml.load(fs.readFileSync(`${__dirname}/api-spec.yml`, 'utf8')) as object;
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Swagger UI is a development/staging aid only — never mounted in production
+// (unauthenticated full API surface disclosure).
+if (process.env.NODE_ENV !== 'production') {
+  const swaggerDocument = yaml.load(fs.readFileSync(`${__dirname}/api-spec.yml`, 'utf8')) as object;
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+}
 
 app.use('/health', healthRoutes);
-app.use('/categories', categoryRoutes);
 
 const adminRouter = express.Router();
 adminRouter.use('/auth', adminAuthRoutes);
 adminRouter.use(requireAdminAuth);
 adminRouter.use('/products', productAdminRoutes);
+adminRouter.use('/categories', categoryAdminRoutes);
 adminRouter.use('/suppliers', supplierAdminRoutes);
 adminRouter.use('/customers', customerAdminRoutes);
 adminRouter.use('/customer-orders', customerOrderAdminRoutes);

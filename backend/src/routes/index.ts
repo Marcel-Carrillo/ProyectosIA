@@ -1,5 +1,4 @@
 export { default as healthRoutes } from './healthRoutes';
-export { default as categoryRoutes } from './categoryRoutes';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // /api/admin routes

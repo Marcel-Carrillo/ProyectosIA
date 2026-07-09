@@ -43,7 +43,6 @@ export async function guestCheckout(req: CustomerAuthRequest, res: Response, nex
       items?: Array<{ productVariantId: number; quantity: number }>;
       shippingAddressSnapshot?: Record<string, unknown>;
       billingAddressSnapshot?: Record<string, unknown>;
-      shippingAmount?: string;
       couponCode?: string;
     };
     if (!body.email || !body.firstName || !body.lastName || !body.items?.length || !body.shippingAddressSnapshot || !body.billingAddressSnapshot) {
@@ -59,7 +58,6 @@ export async function guestCheckout(req: CustomerAuthRequest, res: Response, nex
       items: body.items,
       shippingAddressSnapshot: body.shippingAddressSnapshot,
       billingAddressSnapshot: body.billingAddressSnapshot,
-      shippingAmount: body.shippingAmount,
       couponCode: body.couponCode,
     });
     res.status(201).json({ success: true, data: toPublicOrder(result), message: 'Order created' });
@@ -74,7 +72,6 @@ export async function authenticatedCheckout(req: CustomerAuthRequest, res: Respo
       items?: Array<{ productVariantId: number; quantity: number }>;
       shippingAddressSnapshot?: Record<string, unknown>;
       billingAddressSnapshot?: Record<string, unknown>;
-      shippingAmount?: string;
       couponCode?: string;
     };
     if (!body.items?.length || !body.shippingAddressSnapshot || !body.billingAddressSnapshot) {
@@ -86,7 +83,6 @@ export async function authenticatedCheckout(req: CustomerAuthRequest, res: Respo
       items: body.items,
       shippingAddressSnapshot: body.shippingAddressSnapshot,
       billingAddressSnapshot: body.billingAddressSnapshot,
-      shippingAmount: body.shippingAmount,
       couponCode: body.couponCode,
     });
     res.status(201).json({ success: true, data: toPublicOrder(result), message: 'Order created' });
