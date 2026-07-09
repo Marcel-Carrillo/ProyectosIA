@@ -14,6 +14,8 @@ import {
   CjPromotionRequestInput,
 } from '../validator';
 import { logger } from '../../infrastructure/logger';
+import { extractCjImages, planProductImages } from './cjImageExtraction';
+import { setProductMainImage, createProductImageRecord } from './cjProductImageSync';
 
 const DEFAULT_MARKUP_ENV = 'CJ_DEFAULT_MARKUP_MULTIPLIER';
 
@@ -183,6 +185,27 @@ export class CjCatalogPromotionService {
               data: { name: title, slug, status: productStatus, categoryId },
             });
             productId = createdProduct.id;
+
+            // Image capture is scoped to brand-new products only (design.md
+            // D4; see cj-catalog-cursor-and-media/tasks.md 6.2 for the
+            // deliberate scope cut on variants later joining an
+            // already-existing product from a prior partial promotion).
+            // Planned from the WHOLE group (not just the first item) so a
+            // product-level image from any item wins as the main image, and —
+            // if CJ supplied no product-level image at all — the first
+            // variant-level image found still becomes the main image rather
+            // than leaving mainImageUrl permanently null despite having
+            // captured ProductImage rows.
+            const imagePlan = planProductImages(
+              group.items.map((gi) => ({ ...extractCjImages(gi.catalogItem.rawPayload), altText: gi.catalogItem.title }))
+            );
+            if (imagePlan.mainImageUrl) {
+              await setProductMainImage(tx, productId, imagePlan.mainImageUrl);
+            }
+            for (let i = 0; i < imagePlan.images.length; i++) {
+              const image = imagePlan.images[i]!;
+              await createProductImageRecord(tx, { productId, url: image.url, altText: image.altText, sortOrder: i });
+            }
           }
 
           for (const groupItem of group.items) {

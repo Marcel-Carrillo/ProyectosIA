@@ -98,6 +98,7 @@ describe('CjOrderPushService', () => {
       upsert: jest.fn(),
       updateStatus: jest.fn(),
       updateLastSyncedAt: jest.fn(),
+      updateCatalogSyncCursor: jest.fn(),
     };
     catalogRepo = {
       upsertMany: jest.fn(),

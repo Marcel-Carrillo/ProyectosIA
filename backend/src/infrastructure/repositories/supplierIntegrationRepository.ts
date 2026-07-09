@@ -65,4 +65,19 @@ export class SupplierIntegrationRepository implements ISupplierIntegrationReposi
     });
     return new SupplierIntegration(row);
   }
+
+  async updateCatalogSyncCursor(
+    id: number,
+    data: { cursorPage: number; totalPages: number; wrappedAt?: Date }
+  ): Promise<SupplierIntegration> {
+    const row = await prisma.supplierIntegration.update({
+      where: { id },
+      data: {
+        catalogSyncCursorPage: data.cursorPage,
+        catalogSyncTotalPages: data.totalPages,
+        ...(data.wrappedAt !== undefined && { catalogSyncWrappedAt: data.wrappedAt }),
+      },
+    });
+    return new SupplierIntegration(row);
+  }
 }

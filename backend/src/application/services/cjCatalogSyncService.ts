@@ -12,8 +12,6 @@ import { CjConnectionNotReadyError, CjApiUnavailableError } from '../validator';
 import { logger } from '../../infrastructure/logger';
 
 const MAX_PAGE_SIZE = 100;
-const MAX_SYNC_PAGES = Number(process.env.CJ_SYNC_MAX_PAGES ?? 500);
-const CATALOG_PAGE_SIZE = Number(process.env.CJ_CATALOG_PAGE_SIZE ?? 100);
 
 export interface SyncCatalogResult {
   itemsUpserted: number;
@@ -25,6 +23,23 @@ export interface SyncCatalogResult {
 // attribute pairs (e.g. size/color for fashion items). Falls back to nulls for
 // non-fashion items that don't carry these attributes — this is best-effort
 // enrichment, never a reason to fail the item.
+// Guards against a misconfigured SSM value (empty, zero, negative, or
+// non-numeric) silently producing endPage < startPage, which would make
+// syncCatalog's window loop never execute — a permanently-stuck, zero-progress
+// "successful" sync with no error, no cursor advancement, ever again. Falls
+// back to the safe default and logs a warning instead of trusting the raw
+// parse, mirroring the existing Number.isFinite guard style already used by
+// CjCatalogPromotionService.getDefaultMarkupMultiplier for the same class of
+// env-var-misconfiguration risk.
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  const value = Number(raw);
+  if (Number.isInteger(value) && value > 0) return value;
+  logger.warn('Invalid value for env var, falling back to default', { name, raw, fallback });
+  return fallback;
+}
+
 function parseSizeColor(variantProperty: string | undefined): { size: string | null; color: string | null } {
   if (!variantProperty) return { size: null, color: null };
   try {
@@ -39,11 +54,17 @@ function parseSizeColor(variantProperty: string | undefined): { size: string | n
 }
 
 export class CjCatalogSyncService {
+  private readonly maxSyncPages: number;
+  private readonly catalogPageSize: number;
+
   constructor(
     private readonly integrationRepo: ISupplierIntegrationRepository,
     private readonly catalogRepo: ICjCatalogItemRepository,
     private readonly cjClient: ICjClient
-  ) {}
+  ) {
+    this.maxSyncPages = parsePositiveIntEnv('CJ_SYNC_MAX_PAGES', 500);
+    this.catalogPageSize = parsePositiveIntEnv('CJ_CATALOG_PAGE_SIZE', 100);
+  }
 
   async syncCatalog(supplierId: number): Promise<SyncCatalogResult> {
     const integration = await this.integrationRepo.findBySupplierId(supplierId);
@@ -55,15 +76,28 @@ export class CjCatalogSyncService {
     let failedItemSequence = 0;
     const now = new Date();
 
-    // CJ's listV2 is page-number based (page/size), not a nextPageToken cursor
-    // — bounded both by the response's own totalPages AND the MAX_SYNC_PAGES
-    // safety cap (a totalPages that's wildly wrong shouldn't loop forever).
-    let page = 1;
-    let totalPages = 1;
-    do {
+    const cursorPage = integration.catalogSyncCursorPage ?? 0;
+    const startPage = cursorPage + 1;
+    const endPage = startPage + this.maxSyncPages - 1;
+
+    // CJ's listV2 is page-number based (page/size), not a nextPageToken cursor.
+    // Each run processes a *window* of `maxSyncPages` pages starting right
+    // after the last page this connection finished (design.md D1 in
+    // openspec/changes/cj-catalog-cursor-and-media) — not "pages 1..N from the
+    // start" like the old always-restart-at-page-1 behavior. `totalPages`
+    // starts unknown (`null`) so the first fetch of this window always runs
+    // (matching the previous do-while's "always at least one iteration"
+    // behavior); every subsequent iteration is bounded by both the window
+    // (`endPage`) and the freshly-learned `totalPages`, so this never fetches
+    // a page known in advance to be past the end of the catalog.
+    let page = startPage;
+    let totalPages: number | null = null;
+    let lastPageProcessed = cursorPage;
+
+    while (page <= endPage && (totalPages === null || page <= totalPages)) {
       let listPage;
       try {
-        listPage = await this.cjClient.fetchCatalog(page, CATALOG_PAGE_SIZE);
+        listPage = await this.cjClient.fetchCatalog(page, this.catalogPageSize);
       } catch (err) {
         logger.error('CJ Dropshipping catalog fetch failed', {
           supplierId,
@@ -159,18 +193,30 @@ export class CjCatalogSyncService {
         }
       }
 
+      lastPageProcessed = page;
       page += 1;
-      if (page > MAX_SYNC_PAGES && page <= totalPages) {
-        logger.warn('CJ Dropshipping catalog sync capped at MAX_SYNC_PAGES', {
-          supplierId,
-          maxPages: MAX_SYNC_PAGES,
-          totalPages,
-        });
-        break;
-      }
-    } while (page <= totalPages);
+    }
+
+    // totalPages is only ever null if the loop body never ran, which cannot
+    // happen — maxSyncPages is always >= 1, so startPage <= endPage always.
+    const resolvedTotalPages = totalPages ?? 1;
+    const wrapped = lastPageProcessed >= resolvedTotalPages;
+    const newCursorPage = wrapped ? 0 : lastPageProcessed;
+
+    logger.info('CJ Dropshipping catalog sync window complete', {
+      supplierId,
+      startPage,
+      lastPageProcessed,
+      totalPages: resolvedTotalPages,
+      wrapped,
+    });
 
     const { upserted } = await this.catalogRepo.upsertMany(integration.id, items);
+    await this.integrationRepo.updateCatalogSyncCursor(integration.id, {
+      cursorPage: newCursorPage,
+      totalPages: resolvedTotalPages,
+      ...(wrapped && { wrappedAt: now }),
+    });
     await this.integrationRepo.updateLastSyncedAt(integration.id, now);
 
     return { itemsUpserted: upserted - itemsFailed, itemsFailed, syncedAt: now };

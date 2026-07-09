@@ -47,6 +47,7 @@ describe('CjConnectionService', () => {
       upsert: jest.fn(),
       updateStatus: jest.fn(),
       updateLastSyncedAt: jest.fn(),
+      updateCatalogSyncCursor: jest.fn(),
     };
     mockCjClient = makeMockCjClient();
     service = new CjConnectionService(mockRepo, mockCjClient);

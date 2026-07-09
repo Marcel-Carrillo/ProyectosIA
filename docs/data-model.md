@@ -782,6 +782,9 @@ Represents a single supplier's connection to an external dropshipping provider (
 * `externalAccountRef`: Provider-side account reference (optional, max 150 characters) — **INTERNAL ONLY, never returned by any customer-facing API**
 * `lastVerifiedAt`: Timestamp of the last connection verification attempt (optional)
 * `lastSyncedAt`: Timestamp of the last successful catalog sync (optional)
+* `catalogSyncCursorPage`: Last catalog page fully processed by `syncCatalog` (default `0`, meaning "never synced"). Each sync run starts at `cursorPage + 1`, not page 1 — this is what lets the scheduled auto-provisioning job (`cj-catalog-auto-provisioning`) make genuine daily progress through the supplier's catalog instead of repeating the same window forever.
+* `catalogSyncTotalPages`: The `totalPages` value last observed from the supplier's catalog listing (optional) — used to detect when a sync run has reached the end of the catalog.
+* `catalogSyncWrappedAt`: Timestamp of the last time the cursor wrapped back to page 1 after reaching the end of the catalog (optional). Wrapping is deliberate, not an error condition — it periodically re-visits and refreshes previously-synced items (price, stock, images), since the supplier's catalog has no delta/webhook feed.
 * `createdAt` / `updatedAt`: Standard timestamps
 
 **Validation Rules:**
@@ -799,6 +802,8 @@ Represents a single supplier's connection to an external dropshipping provider (
 ### 18. CjCatalogItem
 
 Staging record for a product/variant pulled from a supplier's CJ Dropshipping catalog. Strictly separate from the live public catalog (`Product`/`ProductVariant`) — an administrator must explicitly promote staged data via `POST /api/admin/suppliers/:supplierId/cj/catalog/promote` (see the `cj-catalog-promotion` capability); nothing here is auto-published. The public catalog is expected to be populated exclusively through this promotion flow going forward, not through manual seeding.
+
+**Image capture on promotion:** promoting a `CjCatalogItem` also derives display images from its already-stored `rawPayload` (`rawPayload.product.bigImage` / `rawPayload.variant.variantImage` — the supplier's raw API response, never re-fetched) and materializes them as `Product.mainImageUrl` and `ProductImage` rows — one for the product (`sortOrder: 0`) and one per variant whose image differs from the product's. This only happens the first time a pid group is promoted (a new `Product` is created); a variant later joining an already-existing product from a prior partial promotion does not trigger image capture. Missing image data never fails promotion — the product is simply created without an image. Only public-safe data (image URLs, names) is ever copied; `supplierCost` and other internal fields are never derived into any image or product field.
 
 **Promotion status (`promotionState`) — derived, not stored:**
 
