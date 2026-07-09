@@ -15,7 +15,7 @@ const mockProductCreate = jest.fn();
 const mockProductUpdate = jest.fn();
 const mockVariantCreate = jest.fn();
 const mockProductImageCreate = jest.fn();
-const mockTransaction = jest.fn(async (cb: (tx: unknown) => unknown) => {
+const mockTransaction = jest.fn(async (cb: (tx: unknown) => unknown, _options?: { timeout?: number }) => {
   const tx = {
     product: { create: mockProductCreate, update: mockProductUpdate },
     productVariant: { create: mockVariantCreate },
@@ -26,7 +26,7 @@ const mockTransaction = jest.fn(async (cb: (tx: unknown) => unknown) => {
 
 jest.mock('../../../infrastructure/prismaClient', () => ({
   prisma: {
-    $transaction: (...args: unknown[]) => mockTransaction(...(args as [(tx: unknown) => unknown])),
+    $transaction: (...args: unknown[]) => mockTransaction(...(args as [(tx: unknown) => unknown, { timeout?: number }?])),
   },
 }));
 
@@ -150,6 +150,22 @@ describe('CjCatalogPromotionService', () => {
       );
       expect(result.createdAny).toBe(true);
       expect(result.variants[0]).toMatchObject({ cjCatalogItemId: 1, productId: 20, productVariantId: 50, wasAlreadyPromoted: false });
+    });
+
+    it('should_raise_the_transaction_timeout_above_prismas_5s_default_for_large_batches', async () => {
+      // Regression: Prisma's default interactive-transaction timeout (5000ms)
+      // was observed live in production to abort promote() for a real batch of
+      // ~300 items ("Transaction already closed" error) — the automated
+      // auto-provisioning job can promote batches at that scale.
+      const item = buildCatalogItem();
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      const options = mockTransaction.mock.calls[0]?.[1] as { timeout?: number } | undefined;
+      expect(options?.timeout).toBeGreaterThan(5000);
     });
 
     it('should_set_mainImageUrl_and_create_a_sortOrder_zero_image_when_a_new_product_has_a_product_image', async () => {
