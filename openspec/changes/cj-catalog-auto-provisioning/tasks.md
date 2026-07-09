@@ -80,10 +80,10 @@ Not applicable — this change has no frontend or admin-UI component. The admin 
 
 ## 11. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 11.1 Load and apply `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
-- [ ] 11.2 Verify all tasks above (0–10) are `[x]` and both reports (steps 7 and 8) exist under `openspec/changes/cj-catalog-auto-provisioning/reports/`.
-- [ ] 11.3 Stage all relevant files (code, tests, docs, OpenSpec artifacts); confirm no `.env`, `.env.docker`, `node_modules`, `dist`, or `coverage` are staged.
-- [ ] 11.4 Create commit with a Conventional Commit message, referencing the OpenSpec change name and test verification status.
-- [ ] 11.5 Push branch to remote: `git push -u origin feature/cj-catalog-auto-provisioning`.
-- [ ] 11.6 Create Pull Request via `gh pr create --base develop` with a summary, the OpenSpec change name, verification status (unit tests, manual job execution testing), and known limitations (e.g. category mapping and multi-provider generalization remain deferred per design.md Non-Goals).
-- [ ] 11.7 Report the PR URL in chat.
+- [x] 11.1 Loaded and applied `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
+- [x] 11.2 Verified all tasks above (0–10) are `[x]` (an independent adversarial review pass and its resulting fixes were completed before this step — see `reports/2026-07-09-adversarial-review.md`) and both reports (steps 7 and 8) exist under `reports/`.
+- [x] 11.3 Staged all relevant files (code, tests, docs, OpenSpec artifacts, `.claude/doc`/`.claude/sessions` planning artifacts per this repo's own precedent); confirmed via `git show --stat HEAD` no `.env`/`.env.docker` were committed.
+- [x] 11.4 Created commit `a4ac20a` with a Conventional Commit message, referencing the OpenSpec change name and full test/review verification status.
+- [x] 11.5 Pushed branch to remote: `git push -u origin feature/cj-catalog-auto-provisioning`.
+- [x] 11.6 Created Pull Request #86 via `gh pr create --base develop` with summary, OpenSpec change name, verification status, and known limitations.
+- [x] 11.7 Reported the PR URL in chat: https://github.com/Marcel-Carrillo/ProyectosIA/pull/86
