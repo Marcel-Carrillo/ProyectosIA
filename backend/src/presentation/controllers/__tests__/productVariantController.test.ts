@@ -137,21 +137,33 @@ describe('deleteVariant', () => {
   });
 });
 
-describe('Supplier field leak prevention', () => {
-  it('variant model should NOT contain supplier fields', () => {
-    const variant = makeVariant();
-    const json = JSON.stringify(variant);
-    expect(json).not.toContain('supplierId');
-    expect(json).not.toContain('supplierReference');
-    expect(json).not.toContain('supplierCost');
+// These controllers are mounted only under /api/admin behind requireAdminAuth.
+// Admin responses DO expose supplier sourcing fields (cost/margin visibility);
+// customer-facing exclusion is enforced by the public serializers and covered
+// by supplierIsolation.test.ts.
+describe('Admin supplier field exposure', () => {
+  it('admin variant responses include supplier sourcing fields', () => {
+    const variant = new ProductVariant({
+      id: 1,
+      productId: 1,
+      sku: 'SKU-001',
+      publicPrice: 29.99,
+      stockPolicy: 'SupplierManaged',
+      supplierId: 7,
+      supplierReference: 'SUP-REF-XYZ',
+      supplierCost: '12.50',
+      supplier: { name: 'CJ Dropshipping' },
+    });
+    const envelope = { success: true, data: variant, message: 'ok' };
+    const parsed = JSON.parse(JSON.stringify(envelope));
+    expect(parsed.data.supplierId).toBe(7);
+    expect(parsed.data.supplierReference).toBe('SUP-REF-XYZ');
+    expect(parsed.data.supplierCost).toBe(12.5);
+    expect(parsed.data.supplierName).toBe('CJ Dropshipping');
   });
 
-  it('variant response envelope should NOT contain supplier fields', () => {
+  it('cjCatalogItemId stays null on rows read through customer-safe selects', () => {
     const variant = makeVariant();
-    const envelope = { success: true, data: variant, message: 'ok' };
-    const json = JSON.stringify(envelope);
-    expect(json).not.toContain('supplierId');
-    expect(json).not.toContain('supplierReference');
-    expect(json).not.toContain('supplierCost');
+    expect(variant.cjCatalogItemId).toBeNull();
   });
 });

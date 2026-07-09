@@ -39,10 +39,11 @@ export class VariantComparePriceInvalidError extends Error {
   }
 }
 
-// INTERNAL-ONLY fields (supplierId/supplierReference/supplierCost, and now
-// cjCatalogItemId) are deliberately omitted from this select — this is the
-// single point that keeps them out of every read path built on top of it,
-// admin and public alike. Never add cjCatalogItemId here.
+// Customer-safe select: supplier fields (supplierId/supplierReference/
+// supplierCost) and cjCatalogItemId are omitted. Used by the lookup helpers
+// (findBySku, findByCjCatalogItemId) that feed shared/internal flows. Public
+// serializers additionally allow-list their own fields — never expose rows
+// from this repository directly on a customer-facing endpoint.
 const variantSelect = {
   id: true,
   productId: true,
@@ -58,11 +59,24 @@ const variantSelect = {
   updatedAt: true,
 } as const;
 
+// Admin select: adds supplier sourcing data so the backoffice can see the
+// supplier cost next to the public price (margin visibility). Only reachable
+// through /api/admin routes behind requireAdminAuth — business rule "supplier
+// cost must never be exposed to customers" applies to customer-facing APIs.
+// cjCatalogItemId stays internal-only even for admins.
+const adminVariantSelect = {
+  ...variantSelect,
+  supplierId: true,
+  supplierReference: true,
+  supplierCost: true,
+  supplier: { select: { name: true } },
+} as const;
+
 export class ProductVariantRepository implements IProductVariantRepository {
   async findByProduct(productId: number): Promise<ProductVariant[]> {
     const rows = await prisma.productVariant.findMany({
       where: { productId, deletedAt: null },
-      select: variantSelect,
+      select: adminVariantSelect,
       orderBy: { createdAt: 'asc' },
     });
     return rows.map((r) => new ProductVariant(r));
@@ -71,7 +85,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
   async findById(id: number): Promise<ProductVariant | null> {
     const row = await prisma.productVariant.findFirst({
       where: { id, deletedAt: null },
-      select: variantSelect,
+      select: adminVariantSelect,
     });
     return row ? new ProductVariant(row) : null;
   }
@@ -118,7 +132,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
         status: data.status ?? 'Active',
         cjCatalogItemId: data.cjCatalogItemId ?? null,
       },
-      select: variantSelect,
+      select: adminVariantSelect,
     });
     return new ProductVariant(row);
   }
@@ -146,7 +160,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
         ...(data.stockPolicy !== undefined && { stockPolicy: data.stockPolicy }),
         ...(data.status !== undefined && { status: data.status }),
       },
-      select: variantSelect,
+      select: adminVariantSelect,
     });
     return new ProductVariant(row);
   }
@@ -158,7 +172,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
     const row = await prisma.productVariant.update({
       where: { id },
       data: { deletedAt: new Date() },
-      select: variantSelect,
+      select: adminVariantSelect,
     });
     return new ProductVariant(row);
   }

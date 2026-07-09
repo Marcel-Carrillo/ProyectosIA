@@ -131,6 +131,17 @@ export function validateProductVariantPublicPrice(publicPrice: unknown): void {
   }
 }
 
+const VALID_STOCK_POLICIES = ['SupplierManaged', 'InternalStock', 'Hybrid'] as const;
+
+export function validateProductVariantStockPolicy(stockPolicy: unknown): void {
+  if (stockPolicy === undefined || stockPolicy === null || stockPolicy === '') return;
+  if (!VALID_STOCK_POLICIES.includes(stockPolicy as (typeof VALID_STOCK_POLICIES)[number])) {
+    throw new ValidationError(
+      `Field 'stockPolicy' must be one of: ${VALID_STOCK_POLICIES.join(', ')}`
+    );
+  }
+}
+
 export function validateProductVariantData(data: Record<string, unknown>): void {
   validateProductVariantPublicPrice(data['publicPrice']);
 
@@ -138,6 +149,8 @@ export function validateProductVariantData(data: Record<string, unknown>): void 
   if (sku === undefined || sku === null || sku === '') {
     throw new ValidationError("Field 'sku' is required");
   }
+
+  validateProductVariantStockPolicy(data['stockPolicy']);
 }
 
 export function validateProductImageData(data: Record<string, unknown>): void {

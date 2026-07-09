@@ -55,8 +55,10 @@ export function extractErrorMessage(error: unknown): string {
 }
 
 // ─── Admin product CRUD (+ nested variants and images) ───────────────────────
-// Security invariant: this service never sends or references supplierId,
-// supplierReference, or supplierCost; the write types enforce it at compile time.
+// Security invariant: supplier fields (supplierId/supplierReference/
+// supplierCost/supplierName) are READ-ONLY here — the admin API returns them
+// for margin visibility, but the write payload types (CreateVariantInput/
+// UpdateVariantInput) exclude them at compile time so they are never sent.
 
 export const adminProductService = {
   list: async (params?: ProductQueryParams): Promise<ProductListResponse> => {

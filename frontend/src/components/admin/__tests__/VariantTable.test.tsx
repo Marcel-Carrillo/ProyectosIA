@@ -15,7 +15,7 @@ const variant: ProductVariant = {
   color: 'Red',
   publicPrice: 29.9,
   compareAtPrice: null,
-  stockPolicy: 'TRACK',
+  stockPolicy: 'SupplierManaged',
   status: 'Active',
   deletedAt: null,
   createdAt: '',
@@ -25,14 +25,45 @@ const variant: ProductVariant = {
 beforeEach(() => jest.clearAllMocks());
 
 describe('VariantTable', () => {
-  it('renders variant rows and never exposes supplier fields', () => {
-    const { container } = render(
-      <VariantTable productId={1} variants={[variant]} onVariantsChange={jest.fn()} />,
-    );
+  it('renders variant rows', () => {
+    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={jest.fn()} />);
     expect(screen.getByTestId('variant-card-5')).toBeInTheDocument();
     expect(within(screen.getByTestId('variant-card-5')).getByText('EJS-5')).toBeInTheDocument();
-    const html = container.innerHTML;
-    expect(html).not.toMatch(/supplierId|supplierReference|supplierCost/i);
+  });
+
+  it('shows supplier cost and margin when the admin API provides them', () => {
+    const sourced: ProductVariant = {
+      ...variant,
+      supplierId: 7,
+      supplierReference: 'CJ-REF-1',
+      supplierCost: 10,
+      supplierName: 'CJ Dropshipping',
+    };
+    render(<VariantTable productId={1} variants={[sourced]} onVariantsChange={jest.fn()} />);
+    // 29.90 public - 10.00 cost = 19.90 margin (67%)
+    expect(screen.getByTestId('variant-supplier-cost-5').textContent).toContain('10');
+    expect(screen.getByTestId('variant-margin-5').textContent).toContain('67');
+  });
+
+  it('renders a dash for supplier cost and margin when the variant has no supplier', () => {
+    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={jest.fn()} />);
+    expect(screen.getByTestId('variant-supplier-cost-5').textContent).toBe('—');
+    expect(screen.getByTestId('variant-margin-5').textContent).toBe('—');
+  });
+
+  it('shows the supplier cost read-only in the edit modal and warns on price below cost', async () => {
+    const sourced: ProductVariant = {
+      ...variant,
+      supplierCost: 35,
+      supplierName: 'CJ Dropshipping',
+    };
+    render(<VariantTable productId={1} variants={[sourced]} onVariantsChange={jest.fn()} />);
+    fireEvent.click(within(screen.getByTestId('variant-card-5')).getByTestId('btn-edit-variant-5'));
+    const costInput = await screen.findByTestId('input-variant-supplier-cost');
+    expect(costInput).toBeDisabled();
+    expect((costInput as HTMLInputElement).value).toContain('35');
+    // publicPrice 29.90 <= supplierCost 35 → warning visible
+    expect(screen.getByText(/public price is at or below the supplier cost/i)).toBeInTheDocument();
   });
 
   it('opens the add-variant modal', () => {
