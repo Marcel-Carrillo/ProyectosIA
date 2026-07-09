@@ -39,6 +39,16 @@ function promotionStateWhere(
   }
 }
 
+// DB-only work (no external API calls inside the transaction), so it is safe
+// to raise this well above Prisma's 5000ms interactive-transaction default —
+// unlike the reverted advisory-lock transaction in supplierAutoProvisionService,
+// which spanned external CJ API calls and could leave a Lambda-frozen
+// transaction open indefinitely. A large catalog sync window (hundreds of
+// sequential upserts) can legitimately exceed 5s; see
+// cjCatalogPromotionService.ts's PROMOTE_TRANSACTION_OPTIONS for the sibling
+// fix of the same bug class.
+const UPSERT_MANY_TRANSACTION_OPTIONS = { timeout: 120_000 };
+
 export class CjCatalogItemRepository implements ICjCatalogItemRepository {
   async upsertMany(
     supplierIntegrationId: number,
@@ -78,7 +88,7 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
           create: { supplierIntegrationId, externalRef: item.externalRef, ...data },
         });
       }
-    });
+    }, UPSERT_MANY_TRANSACTION_OPTIONS);
     return { upserted: items.length };
   }
 

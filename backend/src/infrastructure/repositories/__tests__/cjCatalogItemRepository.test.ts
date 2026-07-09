@@ -85,6 +85,33 @@ describe('CjCatalogItemRepository', () => {
         })
       );
     });
+
+    it('should_raise_the_transaction_timeout_above_prismas_5s_default_for_large_batches', async () => {
+      // Regression: Prisma's default interactive-transaction timeout (5000ms)
+      // was observed live in production to abort upsertMany() for a real sync
+      // window of ~900+ items ("Transaction not found... refers to an old
+      // closed transaction") — the same bug class already fixed for
+      // cjCatalogPromotionService.ts's promote().
+      mockTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<void>) => {
+        await callback({ cjCatalogItem: { upsert: mockUpsert } });
+      });
+      mockUpsert.mockResolvedValue(dbRow);
+
+      await repo.upsertMany(5, [
+        {
+          externalRef: 'ext-1',
+          title: 'Test Product',
+          supplierCost: '9.99',
+          stockQuantity: 10,
+          rawPayload: {},
+          syncStatus: 'Synced' as const,
+          lastSyncedAt: new Date('2026-01-01'),
+        },
+      ]);
+
+      const options = mockTransaction.mock.calls[0]?.[1] as { timeout?: number } | undefined;
+      expect(options?.timeout).toBeGreaterThan(5000);
+    });
   });
 
   describe('findBySupplierIntegrationId', () => {
