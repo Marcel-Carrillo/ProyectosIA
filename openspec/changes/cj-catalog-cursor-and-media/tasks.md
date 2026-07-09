@@ -76,10 +76,10 @@ No new HTTP endpoint is introduced — this exercises the existing `POST .../cj/
 - [x] 11.2 Promoted `CjCatalogItem` id 3778 (real item with `rawPayload.product.bigImage`) via `POST .../cj/catalog/promote`. Verified via curl: `GET /api/public/products/130` → 404 (Draft correctly not public); `GET /api/admin/products/130` → `mainImageUrl` set, 2 `ProductImage` rows (product image `sortOrder:0` + a distinct variant image `sortOrder:1`). Re-promoted the same item: `wasAlreadyPromoted:true`, `ProductImage` count for the product unchanged at 2 (no duplicate).
 - [x] 11.3 Forced wrap-around: set `catalogSyncCursorPage=1199` directly (1 page short of `totalPages:1200`), ran one more sync. Confirmed via DB: `catalogSyncCursorPage` reset to `0`, `catalogSyncWrappedAt` set to the sync timestamp.
 - [x] 11.4 Restored local/dev DB state: deleted the 2 `ProductImage`, 1 `ProductVariant`, 1 `Product`, 80 `CjCatalogItem`, 1 `SupplierIntegration`, 1 `Supplier` test rows. Verified counts match the pre-test baseline exactly (`SupplierIntegration:0, CjCatalogItem:0, Product:12, ProductVariant:24, ProductImage:25`). Stopped the local dev server.
-- [ ] 11.5 Deploy to production (develop → master, per this repo's established release flow) and verify the new `CJ_CATALOG_PAGE_SIZE`/`CJ_SYNC_MAX_PAGES` values are live on the deployed Lambda (`aws lambda get-function-configuration`).
-- [ ] 11.6 Run the backfill script (`backend/scripts/backfillCjProductImages.ts`) once against production; verify via DB query that the previously-imageless products now have `ProductImage`/`mainImageUrl` populated, and record the summary counts.
-- [ ] 11.7 Manually invoke `supplierAutoProvision` once in production (`aws lambda invoke`); verify via DB query that (a) it synced/promoted *different* products than the previous run (cursor advanced, not repeating the same window), (b) newly-promoted products have images, (c) run duration stayed comfortably under the ~540s target (design.md D2).
-- [ ] 11.8 Create report `openspec/changes/cj-catalog-cursor-and-media/reports/YYYY-MM-DD-step-11-manual-endpoint-and-job-testing.md` documenting every command run, its output, and the DB verification queries/results for both local/dev and production.
+- [x] 11.5 Deployed to production (develop → master). Confirmed via `aws lambda get-function-configuration`: `CJ_SYNC_MAX_PAGES=3`, `CJ_CATALOG_PAGE_SIZE=100` live on the deployed Lambda.
+- [x] 11.6 Ran the backfill script against production: `processed=100 imaged=100 noImageAvailable=0`. Verified via DB query: 285 `ProductImage` rows created, all 100 products' `mainImageUrl` populated.
+- [x] 11.7 Manually invoked `supplierAutoProvision` in production. **Found and fixed 2 additional real production bugs along the way** (same root-cause class as `cj-catalog-auto-provisioning`'s incidents — Prisma's 5000ms default transaction timeout, hit by `promote()` then by `upsertMany()` once batch sizes grew): fixed in `3ba183a`/PR #94-95 and `07872d3`/PR #96-97, both deployed. Final successful run: `itemsUpserted:3154, itemsFailed:0, variantsCreated:3154`; cursor advanced `3→12` (of 60); 0 of 1295 CJ-promoted products missing `mainImageUrl`; duration ~422s (47% of the 900s Lambda budget, under the ~540s design.md D2 target).
+- [x] 11.8 Created report `openspec/changes/cj-catalog-cursor-and-media/reports/2026-07-09-step-11-manual-endpoint-and-job-testing.md`.
 
 ## 12. Update Technical Documentation (MANDATORY)
 
@@ -91,10 +91,10 @@ No new HTTP endpoint is introduced — this exercises the existing `POST .../cj/
 
 ## 13. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 13.1 Load and apply `ai-specs/skills/commit/SKILL.md` before executing any Git commands.
-- [ ] 13.2 Verify all tasks above (0–12) are `[x]` and both reports (steps 10 and 11) exist under `openspec/changes/cj-catalog-cursor-and-media/reports/`.
-- [ ] 13.3 Stage all relevant files (code, tests, docs, OpenSpec artifacts); confirm no `.env`, `.env.docker`, `node_modules`, `dist`, or `coverage` are staged.
-- [ ] 13.4 Create commit with a Conventional Commit message, referencing the OpenSpec change name and test/production verification status.
-- [ ] 13.5 Push branch to remote: `git push -u origin feature/cj-catalog-cursor-and-media`.
-- [ ] 13.6 Create Pull Request via `gh pr create --base develop` with a summary, the OpenSpec change name, verification status, and the production deployment/backfill already performed as part of step 11.
-- [ ] 13.7 Report the PR URL in chat.
+- [x] 13.1 Applied `ai-specs/skills/commit/SKILL.md` for each commit in this change.
+- [x] 13.2 Verified all tasks above (0-12) are `[x]` and both reports (steps 10 and 11) exist under `openspec/changes/cj-catalog-cursor-and-media/reports/`.
+- [x] 13.3 Staged only relevant files (code, tests, docs, OpenSpec artifacts) across all commits; no `.env`, `node_modules`, `dist`, or `coverage` staged.
+- [x] 13.4 Created commits with Conventional Commit messages, referencing the change and verification status: `6962e46` (feat: cursor + media capture), `3ba183a` (fix: promote() transaction timeout, found during production verification), `07872d3` (fix: upsertMany() transaction timeout, found during production verification).
+- [x] 13.5 Pushed `feature/cj-catalog-cursor-and-media` to remote across all 3 commits.
+- [x] 13.6 Created 3 PRs to `develop` as issues were found iteratively during production verification: PR #92 (feat), PR #94 (promote() fix), PR #96 (upsertMany() fix) — all merged. Each followed by a release PR to `master`: PR #93, #95, #97 — all merged and deployed.
+- [x] 13.7 PR URLs: https://github.com/Marcel-Carrillo/ProyectosIA/pull/92, /94, /96 (feature → develop) and /93, /95, /97 (develop → master release).
