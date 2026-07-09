@@ -65,6 +65,7 @@ describe('CjCatalogSyncService', () => {
     };
     catalogRepo = {
       upsertMany: jest.fn(),
+      reconcilePromotedVariantStock: jest.fn().mockResolvedValue({ deactivated: 0, reactivated: 0 }),
       findBySupplierIntegrationId: jest.fn(),
       findByExternalRef: jest.fn(),
       findById: jest.fn(),

@@ -51,6 +51,13 @@ export interface ICjCatalogItemRepository {
     supplierIntegrationId: number,
     items: CjCatalogItemUpsertInput[]
   ): Promise<{ upserted: number }>;
+  // Propagates freshly-synced CJ stock to promoted variants: Active variants
+  // whose CJ item ran out of stock become OutOfStock, and vice versa. Only
+  // flips between Active and OutOfStock — never touches variants an admin
+  // deliberately set to Inactive/Archived.
+  reconcilePromotedVariantStock(
+    supplierIntegrationId: number
+  ): Promise<{ deactivated: number; reactivated: number }>;
   findBySupplierIntegrationId(
     supplierIntegrationId: number,
     filters?: CjCatalogItemListFilters

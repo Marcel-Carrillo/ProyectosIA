@@ -92,6 +92,32 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
     return { upserted: items.length };
   }
 
+  async reconcilePromotedVariantStock(
+    supplierIntegrationId: number
+  ): Promise<{ deactivated: number; reactivated: number }> {
+    // Only flips Active <-> OutOfStock. Inactive/Archived are admin decisions
+    // this sync must never override; soft-deleted variants are skipped.
+    const [deactivated, reactivated] = await prisma.$transaction([
+      prisma.productVariant.updateMany({
+        where: {
+          status: 'Active',
+          deletedAt: null,
+          cjCatalogItem: { supplierIntegrationId, stockQuantity: { lte: 0 } },
+        },
+        data: { status: 'OutOfStock' },
+      }),
+      prisma.productVariant.updateMany({
+        where: {
+          status: 'OutOfStock',
+          deletedAt: null,
+          cjCatalogItem: { supplierIntegrationId, stockQuantity: { gt: 0 } },
+        },
+        data: { status: 'Active' },
+      }),
+    ]);
+    return { deactivated: deactivated.count, reactivated: reactivated.count };
+  }
+
   async findBySupplierIntegrationId(
     supplierIntegrationId: number,
     filters: CjCatalogItemListFilters = {}
