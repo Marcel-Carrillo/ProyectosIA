@@ -34,6 +34,17 @@ provider:
     CJ_DEFAULT_MARKUP_MULTIPLIER: '2.5'
     CJ_DEFAULT_CATEGORY_ID: ${ssm:/ecommerce/prod/CJ_DEFAULT_CATEGORY_ID, ''}
     SUPPLIER_AUTO_PROVISION_ENABLED: ${ssm:/ecommerce/prod/SUPPLIER_AUTO_PROVISION_ENABLED, 'false'}
+    # Caps supplierAutoProvision's per-run catalog sync so one invocation
+    # finishes well within the Lambda's 900s timeout instead of syncing the
+    # entire (very large) CJ catalog in one run. syncCatalog makes one
+    # fetchVariants call PER PRODUCT on every page (not just one call per
+    # page), so both page count AND page size must stay small — at the
+    # observed ~1 call/sec effective throughput, unbounded defaults
+    # (500 pages x 100/page) cannot complete within 900s. Sync is
+    # incremental across daily runs by design — this does not need to be
+    # unbounded.
+    CJ_SYNC_MAX_PAGES: ${ssm:/ecommerce/prod/CJ_SYNC_MAX_PAGES, '5'}
+    CJ_CATALOG_PAGE_SIZE: ${ssm:/ecommerce/prod/CJ_CATALOG_PAGE_SIZE, '20'}
 
 functions:
   app:

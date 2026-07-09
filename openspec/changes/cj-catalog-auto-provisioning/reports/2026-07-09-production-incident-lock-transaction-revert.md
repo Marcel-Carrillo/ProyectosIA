@@ -20,16 +20,37 @@
 
 All new unit tests mock `prisma` entirely (`$transaction`, `$queryRaw`) — they verify the *shape* of the calls (transaction invoked, callback receives a `tx`, `tx.$queryRaw` called twice), not whether a real Postgres session under real Lambda freeze semantics actually completes the transaction. This class of bug — an interactive ORM transaction left open because the *hosting* runtime freezes mid-flight — is invisible to mocked tests and only manifests against a real deployed Lambda + real Postgres. The adversarial review's manual-testing decision (documented in `2026-07-09-adversarial-review.md`) explicitly chose not to re-run the full live-API battery after the fix, reasoning the fix was "surgical" — in hindsight, any change to the lock/transaction mechanism specifically needed live-Lambda verification, since that mechanism's entire purpose only matters under real concurrent/production conditions that mocks cannot represent.
 
-## Resolution Verification
+## Resolution Verification (part 1 — transaction revert)
 
 After reverting:
 - `cd backend && npx tsc --noEmit` → clean.
 - `cd backend && npm run lint` → clean.
 - `cd backend && npx jest --watchAll=false` → 82/82 suites, 783/783 tests passed.
-- Redeployed to production; manually invoked `supplierAutoProvision` again — completed successfully (see step-8 manual testing follow-up below for the actual production run's result).
-- Confirmed via `pg_locks` that no advisory lock remains held after a successful run completes.
+- Redeployed to production (PR #88 → develop, PR #89 → master).
+- Re-invoked `supplierAutoProvision` — still reported `LOCKED`. This turned out to be a **second, independent** issue (below), not a regression of the transaction fix.
+
+`docs/backend-standards.md`'s "Scheduled Lambda Job Pattern" section was amended in the same commit as the revert to explicitly warn against `prisma.$transaction` spanning a job's full external-API-calling duration, given Lambda's execution-freeze semantics. Any future change to this lock mechanism must include a real `aws lambda invoke` test against a deployed function before being considered verified — mocked unit tests are necessary but not sufficient for this specific mechanism.
+
+## Second incident: EventBridge fired immediately, unbounded sync ran past the Lambda timeout
+
+After the transaction revert, `supplierAutoProvision` kept reporting `LOCKED` on every manual re-invoke. Investigation via `aws logs tail` (not just `pg_locks`) revealed the real cause:
+
+1. **The EventBridge `rate(1 day)` schedule did not wait ~24h to fire** — contrary to what was assumed and communicated to the user. A real invocation (`RequestId 267f1726`) started at `10:12:52`, almost immediately after the rule was first created/enabled by the initial production deploy. (Whether "rate" schedules generally fire immediately on creation, or this was triggered by the CloudFormation stack being touched on each of the several redeploys that followed, was not conclusively determined — but empirically, multiple real invocations occurred within the same ~45-minute window as the deploys, not the next day.)
+2. That invocation, and subsequent ones, ran `CjCatalogSyncService.syncCatalog` with **no `CJ_SYNC_MAX_PAGES`/`CJ_CATALOG_PAGE_SIZE` override in production** (never wired into `serverless.yml` before this change) — defaulting to 500 pages × 100 items/page. `syncCatalog` makes **one `fetchVariants` API call per product on every page**, not one call per page, so at CJ's observed ~1 call/sec effective throughput, a single run cannot come close to finishing the default page/size budget. Two separate invocations (`267f1726`, `f3781c70`) each ran for the full 900s and were killed by Lambda's own function timeout (`Status: timeout` in `REPORT` lines) — legitimately holding the advisory lock the entire time, which is exactly why every manual re-invoke during that window correctly reported `LOCKED` (working as designed, not a bug).
+3. Immediate mitigation: disabled the EventBridge rule (`aws events disable-rule`) to stop further automatic triggers while investigating. Real CJ API quota consumption during this window was confirmed non-critical (`usedToday` climbed from ~12,800 to ~18,100 against a `remaining: 50000` daily budget).
+4. Waited for the in-flight invocation (`5bfd7af3`, started `10:41:58`) to hit its own 900s timeout naturally (`10:56:58`) rather than force-killing it mid-flight. Confirmed via `pg_locks`/`pg_stat_activity` that Lambda's forced termination correctly closed the connection and released the advisory lock — no manual `pg_terminate_backend` was needed this time, confirming the reverted (non-transaction) lock code behaves correctly even under a hard timeout kill, not just a clean return.
+5. Added `CJ_SYNC_MAX_PAGES` (default `5`) and `CJ_CATALOG_PAGE_SIZE` (default `20`) to `serverless.yml`'s shared `provider.environment` (SSM-backed, with safe fallbacks), bounding a single sync run to at most 100 products' worth of variant-fetch calls — comfortably within the 900s budget at the observed throughput, while still making incremental daily progress. These are shared with the `app` function's manual "Sync catalog" admin action too (previously also effectively unbounded/untested at scale in production).
+6. Redeployed, manually invoked again with the new caps, verified the run completes well within budget, then re-enabled the EventBridge rule.
+
+## Resolution Verification (part 2 — sync bounding)
+
+- `backend/serverless.yml` validated as valid YAML before commit.
+- No code changes in this part (config-only) — `npx tsc --noEmit`/`npm run lint` unaffected, already green.
+- Manually invoked `supplierAutoProvision` in production after redeploy: completed in well under a minute, no `LOCKED`/timeout, lock confirmed released afterward via `pg_locks`.
+- Re-enabled the EventBridge rule (`aws events enable-rule`) only after confirming a bounded run completes reliably.
 
 ## Follow-up / Lessons
 
-- `docs/backend-standards.md`'s new "Scheduled Lambda Job Pattern" section should be amended (follow-up, not done in this report) to explicitly warn against using `prisma.$transaction` for anything spanning a job's full external-API-calling duration, given Lambda's execution-freeze semantics.
-- Any future change to this lock mechanism must include a real `aws lambda invoke` test against a deployed (dev or prod) Lambda before being considered verified — mocked unit tests are necessary but not sufficient for this specific mechanism.
+- Do not assume a newly created EventBridge `rate(...)` schedule's first firing is a full interval away — verify empirically (CloudWatch Logs / `pg_locks`) before assuming a job "hasn't run yet."
+- Any job wrapping a paginated external API sync must have its page count **and** page size bounded from the very first production deployment — "default to unbounded, tune later" is not safe when the per-page cost includes N further API calls (one per item), not O(1).
+- `docs/development_guide.md`/`docs/aws-infrastructure.md` should document `CJ_SYNC_MAX_PAGES`/`CJ_CATALOG_PAGE_SIZE`'s production defaults and why they're capped (follow-up).
