@@ -1741,6 +1741,17 @@ The outbound integration to CJ Dropshipping's REST API lives at `backend/src/inf
 - **Bounded retry with backoff on `429`/`5xx`**, and a dedicated error class (`CjApiError`) whose message is built only from a fixed vocabulary (status code + short reason) — **never** from raw response body text, since upstream error bodies could otherwise leak request headers or other sensitive content into logs.
 - **Environment variables are not hard-required at startup** (unlike Stripe's): absence of `CJDROPSHIPPING_API_KEY`/`CJ_API_BASE_URL`/`CJ_SANDBOX_ORDERS` must not crash the app, since supplier automation is optional infrastructure, not a payment-critical path.
 
+### Scheduled Lambda Job Pattern (non-HTTP entry point)
+
+Some background work (e.g. `backend/src/jobs/supplierAutoProvisionHandler.ts`) must run on a schedule rather than in response to an HTTP request. This project's convention for that:
+
+- **Live in `backend/src/jobs/`**, not `src/presentation/controllers/` — a scheduled job is a distinct kind of entry point from an HTTP controller, even though it wires the same Application-layer services.
+- **A plain exported `handler(event?)` async function**, not `serverless-http`-wrapped — there is no HTTP request/response to bridge, so `src/lambda.ts`'s `serverless(app)` pattern does not apply here.
+- **Manually wired dependencies at module scope**, exactly like every existing controller (no composition root exists in this codebase): construct the needed repositories/services once at import time in the job file itself.
+- **No `http:` event in `serverless.yml`** — only a `schedule:` event (e.g. `rate(1 day)`), so the function is reachable only via IAM/EventBridge, never a public URL. Never add an HTTP route "for convenience" to a job that mutates data without an authenticated admin session behind it.
+- **A kill-switch environment variable**, checked first before any DB/API call, so the job can be disabled without a redeploy if it misbehaves.
+- **Manual testing without `serverless-offline`**: `serverless-offline` does not execute `schedule` events. Exercise the handler locally by invoking its exported `handler()` directly (e.g. a temporary `ts-node` script loading `dotenv/config`), never by adding a temporary HTTP route.
+
 ### Derived State via Relation Join (Pattern)
 
 When a status needs to reflect *another* table's live state rather than being a fact about the row itself (e.g. `CjCatalogItem.promotionState` reflecting whether a linked `ProductVariant`/`Product` are `Active`), compute it at read time via a Prisma relation `include` + a pure mapping function — do not add a column for it. Two rules keep this correct:

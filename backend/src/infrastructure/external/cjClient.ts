@@ -15,7 +15,8 @@ import {
 import { logger } from '../logger';
 
 const CJ_API_BASE_URL = process.env.CJ_API_BASE_URL ?? 'https://developers.cjdropshipping.com/api2.0/v1';
-const CJDROPSHIPPING_API_KEY = process.env.CJDROPSHIPPING_API_KEY ?? 'cj_test_placeholder';
+export const CJ_PLACEHOLDER_API_KEY = 'cj_test_placeholder';
+const CJDROPSHIPPING_API_KEY = process.env.CJDROPSHIPPING_API_KEY ?? CJ_PLACEHOLDER_API_KEY;
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_RETRIES = 3;

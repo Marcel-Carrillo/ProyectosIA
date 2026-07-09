@@ -100,7 +100,12 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
         include: {
           promotedVariant: { select: { id: true, productId: true, status: true, product: { select: { status: true } } } },
         },
-        orderBy: { createdAt: 'desc' },
+        // Secondary sort key is required, not cosmetic: every item from one
+        // syncCatalog batch shares the same createdAt (upsertMany runs in a
+        // single transaction), so createdAt alone is not a stable order
+        // across pages — without a tiebreaker, offset pagination over tied
+        // rows can skip or repeat items between calls.
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip,
         take: pageSize,
       }),
