@@ -68,9 +68,11 @@ if (process.env.NODE_ENV !== 'test') {
 
 export const app = express();
 
-// Security headers. CSP is disabled: this API serves JSON (no HTML to
-// protect) and a default CSP would break the Swagger UI served in dev.
-app.use(helmet({ contentSecurityPolicy: false }));
+// Security headers with helmet defaults, CSP included. The only HTML this
+// API serves is Swagger UI (dev/staging only), which works under the default
+// CSP: swagger-ui-express v5 loads its init script as an external file
+// (script-src 'self') and helmet's default style-src allows 'unsafe-inline'.
+app.use(helmet());
 
 // Trust exactly one proxy hop in prod (API Gateway/CloudFront); loopback only in dev
 // (CRA dev proxy). Prevents express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
