@@ -1,14 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Table, Button, Alert, Row, Col, Form } from 'react-bootstrap';
 import { cjCatalogService, extractCjCatalogErrorMessage } from '../services/cjCatalogService';
+import {
+  cjConnectionService,
+  extractCjConnectionErrorCode,
+  extractCjConnectionErrorMessage,
+} from '../services/cjConnectionService';
 import { categoryService } from '../services/categoryService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import Pagination from '../components/Pagination';
 import StatusBadge from '../components/admin/StatusBadge';
 import CjPromoteModal from '../components/admin/CjPromoteModal';
+import CjConnectionPanel from '../components/admin/CjConnectionPanel';
+import CjConnectionModal from '../components/admin/CjConnectionModal';
 import { CjCatalogItem, CjPromotionState, CjSyncStatus } from '../types/cjCatalog';
+import { CjConnection } from '../types/cjConnection';
 import { Category } from '../types/category';
 
 const PAGE_SIZE = 20;
@@ -34,9 +42,52 @@ const CjCatalogPage: React.FC = () => {
   const [actioningId, setActioningId] = useState<number | null>(null);
   const [actionError, setActionError] = useState('');
 
+  const [connection, setConnection] = useState<CjConnection | null>(null);
+  const [connectionLoading, setConnectionLoading] = useState(true);
+  const [connectionNotFound, setConnectionNotFound] = useState(false);
+  const [connectionError, setConnectionError] = useState('');
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
+
+  // Only the very first connection fetch should toggle connectionLoading.
+  // Verify/Sync trigger later refreshes via the same fetchConnection (as
+  // onRefreshConnection); if those also toggled connectionLoading, every
+  // element gated on it (the panel itself, the catalog-fetch effect, a
+  // possibly-open CjPromoteModal) would unmount/remount mid-action under
+  // real network latency, discarding their local state.
+  const hasLoadedConnectionOnce = useRef(false);
+
   useEffect(() => {
     categoryService.getAll().then(setCategories).catch(() => setCategories([]));
   }, []);
+
+  const fetchConnection = useCallback(async () => {
+    if (!hasLoadedConnectionOnce.current) setConnectionLoading(true);
+    try {
+      const res = await cjConnectionService.getConnection(supplierId);
+      setConnection(res.data);
+      setConnectionNotFound(false);
+      setConnectionError('');
+    } catch (err) {
+      if (extractCjConnectionErrorCode(err) === 'CJ_CONNECTION_NOT_FOUND') {
+        setConnection(null);
+        setConnectionNotFound(true);
+        setConnectionError('');
+      } else {
+        // A non-404 failure (e.g. a 500) is not the same as "no connection
+        // exists" — never null out a previously-loaded `connection` here, or
+        // a transient failure would be misrepresented as "not configured".
+        setConnectionNotFound(false);
+        setConnectionError(extractCjConnectionErrorMessage(err));
+      }
+    } finally {
+      setConnectionLoading(false);
+      hasLoadedConnectionOnce.current = true;
+    }
+  }, [supplierId]);
+
+  useEffect(() => {
+    fetchConnection();
+  }, [fetchConnection]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -67,8 +118,9 @@ const CjCatalogPage: React.FC = () => {
   }, [supplierId, syncStatusFilter, promotionStateFilter, page]);
 
   useEffect(() => {
+    if (connectionLoading || connectionNotFound) return;
     fetchCatalog();
-  }, [fetchCatalog]);
+  }, [fetchCatalog, connectionLoading, connectionNotFound]);
 
   const handleFilterChange = (key: 'syncStatus' | 'promotionState', value: string) => {
     if (key === 'syncStatus') setSyncStatusFilter(value);
@@ -143,155 +195,118 @@ const CjCatalogPage: React.FC = () => {
         <h1 className="h3 mb-0">CJ Catalog</h1>
       </div>
 
-      <Row className="g-2 mb-3 align-items-end">
-        <Col xs={12} md={4}>
-          <Form.Label className="small mb-1">Sync status</Form.Label>
-          <Form.Select
-            value={syncStatusFilter}
-            onChange={(e) => handleFilterChange('syncStatus', e.target.value)}
-            data-testid="filter-sync-status"
-          >
-            <option value="">All</option>
-            <option value="Synced">Synced</option>
-            <option value="Failed">Failed</option>
-          </Form.Select>
-        </Col>
-        <Col xs={12} md={4}>
-          <Form.Label className="small mb-1">Promotion state</Form.Label>
-          <Form.Select
-            value={promotionStateFilter}
-            onChange={(e) => handleFilterChange('promotionState', e.target.value)}
-            data-testid="filter-promotion-state"
-          >
-            <option value="">All</option>
-            <option value="NotPromoted">Not promoted</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </Form.Select>
-        </Col>
-        <Col xs={12} md={4}>
-          <Button
-            variant="outline-secondary"
-            className="w-100 admin-touch-btn"
-            onClick={handleReset}
-            data-testid="btn-filter-reset"
-          >
-            Reset
-          </Button>
-        </Col>
-      </Row>
-
-      {selectedIds.size > 0 && (
-        <Alert variant="light" className="d-flex align-items-center gap-2" data-testid="bulk-action-bar">
-          <span>{selectedIds.size} selected</span>
-          <Button size="sm" onClick={() => setShowPromoteModal(true)} data-testid="btn-promote-selected">
-            Promote selected
-          </Button>
-          <Button
-            size="sm"
-            variant="link"
-            onClick={() => setSelectedIds(new Set())}
-            data-testid="btn-clear-selection"
-          >
-            Clear
-          </Button>
-        </Alert>
-      )}
-
-      {actionError && (
-        <Alert variant="danger" data-testid="action-error">
-          {actionError}
-        </Alert>
-      )}
-
-      {loading && (
-        <div data-testid="loading-state">
+      {connectionLoading && (
+        <div data-testid="connection-loading-state">
           <LoadingSpinner />
         </div>
       )}
-      {!loading && error && <ErrorAlert message={error} />}
-      {!loading && !error && items.length === 0 && (
-        <Alert variant="info" data-testid="empty-state">
-          No CJ catalog items found.
-        </Alert>
+
+      {!connectionLoading && connectionError && !connection && !connectionNotFound && (
+        <ErrorAlert message={connectionError} />
       )}
 
-      {!loading && !error && items.length > 0 && (
-        <>
-          <div className="d-lg-none admin-card-list" data-testid="cj-catalog-card-list">
-            {items.map((item) => (
-              <div key={item.id} className="admin-card-row" data-testid={`cj-catalog-card-row-${item.id}`}>
-                <div className="admin-card-row__header">
-                  <Form.Check
-                    type="checkbox"
-                    checked={selectedIds.has(item.id)}
-                    disabled={item.syncStatus === 'Failed'}
-                    onChange={() => toggleSelect(item.id)}
-                    data-testid={`checkbox-select-${item.id}`}
-                  />
-                  <div className="flex-grow-1">
-                    <div className="fw-semibold">{item.title}</div>
-                    <div className="admin-card-row__meta">
-                      {[item.size, item.color].filter(Boolean).join(' / ') || '—'} · {item.supplierCost}
-                    </div>
-                    <StatusBadge status={item.syncStatus} data-testid={`sync-badge-${item.id}`} />{' '}
-                    <StatusBadge status={item.promotionState} data-testid={`promotion-badge-${item.id}`} />
-                  </div>
-                </div>
-                <div className="admin-card-row__actions">
-                  {item.promotionState === 'Active' && (
-                    <Button
-                      variant="outline-warning"
-                      className="admin-touch-btn"
-                      disabled={actioningId === item.id}
-                      onClick={() => handleDeactivate(item.id)}
-                      data-testid={`btn-deactivate-${item.id}`}
-                    >
-                      Deactivate
-                    </Button>
-                  )}
-                  {item.promotionState === 'Inactive' && (
-                    <Button
-                      variant="outline-success"
-                      className="admin-touch-btn"
-                      disabled={actioningId === item.id}
-                      onClick={() => handleActivate(item.id)}
-                      data-testid={`btn-activate-${item.id}`}
-                    >
-                      Activate
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+      {!connectionLoading && (connection || connectionNotFound) && (
+        <CjConnectionPanel
+          supplierId={supplierId}
+          connection={connection}
+          onConfigureClick={() => setShowConnectionModal(true)}
+          onRefreshConnection={fetchConnection}
+          onCatalogRefreshNeeded={fetchCatalog}
+        />
+      )}
 
-          <div className="d-none d-lg-block admin-table-wrap">
-            <Table hover data-testid="cj-catalog-table">
-              <thead>
-                <tr>
-                  <th>
-                    <Form.Check
-                      type="checkbox"
-                      checked={allSelectableSelected}
-                      onChange={toggleSelectAllOnPage}
-                      data-testid="checkbox-select-all"
-                    />
-                  </th>
-                  <th>Title</th>
-                  <th>SKU</th>
-                  <th>Cost</th>
-                  <th>Stock</th>
-                  <th>Sync</th>
-                  <th>Promotion</th>
-                  <th>Product</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+      <CjConnectionModal
+        show={showConnectionModal}
+        onHide={() => setShowConnectionModal(false)}
+        supplierId={supplierId}
+        connection={connection}
+        onSuccess={(updated) => {
+          setConnection(updated);
+          setConnectionNotFound(false);
+        }}
+      />
+
+      {!connectionLoading && !connectionNotFound && (
+        <>
+          <Row className="g-2 mb-3 align-items-end">
+            <Col xs={12} md={4}>
+              <Form.Label className="small mb-1">Sync status</Form.Label>
+              <Form.Select
+                value={syncStatusFilter}
+                onChange={(e) => handleFilterChange('syncStatus', e.target.value)}
+                data-testid="filter-sync-status"
+              >
+                <option value="">All</option>
+                <option value="Synced">Synced</option>
+                <option value="Failed">Failed</option>
+              </Form.Select>
+            </Col>
+            <Col xs={12} md={4}>
+              <Form.Label className="small mb-1">Promotion state</Form.Label>
+              <Form.Select
+                value={promotionStateFilter}
+                onChange={(e) => handleFilterChange('promotionState', e.target.value)}
+                data-testid="filter-promotion-state"
+              >
+                <option value="">All</option>
+                <option value="NotPromoted">Not promoted</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </Form.Select>
+            </Col>
+            <Col xs={12} md={4}>
+              <Button
+                variant="outline-secondary"
+                className="w-100 admin-touch-btn"
+                onClick={handleReset}
+                data-testid="btn-filter-reset"
+              >
+                Reset
+              </Button>
+            </Col>
+          </Row>
+
+          {selectedIds.size > 0 && (
+            <Alert variant="light" className="d-flex align-items-center gap-2" data-testid="bulk-action-bar">
+              <span>{selectedIds.size} selected</span>
+              <Button size="sm" onClick={() => setShowPromoteModal(true)} data-testid="btn-promote-selected">
+                Promote selected
+              </Button>
+              <Button
+                size="sm"
+                variant="link"
+                onClick={() => setSelectedIds(new Set())}
+                data-testid="btn-clear-selection"
+              >
+                Clear
+              </Button>
+            </Alert>
+          )}
+
+          {actionError && (
+            <Alert variant="danger" data-testid="action-error">
+              {actionError}
+            </Alert>
+          )}
+
+          {loading && (
+            <div data-testid="loading-state">
+              <LoadingSpinner />
+            </div>
+          )}
+          {!loading && error && <ErrorAlert message={error} />}
+          {!loading && !error && items.length === 0 && (
+            <Alert variant="info" data-testid="empty-state">
+              No CJ catalog items found.
+            </Alert>
+          )}
+
+          {!loading && !error && items.length > 0 && (
+            <>
+              <div className="d-lg-none admin-card-list" data-testid="cj-catalog-card-list">
                 {items.map((item) => (
-                  <tr key={item.id} data-testid={`cj-catalog-row-${item.id}`}>
-                    <td>
+                  <div key={item.id} className="admin-card-row" data-testid={`cj-catalog-card-row-${item.id}`}>
+                    <div className="admin-card-row__header">
                       <Form.Check
                         type="checkbox"
                         checked={selectedIds.has(item.id)}
@@ -299,34 +314,20 @@ const CjCatalogPage: React.FC = () => {
                         onChange={() => toggleSelect(item.id)}
                         data-testid={`checkbox-select-${item.id}`}
                       />
-                    </td>
-                    <td>
-                      {item.title}
-                      <div className="admin-card-row__meta">
-                        {[item.size, item.color].filter(Boolean).join(' / ')}
+                      <div className="flex-grow-1">
+                        <div className="fw-semibold">{item.title}</div>
+                        <div className="admin-card-row__meta">
+                          {[item.size, item.color].filter(Boolean).join(' / ') || '—'} · {item.supplierCost}
+                        </div>
+                        <StatusBadge status={item.syncStatus} data-testid={`sync-badge-${item.id}`} />{' '}
+                        <StatusBadge status={item.promotionState} data-testid={`promotion-badge-${item.id}`} />
                       </div>
-                    </td>
-                    <td>{item.sku ?? '—'}</td>
-                    <td>{item.supplierCost}</td>
-                    <td>{item.stockQuantity}</td>
-                    <td>
-                      <StatusBadge status={item.syncStatus} data-testid={`sync-badge-${item.id}`} />
-                    </td>
-                    <td>
-                      <StatusBadge status={item.promotionState} data-testid={`promotion-badge-${item.id}`} />
-                    </td>
-                    <td>
-                      {item.promotionState !== 'NotPromoted' && item.productId ? (
-                        <Link to={`/products/${item.productId}`}>{item.productId}</Link>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td>
+                    </div>
+                    <div className="admin-card-row__actions">
                       {item.promotionState === 'Active' && (
                         <Button
-                          size="sm"
                           variant="outline-warning"
+                          className="admin-touch-btn"
                           disabled={actioningId === item.id}
                           onClick={() => handleDeactivate(item.id)}
                           data-testid={`btn-deactivate-${item.id}`}
@@ -336,8 +337,8 @@ const CjCatalogPage: React.FC = () => {
                       )}
                       {item.promotionState === 'Inactive' && (
                         <Button
-                          size="sm"
                           variant="outline-success"
+                          className="admin-touch-btn"
                           disabled={actioningId === item.id}
                           onClick={() => handleActivate(item.id)}
                           data-testid={`btn-activate-${item.id}`}
@@ -345,25 +346,111 @@ const CjCatalogPage: React.FC = () => {
                           Activate
                         </Button>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </Table>
-          </div>
+              </div>
+
+              <div className="d-none d-lg-block admin-table-wrap">
+                <Table hover data-testid="cj-catalog-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        <Form.Check
+                          type="checkbox"
+                          checked={allSelectableSelected}
+                          onChange={toggleSelectAllOnPage}
+                          data-testid="checkbox-select-all"
+                        />
+                      </th>
+                      <th>Title</th>
+                      <th>SKU</th>
+                      <th>Cost</th>
+                      <th>Stock</th>
+                      <th>Sync</th>
+                      <th>Promotion</th>
+                      <th>Product</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id} data-testid={`cj-catalog-row-${item.id}`}>
+                        <td>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedIds.has(item.id)}
+                            disabled={item.syncStatus === 'Failed'}
+                            onChange={() => toggleSelect(item.id)}
+                            data-testid={`checkbox-select-${item.id}`}
+                          />
+                        </td>
+                        <td>
+                          {item.title}
+                          <div className="admin-card-row__meta">
+                            {[item.size, item.color].filter(Boolean).join(' / ')}
+                          </div>
+                        </td>
+                        <td>{item.sku ?? '—'}</td>
+                        <td>{item.supplierCost}</td>
+                        <td>{item.stockQuantity}</td>
+                        <td>
+                          <StatusBadge status={item.syncStatus} data-testid={`sync-badge-${item.id}`} />
+                        </td>
+                        <td>
+                          <StatusBadge status={item.promotionState} data-testid={`promotion-badge-${item.id}`} />
+                        </td>
+                        <td>
+                          {item.promotionState !== 'NotPromoted' && item.productId ? (
+                            <Link to={`/products/${item.productId}`}>{item.productId}</Link>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td>
+                          {item.promotionState === 'Active' && (
+                            <Button
+                              size="sm"
+                              variant="outline-warning"
+                              disabled={actioningId === item.id}
+                              onClick={() => handleDeactivate(item.id)}
+                              data-testid={`btn-deactivate-${item.id}`}
+                            >
+                              Deactivate
+                            </Button>
+                          )}
+                          {item.promotionState === 'Inactive' && (
+                            <Button
+                              size="sm"
+                              variant="outline-success"
+                              disabled={actioningId === item.id}
+                              onClick={() => handleActivate(item.id)}
+                              data-testid={`btn-activate-${item.id}`}
+                            >
+                              Activate
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </>
+          )}
+
+          {!loading && !error && <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />}
+
+          <CjPromoteModal
+            show={showPromoteModal}
+            onHide={() => setShowPromoteModal(false)}
+            supplierId={supplierId}
+            items={selectedItems}
+            categories={categories}
+            onSuccess={handlePromoteSuccess}
+          />
         </>
       )}
-
-      {!loading && !error && <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />}
-
-      <CjPromoteModal
-        show={showPromoteModal}
-        onHide={() => setShowPromoteModal(false)}
-        supplierId={supplierId}
-        items={selectedItems}
-        categories={categories}
-        onSuccess={handlePromoteSuccess}
-      />
     </div>
   );
 };
