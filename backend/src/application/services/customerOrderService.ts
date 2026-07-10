@@ -25,6 +25,7 @@ import {
   CustomerOrderRepository,
 } from '../../infrastructure/repositories/customerOrderRepository';
 import { paymentService } from './paymentService';
+import { couponService } from './wishlistCouponService';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -206,6 +207,11 @@ export class CustomerOrderService {
         throw err;
       }
     }
+
+    // The cancellation is committed at this point: free the coupon use so an
+    // abandoned/cancelled order does not permanently consume maxUses or the
+    // customer's welcome-coupon allowance.
+    await couponService.releaseForOrder(order.id!);
 
     return (await this.repo.findById(orderId)) as CustomerOrder;
   }

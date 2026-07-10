@@ -3,7 +3,7 @@ import { prisma } from '../../infrastructure/prismaClient';
 import { CustomerOrderRepository } from '../../infrastructure/repositories/customerOrderRepository';
 import { VariantNotFoundError } from '../../infrastructure/repositories/productVariantRepository';
 import { couponService } from './wishlistCouponService';
-import { ValidationError } from '../validator';
+import { ValidationError, validateCustomerOrderCreateData } from '../validator';
 import { CustomerOrder } from '../../domain/models/customerOrder';
 import { logger } from '../../infrastructure/logger';
 import { paymentService } from './paymentService';
@@ -28,7 +28,6 @@ export interface CheckoutInput {
   items: CheckoutLineItem[];
   shippingAddressSnapshot: Record<string, unknown>;
   billingAddressSnapshot: Record<string, unknown>;
-  shippingAmount?: string;
   couponCode?: string;
 }
 
@@ -73,13 +72,31 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+export class GuestEmailHasAccountError extends Error {
+  readonly code = 'EMAIL_HAS_ACCOUNT' as const;
+  readonly status = 409;
+
+  constructor() {
+    super('This email belongs to a registered account. Please log in to place your order.');
+    this.name = 'GuestEmailHasAccountError';
+    Object.setPrototypeOf(this, GuestEmailHasAccountError.prototype);
+  }
+}
+
 export class CheckoutService {
   private readonly orderRepo = new CustomerOrderRepository();
 
   async createOrder(input: CheckoutInput): Promise<CheckoutResult> {
-    if (!input.items.length) {
-      throw new ValidationError('Cart must contain at least one item');
-    }
+    // Same server-side validation as the admin order-creation path: integer
+    // quantities >= 1 and well-formed address snapshots. Prices and shipping
+    // are always resolved server-side — nothing monetary is trusted from the
+    // request body.
+    validateCustomerOrderCreateData({
+      customerId: input.customerId,
+      items: input.items,
+      shippingAddressSnapshot: input.shippingAddressSnapshot,
+      billingAddressSnapshot: input.billingAddressSnapshot,
+    });
 
     const resolvedItems: Array<{
       productVariantId: number;
@@ -115,7 +132,9 @@ export class CheckoutService {
       });
     }
 
-    const shipping = new Decimal(input.shippingAmount ?? '0');
+    // Flat-rate shipping is currently free; when real shipping pricing lands it
+    // must be computed here, never taken from the request.
+    const shipping = new Decimal(0);
     let discount = new Decimal(0);
 
     if (input.couponCode) {
@@ -187,9 +206,17 @@ export class CheckoutService {
       clientSecret = piResult.clientSecret;
       stripePaymentIntentId = piResult.stripePaymentIntentId;
     } catch (err) {
-      await prisma.customerOrder.delete({ where: { id: order.id } }).catch(() => {
+      // Release the coupon use first (decrements usedCount and removes the
+      // redemption), then delete the order. The redemption FK also cascades on
+      // order delete, but the cascade alone would leave usedCount consumed.
+      try {
+        if (input.couponCode) {
+          await couponService.releaseForOrder(order.id);
+        }
+        await prisma.customerOrder.delete({ where: { id: order.id } });
+      } catch {
         logger.error('Failed to rollback order after Stripe error', { orderId: order.id });
-      });
+      }
       throw err;
     }
 
@@ -231,9 +258,20 @@ export class CheckoutService {
 
   async guestCheckout(input: GuestCheckoutInput): Promise<CheckoutResult> {
     const email = normalizeEmail(input.email);
-    let customer = await prisma.customer.findUnique({ where: { email } });
-    if (!customer) {
-      customer = await prisma.customer.create({
+    const existing = await prisma.customer.findUnique({
+      where: { email },
+      select: { id: true, account: { select: { id: true } } },
+    });
+    // Anyone can type any email into the guest form. If that email belongs to
+    // a registered account, refuse: otherwise a stranger could inject orders
+    // into another customer's order history.
+    if (existing?.account) {
+      throw new GuestEmailHasAccountError();
+    }
+
+    let customerId = existing?.id;
+    if (customerId === undefined) {
+      const customer = await prisma.customer.create({
         data: {
           email,
           firstName: input.firstName.trim(),
@@ -241,9 +279,10 @@ export class CheckoutService {
           phone: input.phone?.trim() || null,
         },
       });
+      customerId = customer.id;
     }
 
-    return this.createOrder({ ...input, customerId: customer.id });
+    return this.createOrder({ ...input, customerId });
   }
 }
 

@@ -312,7 +312,7 @@ describe('handleWebhookEvent', () => {
     );
   });
 
-  it('does not throw if handler throws (swallows error, still persists event)', async () => {
+  it('rethrows handler errors and does NOT persist the event, so Stripe retries', async () => {
     mockConstructEvent.mockReturnValue({
       id: 'evt_err',
       type: 'payment_intent.succeeded',
@@ -321,16 +321,18 @@ describe('handleWebhookEvent', () => {
     mockWebhookEventRepo.findByStripeEventId.mockResolvedValue(null);
     mockOrderRepo.findByStripePaymentIntentId.mockRejectedValue(new Error('DB error'));
     mockWebhookEventRepo.create.mockResolvedValue({});
-    await expect(service.handleWebhookEvent(rawBody, signature)).resolves.not.toThrow();
-    expect(mockWebhookEventRepo.create).toHaveBeenCalled();
+    await expect(service.handleWebhookEvent(rawBody, signature)).rejects.toThrow('DB error');
+    // Recording a failed event would make the dedupe check skip Stripe's retry.
+    expect(mockWebhookEventRepo.create).not.toHaveBeenCalled();
   });
 });
 
 describe('handlePaymentIntentSucceeded (via webhook)', () => {
-  const makeEvent = (intentId: string, latestCharge: string | null = 'ch_123') => ({
+  // amount matches the makeOrder() fixture total of 29.99 EUR
+  const makeEvent = (intentId: string, latestCharge: string | null = 'ch_123', amount = 2999) => ({
     id: 'evt_1',
     type: 'payment_intent.succeeded',
-    data: { object: { id: intentId, latest_charge: latestCharge } },
+    data: { object: { id: intentId, latest_charge: latestCharge, amount } },
   });
 
   beforeEach(() => {
@@ -348,6 +350,13 @@ describe('handlePaymentIntentSucceeded (via webhook)', () => {
         data: expect.objectContaining({ status: 'Paid', paymentStatus: 'Paid' }),
       })
     );
+  });
+
+  it('does not mark Paid when intent amount does not match the order total', async () => {
+    mockConstructEvent.mockReturnValue(makeEvent('pi_123', 'ch_123', 100));
+    mockOrderRepo.findByStripePaymentIntentId.mockResolvedValue(makeOrder());
+    await service.handleWebhookEvent(Buffer.from('{}'), 'sig');
+    expect(mockOrderUpdate).not.toHaveBeenCalled();
   });
 
   it('is a no-op if order already Paid', async () => {

@@ -23,7 +23,7 @@ const baseProduct: Product = {
       color: 'Black',
       publicPrice: 49.99,
       compareAtPrice: null,
-      stockPolicy: 'TRACK',
+      stockPolicy: 'SupplierManaged',
       status: 'Active',
       deletedAt: null,
       createdAt: '2026-01-01T00:00:00Z',

@@ -167,6 +167,10 @@ export class PaymentService {
       return;
     }
 
+    // Handler errors must propagate: the controller answers 5xx so Stripe
+    // retries the delivery. The dedupe record is written only after the
+    // handler succeeds — recording a failed event would permanently discard
+    // it (retries would be skipped as "already processed").
     try {
       if (event.type === 'payment_intent.succeeded') {
         await this.handlePaymentIntentSucceeded(event);
@@ -178,11 +182,12 @@ export class PaymentService {
         logger.info('Stripe webhook event type not handled', { type: event.type });
       }
     } catch (err) {
-      logger.error('Stripe webhook event handler error', {
+      logger.error('Stripe webhook event handler error — event NOT recorded, Stripe will retry', {
         eventId: event.id,
         type: event.type,
         error: err instanceof Error ? err.message : String(err),
       });
+      throw err;
     }
 
     await this.webhookEventRepo.create({
@@ -205,6 +210,21 @@ export class PaymentService {
     if (order.paymentStatus === 'Paid') {
       logger.info('payment_intent.succeeded: order already Paid — skipping', {
         orderId: order.id,
+      });
+      return;
+    }
+
+    // Belt-and-braces: the intent was created server-side with the order total,
+    // but never mark an order Paid for an amount that no longer matches it
+    // (e.g. an intent reused after the order was edited). Requires human review.
+    const expectedAmount = toStripeAmount(new Decimal(order.totalAmount), order.currency);
+    if (intent.amount !== expectedAmount) {
+      logger.error('payment_intent.succeeded: amount mismatch — order NOT marked Paid', {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        expectedAmount,
+        receivedAmount: intent.amount,
+        stripePaymentIntentId: intent.id,
       });
       return;
     }

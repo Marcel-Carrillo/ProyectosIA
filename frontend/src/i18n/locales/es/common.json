@@ -53,5 +53,17 @@
     "google": "Continuar con Google",
     "apple": "Continuar con Apple",
     "facebook": "Continuar con Facebook"
+  },
+  "errors": {
+    "generic": "Algo ha salido mal. Inténtalo de nuevo.",
+    "network": "No se ha podido conectar con el servidor. Comprueba tu conexión.",
+    "VALIDATION_ERROR": "Revisa los datos introducidos e inténtalo de nuevo.",
+    "EMAIL_HAS_ACCOUNT": "Este email pertenece a una cuenta registrada. Inicia sesión para completar tu pedido.",
+    "VARIANT_NOT_FOUND": "Uno de los artículos de tu carrito ya no está disponible.",
+    "COUPON_NOT_FOUND": "El cupón no existe o no es válido.",
+    "COUPON_EXHAUSTED": "Este cupón ya no está disponible.",
+    "PAYMENT_GATEWAY_UNAVAILABLE": "El proveedor de pagos no está disponible. Inténtalo más tarde.",
+    "ORDER_NOT_FOUND": "No se ha encontrado el pedido.",
+    "UNAUTHORIZED": "Tu sesión ha caducado. Vuelve a iniciar sesión."
   }
 }

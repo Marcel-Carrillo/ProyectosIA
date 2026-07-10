@@ -1,7 +1,10 @@
 import { ProductVariant } from '../../../domain/models/productVariant';
 
-describe('ProductVariant domain model - supplier field exclusion', () => {
-  it('should NOT expose supplierId on the ProductVariant model', () => {
+// Supplier sourcing fields live on the domain model for ADMIN reads (margin
+// visibility in the backoffice). The customer-facing invariant is enforced at
+// the serializer layer and covered by supplierIsolation.test.ts.
+describe('ProductVariant domain model - supplier fields', () => {
+  it('defaults supplier fields to null when not selected (customer-safe selects)', () => {
     const variant = new ProductVariant({
       id: 1,
       productId: 1,
@@ -9,23 +12,28 @@ describe('ProductVariant domain model - supplier field exclusion', () => {
       publicPrice: 29.99,
       stockPolicy: 'SupplierManaged',
     });
-    expect((variant as unknown as Record<string, unknown>)['supplierId']).toBeUndefined();
-    expect((variant as unknown as Record<string, unknown>)['supplierReference']).toBeUndefined();
-    expect((variant as unknown as Record<string, unknown>)['supplierCost']).toBeUndefined();
+    expect(variant.supplierId).toBeNull();
+    expect(variant.supplierReference).toBeNull();
+    expect(variant.supplierCost).toBeNull();
+    expect(variant.supplierName).toBeNull();
   });
 
-  it('should NOT expose supplier fields when serializing to JSON', () => {
+  it('maps supplier fields from an admin select row (cost as number, name from relation)', () => {
     const variant = new ProductVariant({
       id: 1,
       productId: 1,
       sku: 'SKU-001',
       publicPrice: 29.99,
       stockPolicy: 'SupplierManaged',
+      supplierId: 7,
+      supplierReference: 'SUP-REF-XYZ',
+      supplierCost: '12.50',
+      supplier: { name: 'CJ Dropshipping' },
     });
-    const json = JSON.stringify(variant);
-    expect(json).not.toContain('supplierId');
-    expect(json).not.toContain('supplierReference');
-    expect(json).not.toContain('supplierCost');
+    expect(variant.supplierId).toBe(7);
+    expect(variant.supplierReference).toBe('SUP-REF-XYZ');
+    expect(variant.supplierCost).toBe(12.5);
+    expect(variant.supplierName).toBe('CJ Dropshipping');
   });
 
   it('should correctly serialize publicPrice and compareAtPrice as numbers', () => {

@@ -215,6 +215,27 @@ export class CouponService {
     });
     return discount;
   }
+
+  // Frees the coupon use consumed at order creation when the order never
+  // completes (cancelled PendingPayment, or checkout rollback after a Stripe
+  // failure). Deleting the redemption row also frees per-customer limits
+  // (welcome coupons count redemptions, not usedCount). Idempotent.
+  async releaseForOrder(customerOrderId: number): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const redemption = await tx.couponRedemption.findUnique({
+        where: { customerOrderId },
+        select: { id: true, couponId: true },
+      });
+      if (!redemption) return;
+
+      await tx.couponRedemption.delete({ where: { id: redemption.id } });
+      await tx.$executeRaw`
+        UPDATE "Coupon"
+        SET "usedCount" = GREATEST("usedCount" - 1, 0)
+        WHERE id = ${redemption.couponId}
+      `;
+    });
+  }
 }
 
 export const couponService = new CouponService();

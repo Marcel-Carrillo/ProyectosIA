@@ -86,6 +86,71 @@ describe('checkout routes', () => {
     expect(res.status).toBe(404);
   });
 
+  it.each([
+    ['negative', -1],
+    ['zero', 0],
+    ['fractional', 1.5],
+  ])('rejects %s quantity with 400', async (_label, quantity) => {
+    const variantId = await getVariantId();
+    if (!variantId) return;
+
+    const res = await request(app)
+      .post('/api/public/checkout/guest')
+      .send({
+        email: `qty-${Date.now()}@example.com`,
+        firstName: 'Bad',
+        lastName: 'Quantity',
+        items: [{ productVariantId: variantId, quantity }],
+        shippingAddressSnapshot: address,
+        billingAddressSnapshot: address,
+      });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('rejects guest checkout with a registered account email (409)', async () => {
+    const variantId = await getVariantId();
+    if (!variantId) return;
+
+    const email = `registered-${Date.now()}@example.com`;
+    await request(app)
+      .post('/api/public/auth/register')
+      .send({ email, password: 'BuyerPass1', firstName: 'Reg', lastName: 'User' });
+
+    const res = await request(app)
+      .post('/api/public/checkout/guest')
+      .send({
+        email,
+        firstName: 'Impostor',
+        lastName: 'Guest',
+        items: [{ productVariantId: variantId, quantity: 1 }],
+        shippingAddressSnapshot: address,
+        billingAddressSnapshot: address,
+      });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('EMAIL_HAS_ACCOUNT');
+  });
+
+  it('ignores client-supplied shippingAmount', async () => {
+    const variantId = await getVariantId();
+    if (!variantId) return;
+
+    const res = await request(app)
+      .post('/api/public/checkout/guest')
+      .send({
+        email: `ship-${Date.now()}@example.com`,
+        firstName: 'Ship',
+        lastName: 'Tamper',
+        items: [{ productVariantId: variantId, quantity: 1 }],
+        shippingAddressSnapshot: address,
+        billingAddressSnapshot: address,
+        shippingAmount: '-50',
+      });
+    expect(res.status).toBe(201);
+    expect(parseFloat(res.body.data.shippingAmount)).toBe(0);
+    expect(parseFloat(res.body.data.totalAmount)).toBe(parseFloat(res.body.data.subtotalAmount));
+  });
+
   it('authenticated checkout with coupon', async () => {
     const variantId = await getVariantId();
     if (!variantId) return;

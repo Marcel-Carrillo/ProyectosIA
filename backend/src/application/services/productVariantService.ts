@@ -5,7 +5,11 @@ import {
   ProductVariantUpdateData,
 } from '../../domain/repositories/productRepository';
 import { ProductVariant } from '../../domain/models/productVariant';
-import { validateProductVariantData, validateProductVariantPublicPrice } from '../validator';
+import {
+  validateProductVariantData,
+  validateProductVariantPublicPrice,
+  validateProductVariantStockPolicy,
+} from '../validator';
 import { ProductNotFoundError } from '../../infrastructure/repositories/productRepository';
 import {
   VariantNotFoundError,
@@ -51,6 +55,7 @@ export class ProductVariantService {
     if (data.publicPrice !== undefined) {
       validateProductVariantPublicPrice(data.publicPrice);
     }
+    validateProductVariantStockPolicy(data.stockPolicy);
 
     if (data.publicPrice !== undefined || data.compareAtPrice !== undefined) {
       const effectivePublicPrice = data.publicPrice ?? variant.publicPrice;

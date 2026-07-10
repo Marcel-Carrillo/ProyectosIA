@@ -8,7 +8,6 @@ export interface CheckoutPayload {
   items: Array<{ productVariantId: number; quantity: number }>;
   shippingAddressSnapshot: Record<string, string>;
   billingAddressSnapshot: Record<string, string>;
-  shippingAmount?: string;
   couponCode?: string;
 }
 

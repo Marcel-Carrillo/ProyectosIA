@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
@@ -11,6 +12,7 @@ interface ReviewFormProps {
 const STAR_VALUES = [1, 2, 3, 4, 5] as const;
 
 const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
+  const { t } = useTranslation('product');
   const { isAuthenticated, isLoading: authLoading } = useCustomerAuth();
 
   const [eligibility, setEligibility] = useState<ReviewEligibility | null>(null);
@@ -40,7 +42,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
         if (!cancelled) setEligibility(data);
       })
       .catch(() => {
-        if (!cancelled) setEligibilityError('Unable to check review eligibility.');
+        if (!cancelled) setEligibilityError(t('reviews.form.eligibilityError'));
       })
       .finally(() => {
         if (!cancelled) setEligibilityLoading(false);
@@ -53,7 +55,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating < 1) {
-      setValidationError('Please select a star rating.');
+      setValidationError(t('reviews.form.selectRating'));
       return;
     }
     setValidationError(null);
@@ -80,14 +82,14 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
     return (
       <div className="storefront-review-form storefront-review-form--locked" data-testid="review-form-login-required">
         <p>
-          <Link to="/login">Log in</Link> to write a review. Only customers who purchased this product can review it.
+          <Link to="/login">{t('reviews.form.loginPrefix')}</Link> {t('reviews.form.loginSuffix')}
         </p>
       </div>
     );
   }
 
   if (eligibilityLoading) {
-    return <p className="storefront-review-form__loading" data-testid="review-form-eligibility-loading">Checking review eligibility...</p>;
+    return <p className="storefront-review-form__loading" data-testid="review-form-eligibility-loading">{t('reviews.form.checkingEligibility')}</p>;
   }
 
   if (eligibilityError) {
@@ -97,7 +99,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
   if (submitted) {
     return (
       <div className="storefront-review-form storefront-review-form--success" data-testid="review-submitted">
-        <p>Thanks for your review! It is pending moderation and will appear once approved.</p>
+        <p>{t('reviews.form.thanks')}</p>
       </div>
     );
   }
@@ -105,7 +107,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
   if (eligibility?.reason === 'already_reviewed') {
     return (
       <div className="storefront-review-form storefront-review-form--locked" data-testid="review-already-submitted">
-        <p>You have already reviewed this product.</p>
+        <p>{t('reviews.form.alreadyReviewed')}</p>
       </div>
     );
   }
@@ -113,25 +115,25 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
   if (!eligibility?.canReview) {
     return (
       <div className="storefront-review-form storefront-review-form--locked" data-testid="review-purchase-required">
-        <p>Only customers who purchased this product can write a review.</p>
+        <p>{t('reviews.form.purchaseRequired')}</p>
       </div>
     );
   }
 
   return (
     <form className="storefront-review-form" onSubmit={handleSubmit} data-testid="review-form">
-      <h3 className="storefront-review-form__title">Write a review</h3>
+      <h3 className="storefront-review-form__title">{t('reviews.form.title')}</h3>
 
       {submitError && <p className="storefront-alert" role="alert">{submitError}</p>}
       {validationError && <p className="storefront-review-form__validation" role="alert">{validationError}</p>}
 
-      <div className="storefront-review-form__stars" role="radiogroup" aria-label="Rating">
+      <div className="storefront-review-form__stars" role="radiogroup" aria-label={t('reviews.form.ratingLabel')}>
         {STAR_VALUES.map((v) => (
           <button
             key={v}
             type="button"
             aria-pressed={rating === v}
-            aria-label={`${v} star${v === 1 ? '' : 's'}`}
+            aria-label={t('reviews.form.starLabel', { count: v })}
             className={`storefront-review-form__star${v <= rating ? ' storefront-review-form__star--active' : ''}`}
             onClick={() => setRating(v)}
           >
@@ -141,7 +143,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
       </div>
 
       <label className="storefront-field">
-        <span className="storefront-field__label">Title (optional)</span>
+        <span className="storefront-field__label">{t('reviews.form.titleLabel')}</span>
         <input
           className="storefront-field__input"
           value={title}
@@ -151,7 +153,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
       </label>
 
       <label className="storefront-field">
-        <span className="storefront-field__label">Review (optional)</span>
+        <span className="storefront-field__label">{t('reviews.form.reviewLabel')}</span>
         <textarea
           className="storefront-field__input storefront-field__textarea"
           value={body}
@@ -162,7 +164,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
       </label>
 
       <button type="submit" className="storefront-btn storefront-btn--primary" disabled={submitting}>
-        {submitting ? 'Submitting...' : 'Submit review'}
+        {submitting ? t('reviews.form.submitting') : t('reviews.form.submit')}
       </button>
     </form>
   );

@@ -166,9 +166,9 @@ Examples:
 * `color`: Product color (optional, max 50 characters)
 * `publicPrice`: Price shown to customers
 * `compareAtPrice`: Optional previous price or crossed-out price (must be strictly greater than publicPrice)
-* `supplierId`: Foreign key referencing the Supplier (optional) — **INTERNAL ONLY, never returned by API**
-* `supplierReference`: Supplier product reference (optional, max 150 characters) — **INTERNAL ONLY, never returned by API**
-* `supplierCost`: Internal supplier cost — **INTERNAL ONLY, never returned by API**
+* `supplierId`: Foreign key referencing the Supplier (optional) — **ADMIN ONLY, never returned by customer-facing APIs**
+* `supplierReference`: Supplier product reference (optional, max 150 characters) — **ADMIN ONLY, never returned by customer-facing APIs**
+* `supplierCost`: Internal supplier cost — **ADMIN ONLY, never returned by customer-facing APIs**; shown in the admin panel next to `publicPrice` for margin visibility
 * `cjCatalogItemId`: Foreign key referencing the `CjCatalogItem` this variant was promoted from (optional, unique) — **INTERNAL ONLY, never returned by API**. Nullable+unique; `ON DELETE SET NULL` (a promoted variant survives even if its source staging row is ever deleted, since `CjCatalogItem` rows are disposable/re-syncable). Never cleared once set, including on deactivation — it is the permanent link back to the CJ origin that allows reactivating or re-syncing cost/stock later.
 * `stockPolicy`: Stock policy (valid values: SupplierManaged, InternalStock, Hybrid)
 * `status`: Variant status (valid values: Active, Inactive, OutOfStock, Archived)
@@ -189,7 +189,7 @@ Examples:
 
 **Supplier Field Protection (CRITICAL):**
 
-The fields `supplierId`, `supplierReference`, `supplierCost`, and `cjCatalogItemId` are stored in the database but **must never appear in any API response**. This is enforced at the Prisma repository layer via a `variantSelect` constant that explicitly omits these fields from all read operations. Automated tests assert their absence on every variant query and controller response.
+The fields `supplierId`, `supplierReference`, and `supplierCost` **must never appear in any customer-facing API response**. Admin endpoints (`/api/admin/products/:id/variants*`, behind admin auth) DO return them (plus a derived `supplierName`) via a dedicated `adminVariantSelect` so administrators can see cost and margin; every customer-facing serializer allow-lists its own fields and automated isolation tests assert their absence on all `/api/public/*` responses. `cjCatalogItemId` remains internal-only and is never returned by any API, admin included.
 
 **Relationships:**
 

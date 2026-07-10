@@ -1,1 +1,58 @@
-{}
+{
+  "title": "Checkout",
+  "paymentTitle": "Payment",
+  "backToDetails": "Back to details",
+  "backToCart": "Back to cart",
+  "contact": "Contact",
+  "checkingOutAs": "Checking out as {{name}} ({{email}})",
+  "shippingAddress": "Shipping address",
+  "billingAddress": "Billing address",
+  "coupon": "Coupon",
+  "couponCode": "Code",
+  "applyCoupon": "Apply",
+  "couponInvalid": "Invalid coupon",
+  "couponReason": "Coupon: {{reason}}",
+  "subtotal": "Subtotal",
+  "discount": "Discount",
+  "total": "Total",
+  "continueToPayment": "Continue to payment",
+  "preparingOrder": "Preparing order…",
+  "field": {
+    "email": "Email",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "fullName": "Full name",
+    "streetLine1": "Street address",
+    "city": "City",
+    "province": "Province",
+    "postalCode": "Postal code",
+    "country": "Country"
+  },
+  "payment": {
+    "payNow": "Pay now",
+    "processing": "Processing…",
+    "failed": "Payment failed. Please try again.",
+    "unexpectedError": "An unexpected error occurred. Please try again."
+  },
+  "confirmation": {
+    "seoTitle": "Order confirmation | Mavile",
+    "paymentConfirmed": "Payment confirmed",
+    "thankYou": "Thank you for your order",
+    "confirmingPayment": "Confirming payment…",
+    "paymentReceived": "Your payment was received. We will ship your order shortly.",
+    "paymentFailedPrefix": "Payment failed. Please",
+    "paymentFailedLink": "return to cart",
+    "paymentFailedSuffix": "and try again.",
+    "timeoutPrefix": "Payment confirmation is taking longer than expected. Check your",
+    "timeoutLink": "order history",
+    "timeoutSuffix": "for the latest status.",
+    "orderNumber": "Order number:",
+    "total": "Total: €{{amount}}",
+    "continueShopping": "Continue shopping",
+    "myOrders": "My orders"
+  },
+  "seo": {
+    "checkout": "Checkout | Mavile",
+    "payment": "Payment | Mavile"
+  }
+}
