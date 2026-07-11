@@ -10,6 +10,7 @@ import { CjApiError } from '../../infrastructure/external/cjClient';
 import { SupplierIntegrationNotFoundError } from '../../infrastructure/repositories/supplierIntegrationRepository';
 import { CjConnectionNotReadyError, CjApiUnavailableError } from '../validator';
 import { logger } from '../../infrastructure/logger';
+import { extractCjVariantAttributes } from './cjVariantAttributeExtraction';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -19,10 +20,6 @@ export interface SyncCatalogResult {
   syncedAt: Date;
 }
 
-// Parses CJ's `variantProperty` field: a JSON-encoded array of { key, value }
-// attribute pairs (e.g. size/color for fashion items). Falls back to nulls for
-// non-fashion items that don't carry these attributes — this is best-effort
-// enrichment, never a reason to fail the item.
 // Guards against a misconfigured SSM value (empty, zero, negative, or
 // non-numeric) silently producing endPage < startPage, which would make
 // syncCatalog's window loop never execute — a permanently-stuck, zero-progress
@@ -38,19 +35,6 @@ function parsePositiveIntEnv(name: string, fallback: number): number {
   if (Number.isInteger(value) && value > 0) return value;
   logger.warn('Invalid value for env var, falling back to default', { name, raw, fallback });
   return fallback;
-}
-
-function parseSizeColor(variantProperty: string | undefined): { size: string | null; color: string | null } {
-  if (!variantProperty) return { size: null, color: null };
-  try {
-    const parsed = JSON.parse(variantProperty) as Array<{ key?: string; value?: string }>;
-    if (!Array.isArray(parsed)) return { size: null, color: null };
-    const size = parsed.find((p) => /size/i.test(p.key ?? ''))?.value ?? null;
-    const color = parsed.find((p) => /colou?r/i.test(p.key ?? ''))?.value ?? null;
-    return { size, color };
-  } catch {
-    return { size: null, color: null };
-  }
 }
 
 export class CjCatalogSyncService {
@@ -146,7 +130,11 @@ export class CjCatalogSyncService {
             if (!Number.isInteger(stockQuantity) || stockQuantity < 0) {
               throw new Error('Invalid stockQuantity');
             }
-            const { size, color } = parseSizeColor(variant.variantProperty);
+            const { size, color } = extractCjVariantAttributes({
+              variantKey: variant.variantKey,
+              variantNameEn: variant.variantNameEn,
+              variantProperty: variant.variantProperty,
+            });
             items.push({
               externalRef: variant.vid,
               pid: product.id,
