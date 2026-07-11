@@ -1,3 +1,5 @@
+import { vi, type Mocked } from 'vitest';
+import { AxiosError } from 'axios';
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -10,20 +12,20 @@ import {
   extractCustomerErrorCode,
 } from '../../services/customerService';
 
-jest.mock('../../services/customerService', () => {
-  const actual = jest.requireActual('../../services/customerService');
+vi.mock('../../services/customerService', async () => {
+  const actual = await vi.importActual('../../services/customerService');
   return {
     __esModule: true,
     customerService: {
-      list: jest.fn(),
-      getById: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      listAddresses: jest.fn(),
-      createAddress: jest.fn(),
-      updateAddress: jest.fn(),
-      deleteAddress: jest.fn(),
+      list: vi.fn(),
+      getById: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      listAddresses: vi.fn(),
+      createAddress: vi.fn(),
+      updateAddress: vi.fn(),
+      deleteAddress: vi.fn(),
     },
     extractCustomerErrorMessage: actual.extractCustomerErrorMessage,
     mapCustomerError: actual.mapCustomerError,
@@ -31,19 +33,19 @@ jest.mock('../../services/customerService', () => {
   };
 });
 
-jest.mock('../../components/admin/CustomerFormModal', () => ({
+vi.mock('../../components/admin/CustomerFormModal', () => ({
   __esModule: true,
   default: ({ show }: { show: boolean }) =>
     show ? <div data-testid="mock-customer-form-modal" /> : null,
 }));
 
-jest.mock('../../components/admin/CustomerAddressesSection', () => ({
+vi.mock('../../components/admin/CustomerAddressesSection', () => ({
   __esModule: true,
   default: ({ customer }: { customer: Customer | null }) =>
     customer ? <div data-testid="mock-addresses-section" /> : null,
 }));
 
-const mockedService = customerService as jest.Mocked<typeof customerService>;
+const mockedService = customerService as Mocked<typeof customerService>;
 
 const mockCustomer: Customer = {
   id: 1,
@@ -62,8 +64,7 @@ const listResult = (items: Customer[]) => ({
 });
 
 const makeAxiosError = (code: string, status: number) => {
-  const axios = jest.requireActual('axios');
-  const err = new axios.AxiosError('error');
+  const err = new AxiosError('error');
   err.response = {
     data: { success: false, error: { code, message: 'x' } },
     status,
@@ -82,7 +83,7 @@ const renderPage = () =>
   );
 
 describe('CustomersPage', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('renders customers from the admin API', async () => {
     mockedService.list.mockResolvedValue(listResult([mockCustomer]));
@@ -104,19 +105,19 @@ describe('CustomersPage', () => {
   });
 
   it('re-queries after the search debounce', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mockedService.list.mockResolvedValue(listResult([mockCustomer]));
     renderPage();
     fireEvent.change(screen.getByTestId('filter-search'), { target: { value: 'jane' } });
     await act(async () => {
-      jest.advanceTimersByTime(400);
+      vi.advanceTimersByTime(400);
     });
     await waitFor(() =>
       expect(mockedService.list).toHaveBeenLastCalledWith(
         expect.objectContaining({ search: 'jane' })
       )
     );
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('reset clears search and re-queries', async () => {

@@ -1,3 +1,4 @@
+import { vi, type Mock } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -5,11 +6,11 @@ import CustomerOrdersPage from '../CustomerOrdersPage';
 import { CustomerOrder } from '../../types/customerOrder';
 import { customerOrderService } from '../../services/customerOrderService';
 
-jest.mock('../../services/customerOrderService', () => ({
-  customerOrderService: { list: jest.fn() },
+vi.mock('../../services/customerOrderService', () => ({
+  customerOrderService: { list: vi.fn() },
 }));
 
-const mockedList = customerOrderService.list as jest.Mock;
+const mockedList = customerOrderService.list as Mock;
 
 const mockOrder: CustomerOrder = {
   id: 1,
@@ -59,7 +60,7 @@ const renderPage = (initial = '/customer-orders') =>
 
 describe('CustomerOrdersPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedList.mockResolvedValue(listResult([mockOrder]));
   });
 
@@ -70,7 +71,7 @@ describe('CustomerOrdersPage', () => {
   });
 
   it('passes date range params to list service', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     renderPage();
     await waitFor(() => expect(mockedList).toHaveBeenCalled());
 
@@ -78,7 +79,7 @@ describe('CustomerOrdersPage', () => {
     fireEvent.change(screen.getByTestId('order-date-to'), { target: { value: '2026-06-30' } });
 
     await act(async () => {
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
     });
 
     await waitFor(() =>
@@ -86,7 +87,7 @@ describe('CustomerOrdersPage', () => {
         expect.objectContaining({ createdFrom: '2026-06-01', createdTo: '2026-06-30' })
       )
     );
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('shows empty state', async () => {

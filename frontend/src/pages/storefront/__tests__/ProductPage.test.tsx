@@ -1,38 +1,39 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { waitFor } from '@testing-library/react';
 import ProductPage from '../ProductPage';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 
-const mockGetById = jest.fn();
-const mockCategoryGetAll = jest.fn();
-const mockListApprovedForProduct = jest.fn();
+const mockGetById = vi.fn();
+const mockCategoryGetAll = vi.fn();
+const mockListApprovedForProduct = vi.fn();
 
-jest.mock('react-router-dom', () => ({
+vi.mock('react-router-dom', () => ({
   useParams: () => ({ id: '1' }),
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 
-jest.mock('../../../contexts/CartContext', () => ({
-  useCart: () => ({ addItem: jest.fn() }),
+vi.mock('../../../contexts/CartContext', () => ({
+  useCart: () => ({ addItem: vi.fn() }),
 }));
 
-jest.mock('../../../contexts/CustomerAuthContext', () => ({
+vi.mock('../../../contexts/CustomerAuthContext', () => ({
   useCustomerAuth: () => ({ isAuthenticated: false, isLoading: false }),
 }));
 
-jest.mock('../../../services/productService', () => ({
+vi.mock('../../../services/productService', () => ({
   productService: {
     getById: (...args: unknown[]) => mockGetById(...args),
   },
 }));
 
-jest.mock('../../../services/categoryService', () => ({
+vi.mock('../../../services/categoryService', () => ({
   categoryService: {
     getAll: (...args: unknown[]) => mockCategoryGetAll(...args),
   },
 }));
 
-jest.mock('../../../services/reviewService', () => ({
+vi.mock('../../../services/reviewService', () => ({
   reviewService: {
     listApprovedForProduct: (...args: unknown[]) => mockListApprovedForProduct(...args),
   },
@@ -40,7 +41,7 @@ jest.mock('../../../services/reviewService', () => ({
 
 describe('ProductPage language refetch', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockCategoryGetAll.mockResolvedValue([]);
     mockListApprovedForProduct.mockResolvedValue({
       items: [],
@@ -104,7 +105,7 @@ describe('ProductPage structured data — gtin', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockCategoryGetAll.mockResolvedValue([]);
     mockListApprovedForProduct.mockResolvedValue({
       items: [],
@@ -165,7 +166,7 @@ describe('ProductPage structured data — reviews', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockCategoryGetAll.mockResolvedValue([]);
   });
 

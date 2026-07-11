@@ -1,11 +1,12 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import AccountPage from '../AccountPage';
 
-jest.mock('../../../contexts/CustomerAuthContext', () => ({
-  useCustomerAuth: () => ({ customer: { firstName: 'Ana', lastName: 'García', email: 'ana@example.com' }, logout: jest.fn() }),
+vi.mock('../../../contexts/CustomerAuthContext', () => ({
+  useCustomerAuth: () => ({ customer: { firstName: 'Ana', lastName: 'García', email: 'ana@example.com' }, logout: vi.fn() }),
 }));
 
 describe('AccountPage — noindex coverage', () => {

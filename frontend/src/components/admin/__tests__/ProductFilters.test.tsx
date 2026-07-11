@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ProductFilters, { FiltersState } from '../ProductFilters';
@@ -18,33 +19,33 @@ const categories: Category[] = [
 describe('ProductFilters', () => {
   it('renders category options from props', () => {
     render(
-      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={jest.fn()} onReset={jest.fn()} />,
+      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={vi.fn()} onReset={vi.fn()} />,
     );
     expect(screen.getByRole('option', { name: 'Electronics' })).toBeInTheDocument();
   });
 
   it('calls onFilterChange when status changes', () => {
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
     render(
-      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={onFilterChange} onReset={jest.fn()} />,
+      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={onFilterChange} onReset={vi.fn()} />,
     );
     fireEvent.change(screen.getByTestId('filter-status'), { target: { value: 'Active' } });
     expect(onFilterChange).toHaveBeenCalledWith('status', 'Active');
   });
 
   it('calls onFilterChange when search changes', () => {
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
     render(
-      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={onFilterChange} onReset={jest.fn()} />,
+      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={onFilterChange} onReset={vi.fn()} />,
     );
     fireEvent.change(screen.getByTestId('filter-search'), { target: { value: 'dress' } });
     expect(onFilterChange).toHaveBeenCalledWith('search', 'dress');
   });
 
   it('calls onReset when Reset is clicked', () => {
-    const onReset = jest.fn();
+    const onReset = vi.fn();
     render(
-      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={jest.fn()} onReset={onReset} />,
+      <ProductFilters filters={baseFilters} categories={categories} onFilterChange={vi.fn()} onReset={onReset} />,
     );
     fireEvent.click(screen.getByTestId('btn-filter-reset'));
     expect(onReset).toHaveBeenCalled();

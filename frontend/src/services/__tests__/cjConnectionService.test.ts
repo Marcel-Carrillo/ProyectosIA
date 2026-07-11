@@ -1,3 +1,4 @@
+import { vi, type Mocked } from 'vitest';
 import axios from 'axios';
 import {
   cjConnectionService,
@@ -6,8 +7,8 @@ import {
   extractCjConnectionErrorCode,
 } from '../cjConnectionService';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('mapCjConnectionError', () => {
   it.each([
@@ -30,7 +31,7 @@ describe('mapCjConnectionError', () => {
 });
 
 describe('cjConnectionService', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('getConnection calls GET with the supplier-scoped connection path', async () => {
     mockedAxios.get.mockResolvedValue({

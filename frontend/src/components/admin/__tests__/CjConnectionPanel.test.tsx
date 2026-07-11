@@ -1,17 +1,18 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CjConnectionPanel from '../CjConnectionPanel';
 import { CjConnection } from '../../../types/cjConnection';
 
-const mockVerifyConnection = jest.fn();
-const mockSync = jest.fn();
+const mockVerifyConnection = vi.fn();
+const mockSync = vi.fn();
 
-jest.mock('../../../services/cjConnectionService', () => ({
+vi.mock('../../../services/cjConnectionService', async () => ({
   cjConnectionService: {
     verifyConnection: (...args: unknown[]) => mockVerifyConnection(...args),
     sync: (...args: unknown[]) => mockSync(...args),
   },
-  extractCjConnectionErrorMessage: jest.requireActual('../../../services/cjConnectionService')
+  extractCjConnectionErrorMessage: (await vi.importActual('../../../services/cjConnectionService'))
     .extractCjConnectionErrorMessage,
 }));
 
@@ -38,7 +39,7 @@ const disconnectedConnection: CjConnection = {
 };
 
 describe('CjConnectionPanel', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('renders only the configure CTA when not configured', () => {
     render(
@@ -110,7 +111,7 @@ describe('CjConnectionPanel', () => {
 
   it('calls onRefreshConnection and shows the result on a successful verify', async () => {
     mockVerifyConnection.mockResolvedValue({ data: { healthy: true } });
-    const onRefreshConnection = jest.fn();
+    const onRefreshConnection = vi.fn();
     render(
       <CjConnectionPanel
         supplierId={3}
@@ -145,8 +146,8 @@ describe('CjConnectionPanel', () => {
 
   it('calls both callbacks and shows the result on a successful sync', async () => {
     mockSync.mockResolvedValue({ data: { itemsUpserted: 2, itemsFailed: 0, syncedAt: '2026-01-01T00:00:00.000Z' } });
-    const onRefreshConnection = jest.fn();
-    const onCatalogRefreshNeeded = jest.fn();
+    const onRefreshConnection = vi.fn();
+    const onCatalogRefreshNeeded = vi.fn();
     render(
       <CjConnectionPanel
         supplierId={3}

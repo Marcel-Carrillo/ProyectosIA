@@ -1,44 +1,45 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CjCatalogPage from '../CjCatalogPage';
 
-const mockListCatalog = jest.fn();
-const mockPromote = jest.fn();
-const mockActivate = jest.fn();
-const mockDeactivate = jest.fn();
-const mockGetAllCategories = jest.fn();
+const mockListCatalog = vi.fn();
+const mockPromote = vi.fn();
+const mockActivate = vi.fn();
+const mockDeactivate = vi.fn();
+const mockGetAllCategories = vi.fn();
 
-const mockGetConnection = jest.fn();
-const mockConfigureConnection = jest.fn();
-const mockVerifyConnection = jest.fn();
-const mockSync = jest.fn();
+const mockGetConnection = vi.fn();
+const mockConfigureConnection = vi.fn();
+const mockVerifyConnection = vi.fn();
+const mockSync = vi.fn();
 
-jest.mock('../../services/cjCatalogService', () => ({
+vi.mock('../../services/cjCatalogService', async () => ({
   cjCatalogService: {
     listCatalog: (...args: unknown[]) => mockListCatalog(...args),
     promote: (...args: unknown[]) => mockPromote(...args),
     activate: (...args: unknown[]) => mockActivate(...args),
     deactivate: (...args: unknown[]) => mockDeactivate(...args),
   },
-  extractCjCatalogErrorMessage: jest.requireActual('../../services/cjCatalogService').extractCjCatalogErrorMessage,
-  mapCjCatalogError: jest.requireActual('../../services/cjCatalogService').mapCjCatalogError,
+  extractCjCatalogErrorMessage: (await vi.importActual('../../services/cjCatalogService')).extractCjCatalogErrorMessage,
+  mapCjCatalogError: (await vi.importActual('../../services/cjCatalogService')).mapCjCatalogError,
 }));
 
-jest.mock('../../services/cjConnectionService', () => ({
+vi.mock('../../services/cjConnectionService', async () => ({
   cjConnectionService: {
     getConnection: (...args: unknown[]) => mockGetConnection(...args),
     configureConnection: (...args: unknown[]) => mockConfigureConnection(...args),
     verifyConnection: (...args: unknown[]) => mockVerifyConnection(...args),
     sync: (...args: unknown[]) => mockSync(...args),
   },
-  extractCjConnectionErrorMessage: jest.requireActual('../../services/cjConnectionService')
+  extractCjConnectionErrorMessage: (await vi.importActual('../../services/cjConnectionService'))
     .extractCjConnectionErrorMessage,
-  extractCjConnectionErrorCode: jest.requireActual('../../services/cjConnectionService').extractCjConnectionErrorCode,
-  mapCjConnectionError: jest.requireActual('../../services/cjConnectionService').mapCjConnectionError,
+  extractCjConnectionErrorCode: (await vi.importActual('../../services/cjConnectionService')).extractCjConnectionErrorCode,
+  mapCjConnectionError: (await vi.importActual('../../services/cjConnectionService')).mapCjConnectionError,
 }));
 
-jest.mock('../../services/categoryService', () => ({
+vi.mock('../../services/categoryService', () => ({
   categoryService: {
     getAll: (...args: unknown[]) => mockGetAllCategories(...args),
   },
@@ -113,7 +114,7 @@ const failedItem = {
 
 describe('CjCatalogPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGetAllCategories.mockResolvedValue([
       { id: 1, name: 'Dresses', description: null, imageUrl: null, status: 'Active', parentId: null, createdAt: '', updatedAt: '' },
     ]);

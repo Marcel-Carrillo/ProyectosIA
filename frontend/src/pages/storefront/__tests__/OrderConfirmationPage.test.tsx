@@ -1,11 +1,12 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import OrderConfirmationPage from '../OrderConfirmationPage';
 
-const mockGetOrderPaymentStatus = jest.fn();
+const mockGetOrderPaymentStatus = vi.fn();
 
-jest.mock('../../../services/paymentService', () => ({
+vi.mock('../../../services/paymentService', () => ({
   getOrderPaymentStatus: (...args: unknown[]) => mockGetOrderPaymentStatus(...args),
 }));
 
@@ -22,7 +23,7 @@ function renderPage(locationState?: object) {
 }
 
 describe('OrderConfirmationPage', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('shows order number without polling when no paymentStatus=processing', () => {
     renderPage({ order: { orderNumber: 'ORD-001', totalAmount: '29.99', paymentStatus: 'Paid' } });

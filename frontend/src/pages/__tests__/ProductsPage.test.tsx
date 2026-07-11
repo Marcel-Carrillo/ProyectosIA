@@ -1,3 +1,4 @@
+import { vi, type Mocked } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -6,11 +7,11 @@ import { Product } from '../../types/product';
 import { adminProductService } from '../../services/adminProductService';
 import { categoryService } from '../../services/categoryService';
 
-jest.mock('../../services/adminProductService');
-jest.mock('../../services/categoryService');
+vi.mock('../../services/adminProductService');
+vi.mock('../../services/categoryService');
 
-const mockedAdmin = adminProductService as jest.Mocked<typeof adminProductService>;
-const mockedCategory = categoryService as jest.Mocked<typeof categoryService>;
+const mockedAdmin = adminProductService as Mocked<typeof adminProductService>;
+const mockedCategory = categoryService as Mocked<typeof categoryService>;
 
 const mockProduct: Product = {
   id: 7,
@@ -40,7 +41,7 @@ const renderPage = () =>
   );
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockedCategory.getAll.mockResolvedValue([]);
 });
 

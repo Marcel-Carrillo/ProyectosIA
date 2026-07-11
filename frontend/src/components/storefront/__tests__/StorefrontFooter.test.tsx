@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -5,7 +6,7 @@ import StorefrontFooter from '../StorefrontFooter';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import { CookieConsentProvider } from '../../../contexts/CookieConsentContext';
 
-jest.mock('../../../hooks/useStorefrontCategories', () => ({
+vi.mock('../../../hooks/useStorefrontCategories', () => ({
   useStorefrontCategories: () => ({
     getHref: (slug: string) => `/catalog?category=${slug}`,
   }),

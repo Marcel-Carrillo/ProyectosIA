@@ -1,15 +1,16 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 
-const mockGetMyOrder = jest.fn();
-const mockResumeOrderPayment = jest.fn();
-const mockCancelOrder = jest.fn();
-const mockGetStripeConfig = jest.fn();
-const mockLoadStripe = jest.fn();
+const mockGetMyOrder = vi.fn();
+const mockResumeOrderPayment = vi.fn();
+const mockCancelOrder = vi.fn();
+const mockGetStripeConfig = vi.fn();
+const mockLoadStripe = vi.fn();
 
-jest.mock('../../../services/customerAuthService', () => ({
+vi.mock('../../../services/customerAuthService', () => ({
   getMyOrder: (...args: unknown[]) => mockGetMyOrder(...args),
   resumeOrderPayment: (...args: unknown[]) => mockResumeOrderPayment(...args),
   cancelOrder: (...args: unknown[]) => mockCancelOrder(...args),
@@ -18,33 +19,33 @@ jest.mock('../../../services/customerAuthService', () => ({
     'UNKNOWN_ERROR',
 }));
 
-jest.mock('../../../services/paymentService', () => ({
+vi.mock('../../../services/paymentService', () => ({
   getStripeConfig: (...args: unknown[]) => mockGetStripeConfig(...args),
 }));
 
-jest.mock('@stripe/stripe-js', () => ({
+vi.mock('@stripe/stripe-js', () => ({
   loadStripe: (...args: unknown[]) => mockLoadStripe(...args),
 }));
 
-jest.mock('@stripe/react-stripe-js', () => ({
+vi.mock('@stripe/react-stripe-js', () => ({
   Elements: ({ children, options }: { children: React.ReactNode; options?: { clientSecret?: string } }) => (
     <div data-testid="elements-mock" data-clientsecret={options?.clientSecret}>
       {children}
     </div>
   ),
   PaymentElement: () => <div data-testid="payment-element" />,
-  useStripe: () => ({ confirmPayment: jest.fn() }),
+  useStripe: () => ({ confirmPayment: vi.fn() }),
   useElements: () => ({}),
 }));
 
-jest.mock('../../../contexts/CustomerAuthContext', () => ({
+vi.mock('../../../contexts/CustomerAuthContext', () => ({
   useCustomerAuth: () => ({
     customer: { firstName: 'Ana', lastName: 'García', email: 'ana@example.com' },
-    logout: jest.fn(),
+    logout: vi.fn(),
   }),
 }));
 
-// eslint-disable-next-line import/first -- must load after jest.mock() calls above (CRA's resetMocks:true requires mock factories to be defined before the module under test is required)
+// eslint-disable-next-line import/first -- must load after vi.mock() calls above (CRA's resetMocks:true requires mock factories to be defined before the module under test is required)
 import AccountOrderDetailPage from '../AccountOrderDetailPage';
 
 const pendingOrder = {
@@ -83,7 +84,7 @@ function renderPage() {
 
 describe('AccountOrderDetailPage - pending payment actions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGetStripeConfig.mockResolvedValue({ publishableKey: 'pk_test_123', mode: 'test' });
     mockLoadStripe.mockResolvedValue({});
   });
@@ -156,7 +157,7 @@ describe('AccountOrderDetailPage - pending payment actions', () => {
 
 describe('AccountOrderDetailPage - shipping status', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGetStripeConfig.mockResolvedValue({ publishableKey: 'pk_test_123', mode: 'test' });
     mockLoadStripe.mockResolvedValue({});
   });

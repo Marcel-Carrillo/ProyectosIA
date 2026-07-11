@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SupplierOrderStatusControl from '../SupplierOrderStatusControl';
@@ -15,7 +16,7 @@ const baseOrder: SupplierOrder = {
 
 describe('SupplierOrderStatusControl', () => {
   it('calls onSave with selected status', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     render(
       <SupplierOrderStatusControl order={baseOrder} saving={false} onSave={onSave} />
     );

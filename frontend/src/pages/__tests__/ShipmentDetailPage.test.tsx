@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ShipmentDetailPage from '../ShipmentDetailPage';
 
-const mockGetById = jest.fn();
-const mockUpdateStatus = jest.fn();
-const mockNavigate = jest.fn();
+const mockGetById = vi.fn();
+const mockUpdateStatus = vi.fn();
+const mockNavigate = vi.fn();
 
-jest.mock('../../services/shipmentService', () => ({
+vi.mock('../../services/shipmentService', () => ({
   shipmentService: {
     getById: (...args: unknown[]) => mockGetById(...args),
     updateStatus: (...args: unknown[]) => mockUpdateStatus(...args),
@@ -15,8 +16,8 @@ jest.mock('../../services/shipmentService', () => ({
   extractShipmentErrorMessage: () => 'An error occurred',
 }));
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual('react-router-dom')),
   useNavigate: () => mockNavigate,
 }));
 
@@ -50,7 +51,7 @@ function renderPage() {
 
 describe('ShipmentDetailPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('shows loading spinner initially', () => {

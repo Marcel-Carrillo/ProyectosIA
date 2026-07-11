@@ -1,3 +1,4 @@
+import { vi, type Mocked } from 'vitest';
 import axios from 'axios';
 import {
   cjCatalogService,
@@ -6,8 +7,8 @@ import {
   extractCjCatalogErrorCode,
 } from '../cjCatalogService';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('mapCjCatalogError', () => {
   it.each([
@@ -31,7 +32,7 @@ describe('mapCjCatalogError', () => {
 });
 
 describe('cjCatalogService', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('listCatalog calls GET with supplier-scoped path and query params', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: true, data: { items: [], total: 0, page: 1, pageSize: 20 }, message: '' } });

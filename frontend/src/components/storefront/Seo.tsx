@@ -14,7 +14,7 @@ export interface SeoProps {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-export const SITE_URL = (process.env.REACT_APP_SITE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+export const SITE_URL = (import.meta.env.VITE_SITE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const DEFAULT_OG_IMAGE = `${SITE_URL}/mavile-logo.png`;
 
 const Seo: React.FC<SeoProps> = ({

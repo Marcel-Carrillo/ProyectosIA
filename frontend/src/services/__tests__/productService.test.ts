@@ -1,28 +1,29 @@
-const mockGet = jest.fn();
+import { vi, type Mock } from 'vitest';
+const mockGet = vi.fn();
 
-jest.mock('axios', () => ({
+vi.mock('axios', () => ({
   __esModule: true,
   default: {
-    create: jest.fn(() => ({
+    create: vi.fn(() => ({
       get: mockGet,
       interceptors: {
         request: {
-          use: jest.fn(),
+          use: vi.fn(),
         },
       },
     })),
   },
 }));
 
-jest.mock('../../i18n', () => ({
+vi.mock('../../i18n', () => ({
   __esModule: true,
   default: { language: 'es' },
 }));
 
 describe('productService Accept-Language', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
+    vi.resetModules();
     mockGet.mockResolvedValue({
       data: { success: true, data: { items: [], total: 0, page: 1, pageSize: 20 }, message: '' },
     });
@@ -31,7 +32,7 @@ describe('productService Accept-Language', () => {
   it('registers a request interceptor that sets Accept-Language from i18n', async () => {
     const axios = (await import('axios')).default;
     await import('../productService');
-    const createMock = axios.create as jest.Mock;
+    const createMock = axios.create as Mock;
     const instance = createMock.mock.results[createMock.mock.results.length - 1].value;
     const interceptor = instance.interceptors.request.use.mock.calls[0][0];
     const config = { headers: {} as Record<string, string> };
