@@ -128,6 +128,13 @@ cd backend
 npx ts-node --transpile-only scripts/backfillCjProductImages.ts
 ```
 
+**Backfilling variant size/color for already-synced or promoted CJ items**: `backend/scripts/backfillCjVariantAttributes.ts` re-derives `CjCatalogItem.size`/`color` and linked `ProductVariant.size`/`color` from stored `rawPayload.variant.variantKey` (and fallbacks). Zero CJ API calls; idempotent. Run after deploying the extraction fix to repair rows synced before the fix:
+
+```bash
+cd backend
+npx ts-node --transpile-only scripts/backfillCjVariantAttributes.ts
+```
+
 **Dev/prod shared CJ account caveat**: CJ Dropshipping uses the same merchant account/API key for both dev and prod (no separation). The ~1 req/s rate limiter in `cjClient.ts` is in-process per Lambda/server invocation, not globally coordinated — running a manual local sync at the same time as the scheduled production job can double real request pressure against CJ and risk 429s. Avoid large manual syncs while the daily production job would be running.
 
 **Scheduled auto-provisioning job** (`backend/src/jobs/supplierAutoProvisionHandler.ts`): runs once every 24 hours in production (AWS EventBridge, `rate(1 day)` — see `backend/serverless.yml`'s `supplierAutoProvision` function) and automates the manual connect → verify → sync → promote flow above end to end for any configured supplier provider (CJ Dropshipping today). It auto-creates the `Supplier`/`SupplierIntegration` the first time it detects a configured API key with none provisioned yet, then re-syncs and auto-promotes on every run. Auto-promoted products are always created **Draft** (never auto-activated) using `CJ_DEFAULT_CATEGORY_ID` and the existing markup-based pricing — an admin still reviews price and clicks Activate manually. It has no HTTP route by design; to run it manually (support/debugging or local testing), invoke `handler()` from `backend/src/jobs/supplierAutoProvisionHandler.ts` directly (e.g. via a one-off `ts-node` script loading `dotenv/config`) with `SUPPLIER_AUTO_PROVISION_ENABLED=true` and a valid `CJ_DEFAULT_CATEGORY_ID` set. One-time setup required before enabling in any environment: create a fallback `Category` (e.g. "Uncategorized") via the existing admin Category management flow and set its id as `CJ_DEFAULT_CATEGORY_ID`.

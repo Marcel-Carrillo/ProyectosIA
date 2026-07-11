@@ -82,7 +82,7 @@ describe('CjCatalogSyncService', () => {
         singlePageListV2([{ id: 'p1', nameEn: 'Dress', categoryId: 'cat1', sellPrice: 20 }])
       );
       cjClient.fetchVariants.mockResolvedValue([
-        { vid: 'v1', pid: 'p1', variantSku: 'SKU-1', variantSellPrice: 10, inventoryNum: 5 },
+        { vid: 'v1', pid: 'p1', variantSku: 'SKU-1', variantSellPrice: 10, inventoryNum: 5, variantKey: 'Black-XXL' },
       ]);
       catalogRepo.upsertMany.mockResolvedValue({ upserted: 1 });
 
@@ -91,7 +91,14 @@ describe('CjCatalogSyncService', () => {
       expect(result).toEqual({ itemsUpserted: 1, itemsFailed: 0, syncedAt: expect.any(Date) });
       expect(catalogRepo.upsertMany).toHaveBeenCalledWith(
         1,
-        expect.arrayContaining([expect.objectContaining({ externalRef: 'v1', syncStatus: 'Synced' })])
+        expect.arrayContaining([
+          expect.objectContaining({
+            externalRef: 'v1',
+            syncStatus: 'Synced',
+            size: 'XXL',
+            color: 'Black',
+          }),
+        ])
       );
       expect(integrationRepo.updateLastSyncedAt).toHaveBeenCalledWith(1, expect.any(Date));
     });
@@ -106,6 +113,36 @@ describe('CjCatalogSyncService', () => {
       await service.syncCatalog(10);
 
       expect(catalogRepo.upsertMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('should_store_synced_status_when_variant_attribute_extraction_yields_nulls', async () => {
+      integrationRepo.findBySupplierId.mockResolvedValue(makeIntegration());
+      cjClient.fetchCatalog.mockResolvedValue(singlePageListV2([{ id: 'p1', nameEn: 'Dress' }]));
+      cjClient.fetchVariants.mockResolvedValue([
+        {
+          vid: 'v1',
+          pid: 'p1',
+          variantSku: 'SKU-1',
+          variantSellPrice: 10,
+          variantKey: 'XL-XXL',
+        },
+      ]);
+      catalogRepo.upsertMany.mockResolvedValue({ upserted: 1 });
+
+      const result = await service.syncCatalog(10);
+
+      expect(result.itemsFailed).toBe(0);
+      expect(catalogRepo.upsertMany).toHaveBeenCalledWith(
+        1,
+        expect.arrayContaining([
+          expect.objectContaining({
+            externalRef: 'v1',
+            syncStatus: 'Synced',
+            size: null,
+            color: null,
+          }),
+        ])
+      );
     });
 
     it('should_mark_a_malformed_item_as_failed_without_aborting_the_rest', async () => {
