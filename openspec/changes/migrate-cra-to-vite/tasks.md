@@ -98,9 +98,9 @@
 
 ## 13. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 13.1 Load and apply `ai-specs/skills/commit/SKILL.md` before any Git command.
-- [ ] 13.2 Verify all tasks are `[x]`, the three reports exist under `openspec/changes/migrate-cra-to-vite/reports/`, and docs are updated.
-- [ ] 13.3 Run and report `git status`, `git branch --show-current`, `git diff --stat`; stage only change-related files (never `.env*` values, `node_modules/`, `build/`, `coverage/`).
-- [ ] 13.4 Create Conventional Commit(s), e.g. `chore(frontend): migrate build tooling from CRA to Vite and tests to Vitest`, referencing OpenSpec change `migrate-cra-to-vite` and test evidence.
-- [ ] 13.5 Push `feature/migrate-cra-to-vite` to origin.
-- [ ] 13.6 Check no duplicate PR exists, then `gh pr create --base develop` (never `master`) with summary, OpenSpec change name, and verification status; report the PR URL in chat.
+- [x] 13.1 Load and apply `ai-specs/skills/commit/SKILL.md` before any Git command.
+- [x] 13.2 Verify all tasks are `[x]`, the three reports exist under `openspec/changes/migrate-cra-to-vite/reports/`, and docs are updated. → Verificado; suite re-ejecutada antes del commit (315/315).
+- [x] 13.3 Run and report `git status`, `git branch --show-current`, `git diff --stat`; stage only change-related files (never `.env*` values, `node_modules/`, `build/`, `coverage/`). → 96 archivos, sin `.env`/artefactos.
+- [x] 13.4 Create Conventional Commit(s), e.g. `chore(frontend): migrate build tooling from CRA to Vite and tests to Vitest`, referencing OpenSpec change `migrate-cra-to-vite` and test evidence. → Commit `324e094`.
+- [x] 13.5 Push `feature/migrate-cra-to-vite` to origin. → Hecho (upstream configurado).
+- [x] 13.6 Check no duplicate PR exists, then `gh pr create --base develop` (never `master`) with summary, OpenSpec change name, and verification status; report the PR URL in chat. → https://github.com/Marcel-Carrillo/ProyectosIA/pull/102
