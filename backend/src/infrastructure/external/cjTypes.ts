@@ -43,7 +43,9 @@ export interface CjVariantDto {
   vid: string;
   pid: string;
   variantSku: string;
-  variantProperty?: string; // JSON-encoded array of { key, value } attribute pairs
+  variantKey?: string; // Hyphen-joined option values, e.g. "Black-XXL" — primary size/color source
+  variantNameEn?: string; // Secondary signal when variantKey is absent or incomplete
+  variantProperty?: string; // Fallback-only JSON-encoded array of { key, value } attribute pairs
   variantWeight?: number;
   variantSellPrice: number;
   inventoryNum?: number;

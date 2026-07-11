@@ -803,6 +803,13 @@ Represents a single supplier's connection to an external dropshipping provider (
 
 Staging record for a product/variant pulled from a supplier's CJ Dropshipping catalog. Strictly separate from the live public catalog (`Product`/`ProductVariant`) — an administrator must explicitly promote staged data via `POST /api/admin/suppliers/:supplierId/cj/catalog/promote` (see the `cj-catalog-promotion` capability); nothing here is auto-published. The public catalog is expected to be populated exclusively through this promotion flow going forward, not through manual seeding.
 
+**Attribute backfill for already-synced rows:** `backend/scripts/backfillCjVariantAttributes.ts` re-derives `size`/`color` on existing `CjCatalogItem` rows and their promoted `ProductVariant`s from stored `rawPayload.variant` (zero CJ API calls). Idempotent — safe to re-run. Invoke with:
+
+```bash
+cd backend
+npx ts-node --transpile-only scripts/backfillCjVariantAttributes.ts
+```
+
 **Image capture on promotion:** promoting a `CjCatalogItem` also derives display images from its already-stored `rawPayload` (`rawPayload.product.bigImage` / `rawPayload.variant.variantImage` — the supplier's raw API response, never re-fetched) and materializes them as `Product.mainImageUrl` and `ProductImage` rows — one for the product (`sortOrder: 0`) and one per variant whose image differs from the product's. This only happens the first time a pid group is promoted (a new `Product` is created); a variant later joining an already-existing product from a prior partial promotion does not trigger image capture. Missing image data never fails promotion — the product is simply created without an image. Only public-safe data (image URLs, names) is ever copied; `supplierCost` and other internal fields are never derived into any image or product field.
 
 **Promotion status (`promotionState`) — derived, not stored:**
@@ -825,7 +832,7 @@ This is intentionally never persisted as a column on `CjCatalogItem` — it stay
 * `sku`: CJ variant SKU (optional, max 100 characters)
 * `categoryId`: CJ category identifier (optional, max 100 characters) — **INTERNAL ONLY on admin list responses**
 * `title`: Product title as reported by CJ Dropshipping (max 150 characters)
-* `size` / `color`: Variant attributes parsed from CJ variant properties (optional, max 50 characters each)
+* `size` / `color`: Variant attributes parsed from the CJ variant payload using precedence `variantKey` → `variantNameEn` → `variantProperty` (see `cj-variant-attribute-extraction`). Best-effort only — ambiguity yields `null`, never a failed sync item.
 * `supplierCost`: Cost reported by CJ Dropshipping (must be >= 0) — **INTERNAL ONLY, never returned by any customer-facing API**
 * `sellPrice`: CJ-reported sell price (optional, must be >= 0 if provided) — **INTERNAL ONLY on admin list responses**
 * `stockQuantity`: Stock quantity reported by CJ Dropshipping (must be >= 0)
