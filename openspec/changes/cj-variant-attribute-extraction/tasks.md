@@ -64,9 +64,9 @@
 
 ## 8. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 8.1 Load and apply `ai-specs/skills/commit/SKILL.md` before any Git command.
-- [ ] 8.2 Verify all tasks are `[x]`, the three reports exist under `openspec/changes/cj-variant-attribute-extraction/reports/`, and docs are updated.
-- [ ] 8.3 Run and report `git status`, `git branch --show-current`, `git diff --stat`; stage only change-related files (never `.env*`, `node_modules/`, `dist/`, `coverage/`).
-- [ ] 8.4 Create Conventional Commit, e.g. `fix(suppliers): derive CJ variant size/color from variantKey and backfill promoted variants`, referencing OpenSpec change `cj-variant-attribute-extraction` and test evidence.
-- [ ] 8.5 Push `feature/cj-variant-attribute-extraction` to origin.
-- [ ] 8.6 Check no duplicate PR exists, then `gh pr create --base develop` (never `master`) with summary, OpenSpec change name, and verification status; report the PR URL in chat.
+- [x] 8.1 Load and apply `ai-specs/skills/commit/SKILL.md` before any Git command.
+- [x] 8.2 Verify all tasks are `[x]`, the three reports exist under `openspec/changes/cj-variant-attribute-extraction/reports/`, and docs are updated.
+- [x] 8.3 Run and report `git status`, `git branch --show-current`, `git diff --stat`; stage only change-related files (never `.env*`, `node_modules/`, `dist/`, `coverage/`).
+- [x] 8.4 Create Conventional Commit, e.g. `fix(suppliers): derive CJ variant size/color from variantKey and backfill promoted variants`, referencing OpenSpec change `cj-variant-attribute-extraction` and test evidence.
+- [x] 8.5 Push `feature/cj-variant-attribute-extraction` to origin.
+- [x] 8.6 Check no duplicate PR exists, then `gh pr create --base develop` (never `master`) with summary, OpenSpec change name, and verification status; report the PR URL in chat.
