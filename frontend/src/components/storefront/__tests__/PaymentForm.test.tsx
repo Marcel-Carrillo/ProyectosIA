@@ -1,24 +1,25 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import PaymentForm from '../PaymentForm';
 
-const mockConfirmPayment = jest.fn();
-const mockUseStripe = jest.fn();
-const mockUseElements = jest.fn();
+const mockConfirmPayment = vi.fn();
+const mockUseStripe = vi.fn();
+const mockUseElements = vi.fn();
 
-jest.mock('@stripe/react-stripe-js', () => ({
+vi.mock('@stripe/react-stripe-js', () => ({
   PaymentElement: () => <div data-testid="payment-element" />,
   useStripe: () => mockUseStripe(),
   useElements: () => mockUseElements(),
 }));
 
 describe('PaymentForm', () => {
-  const onSuccess = jest.fn();
-  const onError = jest.fn();
+  const onSuccess = vi.fn();
+  const onError = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseStripe.mockReturnValue({ confirmPayment: mockConfirmPayment });
     mockUseElements.mockReturnValue({});
   });

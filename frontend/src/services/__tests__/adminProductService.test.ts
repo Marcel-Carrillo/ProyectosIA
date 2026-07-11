@@ -1,8 +1,9 @@
+import { vi, type Mocked } from 'vitest';
 import axios from 'axios';
 import { mapProductError, adminProductService } from '../adminProductService';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('mapProductError', () => {
   it.each([
@@ -25,7 +26,7 @@ describe('mapProductError', () => {
 });
 
 describe('adminProductService translations', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('listTranslations calls the translations endpoint', async () => {
     mockedAxios.get.mockResolvedValue({ data: { success: true, data: [], message: '' } });

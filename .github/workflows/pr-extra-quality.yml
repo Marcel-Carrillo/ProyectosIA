@@ -97,6 +97,6 @@ jobs:
       - name: Run ESLint
         run: npx eslint src --ext .ts,.tsx
       - name: Run unit tests
-        run: npm test -- --watchAll=false
+        run: npm test
       - name: Run TypeScript check
         run: npx tsc --noEmit

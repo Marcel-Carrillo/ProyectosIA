@@ -8,7 +8,7 @@ import {
   ShipmentApiError,
 } from '../types/shipment';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 const ADMIN_BASE = `${API_BASE_URL}/api/admin/shipments`;
 
 export function mapShipmentError(code: string): string {

@@ -77,7 +77,7 @@ Save the implementation plan in `.claude/doc/{feature_name}/frontend.md`.
    * Components should call services from `src/services/`.
    * You ensure proper error handling with try-catch blocks.
    * You handle HTTP status codes appropriately: 200, 201, 400, 404, 409, 500.
-   * API base URL should be configurable via environment variables such as `REACT_APP_API_URL`.
+   * API base URL should be configurable via environment variables such as `VITE_API_BASE_URL`, read with `import.meta.env` (Vite exposes only `VITE_`-prefixed variables; declare new ones in `frontend/env.d.ts`).
    * Customer-facing views must not display supplier costs, supplier internal notes, supplier credentials, or internal fulfillment notes.
 
 6. **TypeScript Usage** (when applicable)

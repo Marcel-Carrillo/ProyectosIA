@@ -1,3 +1,4 @@
+import { vi, type Mock } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import axios from 'axios';
@@ -5,11 +6,11 @@ import CustomerFormModal from '../CustomerFormModal';
 import { Customer } from '../../../types/customer';
 import { customerService } from '../../../services/customerService';
 
-jest.mock('../../../services/customerService', () => {
-  const actual = jest.requireActual('../../../services/customerService');
+vi.mock('../../../services/customerService', async () => {
+  const actual = await vi.importActual('../../../services/customerService');
   return {
     __esModule: true,
-    customerService: { create: jest.fn(), update: jest.fn() },
+    customerService: { create: vi.fn(), update: vi.fn() },
     extractCustomerErrorMessage: actual.extractCustomerErrorMessage,
     mapCustomerError: actual.mapCustomerError,
     extractCustomerErrorCode: actual.extractCustomerErrorCode,
@@ -17,8 +18,8 @@ jest.mock('../../../services/customerService', () => {
 });
 
 const mocked = customerService as unknown as {
-  create: jest.Mock;
-  update: jest.Mock;
+  create: Mock;
+  update: Mock;
 };
 
 const makeAxiosError = (code: string, status: number) => {
@@ -46,7 +47,7 @@ const existing: Customer = {
 const noop = () => undefined;
 
 describe('CustomerFormModal', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('shows a validation error when first name is empty', () => {
     render(<CustomerFormModal show onHide={noop} onSuccess={noop} />);
@@ -87,13 +88,17 @@ describe('CustomerFormModal', () => {
     fireEvent.change(screen.getByTestId('input-customer-email'), {
       target: { value: 'not-an-email' },
     });
-    fireEvent.click(screen.getByTestId('btn-modal-save'));
+    // jsdom now enforces native constraint validation on type="email" inputs,
+    // so a click on the submit button never reaches the component's own
+    // validation (same as a real browser). Submit the form directly to
+    // exercise the JS validation path.
+    fireEvent.submit(screen.getByTestId('btn-modal-save').closest('form')!);
     expect(screen.getByText(/valid email/i)).toBeInTheDocument();
   });
 
   it('creates a customer and calls onSuccess', async () => {
     mocked.create.mockResolvedValue({ success: true, data: existing, message: '' });
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     render(<CustomerFormModal show onHide={noop} onSuccess={onSuccess} />);
     fireEvent.change(screen.getByTestId('input-customer-first-name'), {
       target: { value: 'Jane' },

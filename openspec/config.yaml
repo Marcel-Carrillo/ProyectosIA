@@ -16,8 +16,8 @@ context: |
   Tech stack:
 
   * Backend: Node.js, TypeScript, Express, Prisma, PostgreSQL
-  * Frontend: React, TypeScript, Create React App, React Router, React Bootstrap, Bootstrap, Axios
-  * Testing: Jest, React Testing Library, Cypress, curl manual endpoint testing
+  * Frontend: React, TypeScript, Vite, React Router, React Bootstrap, Bootstrap, Axios
+  * Testing: Jest (backend), Vitest (frontend), React Testing Library, Cypress, curl manual endpoint testing
   * Database: PostgreSQL with Prisma migrations
   * Deployment target: Serverless Framework and AWS Lambda when applicable
 

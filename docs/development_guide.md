@@ -137,10 +137,11 @@ npx ts-node --transpile-only scripts/backfillCjProductImages.ts
 **Frontend Environment** (`frontend/.env.development`):
 
 ```env
-REACT_APP_API_BASE_URL=http://localhost:3000
-REACT_APP_SITE_URL=http://localhost:3001
-PORT=3001
+VITE_API_BASE_URL=http://localhost:3000
+VITE_SITE_URL=http://localhost:3001
 ```
+
+> The dev server port (3001) is configured in `frontend/vite.config.ts` (`server.port`) — Vite does not read a `PORT` variable.
 
 > See `frontend/.env.example` for the full list of supported variables. Do not commit `.env.development` — it is listed in `.gitignore`.
 
@@ -581,7 +582,7 @@ This section documents the MVP production pipeline: backend on AWS Lambda (Serve
    | `WELCOME_COUPON_VALIDITY_DAYS` | Days until welcome coupon expires (default `30`) |
    | `WELCOME_COUPON_MIN_ORDER` | Minimum order amount to redeem welcome coupon in EUR (default `0`) |
 
-2. **S3 bucket** — create a bucket for the CRA `frontend/build/` artifacts (manual, one-time).
+2. **S3 bucket** — create a bucket for the Vite `frontend/build/` artifacts (manual, one-time; `build.outDir` in `vite.config.ts` keeps the CRA-era path).
 
 3. **CloudFront distribution** — point origin at the S3 bucket (manual, one-time).
 
@@ -602,7 +603,7 @@ Configure these repository secrets for `.github/workflows/deploy.yml`:
 | `AWS_ACCESS_KEY_ID` | AWS deploy credentials |
 | `AWS_SECRET_ACCESS_KEY` | AWS deploy credentials |
 | `PROD_API_BASE_URL` | Post-deploy smoke test base URL |
-| `REACT_APP_API_BASE_URL` | Baked into frontend production build |
+| `VITE_API_BASE_URL` | Baked into frontend production build |
 | `PROD_S3_BUCKET` | S3 bucket name for frontend sync |
 | `PROD_CF_DIST_ID` | CloudFront distribution ID for cache invalidation |
 
@@ -622,7 +623,7 @@ npx serverless deploy --stage prod
 # Frontend
 cd ../frontend
 npm ci
-REACT_APP_API_BASE_URL="$PROD_API_URL" npm run build
+VITE_API_BASE_URL="$PROD_API_URL" npm run build
 aws s3 sync build/ s3://$PROD_S3_BUCKET --delete
 aws cloudfront create-invalidation --distribution-id $PROD_CF_DIST_ID --paths "/*"
 

@@ -1,15 +1,16 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CjConnectionModal from '../CjConnectionModal';
 import { CjConnection } from '../../../types/cjConnection';
 
-const mockConfigureConnection = jest.fn();
+const mockConfigureConnection = vi.fn();
 
-jest.mock('../../../services/cjConnectionService', () => ({
+vi.mock('../../../services/cjConnectionService', async () => ({
   cjConnectionService: {
     configureConnection: (...args: unknown[]) => mockConfigureConnection(...args),
   },
-  extractCjConnectionErrorMessage: jest.requireActual('../../../services/cjConnectionService')
+  extractCjConnectionErrorMessage: (await vi.importActual('../../../services/cjConnectionService'))
     .extractCjConnectionErrorMessage,
 }));
 
@@ -28,7 +29,7 @@ const existingConnection: CjConnection = {
 };
 
 describe('CjConnectionModal', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('renders with an empty input in create mode', () => {
     render(<CjConnectionModal show onHide={noop} supplierId={3} connection={null} onSuccess={noop} />);
@@ -53,8 +54,8 @@ describe('CjConnectionModal', () => {
   it('submits and calls onSuccess with the returned connection, then closes', async () => {
     const updated = { ...existingConnection, externalAccountRef: 'cj-account-123' };
     mockConfigureConnection.mockResolvedValue({ data: updated });
-    const onSuccess = jest.fn();
-    const onHide = jest.fn();
+    const onSuccess = vi.fn();
+    const onHide = vi.fn();
     render(<CjConnectionModal show onHide={onHide} supplierId={3} connection={null} onSuccess={onSuccess} />);
 
     fireEvent.change(screen.getByTestId('input-external-account-ref'), { target: { value: 'cj-account-123' } });
@@ -78,7 +79,7 @@ describe('CjConnectionModal', () => {
 
   it('shows the mapped error inline and does not close on failure', async () => {
     mockConfigureConnection.mockRejectedValue({ response: { data: { error: { code: 'VALIDATION_ERROR' } } } });
-    const onHide = jest.fn();
+    const onHide = vi.fn();
     render(<CjConnectionModal show onHide={onHide} supplierId={3} connection={null} onSuccess={noop} />);
 
     fireEvent.click(screen.getByTestId('btn-modal-save-connection'));

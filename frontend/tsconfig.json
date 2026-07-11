@@ -23,9 +23,13 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["cypress", "node"]
+    "types": ["node", "vite/client", "vitest/globals"]
   },
   "include": [
-    "src"
+    "src",
+    "env.d.ts"
+  ],
+  "references": [
+    { "path": "./tsconfig.node.json" }
   ]
 }

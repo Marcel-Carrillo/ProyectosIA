@@ -2,6 +2,10 @@ FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY tsconfig.node.json ./
+COPY vite.config.ts ./
+COPY env.d.ts ./
+COPY index.html ./
 RUN npm ci --legacy-peer-deps
 COPY src ./src
 COPY public ./public

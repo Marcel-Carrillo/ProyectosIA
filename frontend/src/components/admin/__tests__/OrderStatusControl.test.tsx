@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import OrderStatusControl from '../OrderStatusControl';
 import { CustomerOrder } from '../../../types/customerOrder';
@@ -36,7 +37,7 @@ const baseOrder: CustomerOrder = {
 
 describe('OrderStatusControl', () => {
   it('calls onSave with changed payment status only', () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     render(<OrderStatusControl order={baseOrder} saving={false} onSave={onSave} />);
     fireEvent.change(screen.getByTestId('select-payment-status'), { target: { value: 'Paid' } });
     fireEvent.click(screen.getByTestId('btn-save-status'));

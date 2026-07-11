@@ -1,11 +1,12 @@
+import { vi, type Mocked } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import VariantTable from '../VariantTable';
 import { ProductVariant } from '../../../types/product';
 import { adminProductService } from '../../../services/adminProductService';
 
-jest.mock('../../../services/adminProductService');
-const mocked = adminProductService as jest.Mocked<typeof adminProductService>;
+vi.mock('../../../services/adminProductService');
+const mocked = adminProductService as Mocked<typeof adminProductService>;
 
 const variant: ProductVariant = {
   id: 5,
@@ -22,11 +23,11 @@ const variant: ProductVariant = {
   updatedAt: '',
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('VariantTable', () => {
   it('renders variant rows', () => {
-    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={jest.fn()} />);
+    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={vi.fn()} />);
     expect(screen.getByTestId('variant-card-5')).toBeInTheDocument();
     expect(within(screen.getByTestId('variant-card-5')).getByText('EJS-5')).toBeInTheDocument();
   });
@@ -39,14 +40,14 @@ describe('VariantTable', () => {
       supplierCost: 10,
       supplierName: 'CJ Dropshipping',
     };
-    render(<VariantTable productId={1} variants={[sourced]} onVariantsChange={jest.fn()} />);
+    render(<VariantTable productId={1} variants={[sourced]} onVariantsChange={vi.fn()} />);
     // 29.90 public - 10.00 cost = 19.90 margin (67%)
     expect(screen.getByTestId('variant-supplier-cost-5').textContent).toContain('10');
     expect(screen.getByTestId('variant-margin-5').textContent).toContain('67');
   });
 
   it('renders a dash for supplier cost and margin when the variant has no supplier', () => {
-    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={jest.fn()} />);
+    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={vi.fn()} />);
     expect(screen.getByTestId('variant-supplier-cost-5').textContent).toBe('—');
     expect(screen.getByTestId('variant-margin-5').textContent).toBe('—');
   });
@@ -57,7 +58,7 @@ describe('VariantTable', () => {
       supplierCost: 35,
       supplierName: 'CJ Dropshipping',
     };
-    render(<VariantTable productId={1} variants={[sourced]} onVariantsChange={jest.fn()} />);
+    render(<VariantTable productId={1} variants={[sourced]} onVariantsChange={vi.fn()} />);
     fireEvent.click(within(screen.getByTestId('variant-card-5')).getByTestId('btn-edit-variant-5'));
     const costInput = await screen.findByTestId('input-variant-supplier-cost');
     expect(costInput).toBeDisabled();
@@ -67,7 +68,7 @@ describe('VariantTable', () => {
   });
 
   it('opens the add-variant modal', () => {
-    render(<VariantTable productId={1} variants={[]} onVariantsChange={jest.fn()} />);
+    render(<VariantTable productId={1} variants={[]} onVariantsChange={vi.fn()} />);
     fireEvent.click(screen.getByTestId('btn-add-variant'));
     expect(screen.getByTestId('modal-variant')).toBeInTheDocument();
     expect(screen.getByTestId('input-variant-sku')).toBeInTheDocument();
@@ -75,7 +76,7 @@ describe('VariantTable', () => {
 
   it('confirms delete and calls the service + onVariantsChange', async () => {
     mocked.deleteVariant.mockResolvedValue(undefined);
-    const onVariantsChange = jest.fn();
+    const onVariantsChange = vi.fn();
     render(<VariantTable productId={1} variants={[variant]} onVariantsChange={onVariantsChange} />);
     fireEvent.click(within(screen.getByTestId('variant-card-5')).getByTestId('btn-delete-variant-5'));
     fireEvent.click(await screen.findByTestId('btn-confirm-delete-variant'));

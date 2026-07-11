@@ -1,3 +1,4 @@
+import { vi, type Mocked } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import axios from 'axios';
@@ -7,11 +8,11 @@ import { adminProductService } from '../../../services/adminProductService';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../../../i18n';
 
-jest.mock('../../../services/adminProductService', () => {
-  const actual = jest.requireActual('../../../services/adminProductService');
-  return { __esModule: true, ...actual, adminProductService: { create: jest.fn() } };
+vi.mock('../../../services/adminProductService', async () => {
+  const actual = await vi.importActual('../../../services/adminProductService');
+  return { __esModule: true, ...actual, adminProductService: { create: vi.fn() } };
 });
-const mocked = adminProductService as jest.Mocked<typeof adminProductService>;
+const mocked = adminProductService as Mocked<typeof adminProductService>;
 
 const renderModal = (ui: React.ReactElement) =>
   render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
@@ -36,13 +37,13 @@ const makeAxiosError = (code: string, status: number) => {
   return err;
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('ProductFormModal', () => {
   it('creates a product and calls onSuccess', async () => {
     mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
-    const onSuccess = jest.fn();
-    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={onSuccess} categories={[]} />);
+    const onSuccess = vi.fn();
+    renderModal(<ProductFormModal show onHide={vi.fn()} onSuccess={onSuccess} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'New' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
     await waitFor(() =>
@@ -53,7 +54,7 @@ describe('ProductFormModal', () => {
 
   it('shows the slug-conflict error and keeps the modal open', async () => {
     mocked.create.mockRejectedValue(makeAxiosError('PRODUCT_SLUG_CONFLICT', 409));
-    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    renderModal(<ProductFormModal show onHide={vi.fn()} onSuccess={vi.fn()} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dup' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
     expect(await screen.findByText(/already exists/i)).toBeInTheDocument();
@@ -61,7 +62,7 @@ describe('ProductFormModal', () => {
 
   it('includes ES translation in create payload when provided', async () => {
     mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
-    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    renderModal(<ProductFormModal show onHide={vi.fn()} onSuccess={vi.fn()} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
     fireEvent.change(screen.getByTestId('input-product-name-es'), { target: { value: 'Vestido' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
@@ -77,7 +78,7 @@ describe('ProductFormModal', () => {
 
   it('includes gtin in the create payload when provided', async () => {
     mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
-    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    renderModal(<ProductFormModal show onHide={vi.fn()} onSuccess={vi.fn()} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
     fireEvent.change(screen.getByTestId('input-product-gtin'), { target: { value: '4006381333931' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
@@ -88,7 +89,7 @@ describe('ProductFormModal', () => {
 
   it('submits null gtin when the field is left empty', async () => {
     mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
-    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    renderModal(<ProductFormModal show onHide={vi.fn()} onSuccess={vi.fn()} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
     await waitFor(() =>
@@ -98,7 +99,7 @@ describe('ProductFormModal', () => {
 
   it('clears a previously entered gtin value before submitting', async () => {
     mocked.create.mockResolvedValue({ success: true, data: created, message: '' });
-    renderModal(<ProductFormModal show onHide={jest.fn()} onSuccess={jest.fn()} categories={[]} />);
+    renderModal(<ProductFormModal show onHide={vi.fn()} onSuccess={vi.fn()} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dress' } });
     fireEvent.change(screen.getByTestId('input-product-gtin'), { target: { value: '4006381333931' } });
     fireEvent.change(screen.getByTestId('input-product-gtin'), { target: { value: '' } });

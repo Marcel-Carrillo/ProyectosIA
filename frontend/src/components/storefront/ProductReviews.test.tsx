@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithI18n } from '../../test-utils/renderWithI18n';
@@ -22,7 +23,7 @@ const defaultProps = {
   error: null,
   page: 1,
   totalPages: 1,
-  onPageChange: jest.fn(),
+  onPageChange: vi.fn(),
 };
 
 describe('ProductReviews', () => {
@@ -69,7 +70,7 @@ describe('ProductReviews', () => {
   });
 
   it('renders pagination and calls onPageChange when totalPages > 1', async () => {
-    const onPageChange = jest.fn();
+    const onPageChange = vi.fn();
     renderWithI18n(
       <ProductReviews
         {...defaultProps}

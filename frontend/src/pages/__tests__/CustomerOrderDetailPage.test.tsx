@@ -1,3 +1,4 @@
+import { vi, type Mock } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -8,32 +9,32 @@ import { supplierOrderService } from '../../services/supplierOrderService';
 import { refundService } from '../../services/refundService';
 import { returnRequestService } from '../../services/returnRequestService';
 
-jest.mock('../../services/customerOrderService', () => ({
+vi.mock('../../services/customerOrderService', () => ({
   customerOrderService: {
-    getById: jest.fn(),
-    updateStatus: jest.fn(),
-    generateSupplierOrders: jest.fn(),
+    getById: vi.fn(),
+    updateStatus: vi.fn(),
+    generateSupplierOrders: vi.fn(),
   },
   extractCustomerOrderErrorMessage: (err: unknown) =>
     err instanceof Error ? err.message : 'error',
 }));
 
-jest.mock('../../services/supplierOrderService', () => ({
-  supplierOrderService: { listByCustomerOrder: jest.fn() },
+vi.mock('../../services/supplierOrderService', () => ({
+  supplierOrderService: { listByCustomerOrder: vi.fn() },
 }));
 
-jest.mock('../../services/refundService', () => ({
-  refundService: { getAll: jest.fn() },
+vi.mock('../../services/refundService', () => ({
+  refundService: { getAll: vi.fn() },
 }));
 
-jest.mock('../../services/returnRequestService', () => ({
-  returnRequestService: { getAll: jest.fn(), create: jest.fn() },
+vi.mock('../../services/returnRequestService', () => ({
+  returnRequestService: { getAll: vi.fn(), create: vi.fn() },
 }));
 
-const mockedGet = customerOrderService.getById as jest.Mock;
-const mockedSupplierList = supplierOrderService.listByCustomerOrder as jest.Mock;
-const mockedRefunds = refundService.getAll as jest.Mock;
-const mockedReturns = returnRequestService.getAll as jest.Mock;
+const mockedGet = customerOrderService.getById as Mock;
+const mockedSupplierList = supplierOrderService.listByCustomerOrder as Mock;
+const mockedRefunds = refundService.getAll as Mock;
+const mockedReturns = returnRequestService.getAll as Mock;
 
 const address = {
   fullName: 'Jane Doe',
@@ -89,7 +90,7 @@ const renderDetail = () =>
 
 describe('CustomerOrderDetailPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGet.mockResolvedValue({ success: true, data: mockOrder, message: '' });
     mockedSupplierList.mockResolvedValue({ success: true, data: { items: [] }, message: '' });
     mockedRefunds.mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20 });
