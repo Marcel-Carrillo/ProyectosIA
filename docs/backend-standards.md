@@ -1032,7 +1032,7 @@ SUPPLIER_COST_EXPOSURE_BLOCKED
 ### CORS Configuration
 
 - **Enable CORS**: Configure CORS to allow frontend origin(s) listed in `FRONTEND_URL` (comma-separated).
-- **Development**: When `NODE_ENV=development`, allow all origins so CRA dev-server proxy requests succeed during local E2E.
+- **Development**: When `NODE_ENV=development`, allow all origins so Vite dev-server proxy requests succeed during local E2E.
 - **Production**: Restrict to explicit origins only; never use wildcard with credentials.
 - **Credentials**: Configure credentials handling appropriately.
 
@@ -1553,7 +1553,7 @@ app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
 ```
 
 - **`production`**: trusts exactly 1 hop (API Gateway + CloudFront each add one `X-Forwarded-For`; only the outermost hop is trusted)
-- **`development`**: trusts loopback only (the CRA dev proxy runs on `127.0.0.1`)
+- **`development`**: trusts loopback only (the Vite dev proxy runs on `127.0.0.1`)
 
 This prevents `express-rate-limit` v8 from throwing `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` in both environments while preserving accurate per-IP rate limiting. Setting `trust proxy: true` globally is prohibited — it allows IP spoofing to bypass rate limits.
 

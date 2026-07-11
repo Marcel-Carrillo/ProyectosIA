@@ -1,1 +1,58 @@
-{}
+{
+  "title": "Finalizar compra",
+  "paymentTitle": "Pago",
+  "backToDetails": "Volver a los datos",
+  "backToCart": "Volver al carrito",
+  "contact": "Contacto",
+  "checkingOutAs": "Comprando como {{name}} ({{email}})",
+  "shippingAddress": "Dirección de envío",
+  "billingAddress": "Dirección de facturación",
+  "coupon": "Cupón",
+  "couponCode": "Código",
+  "applyCoupon": "Aplicar",
+  "couponInvalid": "Cupón no válido",
+  "couponReason": "Cupón: {{reason}}",
+  "subtotal": "Subtotal",
+  "discount": "Descuento",
+  "total": "Total",
+  "continueToPayment": "Continuar al pago",
+  "preparingOrder": "Preparando pedido…",
+  "field": {
+    "email": "Email",
+    "firstName": "Nombre",
+    "lastName": "Apellidos",
+    "fullName": "Nombre completo",
+    "streetLine1": "Dirección",
+    "city": "Ciudad",
+    "province": "Provincia",
+    "postalCode": "Código postal",
+    "country": "País"
+  },
+  "payment": {
+    "payNow": "Pagar ahora",
+    "processing": "Procesando…",
+    "failed": "El pago ha fallado. Inténtalo de nuevo.",
+    "unexpectedError": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
+  },
+  "confirmation": {
+    "seoTitle": "Confirmación de pedido | Mavile",
+    "paymentConfirmed": "Pago confirmado",
+    "thankYou": "Gracias por tu pedido",
+    "confirmingPayment": "Confirmando el pago…",
+    "paymentReceived": "Hemos recibido tu pago. Enviaremos tu pedido en breve.",
+    "paymentFailedPrefix": "El pago ha fallado. Por favor,",
+    "paymentFailedLink": "vuelve al carrito",
+    "paymentFailedSuffix": "e inténtalo de nuevo.",
+    "timeoutPrefix": "La confirmación del pago está tardando más de lo esperado. Consulta tu",
+    "timeoutLink": "historial de pedidos",
+    "timeoutSuffix": "para ver el estado más reciente.",
+    "orderNumber": "Número de pedido:",
+    "total": "Total: {{amount}} €",
+    "continueShopping": "Seguir comprando",
+    "myOrders": "Mis pedidos"
+  },
+  "seo": {
+    "checkout": "Finalizar compra | Mavile",
+    "payment": "Pago | Mavile"
+  }
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ProductVariant } from '../../types/product';
 
 interface VariantSelectorProps {
@@ -31,6 +32,7 @@ function findVariant(
 }
 
 const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onVariantChange }) => {
+  const { t } = useTranslation('product');
   const active = getActiveVariants(variants);
   const sizes = getDistinctValues(active, 'size');
   const colors = getDistinctValues(active, 'color');
@@ -65,7 +67,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onVariantCh
     <div>
       {sizes.length > 0 && (
         <div className="storefront-variant-group">
-          <p className="storefront-variant-label">Size</p>
+          <p className="storefront-variant-label">{t('variant.size')}</p>
           <div className="storefront-variant-options">
             {sizes.map((size) => {
               const available = isCombinationAvailable(size, selectedColor);
@@ -76,7 +78,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onVariantCh
                   onClick={() => setSelectedSize(size)}
                   disabled={!available}
                   aria-pressed={selectedSize === size}
-                  aria-label={`Size ${size}${!available ? ' (unavailable)' : ''}`}
+                  aria-label={`${t('variant.sizeOption', { value: size })}${!available ? ` ${t('variant.unavailable')}` : ''}`}
                   className={`storefront-variant-btn${selectedSize === size ? ' storefront-variant-btn--active' : ''}`}
                 >
                   {size}
@@ -89,7 +91,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onVariantCh
 
       {colors.length > 0 && (
         <div className="storefront-variant-group">
-          <p className="storefront-variant-label">Color</p>
+          <p className="storefront-variant-label">{t('variant.color')}</p>
           <div className="storefront-variant-options">
             {colors.map((color) => {
               const available = isCombinationAvailable(selectedSize, color);
@@ -100,7 +102,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onVariantCh
                   onClick={() => setSelectedColor(color)}
                   disabled={!available}
                   aria-pressed={selectedColor === color}
-                  aria-label={`Color ${color}${!available ? ' (unavailable)' : ''}`}
+                  aria-label={`${t('variant.colorOption', { value: color })}${!available ? ` ${t('variant.unavailable')}` : ''}`}
                   className={`storefront-variant-btn${selectedColor === color ? ' storefront-variant-btn--active' : ''}`}
                 >
                   {color}

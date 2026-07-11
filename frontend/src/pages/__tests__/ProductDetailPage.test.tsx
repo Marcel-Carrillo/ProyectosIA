@@ -1,3 +1,4 @@
+import { vi, type Mocked } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -7,23 +8,23 @@ import { Product, ProductVariant } from '../../types/product';
 import { adminProductService } from '../../services/adminProductService';
 import { categoryService } from '../../services/categoryService';
 
-jest.mock('../../services/adminProductService', () => {
-  const actual = jest.requireActual('../../services/adminProductService');
+vi.mock('../../services/adminProductService', async () => {
+  const actual = await vi.importActual('../../services/adminProductService');
   return {
     __esModule: true,
     ...actual,
     adminProductService: {
-      getById: jest.fn(),
-      update: jest.fn(),
-      listVariants: jest.fn(),
-      listImages: jest.fn(),
+      getById: vi.fn(),
+      update: vi.fn(),
+      listVariants: vi.fn(),
+      listImages: vi.fn(),
     },
   };
 });
-jest.mock('../../services/categoryService');
+vi.mock('../../services/categoryService');
 
-const mockedAdmin = adminProductService as jest.Mocked<typeof adminProductService>;
-const mockedCategory = categoryService as jest.Mocked<typeof categoryService>;
+const mockedAdmin = adminProductService as Mocked<typeof adminProductService>;
+const mockedCategory = categoryService as Mocked<typeof categoryService>;
 
 const makeAxiosError = (code: string, status: number) => {
   const err = new axios.AxiosError('error');
@@ -54,7 +55,7 @@ const variant = (status: 'Active' | 'Inactive'): ProductVariant => ({
   color: null,
   publicPrice: 10,
   compareAtPrice: null,
-  stockPolicy: 'TRACK',
+  stockPolicy: 'SupplierManaged',
   status,
   deletedAt: null,
   createdAt: '',
@@ -76,7 +77,7 @@ const setup = (product: Product, variants: ProductVariant[]) => {
   );
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('ProductDetailPage', () => {
   it('loads and renders product sections', async () => {

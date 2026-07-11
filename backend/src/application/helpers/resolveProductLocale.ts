@@ -4,12 +4,18 @@ import { ProductTranslation } from '../../domain/models/productTranslation';
 const SUPPORTED_LOCALES = ['en', 'es'] as const;
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
+// The storefront's default language is Spanish (frontend i18n fallbackLng:
+// 'es'), so requests without a usable Accept-Language get Spanish content too.
+// Base Product.name/description remain the last-resort fallback (imported
+// catalogs are English), reported as locale 'en'.
+const DEFAULT_LOCALE: SupportedLocale = 'es';
+
 export function normalizeLocale(raw: string | undefined | null): SupportedLocale {
-  if (!raw) return 'en';
+  if (!raw) return DEFAULT_LOCALE;
   const tag = raw.toLowerCase().split('-')[0]!;
   return (SUPPORTED_LOCALES as readonly string[]).includes(tag)
     ? (tag as SupportedLocale)
-    : 'en';
+    : DEFAULT_LOCALE;
 }
 
 export interface ResolvedProductContent {

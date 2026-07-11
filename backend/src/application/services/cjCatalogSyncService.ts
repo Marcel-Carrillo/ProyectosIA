@@ -212,6 +212,18 @@ export class CjCatalogSyncService {
     });
 
     const { upserted } = await this.catalogRepo.upsertMany(integration.id, items);
+
+    // Push freshly-synced stock levels onto promoted variants so the
+    // storefront stops selling variants whose CJ stock reached 0 (and brings
+    // them back automatically when CJ restocks).
+    const stockReconciliation = await this.catalogRepo.reconcilePromotedVariantStock(integration.id);
+    if (stockReconciliation.deactivated > 0 || stockReconciliation.reactivated > 0) {
+      logger.info('CJ stock reconciliation applied to promoted variants', {
+        supplierId,
+        ...stockReconciliation,
+      });
+    }
+
     await this.integrationRepo.updateCatalogSyncCursor(integration.id, {
       cursorPage: newCursorPage,
       totalPages: resolvedTotalPages,

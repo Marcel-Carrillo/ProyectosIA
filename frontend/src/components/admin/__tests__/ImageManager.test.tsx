@@ -1,11 +1,12 @@
+import { vi, type Mocked } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImageManager from '../ImageManager';
 import { ProductImage } from '../../../types/product';
 import { adminProductService } from '../../../services/adminProductService';
 
-jest.mock('../../../services/adminProductService');
-const mocked = adminProductService as jest.Mocked<typeof adminProductService>;
+vi.mock('../../../services/adminProductService');
+const mocked = adminProductService as Mocked<typeof adminProductService>;
 
 const image: ProductImage = {
   id: 3,
@@ -16,7 +17,7 @@ const image: ProductImage = {
   createdAt: '',
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('ImageManager', () => {
   it('renders image cards and disables "Set as main" for the current main image', () => {
@@ -25,8 +26,8 @@ describe('ImageManager', () => {
         productId={1}
         images={[image]}
         mainImageUrl="https://img/main.jpg"
-        onImagesChange={jest.fn()}
-        onMainImageChange={jest.fn()}
+        onImagesChange={vi.fn()}
+        onMainImageChange={vi.fn()}
       />,
     );
     expect(screen.getByTestId('image-card-3')).toBeInTheDocument();
@@ -35,14 +36,14 @@ describe('ImageManager', () => {
 
   it('adds an image via the service', async () => {
     mocked.addImage.mockResolvedValue({ success: true, data: image, message: '' });
-    const onImagesChange = jest.fn();
+    const onImagesChange = vi.fn();
     render(
       <ImageManager
         productId={1}
         images={[]}
         mainImageUrl={null}
         onImagesChange={onImagesChange}
-        onMainImageChange={jest.fn()}
+        onMainImageChange={vi.fn()}
       />,
     );
     fireEvent.change(screen.getByTestId('input-image-url'), { target: { value: 'https://img/new.jpg' } });

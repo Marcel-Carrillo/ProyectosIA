@@ -74,7 +74,7 @@ The frontend supports an online store for women's fashion and accessories. The i
 
 * **React 18.3.1**: Modern React with functional components and hooks
 * **TypeScript 4.9.5**: For type safety and better development experience
-* **Create React App 5.0.1**: Build tooling and development server
+* **Vite 6**: Build tooling and development server (`@vitejs/plugin-react`)
 * **React Router DOM 6.23.1**: Client-side routing and navigation
 
 ### UI Framework
@@ -92,8 +92,8 @@ The frontend supports an online store for women's fashion and accessories. The i
 
 ### Testing Framework
 
-* **Cypress 14.4.1**: End-to-end testing
-* **Jest**: Unit testing via Create React App
+* **Cypress**: End-to-end testing
+* **Vitest 3**: Unit testing (jsdom environment, config in `vite.config.ts` `test` block)
 * **React Testing Library**: Component testing utilities
 
 ### Development Tools
@@ -398,6 +398,16 @@ refundService.ts
 * **Test IDs**: `order-search`, `order-date-from`, `order-date-to`, `order-link-{id}`, `order-status-timeline`, `order-status-control`, `btn-save-status`.
 * **Testing**: RTL page tests under `frontend/src/pages/__tests__/CustomerOrdersPage.test.tsx` and `CustomerOrderDetailPage.test.tsx`; Cypress `frontend/cypress/e2e/customer-orders.cy.ts`.
 
+#### CJ connection admin panel patterns
+
+* **Service**: `frontend/src/services/cjConnectionService.ts` calls `/api/admin/suppliers/:supplierId/cj/{connection,connection/verify,sync}` — a sibling to `cjCatalogService.ts` (catalog listing/promotion), not an extension of it, since the two resources (`SupplierIntegration` vs `CjCatalogItem`) have distinct error-code vocabularies. Exports `mapCjConnectionError`/`extractCjConnectionErrorMessage`/`extractCjConnectionErrorCode`.
+* **429 rate-limit handling**: `express-rate-limit`'s default response on `POST .../cj/connection/verify` is a **plain-text body with no error code** (not `{ error: { code } }`), unlike every other admin error response in this codebase. `mapCjConnectionError(code, httpStatus)` takes an explicit `httpStatus` and checks `httpStatus === 429` *before* the code switch, since `code` will be empty on a 429.
+* **Types**: `frontend/src/types/cjConnection.ts` — `SupplierIntegrationStatus = 'Disconnected' | 'Connected' | 'Error'`, `CjConnection`, `CjConfigureConnectionRequest` (`externalAccountRef` is the *only* field — never an API-key/credential field; the CJ Dropshipping API key is server-side config and must never appear in a request body or the UI), `CjVerifyResult`, `CjSyncResult`.
+* **Components**: `CjConnectionPanel` (status display + Verify/Sync actions) and `CjConnectionModal` (configure/edit `externalAccountRef` only) under `frontend/src/components/admin/`, both rendered from `CjCatalogPage`.
+* **Gating rule**: on `CjCatalogPage`, `GET .../cj/connection` returning `404 CJ_CONNECTION_NOT_FOUND` renders only the panel's "not configured" state (with a "Configure connection" CTA) — the existing catalog list/filters/promote UI is not rendered and `listCatalog` is never called in this state. Once any connection exists (any `status`, including `Error`), the catalog list renders normally below the panel; only the panel's own "Sync catalog" action is additionally gated on `status === 'Connected'`.
+* **No auto-verify, no polling**: "Verify" and "Sync" are explicit user-triggered actions only, each with a disabled/loading state while in flight — `verify` mutates persisted `status` as a side effect and is rate-limited, so it must never be called automatically or in a retry loop.
+* **Testing**: `frontend/src/services/__tests__/cjConnectionService.test.ts`, `frontend/src/components/admin/__tests__/{CjConnectionPanel,CjConnectionModal}.test.tsx`, extended `frontend/src/pages/__tests__/CjCatalogPage.test.tsx` (not-configured gating, configure/verify/sync success and failure paths, 429 handling, sync-disabled-unless-Connected).
+
 ## UI/UX Standards
 
 ### Bootstrap Integration
@@ -604,9 +614,9 @@ create refund
 
 ### ESLint Configuration
 
-* Extend **React App** configuration (`react-app`, `react-app/jest`)
+* Extend **React App** configuration (`react-app`, `react-app/jest`) — `eslint-config-react-app` is a direct devDependency since the Vite migration (it no longer comes transitively from `react-scripts`)
 * CI job **`frontend-quality`** runs: `npx eslint src --ext .ts,.tsx` — must pass before merge
-* Include **Jest / Testing Library rules** for test files
+* Include **Jest / Testing Library rules** for test files (the `react-app/jest` preset's Testing Library rules apply equally to Vitest suites)
 
 #### Testing Library rules (test files)
 
@@ -622,7 +632,7 @@ fireEvent.click(await screen.findByTestId('btn-save'));
 await waitFor(() => expect(screen.getByTestId('order-link-1')).toBeInTheDocument());
 ```
 
-* Reserve `waitFor` for non-query assertions (e.g. mock call counts after debounce + `jest.advanceTimersByTime`).
+* Reserve `waitFor` for non-query assertions (e.g. mock call counts after debounce + `vi.advanceTimersByTime`).
 * Reference passing tests: `src/pages/__tests__/ProductsPage.test.tsx`, `ShipmentDetailPage.test.tsx`.
 * Run locally before commit: `cd frontend && npx eslint src --ext .ts,.tsx`
 
@@ -646,15 +656,16 @@ export default defineConfig({
 });
 ```
 
-Recommended frontend environment variables:
+Recommended frontend environment variables (Vite convention — only `VITE_`-prefixed variables are exposed to client code, read via `import.meta.env.VITE_*`, never `process.env`):
 
 ```text
-REACT_APP_API_BASE_URL
-REACT_APP_ENVIRONMENT
-REACT_APP_SITE_URL
+VITE_API_BASE_URL
+VITE_SITE_URL
 ```
 
-`REACT_APP_SITE_URL` is the public storefront origin used for canonical URLs, Open Graph tags, and JSON-LD (see `Seo` component below). It is not sensitive and is committed directly in `.env.production` — do not add it to CI/CD secrets.
+Variables are typed in `frontend/env.d.ts` (`ImportMetaEnv` interface) — declare any new `VITE_*` variable there. The dev server port (3001) is set in `vite.config.ts` (`server.port`); Vite does not read a `PORT` env var.
+
+`VITE_SITE_URL` is the public storefront origin used for canonical URLs, Open Graph tags, and JSON-LD (see `Seo` component below). It is not sensitive and is committed directly in `.env.production` — do not add it to CI/CD secrets.
 
 ## Performance Best Practices
 
@@ -667,7 +678,7 @@ REACT_APP_SITE_URL
 
 ### Bundle Optimization
 
-* **Tree shaking** enabled through Create React App
+* **Tree shaking** enabled through Vite (Rollup production builds)
 * **Code splitting** at route level
 * **Optimize images** and static assets
 * **Monitor bundle size** with build tools
@@ -700,9 +711,10 @@ feature/returns-refunds-frontend
 ### Development Scripts
 
 ```bash
-npm start          # Development server
-npm test           # Run unit tests
-npm run build      # Production build
+npm start          # Development server (Vite, alias of npm run dev)
+npm test           # Run unit tests once (vitest run)
+npm run test:watch # Run unit tests in watch mode
+npm run build      # Production build (vite build → frontend/build/)
 npm run cypress:open    # Open Cypress test runner
 npm run cypress:run     # Run Cypress tests headlessly
 ```
@@ -863,13 +875,13 @@ Recommended scenarios:
 
 `frontend/src/components/storefront/Seo.tsx` is the single shared component for per-route `<head>` metadata, built on `react-helmet-async` (`HelmetProvider` wraps the app root in `App.tsx`). Props: `title` (required), `description`, `canonicalPath` (site-relative, e.g. `/catalog/42`), `image` (absolute URL, falls back to a default OG image), `noindex`, `jsonLd` (one object or an array — e.g. `Product` + `BreadcrumbList` on the PDP). It renders `<title>`, meta description, canonical link, Open Graph/Twitter tags, a `noindex, nofollow` robots meta when `noindex` is true, and JSON-LD `<script>` tags.
 
-`SITE_URL` is exported from `Seo.tsx` (derived from `REACT_APP_SITE_URL`) — reuse it when a page needs the absolute site origin outside the component itself (e.g. building `BreadcrumbList` item URLs).
+`SITE_URL` is exported from `Seo.tsx` (derived from `VITE_SITE_URL`) — reuse it when a page needs the absolute site origin outside the component itself (e.g. building `BreadcrumbList` item URLs).
 
 ### Rendering Convention: One `Seo` Per Page
 
 Render exactly **one** `<Seo>` per page view. Do not add a second, layout-level `<Seo>` alongside a page's own `<Seo>` — `react-helmet-async`'s React 19 code path does **not** dedupe `<meta>`/`og:*` tags across independently-mounted `Helmet` instances (only `<title>` is reliably prioritized). Two simultaneously-mounted `Helmet` instances produce duplicate `meta[name="description"]`/`og:title` tags in the final DOM, which is an SEO regression, not a cosmetic issue.
 
-This is why `frontend/public/index.html` has no static `meta[name="description"]` (removed — it would coexist with, not be replaced by, each page's own description) and why `StorefrontLayout.tsx` does not render a fallback `Seo`. Every storefront route renders its own `Seo` directly, or via a shared wrapper component that all its consumers share (never both):
+This is why `frontend/index.html` has no static `meta[name="description"]` (removed — it would coexist with, not be replaced by, each page's own description) and why `StorefrontLayout.tsx` does not render a fallback `Seo`. Every storefront route renders its own `Seo` directly, or via a shared wrapper component that all its consumers share (never both):
 
 - **Admin pages**: covered once by `frontend/src/components/Layout.tsx` (`<Seo title="Admin | Mavile" noindex />`), not by individual page files.
 - **Customer account pages**: covered once by `frontend/src/components/storefront/AccountLayout.tsx`.
@@ -1044,24 +1056,27 @@ useEffect(() => {
 
 ### CRA vs. Vite
 
-**Decision:** Keep Create React App 5.0.1. **Vite migration is deferred until explicitly approved.**
+**Decision:** Migrated from Create React App 5.0.1 to **Vite 6 + Vitest 3** (approved 2026-07-09, implemented via OpenSpec change `migrate-cra-to-vite`).
 
 Rationale:
-- All existing tooling (Cypress config, Jest, `react-scripts`) is CRA-based.
-- Migration requires updating `tsconfig.json`, `vite.config.ts`, adjusting import aliases, and re-testing the full suite.
-- No performance bottleneck has been identified that justifies the migration risk at this stage.
+- `react-scripts` is unmaintained and CRA is officially deprecated; it blocked dependency upgrades (React 19 required `--legacy-peer-deps`).
+- Vite provides a faster dev server (native ESM) and maintained tooling; Vitest runs the same Testing Library suites with a Jest-compatible API.
 
-If Vite is reconsidered, create a dedicated change proposal through the OpenSpec workflow before proceeding.
+Migration outcome (parity verified):
+- Same test suite: 53 files / 315 tests passing before and after, none skipped or deleted.
+- `vite.config.ts` replaces both `setupProxy.js` (dev proxy `/api` → backend) and the `package.json` `jest` block (Vitest `test` config).
+- `frontend/public/index.html` moved to `frontend/index.html` (no `%PUBLIC_URL%`); env vars renamed `REACT_APP_*` → `VITE_*` and read via `import.meta.env`.
+- Build output remains `frontend/build/` (`build.outDir`), so CI/CD deploy paths are unchanged.
+
+Conventions for new code: use `vi.*` (never `jest.*`) in tests, `import.meta.env.VITE_*` for env access, and declare new variables in `env.d.ts`.
 
 ## Stripe.js / Elements Integration
 
 ### Package Installation
 
 ```bash
-npm install @stripe/stripe-js @stripe/react-stripe-js --legacy-peer-deps
+npm install @stripe/stripe-js @stripe/react-stripe-js
 ```
-
-The `--legacy-peer-deps` flag is required due to React 19 peer dependency constraints in the current CRA setup.
 
 ### Loading Stripe
 
@@ -1143,10 +1158,10 @@ After confirmation, navigate to the order confirmation page with `state: { payme
 
 ### Testing Stripe Components
 
-Mock `@stripe/react-stripe-js` in unit tests — never use real Stripe.js in Jest:
+Mock `@stripe/react-stripe-js` in unit tests — never use real Stripe.js in Vitest:
 
 ```typescript
-jest.mock('@stripe/react-stripe-js', () => ({
+vi.mock('@stripe/react-stripe-js', () => ({
   PaymentElement: () => <div data-testid="payment-element" />,
   useStripe: () => mockUseStripe(),
   useElements: () => mockUseElements(),

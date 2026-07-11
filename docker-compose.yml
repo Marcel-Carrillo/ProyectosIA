@@ -43,9 +43,8 @@ services:
       context: ./frontend
     container_name: ecommerce-frontend
     environment:
-      - REACT_APP_API_BASE_URL=http://localhost:3000
+      # Read by vite.config.ts (server.proxy target); port lives in server.port
       - BACKEND_URL=http://ecommerce-backend:3000
-      - PORT=3001
     ports:
       - '3001:3001'
 

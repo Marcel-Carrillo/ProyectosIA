@@ -16,7 +16,7 @@ feature/* ──► develop (CI) ──► master (CI + aprobación) ──► A
 |---|---|---|
 | Rama | `develop` | `master` |
 | Backend | `ts-node-dev` en Docker | AWS Lambda (`nodejs20.x`) |
-| Frontend | CRA webpack-dev-server en Docker | S3 + CloudFront |
+| Frontend | Vite dev server en Docker | S3 + CloudFront |
 | Base de datos | Postgres 15 en Docker | AWS RDS PostgreSQL 16 (`eu-north-1`) |
 | Email | Mailpit (local, sin SMTP real) | SMTP externo vía SSM |
 | Secretos | `backend/.env.docker` (git-ignored) | SSM Parameter Store `/ecommerce/prod/*` |
@@ -29,9 +29,9 @@ feature/* ──► develop (CI) ──► master (CI + aprobación) ──► A
 ### Diagrama
 
 ```
-localhost:3001  ←──  frontend container (CRA / webpack-dev-server)
+localhost:3001  ←──  frontend container (Vite dev server)
                            │
-                     /api proxy (setupProxy.js)
+                     /api proxy (vite.config.ts server.proxy)
                            │
 localhost:3000  ←──  backend container (ts-node-dev + hot-reload)
                            │
@@ -50,7 +50,7 @@ localhost:1025        (SMTP server)
 | `db` | `postgres:15` | `5432` | Base de datos local. Volumen persistente `ecommerce-db-data`. Healthcheck con `pg_isready`. |
 | `mailpit` | `axllent/mailpit:latest` | `1025` (SMTP), `8025` (UI) | Captura todos los emails en local. No envía nada al exterior. |
 | `backend` | `./backend` target `dev` | `3000` | Express + ts-node-dev. Bind-mount de `backend/src` para hot-reload. Arranca solo cuando `db` está healthy. |
-| `frontend` | `./frontend` | `3001` | CRA webpack-dev-server. Proxy `/api` → `http://ecommerce-backend:3000` via `setupProxy.js`. |
+| `frontend` | `./frontend` | `3001` | Vite dev server. Proxy `/api` → `http://ecommerce-backend:3000` via `server.proxy` en `vite.config.ts`. |
 
 ### Configuración de entorno local
 
@@ -131,9 +131,9 @@ docker compose up -d --build backend
 
 ### Proxy del frontend
 
-El archivo `frontend/src/setupProxy.js` redirige todas las llamadas `/api/*` al backend:
+El bloque `server.proxy` de `frontend/vite.config.ts` redirige todas las llamadas `/api/*` al backend:
 
-```js
+```ts
 const target = process.env.BACKEND_URL || 'http://localhost:3000';
 // En Docker: BACKEND_URL=http://ecommerce-backend:3000 (nombre del servicio)
 // En host:   BACKEND_URL no definida → usa localhost:3000
@@ -147,7 +147,7 @@ Esto permite que el mismo código funcione tanto en Docker como ejecutando el fr
 
 **Prisma binary targets**: `schema.prisma` incluye `linux-musl-openssl-3.0.x` para Alpine Linux (imagen base de los contenedores) además del target del host de desarrollo.
 
-**trust proxy en desarrollo**: `app.set('trust proxy', 'loopback')` — el proxy de CRA corre en `127.0.0.1`, que es un loopback. Esto evita que `express-rate-limit` lance `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`.
+**trust proxy en desarrollo**: `app.set('trust proxy', 'loopback')` — el proxy del dev server de Vite corre en `127.0.0.1`, que es un loopback. Esto evita que `express-rate-limit` lance `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`.
 
 ---
 
@@ -255,7 +255,7 @@ El workflow `.github/workflows/deploy.yml` ejecuta en orden:
 3. `npx prisma generate` — genera el cliente Prisma
 4. `npx prisma migrate deploy` — aplica migraciones en RDS (usa `PROD_DATABASE_URL` de GitHub secrets)
 5. `npx serverless deploy --stage prod` — despliega Lambda
-6. `npm ci` + `npm run build` del frontend (con `REACT_APP_API_BASE_URL` inyectado)
+6. `npm ci` + `npm run build` del frontend (con `VITE_API_BASE_URL` inyectado)
 7. `aws s3 sync build/ s3://$PROD_S3_BUCKET --delete` — sincroniza el build a S3
 8. `aws cloudfront create-invalidation` — invalida la caché de CloudFront
 9. `bash scripts/smoke.sh $PROD_API_BASE_URL` — smoke tests post-deploy
@@ -281,7 +281,7 @@ Ambos deben pasar antes de poder hacer merge.
 | `PROD_S3_BUCKET` | Nombre del bucket S3 del frontend |
 | `PROD_CF_DIST_ID` | `E3V8C2LV0ASO8L` — distribución CloudFront |
 | `PROD_API_BASE_URL` | `https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod` |
-| `REACT_APP_API_BASE_URL` | Igual que el anterior (baked into el build de React) |
+| `VITE_API_BASE_URL` | Igual que el anterior (baked into el build de Vite; sustituye a `REACT_APP_API_BASE_URL`) |
 
 ---
 
@@ -319,7 +319,7 @@ cd backend && npx serverless deploy --stage prod
 
 # Solo frontend
 cd frontend
-REACT_APP_API_BASE_URL=https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod npm run build
+VITE_API_BASE_URL=https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod npm run build
 aws s3 sync build/ s3://<PROD_S3_BUCKET> --delete
 aws cloudfront create-invalidation --distribution-id E3V8C2LV0ASO8L --paths "/*"
 ```

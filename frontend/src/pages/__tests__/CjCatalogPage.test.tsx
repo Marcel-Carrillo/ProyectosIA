@@ -1,26 +1,45 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CjCatalogPage from '../CjCatalogPage';
 
-const mockListCatalog = jest.fn();
-const mockPromote = jest.fn();
-const mockActivate = jest.fn();
-const mockDeactivate = jest.fn();
-const mockGetAllCategories = jest.fn();
+const mockListCatalog = vi.fn();
+const mockPromote = vi.fn();
+const mockActivate = vi.fn();
+const mockDeactivate = vi.fn();
+const mockGetAllCategories = vi.fn();
 
-jest.mock('../../services/cjCatalogService', () => ({
+const mockGetConnection = vi.fn();
+const mockConfigureConnection = vi.fn();
+const mockVerifyConnection = vi.fn();
+const mockSync = vi.fn();
+
+vi.mock('../../services/cjCatalogService', async () => ({
   cjCatalogService: {
     listCatalog: (...args: unknown[]) => mockListCatalog(...args),
     promote: (...args: unknown[]) => mockPromote(...args),
     activate: (...args: unknown[]) => mockActivate(...args),
     deactivate: (...args: unknown[]) => mockDeactivate(...args),
   },
-  extractCjCatalogErrorMessage: jest.requireActual('../../services/cjCatalogService').extractCjCatalogErrorMessage,
-  mapCjCatalogError: jest.requireActual('../../services/cjCatalogService').mapCjCatalogError,
+  extractCjCatalogErrorMessage: (await vi.importActual('../../services/cjCatalogService')).extractCjCatalogErrorMessage,
+  mapCjCatalogError: (await vi.importActual('../../services/cjCatalogService')).mapCjCatalogError,
 }));
 
-jest.mock('../../services/categoryService', () => ({
+vi.mock('../../services/cjConnectionService', async () => ({
+  cjConnectionService: {
+    getConnection: (...args: unknown[]) => mockGetConnection(...args),
+    configureConnection: (...args: unknown[]) => mockConfigureConnection(...args),
+    verifyConnection: (...args: unknown[]) => mockVerifyConnection(...args),
+    sync: (...args: unknown[]) => mockSync(...args),
+  },
+  extractCjConnectionErrorMessage: (await vi.importActual('../../services/cjConnectionService'))
+    .extractCjConnectionErrorMessage,
+  extractCjConnectionErrorCode: (await vi.importActual('../../services/cjConnectionService')).extractCjConnectionErrorCode,
+  mapCjConnectionError: (await vi.importActual('../../services/cjConnectionService')).mapCjConnectionError,
+}));
+
+vi.mock('../../services/categoryService', () => ({
   categoryService: {
     getAll: (...args: unknown[]) => mockGetAllCategories(...args),
   },
@@ -35,6 +54,18 @@ function renderPage() {
     </MemoryRouter>
   );
 }
+
+const baseConnection = {
+  id: 1,
+  supplierId: 3,
+  provider: 'CJDropshipping',
+  status: 'Connected' as const,
+  externalAccountRef: null,
+  lastVerifiedAt: null,
+  lastSyncedAt: null,
+  createdAt: '',
+  updatedAt: '',
+};
 
 const notPromotedItem = {
   id: 1,
@@ -83,16 +114,17 @@ const failedItem = {
 
 describe('CjCatalogPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGetAllCategories.mockResolvedValue([
       { id: 1, name: 'Dresses', description: null, imageUrl: null, status: 'Active', parentId: null, createdAt: '', updatedAt: '' },
     ]);
+    mockGetConnection.mockResolvedValue({ data: baseConnection });
   });
 
   it('shows a loading state while fetching', async () => {
     mockListCatalog.mockReturnValue(new Promise(() => {}));
     renderPage();
-    expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+    expect(await screen.findByTestId('loading-state')).toBeInTheDocument();
   });
 
   it('renders a NotPromoted item with an enabled checkbox and no product link', async () => {
@@ -142,7 +174,7 @@ describe('CjCatalogPage', () => {
     expect(await screen.findByTestId('empty-state')).toBeInTheDocument();
   });
 
-  it('shows an error message when the list fetch fails', async () => {
+  it('shows an error message when the list fetch fails for a supplier with a connection', async () => {
     mockListCatalog.mockRejectedValue({ response: { data: { error: { code: 'CJ_CONNECTION_NOT_FOUND' } } } });
     renderPage();
 
@@ -276,5 +308,167 @@ describe('CjCatalogPage', () => {
 
     expect(await screen.findByTestId('action-error')).toHaveTextContent(/not been promoted/i);
     expect(mockListCatalog).toHaveBeenCalledTimes(1);
+  });
+
+  describe('CJ connection panel', () => {
+    it('shows a configure CTA and never calls listCatalog when no connection is configured', async () => {
+      mockGetConnection.mockRejectedValue({ response: { data: { error: { code: 'CJ_CONNECTION_NOT_FOUND' } } } });
+      renderPage();
+
+      expect(await screen.findByTestId('btn-configure-connection')).toBeInTheDocument();
+      expect(screen.queryByTestId('cj-catalog-table')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument();
+      expect(mockListCatalog).not.toHaveBeenCalled();
+    });
+
+    it('renders the connection panel and the catalog together when a connection exists', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      renderPage();
+
+      expect(await screen.findByTestId('cj-connection-panel')).toBeInTheDocument();
+      expect(await screen.findByTestId('empty-state')).toBeInTheDocument();
+      expect(mockListCatalog).toHaveBeenCalled();
+    });
+
+    it('configures a connection successfully and updates the panel', async () => {
+      mockGetConnection.mockRejectedValue({ response: { data: { error: { code: 'CJ_CONNECTION_NOT_FOUND' } } } });
+      mockConfigureConnection.mockResolvedValue({
+        data: { ...baseConnection, status: 'Disconnected', externalAccountRef: 'cj-account-123' },
+      });
+      renderPage();
+
+      fireEvent.click(await screen.findByTestId('btn-configure-connection'));
+      const modal = await screen.findByTestId('modal-configure-cj-connection');
+      fireEvent.change(within(modal).getByTestId('input-external-account-ref'), {
+        target: { value: 'cj-account-123' },
+      });
+      fireEvent.click(within(modal).getByTestId('btn-modal-save-connection'));
+
+      await waitFor(() => expect(mockConfigureConnection).toHaveBeenCalledWith(3, { externalAccountRef: 'cj-account-123' }));
+      expect(await screen.findByTestId('cj-connection-status')).toHaveTextContent('Disconnected');
+      expect(screen.getByTestId('cj-connection-panel')).toHaveTextContent('cj-account-123');
+    });
+
+    it('verifies successfully and shows a healthy result', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      mockVerifyConnection.mockResolvedValue({ data: { healthy: true } });
+      renderPage();
+
+      fireEvent.click(await screen.findByTestId('btn-verify-connection'));
+
+      expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/healthy/i);
+      expect(mockGetConnection).toHaveBeenCalledTimes(2);
+    });
+
+    it('surfaces the backend reason when verification is unhealthy', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      mockVerifyConnection.mockResolvedValue({
+        data: { healthy: false, reason: 'CJ Dropshipping rejected the configured credentials or is unreachable' },
+      });
+      renderPage();
+
+      fireEvent.click(await screen.findByTestId('btn-verify-connection'));
+
+      expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(
+        'CJ Dropshipping rejected the configured credentials or is unreachable'
+      );
+    });
+
+    it('shows a rate-limit message on a 429 from verify, not a generic error', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      mockVerifyConnection.mockRejectedValue({ response: { status: 429 } });
+      renderPage();
+
+      fireEvent.click(await screen.findByTestId('btn-verify-connection'));
+
+      expect(await screen.findByTestId('cj-connection-error')).toHaveTextContent(/too many/i);
+    });
+
+    it('disables the verify button while the request is in flight', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      mockVerifyConnection.mockReturnValue(new Promise(() => {}));
+      renderPage();
+
+      const button = await screen.findByTestId('btn-verify-connection');
+      fireEvent.click(button);
+
+      await waitFor(() => expect(button).toBeDisabled());
+    });
+
+    it('disables sync unless the connection is Connected', async () => {
+      mockGetConnection.mockResolvedValue({ data: { ...baseConnection, status: 'Disconnected' } });
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      renderPage();
+
+      expect(await screen.findByTestId('btn-sync-catalog')).toBeDisabled();
+    });
+
+    it('runs a sync successfully, shows the result summary, and refetches the catalog', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      mockSync.mockResolvedValue({ data: { itemsUpserted: 3, itemsFailed: 1, syncedAt: '2026-01-01T00:00:00.000Z' } });
+      renderPage();
+
+      await screen.findByTestId('cj-connection-panel');
+      expect(mockListCatalog).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(screen.getByTestId('btn-sync-catalog'));
+
+      expect(await screen.findByTestId('cj-sync-result')).toHaveTextContent('3');
+      expect(screen.getByTestId('cj-sync-result')).toHaveTextContent('1 failed');
+      await waitFor(() => expect(mockListCatalog).toHaveBeenCalledTimes(2));
+    });
+
+    it('keeps the verify result visible through a delayed background connection refresh (no premature panel remount)', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      mockGetConnection
+        .mockResolvedValueOnce({ data: baseConnection })
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) =>
+              setTimeout(() => resolve({ data: { ...baseConnection, status: 'Connected' } }), 20)
+            )
+        );
+      mockVerifyConnection.mockResolvedValue({ data: { healthy: true } });
+      renderPage();
+
+      fireEvent.click(await screen.findByTestId('btn-verify-connection'));
+
+      expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/healthy/i);
+      await waitFor(() => expect(mockGetConnection).toHaveBeenCalledTimes(2));
+      expect(screen.queryByTestId('connection-loading-state')).not.toBeInTheDocument();
+      expect(screen.getByTestId('cj-verify-result')).toHaveTextContent(/healthy/i);
+    });
+
+    it('does not clear the bulk selection or refetch the catalog when Verify triggers a delayed background connection refresh', async () => {
+      mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+      mockGetConnection
+        .mockResolvedValueOnce({ data: baseConnection })
+        .mockImplementationOnce(
+          () => new Promise((resolve) => setTimeout(() => resolve({ data: baseConnection }), 20))
+        );
+      mockVerifyConnection.mockResolvedValue({ data: { healthy: true } });
+      renderPage();
+
+      const card = await screen.findByTestId('cj-catalog-card-row-1');
+      fireEvent.click(within(card).getByTestId('checkbox-select-1'));
+      await screen.findByTestId('bulk-action-bar');
+
+      fireEvent.click(screen.getByTestId('btn-verify-connection'));
+      await waitFor(() => expect(mockGetConnection).toHaveBeenCalledTimes(2));
+
+      expect(screen.getByTestId('bulk-action-bar')).toBeInTheDocument();
+      expect(mockListCatalog).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows an error message, not the not-configured CTA, when the initial connection fetch fails with a non-404 error', async () => {
+      mockGetConnection.mockRejectedValue({ response: { data: { error: { code: 'INTERNAL_SERVER_ERROR' } } } });
+      mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
+      renderPage();
+
+      expect(await screen.findByText(/unexpected error/i)).toBeInTheDocument();
+      expect(screen.queryByTestId('btn-configure-connection')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('cj-connection-panel')).not.toBeInTheDocument();
+      await waitFor(() => expect(mockListCatalog).toHaveBeenCalled());
+    });
   });
 });

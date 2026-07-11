@@ -72,7 +72,7 @@ aws ssm put-parameter --name "/ecommerce/prod/DATABASE_URL" --value "nuevo_valor
 | `PROD_S3_BUCKET` | Nombre del bucket S3 del frontend |
 | `PROD_CF_DIST_ID` | `E3V8C2LV0ASO8L` |
 | `PROD_API_BASE_URL` | `https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod` |
-| `REACT_APP_API_BASE_URL` | Igual que el anterior (inyectado en el build de React) |
+| `VITE_API_BASE_URL` | Igual que el anterior (inyectado en el build de Vite; sustituye al antiguo `REACT_APP_API_BASE_URL`, que se puede borrar tras el primer deploy verde) |
 | `STRIPE_PUBLISHABLE_KEY` | Clave pública Stripe (inyectada en frontend si hace falta) |
 
 ## CI/CD
@@ -127,7 +127,7 @@ npx serverless deploy --stage prod
 
 ```bash
 cd frontend
-REACT_APP_API_BASE_URL=https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod npm run build
+VITE_API_BASE_URL=https://g54xfd8lja.execute-api.eu-north-1.amazonaws.com/prod npm run build
 aws s3 sync build/ s3://<BUCKET_NAME> --delete
 aws cloudfront create-invalidation --distribution-id E3V8C2LV0ASO8L --paths "/*"
 ```

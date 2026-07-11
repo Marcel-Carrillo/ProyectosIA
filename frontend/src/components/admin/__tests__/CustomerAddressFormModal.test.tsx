@@ -1,3 +1,4 @@
+import { vi, type Mock } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import axios from 'axios';
@@ -5,11 +6,11 @@ import CustomerAddressFormModal from '../CustomerAddressFormModal';
 import { CustomerAddress } from '../../../types/customer';
 import { customerService } from '../../../services/customerService';
 
-jest.mock('../../../services/customerService', () => {
-  const actual = jest.requireActual('../../../services/customerService');
+vi.mock('../../../services/customerService', async () => {
+  const actual = await vi.importActual('../../../services/customerService');
   return {
     __esModule: true,
-    customerService: { createAddress: jest.fn(), updateAddress: jest.fn() },
+    customerService: { createAddress: vi.fn(), updateAddress: vi.fn() },
     extractCustomerErrorMessage: actual.extractCustomerErrorMessage,
     mapCustomerError: actual.mapCustomerError,
     extractCustomerErrorCode: actual.extractCustomerErrorCode,
@@ -17,8 +18,8 @@ jest.mock('../../../services/customerService', () => {
 });
 
 const mocked = customerService as unknown as {
-  createAddress: jest.Mock;
-  updateAddress: jest.Mock;
+  createAddress: Mock;
+  updateAddress: Mock;
 };
 
 const makeAxiosError = (code: string, status: number) => {
@@ -74,7 +75,7 @@ const fillRequiredFields = () => {
 };
 
 describe('CustomerAddressFormModal', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('renders in create mode with Shipping as the default type', () => {
     render(
@@ -125,7 +126,7 @@ describe('CustomerAddressFormModal', () => {
       data: existingAddress,
       message: '',
     });
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     render(
       <CustomerAddressFormModal
         show

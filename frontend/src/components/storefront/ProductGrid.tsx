@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Product } from '../../types/product';
 import ProductCard from './ProductCard';
 
@@ -20,9 +21,10 @@ const SkeletonCard: React.FC = () => (
 );
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading, isEmpty }) => {
+  const { t } = useTranslation('product');
   if (isLoading) {
     return (
-      <div className="storefront-grid" aria-busy="true" aria-label="Loading products">
+      <div className="storefront-grid" aria-busy="true" aria-label={t('grid.loading')}>
         {Array.from({ length: 8 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -33,8 +35,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, isLoading, isEmpty 
   if (isEmpty) {
     return (
       <div className="storefront-empty">
-        <p className="storefront-empty__title">No products found</p>
-        <p>Try adjusting your filters or search term.</p>
+        <p className="storefront-empty__title">{t('grid.emptyTitle')}</p>
+        <p>{t('grid.emptyText')}</p>
       </div>
     );
   }

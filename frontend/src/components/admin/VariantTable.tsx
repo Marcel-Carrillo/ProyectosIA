@@ -28,7 +28,7 @@ const EMPTY_FORM: VariantFormData = {
   color: '',
   publicPrice: '',
   compareAtPrice: '',
-  stockPolicy: 'TRACK',
+  stockPolicy: 'SupplierManaged',
   status: 'Active',
 };
 
@@ -142,6 +142,23 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
             <Form.Label>Color</Form.Label>
             <Form.Control type="text" value={form.color} onChange={(e) => set('color', e.target.value)} />
           </Form.Group>
+          {mode === 'edit' && initial?.supplierCost != null && (
+            <Form.Group className="mb-3">
+              <Form.Label>Supplier cost (read-only)</Form.Label>
+              <Form.Control
+                type="text"
+                value={new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(
+                  initial.supplierCost
+                )}
+                readOnly
+                disabled
+                data-testid="input-variant-supplier-cost"
+              />
+              {initial.supplierName && (
+                <Form.Text className="text-muted">Supplier: {initial.supplierName}</Form.Text>
+              )}
+            </Form.Group>
+          )}
           <Form.Group className="mb-3">
             <Form.Label>Public price *</Form.Label>
             <Form.Control
@@ -153,6 +170,14 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
               required
               data-testid="input-variant-price"
             />
+            {mode === 'edit' &&
+              initial?.supplierCost != null &&
+              Number(form.publicPrice) > 0 &&
+              Number(form.publicPrice) <= initial.supplierCost && (
+                <Form.Text className="text-danger">
+                  Warning: public price is at or below the supplier cost.
+                </Form.Text>
+              )}
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Compare-at price</Form.Label>
@@ -167,9 +192,9 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
           <Form.Group className="mb-3">
             <Form.Label>Stock policy</Form.Label>
             <Form.Select value={form.stockPolicy} onChange={(e) => set('stockPolicy', e.target.value)}>
-              <option value="TRACK">TRACK</option>
-              <option value="DONT_TRACK">DONT_TRACK</option>
-              <option value="DENY">DENY</option>
+              <option value="SupplierManaged">Supplier managed</option>
+              <option value="InternalStock">Internal stock</option>
+              <option value="Hybrid">Hybrid</option>
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
@@ -201,6 +226,20 @@ type VariantTableProps = {
 
 const formatPrice = (n: number | null | undefined) =>
   n == null ? '—' : new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(n);
+
+// Margin over the supplier cost: absolute € and % of the public price.
+// Rendered red when selling below cost so pricing mistakes are obvious.
+const Margin: React.FC<{ variant: ProductVariant }> = ({ variant }) => {
+  const { publicPrice, supplierCost } = variant;
+  if (supplierCost == null) return <>—</>;
+  const margin = publicPrice - supplierCost;
+  const pct = publicPrice > 0 ? (margin / publicPrice) * 100 : 0;
+  return (
+    <span className={margin < 0 ? 'text-danger fw-semibold' : undefined}>
+      {formatPrice(margin)} ({pct.toFixed(0)}%)
+    </span>
+  );
+};
 
 const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVariantsChange }) => {
   const [showModal, setShowModal] = useState(false);
@@ -266,8 +305,18 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   <span>{v.color ?? '—'}</span>
                 </div>
                 <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Supplier cost</span>
+                  <span>{formatPrice(v.supplierCost)}</span>
+                </div>
+                <div className="admin-card-row__field">
                   <span className="admin-card-row__label">Public price</span>
                   <span>{formatPrice(v.publicPrice)}</span>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Margin</span>
+                  <span>
+                    <Margin variant={v} />
+                  </span>
                 </div>
                 <div className="admin-card-row__field">
                   <span className="admin-card-row__label">Compare-at</span>
@@ -310,7 +359,9 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                 <th>SKU</th>
                 <th>Size</th>
                 <th>Color</th>
+                <th>Supplier cost</th>
                 <th>Public price</th>
+                <th>Margin</th>
                 <th>Compare-at</th>
                 <th>Stock policy</th>
                 <th>Status</th>
@@ -325,7 +376,11 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   </td>
                   <td>{v.size ?? '—'}</td>
                   <td>{v.color ?? '—'}</td>
+                  <td data-testid={`variant-supplier-cost-${v.id}`}>{formatPrice(v.supplierCost)}</td>
                   <td>{formatPrice(v.publicPrice)}</td>
+                  <td data-testid={`variant-margin-${v.id}`}>
+                    <Margin variant={v} />
+                  </td>
                   <td>{formatPrice(v.compareAtPrice)}</td>
                   <td>{v.stockPolicy}</td>
                   <td>

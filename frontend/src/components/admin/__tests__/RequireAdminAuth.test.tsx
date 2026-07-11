@@ -1,16 +1,17 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import RequireAdminAuth from '../RequireAdminAuth';
 import { AdminAuthProvider } from '../../../contexts/AdminAuthContext';
 
-jest.mock('../../../services/adminAuthService', () => ({
-  adminRefresh: jest.fn().mockRejectedValue(new Error('no session')),
-  adminMe: jest.fn(),
-  adminLogin: jest.fn(),
-  adminLogout: jest.fn(),
-  getAdminAccessToken: jest.fn().mockReturnValue(null),
-  setAdminAccessToken: jest.fn(),
+vi.mock('../../../services/adminAuthService', () => ({
+  adminRefresh: vi.fn().mockRejectedValue(new Error('no session')),
+  adminMe: vi.fn(),
+  adminLogin: vi.fn(),
+  adminLogout: vi.fn(),
+  getAdminAccessToken: vi.fn().mockReturnValue(null),
+  setAdminAccessToken: vi.fn(),
 }));
 
 const Protected = () => <div>Protected content</div>;

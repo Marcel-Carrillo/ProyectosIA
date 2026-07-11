@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '../infrastructure/logger';
 import {
   ValidationError,
   TranslationLocaleInvalidError,
@@ -278,8 +279,15 @@ export function globalErrorHandler(
     statusCode = err.status;
     code = (err as AppError).code ?? 'ERROR';
     message = err.message;
-  } else if (err instanceof Error && err.message) {
-    message = err.message;
+  } else {
+    // Unexpected error (no domain status): keep the generic 500 payload so
+    // internals (Prisma/driver messages, stack hints) never leak to clients,
+    // and log the real error for diagnosis.
+    logger.error('Unhandled error reached globalErrorHandler', {
+      name: err instanceof Error ? err.name : typeof err,
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
   }
 
   res.status(statusCode).json({

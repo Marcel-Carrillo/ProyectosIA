@@ -47,6 +47,14 @@ jest.mock('../paymentService', () => ({
   },
 }));
 
+const mockReleaseForOrder = jest.fn();
+
+jest.mock('../wishlistCouponService', () => ({
+  couponService: {
+    releaseForOrder: (...args: unknown[]) => mockReleaseForOrder(...args),
+  },
+}));
+
 const address = {
   fullName: 'Jane Doe',
   streetLine1: 'Main St',
@@ -336,6 +344,8 @@ describe('CustomerOrderService - cancelPendingOrder', () => {
     );
     expect(mockCancelPaymentIntent).toHaveBeenCalledWith('pi_1');
     expect(result.status).toBe('Cancelled');
+    // A cancelled order must free its coupon use.
+    expect(mockReleaseForOrder).toHaveBeenCalledWith(order.id);
   });
 
   it('does not call Stripe when order has no stripePaymentIntentId', async () => {

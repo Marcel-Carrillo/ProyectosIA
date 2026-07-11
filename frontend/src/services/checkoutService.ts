@@ -2,13 +2,12 @@ import axios from 'axios';
 import { getCustomerAccessToken } from './customerAuthService';
 import { PublicOrder } from '../types/auth';
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 
 export interface CheckoutPayload {
   items: Array<{ productVariantId: number; quantity: number }>;
   shippingAddressSnapshot: Record<string, string>;
   billingAddressSnapshot: Record<string, string>;
-  shippingAmount?: string;
   couponCode?: string;
 }
 

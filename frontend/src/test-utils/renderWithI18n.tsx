@@ -12,6 +12,8 @@ import esAccount from '../i18n/locales/es/account.json';
 import esAdmin from '../i18n/locales/es/admin.json';
 import esPages from '../i18n/locales/es/pages.json';
 import esCookies from '../i18n/locales/es/cookies.json';
+import esProduct from '../i18n/locales/es/product.json';
+import esCheckout from '../i18n/locales/es/checkout.json';
 import enCommon from '../i18n/locales/en/common.json';
 import enAuth from '../i18n/locales/en/auth.json';
 import enCatalog from '../i18n/locales/en/catalog.json';
@@ -20,6 +22,8 @@ import enAccount from '../i18n/locales/en/account.json';
 import enAdmin from '../i18n/locales/en/admin.json';
 import enPages from '../i18n/locales/en/pages.json';
 import enCookies from '../i18n/locales/en/cookies.json';
+import enProduct from '../i18n/locales/en/product.json';
+import enCheckout from '../i18n/locales/en/checkout.json';
 
 const createTestI18n = (lng: 'es' | 'en' = 'en') => {
   const testI18n = i18n.createInstance();
@@ -28,8 +32,8 @@ const createTestI18n = (lng: 'es' | 'en' = 'en') => {
     fallbackLng: 'es',
     defaultNS: 'common',
     resources: {
-      es: { common: esCommon, auth: esAuth, catalog: esCatalog, cart: esCart, account: esAccount, admin: esAdmin, pages: esPages, cookies: esCookies },
-      en: { common: enCommon, auth: enAuth, catalog: enCatalog, cart: enCart, account: enAccount, admin: enAdmin, pages: enPages, cookies: enCookies },
+      es: { common: esCommon, auth: esAuth, catalog: esCatalog, cart: esCart, account: esAccount, admin: esAdmin, pages: esPages, cookies: esCookies, product: esProduct, checkout: esCheckout },
+      en: { common: enCommon, auth: enAuth, catalog: enCatalog, cart: enCart, account: enAccount, admin: enAdmin, pages: enPages, cookies: enCookies, product: enProduct, checkout: enCheckout },
     },
     interpolation: { escapeValue: false },
   });

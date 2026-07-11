@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentFormProps {
@@ -8,6 +9,7 @@ interface PaymentFormProps {
 }
 
 export default function PaymentForm({ orderNumber, onSuccess, onError }: PaymentFormProps) {
+  const { t } = useTranslation('checkout');
   const stripe = useStripe();
   const elements = useElements();
   const [paying, setPaying] = useState(false);
@@ -27,7 +29,8 @@ export default function PaymentForm({ orderNumber, onSuccess, onError }: Payment
         redirect: 'if_required',
       });
       if (error) {
-        const msg = error.message ?? 'Payment failed. Please try again.';
+        // Stripe localizes error.message via the Elements locale; our copy is the fallback.
+        const msg = error.message ?? t('payment.failed');
         setPaymentError(msg);
         onError(msg);
       } else if (paymentIntent?.status === 'succeeded') {
@@ -36,7 +39,7 @@ export default function PaymentForm({ orderNumber, onSuccess, onError }: Payment
         onSuccess();
       }
     } catch {
-      const msg = 'An unexpected error occurred. Please try again.';
+      const msg = t('payment.unexpectedError');
       setPaymentError(msg);
       onError(msg);
     } finally {
@@ -58,7 +61,7 @@ export default function PaymentForm({ orderNumber, onSuccess, onError }: Payment
         className="storefront-btn storefront-btn--primary storefront-btn--press"
         data-testid="btn-pay"
       >
-        {paying ? 'Processing…' : 'Pay now'}
+        {paying ? t('payment.processing') : t('payment.payNow')}
       </button>
     </form>
   );

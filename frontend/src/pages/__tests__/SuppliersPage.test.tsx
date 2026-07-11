@@ -1,3 +1,4 @@
+import { vi, type Mocked } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -5,28 +6,28 @@ import SuppliersPage from '../SuppliersPage';
 import { Supplier } from '../../types/supplier';
 import { supplierService } from '../../services/supplierService';
 
-jest.mock('../../services/supplierService', () => {
-  const actual = jest.requireActual('../../services/supplierService');
+vi.mock('../../services/supplierService', async () => {
+  const actual = await vi.importActual('../../services/supplierService');
   return {
     __esModule: true,
     supplierService: {
-      list: jest.fn(),
-      getById: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      softDelete: jest.fn(),
+      list: vi.fn(),
+      getById: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      softDelete: vi.fn(),
     },
     extractSupplierErrorMessage: actual.extractSupplierErrorMessage,
     mapSupplierError: actual.mapSupplierError,
   };
 });
-jest.mock('../../components/admin/SupplierFormModal', () => ({
+vi.mock('../../components/admin/SupplierFormModal', () => ({
   __esModule: true,
   default: ({ show }: { show: boolean }) =>
     show ? <div data-testid="mock-supplier-form-modal" /> : null,
 }));
 
-const mockedService = supplierService as jest.Mocked<typeof supplierService>;
+const mockedService = supplierService as Mocked<typeof supplierService>;
 
 const mockSupplier: Supplier = {
   id: 1,
@@ -55,7 +56,7 @@ const renderPage = () =>
   );
 
 describe('SuppliersPage', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('renders suppliers from the admin API', async () => {
     mockedService.list.mockResolvedValue(listResult([mockSupplier]));
@@ -89,19 +90,19 @@ describe('SuppliersPage', () => {
   });
 
   it('re-queries after the search debounce', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mockedService.list.mockResolvedValue(listResult([mockSupplier]));
     renderPage();
     fireEvent.change(screen.getByTestId('filter-search'), { target: { value: 'acme' } });
     await act(async () => {
-      jest.advanceTimersByTime(400);
+      vi.advanceTimersByTime(400);
     });
     await waitFor(() =>
       expect(mockedService.list).toHaveBeenLastCalledWith(
         expect.objectContaining({ search: 'acme' })
       )
     );
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('reset clears filters and re-queries', async () => {

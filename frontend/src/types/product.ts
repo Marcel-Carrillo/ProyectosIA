@@ -1,6 +1,6 @@
 export type ProductStatus = 'Draft' | 'Active' | 'Inactive' | 'Archived';
 export type ProductVariantStatus = 'Active' | 'Inactive';
-export type StockPolicy = 'TRACK' | 'DONT_TRACK' | 'DENY';
+export type StockPolicy = 'SupplierManaged' | 'InternalStock' | 'Hybrid';
 export type TranslationSource = 'manual' | 'import' | 'machine';
 export type SupportedLocale = 'en' | 'es';
 
@@ -25,6 +25,12 @@ export interface ProductVariant {
   compareAtPrice: number | null;
   stockPolicy: StockPolicy;
   status: ProductVariantStatus;
+  // Supplier sourcing data returned only by /api/admin variant endpoints.
+  // Read-only in the admin UI: write payloads must never include these fields.
+  supplierId?: number | null;
+  supplierReference?: string | null;
+  supplierCost?: number | null;
+  supplierName?: string | null;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;

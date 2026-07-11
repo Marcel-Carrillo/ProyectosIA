@@ -4022,9 +4022,12 @@ components:
     ProductVariant:
       type: object
       description: >
-        Represents a sellable variant of a product. Note: supplierId, supplierReference,
-        and supplierCost are stored in the database but are NEVER included in API responses.
-        These fields are excluded at the Prisma select layer as a security invariant.
+        Represents a sellable variant of a product as returned by ADMIN endpoints.
+        Includes read-only supplier sourcing fields (supplierId, supplierReference,
+        supplierCost, supplierName) so administrators can see cost and margin next
+        to the public price. These fields are NEVER included in customer-facing
+        responses (see PublicProductVariant) and are ignored on write requests to
+        the variant endpoints.
       properties:
         id:
           type: integer
@@ -4056,6 +4059,31 @@ components:
           $ref: '#/components/schemas/StockPolicy'
         status:
           $ref: '#/components/schemas/ProductVariantStatus'
+        supplierId:
+          type: integer
+          nullable: true
+          readOnly: true
+          example: 1
+          description: Admin-only. Never present on customer-facing responses.
+        supplierReference:
+          type: string
+          nullable: true
+          readOnly: true
+          example: SUP-BLACK-DRESS-S
+          description: Admin-only. Never present on customer-facing responses.
+        supplierCost:
+          type: number
+          format: decimal
+          nullable: true
+          readOnly: true
+          example: 24.99
+          description: Admin-only. Never present on customer-facing responses.
+        supplierName:
+          type: string
+          nullable: true
+          readOnly: true
+          example: CJ Dropshipping
+          description: Admin-only. Resolved from the supplier relation.
         deletedAt:
           type: string
           format: date-time

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 
 export interface SeoProps {
@@ -13,7 +14,7 @@ export interface SeoProps {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-export const SITE_URL = (process.env.REACT_APP_SITE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+export const SITE_URL = (import.meta.env.VITE_SITE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const DEFAULT_OG_IMAGE = `${SITE_URL}/mavile-logo.png`;
 
 const Seo: React.FC<SeoProps> = ({
@@ -24,9 +25,11 @@ const Seo: React.FC<SeoProps> = ({
   noindex = false,
   jsonLd,
 }) => {
+  const { i18n } = useTranslation();
   const canonicalUrl = canonicalPath ? `${SITE_URL}${canonicalPath}` : undefined;
   const resolvedImage = image ?? DEFAULT_OG_IMAGE;
   const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+  const ogLocale = i18n.language === 'en' ? 'en_US' : 'es_ES';
 
   return (
     <Helmet>
@@ -38,6 +41,8 @@ const Seo: React.FC<SeoProps> = ({
       <meta property="og:title" content={title} />
       {description && <meta property="og:description" content={description} />}
       <meta property="og:type" content="website" />
+      <meta property="og:locale" content={ogLocale} />
+      <meta property="og:locale:alternate" content={ogLocale === 'es_ES' ? 'en_US' : 'es_ES'} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta property="og:image" content={resolvedImage} />
 

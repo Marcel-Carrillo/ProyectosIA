@@ -1,3 +1,4 @@
+import { vi, type Mock } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import axios from 'axios';
@@ -5,19 +6,19 @@ import SupplierFormModal from '../SupplierFormModal';
 import { Supplier } from '../../../types/supplier';
 import { supplierService } from '../../../services/supplierService';
 
-jest.mock('../../../services/supplierService', () => {
-  const actual = jest.requireActual('../../../services/supplierService');
+vi.mock('../../../services/supplierService', async () => {
+  const actual = await vi.importActual('../../../services/supplierService');
   return {
     __esModule: true,
-    supplierService: { create: jest.fn(), update: jest.fn() },
+    supplierService: { create: vi.fn(), update: vi.fn() },
     extractSupplierErrorMessage: actual.extractSupplierErrorMessage,
     mapSupplierError: actual.mapSupplierError,
   };
 });
 
 const mocked = supplierService as unknown as {
-  create: jest.Mock;
-  update: jest.Mock;
+  create: Mock;
+  update: Mock;
 };
 
 const makeAxiosError = (code: string, status: number) => {
@@ -48,7 +49,7 @@ const existing: Supplier = {
 const noop = () => undefined;
 
 describe('SupplierFormModal', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('shows a validation error when name is empty', () => {
     render(<SupplierFormModal show onHide={noop} onSuccess={noop} />);
@@ -63,13 +64,17 @@ describe('SupplierFormModal', () => {
     fireEvent.change(screen.getByTestId('input-supplier-contact-email'), {
       target: { value: 'not-an-email' },
     });
-    fireEvent.click(screen.getByTestId('btn-modal-save'));
+    // jsdom now enforces native constraint validation on type="email" inputs,
+    // so a click on the submit button never reaches the component's own
+    // validation (same as a real browser). Submit the form directly to
+    // exercise the JS validation path.
+    fireEvent.submit(screen.getByTestId('btn-modal-save').closest('form')!);
     expect(screen.getByText(/valid email/i)).toBeInTheDocument();
   });
 
   it('creates a supplier and calls onSuccess', async () => {
     mocked.create.mockResolvedValue({ success: true, data: existing, message: '' });
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     render(<SupplierFormModal show onHide={noop} onSuccess={onSuccess} />);
     fireEvent.change(screen.getByTestId('input-supplier-name'), { target: { value: 'Acme' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));

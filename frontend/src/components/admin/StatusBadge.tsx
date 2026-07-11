@@ -25,6 +25,10 @@ const VARIANT: Record<string, string> = {
   Failed: 'danger',
   // CJ catalog item promotionState-only value (Active/Inactive above are reused)
   NotPromoted: 'secondary',
+  // CJ connection (SupplierIntegration) status
+  Connected: 'success',
+  Disconnected: 'secondary',
+  Error: 'danger',
 };
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status, ...rest }) => (

@@ -1,26 +1,27 @@
+import { vi, type Mock } from 'vitest';
 import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import CatalogPage from '../CatalogPage';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import { productService } from '../../../services/productService';
 
-const mockSetSearchParams = jest.fn();
+const mockSetSearchParams = vi.fn();
 
-jest.mock('react-router-dom', () => ({
+vi.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(), mockSetSearchParams],
 }));
 
-jest.mock('../../../services/productService', () => ({
+vi.mock('../../../services/productService', () => ({
   productService: {
-    getAll: jest.fn(),
+    getAll: vi.fn(),
   },
 }));
 
-const mockedGetAll = productService.getAll as jest.Mock;
+const mockedGetAll = productService.getAll as Mock;
 
 describe('CatalogPage language refetch', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedGetAll.mockResolvedValue({
       data: { items: [], total: 0, page: 1, pageSize: 20 },
     });

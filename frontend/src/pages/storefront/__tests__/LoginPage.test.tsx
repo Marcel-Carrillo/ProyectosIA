@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -5,15 +6,15 @@ import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 import LoginPage from '../LoginPage';
 import { CustomerAuthProvider } from '../../../contexts/CustomerAuthContext';
 
-jest.mock('../../../services/customerAuthService', () => ({
-  customerLogin: jest.fn(),
-  customerRefresh: jest.fn().mockRejectedValue(new Error('no session')),
-  customerMe: jest.fn(),
-  customerLogout: jest.fn(),
-  customerRegister: jest.fn(),
-  getCustomerAccessToken: jest.fn(),
-  setCustomerAccessToken: jest.fn(),
-  extractCustomerAuthError: jest.fn().mockReturnValue('Invalid'),
+vi.mock('../../../services/customerAuthService', () => ({
+  customerLogin: vi.fn(),
+  customerRefresh: vi.fn().mockRejectedValue(new Error('no session')),
+  customerMe: vi.fn(),
+  customerLogout: vi.fn(),
+  customerRegister: vi.fn(),
+  getCustomerAccessToken: vi.fn(),
+  setCustomerAccessToken: vi.fn(),
+  extractCustomerAuthError: vi.fn().mockReturnValue('Invalid'),
 }));
 
 describe('LoginPage', () => {

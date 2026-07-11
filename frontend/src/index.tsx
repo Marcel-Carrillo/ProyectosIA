@@ -8,12 +8,15 @@ import './styles/storefront.css';
 import './styles/admin.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { installAcceptLanguageInterceptor } from './services/acceptLanguageInterceptor';
 import {
   ANALYTICS_CONSENT_EVENT,
   CONSENT_STORAGE_KEY,
   CONSENT_VERSION,
   CONSENT_EXPIRY_DAYS,
 } from './constants/cookieConsent';
+
+installAcceptLanguageInterceptor();
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

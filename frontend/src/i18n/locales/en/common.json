@@ -53,5 +53,17 @@
     "google": "Continue with Google",
     "apple": "Continue with Apple",
     "facebook": "Continue with Facebook"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Could not reach the server. Check your connection.",
+    "VALIDATION_ERROR": "Please review the entered data and try again.",
+    "EMAIL_HAS_ACCOUNT": "This email belongs to a registered account. Please log in to place your order.",
+    "VARIANT_NOT_FOUND": "One of the items in your cart is no longer available.",
+    "COUPON_NOT_FOUND": "That coupon does not exist or is not valid.",
+    "COUPON_EXHAUSTED": "This coupon is no longer available.",
+    "PAYMENT_GATEWAY_UNAVAILABLE": "The payment provider is unavailable. Please try again later.",
+    "ORDER_NOT_FOUND": "Order not found.",
+    "UNAUTHORIZED": "Your session has expired. Please log in again."
   }
 }

@@ -1,29 +1,31 @@
+import { vi, type Mocked } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithI18n } from '../../test-utils/renderWithI18n';
 import { MemoryRouter } from 'react-router-dom';
 import ReviewForm from './ReviewForm';
 import { reviewService } from '../../services/reviewService';
 
-const mockUseCustomerAuth = jest.fn();
+const mockUseCustomerAuth = vi.fn();
 
-jest.mock('../../contexts/CustomerAuthContext', () => ({
+vi.mock('../../contexts/CustomerAuthContext', () => ({
   useCustomerAuth: () => mockUseCustomerAuth(),
 }));
 
-jest.mock('../../services/reviewService', () => ({
+vi.mock('../../services/reviewService', async () => ({
   reviewService: {
-    getEligibility: jest.fn(),
-    submitReview: jest.fn(),
+    getEligibility: vi.fn(),
+    submitReview: vi.fn(),
   },
-  extractReviewErrorMessage: jest.requireActual('../../services/reviewService').extractReviewErrorMessage,
+  extractReviewErrorMessage: (await vi.importActual('../../services/reviewService')).extractReviewErrorMessage,
 }));
 
-const mockedReviewService = reviewService as jest.Mocked<typeof reviewService>;
+const mockedReviewService = reviewService as Mocked<typeof reviewService>;
 
-const renderForm = () => render(<MemoryRouter><ReviewForm productId={1} /></MemoryRouter>);
+const renderForm = () => renderWithI18n(<MemoryRouter><ReviewForm productId={1} /></MemoryRouter>);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('ReviewForm', () => {

@@ -1,22 +1,23 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 
-const mockListMyOrders = jest.fn();
+const mockListMyOrders = vi.fn();
 
-jest.mock('../../../services/customerAuthService', () => ({
+vi.mock('../../../services/customerAuthService', () => ({
   listMyOrders: (...args: unknown[]) => mockListMyOrders(...args),
 }));
 
-jest.mock('../../../contexts/CustomerAuthContext', () => ({
+vi.mock('../../../contexts/CustomerAuthContext', () => ({
   useCustomerAuth: () => ({
     customer: { firstName: 'Ana', lastName: 'García', email: 'ana@example.com' },
-    logout: jest.fn(),
+    logout: vi.fn(),
   }),
 }));
 
-// eslint-disable-next-line import/first -- must load after jest.mock() calls above
+// eslint-disable-next-line import/first -- must load after vi.mock() calls above
 import AccountOrdersPage from '../AccountOrdersPage';
 
 function renderPage() {
@@ -29,7 +30,7 @@ function renderPage() {
 }
 
 describe('AccountOrdersPage - pending payment indicator', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('shows a quick action linking to the order detail page for PendingPayment orders', async () => {
     mockListMyOrders.mockResolvedValue([
@@ -52,7 +53,7 @@ describe('AccountOrdersPage - pending payment indicator', () => {
 });
 
 describe('AccountOrdersPage - shipping status badge', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('shows a shipping-status badge for non-pending orders', async () => {
     mockListMyOrders.mockResolvedValue([
