@@ -22,7 +22,7 @@
 ## 2. Environment Variable Migration (REACT_APP_* → VITE_*)
 
 - [x] 2.1 Rename variables in `.env.development`, `.env.production` (if present), and `.env.example`: `REACT_APP_API_BASE_URL` → `VITE_API_BASE_URL`, `REACT_APP_SITE_URL` → `VITE_SITE_URL`; remove `PORT` (port now set in `vite.config.ts`).
-- [x] 2.2 Replace `process.env.REACT_APP_*` with `import.meta.env.VITE_*` in all 21 call sites, preserving existing fallbacks: the 17 service files (`customerAuthService`, `categoryService`, `adminAuthService`, `cjCatalogService`, `adminProductService`, `checkoutService`, `refundService`, `shipmentService`, `productService`, `reviewService`, `paymentService`, `customerService`, `customerOrderService`, `returnRequestService`, `supplierService`, `supplierOrderService`, `wishlistService`), plus `components/storefront/OAuthButtons.tsx`, `components/storefront/Seo.tsx`, `pages/storefront/ContentPage.tsx`, `pages/storefront/TwoFactorSetupPage.tsx`.
+- [x] 2.2 Replace `process.env.REACT_APP_*` with `import.meta.env.VITE_*` in all 21 call sites, preserving existing fallbacks: the 17 service files (`customerAuthService`, `categoryService`, `adminAuthService`, `cjCatalogService`, `adminProductService`, `checkoutService`, `refundService`, `shipmentService`, `productService`, `reviewService`, `paymentService`, `customerService`, `customerOrderService`, `returnRequestService`, `supplierService`, `supplierOrderService`, `wishlistService`), plus `components/storefront/OAuthButtons.tsx`, `components/storefront/Seo.tsx`, `pages/storefront/ContentPage.tsx`, `pages/storefront/TwoFactorSetupPage.tsx`. → Nota (adversarial review): el recuento real fue 22 call sites (18 servicios incl. `cjConnectionService` + los 4 componentes/páginas), no 21; paridad 22→22 verificada, cero `process.env.REACT_APP_*` residuales.
 - [x] 2.3 Create `frontend/env.d.ts` with `/// <reference types="vite/client" />` and an `ImportMetaEnv` interface declaring `VITE_API_BASE_URL` and `VITE_SITE_URL`.
 - [x] 2.4 Verify zero residual references: `grep -rn "REACT_APP_\|%PUBLIC_URL%\|react-scripts\|setupProxy" frontend/src frontend/package.json frontend/index.html` returns empty (evidence required).
 
@@ -59,7 +59,7 @@
 
 ## 8. Review and Update Existing Unit Tests (MANDATORY)
 
-- [x] 8.1 Review the migrated suites against `docs/frontend-standards.md` testing conventions (`renderWithI18n`, provider wrappers, `findBy*` preference): API rename only, no behavioral edits, no weakened assertions.
+- [x] 8.1 Review the migrated suites against `docs/frontend-standards.md` testing conventions (`renderWithI18n`, provider wrappers, `findBy*` preference): API rename only, no behavioral edits, no weakened assertions. → Matiz (adversarial review): 2 tests (`CustomerFormModal`/`SupplierFormModal`, invalid-email) cambiaron la interacción `fireEvent.click`→`fireEvent.submit` porque jsdom moderno aplica validación nativa de `type="email"`; aserciones intactas, documentado en el report del paso 9.
 - [x] 8.2 Confirm the test count matches the Step 0.4 pre-migration baseline and no `.skip`/`.todo` was introduced (`grep -rn "\.skip\|\.todo" frontend/src --include="*.test.*"`).
 
 ## 9. Run Unit Tests and Verify Database State (MANDATORY)

@@ -16,7 +16,7 @@ feature/* ──► develop (CI) ──► master (CI + aprobación) ──► A
 |---|---|---|
 | Rama | `develop` | `master` |
 | Backend | `ts-node-dev` en Docker | AWS Lambda (`nodejs20.x`) |
-| Frontend | CRA webpack-dev-server en Docker | S3 + CloudFront |
+| Frontend | Vite dev server en Docker | S3 + CloudFront |
 | Base de datos | Postgres 15 en Docker | AWS RDS PostgreSQL 16 (`eu-north-1`) |
 | Email | Mailpit (local, sin SMTP real) | SMTP externo vía SSM |
 | Secretos | `backend/.env.docker` (git-ignored) | SSM Parameter Store `/ecommerce/prod/*` |
