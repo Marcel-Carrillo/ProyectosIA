@@ -210,6 +210,7 @@ Represents images associated with a product.
 * `url`: Image URL or storage path (max 500 characters)
 * `altText`: Alternative text for accessibility and SEO (optional, max 250 characters)
 * `sortOrder`: Numeric order used to display product images
+* `color`: Optional color association (max 50 characters). `null` means the image is shared/product-level and applies regardless of the selected variant color; a non-null value ties the image to a specific `ProductVariant.color` value (same vocabulary, not a foreign key — CJ's photo varies by color, not size, so multiple variants of different sizes intentionally share one color-tagged image). For CJ-sourced products, derived the same way `ProductVariant.color` is derived (`variantKey` → `variantNameEn` → `variantProperty` precedence) from the source variant's `rawPayload`; the product-level image is always `color: null`. The storefront product detail page filters the gallery to the selected variant's color plus any `color: null` images, falling back to the full image list whenever that filter would be empty.
 * `createdAt`: Date and time when the image was created
 
 **Validation Rules:**
@@ -218,6 +219,7 @@ Represents images associated with a product.
 * URL is required and cannot exceed 500 characters
 * Alternative text is optional but cannot exceed 250 characters
 * Sort order must be greater than or equal to 0
+* Color is optional but cannot exceed 50 characters
 
 **Relationships:**
 
@@ -810,7 +812,14 @@ cd backend
 npx ts-node --transpile-only scripts/backfillCjVariantAttributes.ts
 ```
 
-**Image capture on promotion:** promoting a `CjCatalogItem` also derives display images from its already-stored `rawPayload` (`rawPayload.product.bigImage` / `rawPayload.variant.variantImage` — the supplier's raw API response, never re-fetched) and materializes them as `Product.mainImageUrl` and `ProductImage` rows — one for the product (`sortOrder: 0`) and one per variant whose image differs from the product's. This only happens the first time a pid group is promoted (a new `Product` is created); a variant later joining an already-existing product from a prior partial promotion does not trigger image capture. Missing image data never fails promotion — the product is simply created without an image. Only public-safe data (image URLs, names) is ever copied; `supplierCost` and other internal fields are never derived into any image or product field.
+**Image capture on promotion:** promoting a `CjCatalogItem` also derives display images from its already-stored `rawPayload` (`rawPayload.product.bigImage` / `rawPayload.variant.variantImage` — the supplier's raw API response, never re-fetched) and materializes them as `Product.mainImageUrl` and `ProductImage` rows — one for the product (`sortOrder: 0`, `color: null`) and one per distinct `(url, color)` pair among the variant images, where each variant image's `color` is derived the same way `ProductVariant.color` is (`variantKey` → `variantNameEn` → `variantProperty`). This only happens the first time a pid group is promoted (a new `Product` is created); a variant later joining an already-existing product from a prior partial promotion does not trigger image capture. Missing image data never fails promotion — the product is simply created without an image. Only public-safe data (image URLs, names, color) is ever copied; `supplierCost` and other internal fields are never derived into any image or product field.
+
+**Image color backfill for already-promoted products:** `backend/scripts/backfillCjImageColors.ts` assigns `color` to already-persisted `ProductImage` rows (created before image-color association existed) by re-deriving `(variantImage, color)` from stored `CjCatalogItem.rawPayload` and matching on `(productId, url)` — zero CJ API calls. Idempotent; skips and logs a row if two catalog items derive conflicting colors for the same already-persisted image (ambiguous match, left `color: null`). Invoke with:
+
+```bash
+cd backend
+npx ts-node --transpile-only scripts/backfillCjImageColors.ts
+```
 
 **Promotion status (`promotionState`) — derived, not stored:**
 
@@ -911,6 +920,7 @@ erDiagram
         String url
         String altText
         Int sortOrder
+        String color
         DateTime createdAt
     }
 

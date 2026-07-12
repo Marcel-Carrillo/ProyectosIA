@@ -4,6 +4,7 @@ export class ProductImage {
   url: string;
   altText?: string | null;
   sortOrder: number;
+  color: string | null;
   createdAt?: Date;
 
   constructor(data: {
@@ -12,6 +13,7 @@ export class ProductImage {
     url: string;
     altText?: string | null;
     sortOrder?: number;
+    color?: string | null;
     createdAt?: Date;
   }) {
     this.id = data.id;
@@ -19,6 +21,7 @@ export class ProductImage {
     this.url = data.url;
     this.altText = data.altText ?? null;
     this.sortOrder = data.sortOrder ?? 0;
+    this.color = data.color ?? null;
     this.createdAt = data.createdAt;
   }
 }

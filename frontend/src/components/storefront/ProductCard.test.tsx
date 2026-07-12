@@ -73,7 +73,7 @@ describe('ProductCard', () => {
     const withAlt: Product = {
       ...baseProduct,
       mainImageUrl: 'https://cdn.example.com/dress.jpg',
-      images: [{ id: 1, productId: 1, url: 'https://cdn.example.com/dress.jpg', altText: 'Black midi dress on model', sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' }],
+      images: [{ id: 1, productId: 1, url: 'https://cdn.example.com/dress.jpg', altText: 'Black midi dress on model', sortOrder: 0, color: null, createdAt: '2026-01-01T00:00:00Z' }],
     };
     render(
       <MemoryRouter>
@@ -87,7 +87,7 @@ describe('ProductCard', () => {
     const noAlt: Product = {
       ...baseProduct,
       mainImageUrl: 'https://cdn.example.com/dress.jpg',
-      images: [{ id: 1, productId: 1, url: 'https://cdn.example.com/dress.jpg', altText: null, sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' }],
+      images: [{ id: 1, productId: 1, url: 'https://cdn.example.com/dress.jpg', altText: null, sortOrder: 0, color: null, createdAt: '2026-01-01T00:00:00Z' }],
     };
     render(
       <MemoryRouter>

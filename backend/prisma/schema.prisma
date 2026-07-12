@@ -93,6 +93,7 @@ model ProductImage {
   url       String   @db.VarChar(500)
   altText   String?  @db.VarChar(250)
   sortOrder Int      @default(0)
+  color     String?  @db.VarChar(50)
   createdAt DateTime @default(now())
 }
 

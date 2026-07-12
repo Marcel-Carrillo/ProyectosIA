@@ -27,6 +27,7 @@ export interface PublicProductImageDTO {
   url: string;
   altText: string | null;
   sortOrder: number;
+  color: string | null;
 }
 
 export interface PublicProductDTO {
@@ -64,6 +65,7 @@ function serializeImage(image: ProductImage): PublicProductImageDTO {
     url: image.url,
     altText: image.altText ?? null,
     sortOrder: image.sortOrder,
+    color: image.color ?? null,
   };
 }
 

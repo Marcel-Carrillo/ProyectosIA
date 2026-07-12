@@ -1,11 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import ProductGallery from './ProductGallery';
 import { ProductImage } from '../../types/product';
 
 const images: ProductImage[] = [
-  { id: 1, productId: 1, url: 'https://cdn.example.com/a.jpg', altText: 'Red dress front view', sortOrder: 0, createdAt: '2026-01-01T00:00:00Z' },
-  { id: 2, productId: 1, url: 'https://cdn.example.com/b.jpg', altText: null, sortOrder: 1, createdAt: '2026-01-01T00:00:00Z' },
+  { id: 1, productId: 1, url: 'https://cdn.example.com/a.jpg', altText: 'Red dress front view', sortOrder: 0, color: null, createdAt: '2026-01-01T00:00:00Z' },
+  { id: 2, productId: 1, url: 'https://cdn.example.com/b.jpg', altText: null, sortOrder: 1, color: null, createdAt: '2026-01-01T00:00:00Z' },
 ];
 
 describe('ProductGallery', () => {
@@ -19,5 +19,60 @@ describe('ProductGallery', () => {
     render(<ProductGallery images={[images[1]]} productName="Red Dress" />);
     const main = screen.getByRole('img');
     expect(main).toHaveAttribute('alt', 'Red Dress');
+  });
+});
+
+const colorImages: ProductImage[] = [
+  { id: 10, productId: 1, url: 'https://cdn.example.com/shared.jpg', altText: 'Shared front', sortOrder: 0, color: null, createdAt: '2026-01-01T00:00:00Z' },
+  { id: 11, productId: 1, url: 'https://cdn.example.com/red-1.jpg', altText: 'Red detail 1', sortOrder: 1, color: 'Red', createdAt: '2026-01-01T00:00:00Z' },
+  { id: 12, productId: 1, url: 'https://cdn.example.com/red-2.jpg', altText: 'Red detail 2', sortOrder: 2, color: 'Red', createdAt: '2026-01-01T00:00:00Z' },
+  { id: 13, productId: 1, url: 'https://cdn.example.com/blue-1.jpg', altText: 'Blue detail 1', sortOrder: 3, color: 'Blue', createdAt: '2026-01-01T00:00:00Z' },
+];
+
+describe('ProductGallery color filtering', () => {
+  it('filters to images matching the selected color plus shared (color=null) images', () => {
+    render(<ProductGallery images={colorImages} productName="Dress" selectedColor="Red" />);
+
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.queryByAltText('Blue detail 1')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the full image list when the filtered set would be empty', () => {
+    const noSharedImages = colorImages.filter((img) => img.color !== null);
+    render(<ProductGallery images={noSharedImages} productName="Dress" selectedColor="Green" />);
+
+    const list = within(screen.getByRole('list'));
+    expect(list.getAllByRole('listitem')).toHaveLength(3);
+    expect(list.getByAltText('Red detail 1')).toBeInTheDocument();
+    expect(list.getByAltText('Red detail 2')).toBeInTheDocument();
+    expect(list.getByAltText('Blue detail 1')).toBeInTheDocument();
+  });
+
+  it('renders the full list unchanged when selectedColor is not provided', () => {
+    render(<ProductGallery images={colorImages} productName="Dress" />);
+
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(4);
+  });
+
+  it('renders the full list unchanged when selectedColor is explicitly null', () => {
+    render(<ProductGallery images={colorImages} productName="Dress" selectedColor={null} />);
+
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(4);
+  });
+
+  it('resets the active thumbnail to the first image when selectedColor changes', () => {
+    const { rerender } = render(
+      <ProductGallery images={colorImages} productName="Dress" selectedColor="Blue" />
+    );
+
+    // Filtered to Blue: shared (id:10, index 0) + Blue (id:13, index 1).
+    const thumbs = within(screen.getByRole('list')).getAllByRole('listitem');
+    expect(thumbs).toHaveLength(2);
+    fireEvent.click(thumbs[1]!);
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue detail 1');
+
+    rerender(<ProductGallery images={colorImages} productName="Dress" selectedColor="Red" />);
+
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Shared front');
   });
 });
