@@ -38,6 +38,7 @@ export class ProductImageRepository implements IProductImageRepository {
         url: data.url,
         altText: data.altText ?? null,
         sortOrder: data.sortOrder ?? 0,
+        color: data.color ?? null,
       },
     });
     return new ProductImage(row);
@@ -53,6 +54,7 @@ export class ProductImageRepository implements IProductImageRepository {
         ...(data.url !== undefined && { url: data.url }),
         ...(data.altText !== undefined && { altText: data.altText }),
         ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+        ...(data.color !== undefined && { color: data.color }),
       },
     });
     return new ProductImage(row);

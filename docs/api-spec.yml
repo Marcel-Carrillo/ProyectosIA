@@ -3981,6 +3981,13 @@ components:
         sortOrder:
           type: integer
           example: 0
+        color:
+          type: string
+          nullable: true
+          description: >-
+            Color this image depicts, matching ProductVariant.color's vocabulary. Null means the
+            image is shared/product-level and applies regardless of the selected variant's color.
+          example: Black
         createdAt:
           type: string
           format: date-time
@@ -4219,6 +4226,14 @@ components:
           type: integer
           minimum: 0
           default: 0
+        color:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: >-
+            Optional color association, matching ProductVariant.color's vocabulary. Omit or set
+            null for a shared/product-level image.
+          example: Black
 
     CreateProductRequest:
       type: object

@@ -48,7 +48,7 @@ export async function backfillProductImages(
   }
   for (let i = 0; i < plan.images.length; i++) {
     const image = plan.images[i]!;
-    await createProductImageRecord(client, { productId: candidate.productId, url: image.url, altText: image.altText, sortOrder: i });
+    await createProductImageRecord(client, { productId: candidate.productId, url: image.url, altText: image.altText, sortOrder: i, color: image.color });
   }
 
   return { imaged: true };

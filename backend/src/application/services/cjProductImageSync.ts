@@ -14,7 +14,7 @@ export async function setProductMainImage(
 
 export async function createProductImageRecord(
   client: Prisma.TransactionClient,
-  data: { productId: number; url: string; altText: string; sortOrder: number }
+  data: { productId: number; url: string; altText: string; sortOrder: number; color: string | null }
 ): Promise<void> {
   await client.productImage.create({ data });
 }

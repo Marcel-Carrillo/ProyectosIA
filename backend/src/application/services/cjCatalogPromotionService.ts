@@ -218,7 +218,7 @@ export class CjCatalogPromotionService {
             }
             for (let i = 0; i < imagePlan.images.length; i++) {
               const image = imagePlan.images[i]!;
-              await createProductImageRecord(tx, { productId, url: image.url, altText: image.altText, sortOrder: i });
+              await createProductImageRecord(tx, { productId, url: image.url, altText: image.altText, sortOrder: i, color: image.color });
             }
           }
 

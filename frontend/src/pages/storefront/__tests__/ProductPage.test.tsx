@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import React from 'react';
-import { waitFor } from '@testing-library/react';
+import { waitFor, screen, within, fireEvent } from '@testing-library/react';
 import ProductPage from '../ProductPage';
 import { renderWithI18n } from '../../../test-utils/renderWithI18n';
 
@@ -280,5 +280,115 @@ describe('ProductPage structured data — reviews', () => {
     // not HTML-stripping or double-escaping)
     const parsed = JSON.parse(scripts[0].textContent ?? '{}');
     expect(parsed.review[0].reviewBody).toBe(dangerousBody);
+  });
+});
+
+describe('ProductPage gallery color wiring', () => {
+  const baseProduct = {
+    id: 1,
+    name: 'Dress',
+    slug: 'dress',
+    description: 'A dress',
+    brand: null,
+    status: 'Active',
+    mainImageUrl: null,
+    categoryId: null,
+    reviewSummary: { averageRating: null, reviewCount: 0 },
+    createdAt: '',
+    updatedAt: '',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCategoryGetAll.mockResolvedValue([]);
+    mockListApprovedForProduct.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 5,
+      summary: { averageRating: null, reviewCount: 0 },
+      distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    });
+  });
+
+  it('selecting a color-bearing variant filters the gallery to that colors images', async () => {
+    mockGetById.mockResolvedValue({
+      data: {
+        ...baseProduct,
+        variants: [
+          {
+            id: 1,
+            productId: 1,
+            sku: 'SKU-RED',
+            size: null,
+            color: 'Red',
+            publicPrice: 29.99,
+            compareAtPrice: null,
+            stockPolicy: 'SupplierManaged',
+            status: 'Active',
+            deletedAt: null,
+            createdAt: '',
+            updatedAt: '',
+          },
+          {
+            id: 2,
+            productId: 1,
+            sku: 'SKU-BLUE',
+            size: null,
+            color: 'Blue',
+            publicPrice: 29.99,
+            compareAtPrice: null,
+            stockPolicy: 'SupplierManaged',
+            status: 'Active',
+            deletedAt: null,
+            createdAt: '',
+            updatedAt: '',
+          },
+        ],
+        images: [
+          { id: 10, productId: 1, url: 'https://cdn/shared.jpg', altText: 'Shared', sortOrder: 0, color: null, createdAt: '' },
+          { id: 11, productId: 1, url: 'https://cdn/red.jpg', altText: 'Red image', sortOrder: 1, color: 'Red', createdAt: '' },
+          { id: 12, productId: 1, url: 'https://cdn/blue.jpg', altText: 'Blue image', sortOrder: 2, color: 'Blue', createdAt: '' },
+        ],
+      },
+    });
+
+    renderWithI18n(<ProductPage />, { lng: 'en' });
+
+    await screen.findByRole('heading', { name: 'Dress' });
+    // VariantSelector auto-selects the first color (Red) on mount, so the
+    // gallery should already be filtered to Red + shared images.
+    await waitFor(() => {
+      expect(screen.queryByAltText('Blue image')).not.toBeInTheDocument();
+    });
+    expect(screen.getByAltText('Red image')).toBeInTheDocument();
+
+    const blueButton = screen.getByRole('button', { name: /blue/i });
+    fireEvent.click(blueButton);
+
+    await waitFor(() => {
+      expect(screen.queryByAltText('Red image')).not.toBeInTheDocument();
+    });
+    expect(screen.getByAltText('Blue image')).toBeInTheDocument();
+    expect(screen.getAllByAltText('Shared').length).toBeGreaterThan(0);
+  });
+
+  it('a product without variants/colors renders the gallery unchanged', async () => {
+    mockGetById.mockResolvedValue({
+      data: {
+        ...baseProduct,
+        variants: [],
+        images: [
+          { id: 20, productId: 1, url: 'https://cdn/a.jpg', altText: 'Image A', sortOrder: 0, color: null, createdAt: '' },
+          { id: 21, productId: 1, url: 'https://cdn/b.jpg', altText: 'Image B', sortOrder: 1, color: null, createdAt: '' },
+        ],
+      },
+    });
+
+    renderWithI18n(<ProductPage />, { lng: 'en' });
+
+    await screen.findByRole('heading', { name: 'Dress' });
+    const list = within(screen.getByRole('list'));
+    expect(list.getAllByRole('listitem')).toHaveLength(2);
   });
 });

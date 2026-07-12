@@ -94,12 +94,14 @@ export interface ProductImageCreateData {
   url: string;
   altText?: string | null;
   sortOrder?: number;
+  color?: string | null;
 }
 
 export interface ProductImageUpdateData {
   url?: string;
   altText?: string | null;
   sortOrder?: number;
+  color?: string | null;
 }
 
 export interface IProductImageRepository {

@@ -51,7 +51,7 @@ describe('backfillProductImages', () => {
     expect(result.imaged).toBe(true);
     expect(mockProductUpdate).toHaveBeenCalledWith({ where: { id: 20 }, data: { mainImageUrl: 'https://a/p.jpg' } });
     expect(mockProductImageCreate).toHaveBeenCalledWith({
-      data: { productId: 20, url: 'https://a/p.jpg', altText: 'Dress', sortOrder: 0 },
+      data: { productId: 20, url: 'https://a/p.jpg', altText: 'Dress', sortOrder: 0, color: null },
     });
   });
 
@@ -69,7 +69,7 @@ describe('backfillProductImages', () => {
     expect(result.imaged).toBe(true);
     expect(mockProductImageCreate).toHaveBeenCalledTimes(2);
     expect(mockProductImageCreate).toHaveBeenNthCalledWith(2, {
-      data: { productId: 20, url: 'B', altText: 'Dress Blue', sortOrder: 1 },
+      data: { productId: 20, url: 'B', altText: 'Dress Blue', sortOrder: 1, color: null },
     });
   });
 

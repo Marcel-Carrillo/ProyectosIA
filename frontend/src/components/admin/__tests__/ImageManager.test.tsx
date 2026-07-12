@@ -14,6 +14,7 @@ const image: ProductImage = {
   url: 'https://img/main.jpg',
   altText: 'main',
   sortOrder: 0,
+  color: null,
   createdAt: '',
 };
 

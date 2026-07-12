@@ -28,6 +28,7 @@ jest.mock('../../../infrastructure/repositories/productRepository', () => ({
 import {
   listImages,
   addImage,
+  updateImage,
   deleteImage,
 } from '../productImageController';
 
@@ -102,6 +103,43 @@ describe('addImage', () => {
     const req = { params: { id: '1' }, body: {} } as unknown as Request;
     const res = mockRes();
     await addImage(req, res, mockNext);
+    expect(mockNext).toHaveBeenCalledWith(err);
+  });
+
+  it('should pass color through to the service on create', async () => {
+    const img = makeImage({ color: 'Black' });
+    mockAdd.mockResolvedValue(img);
+    const req = { params: { id: '1' }, body: { url: 'https://example.com/img.jpg', color: 'Black' } } as unknown as Request;
+    const res = mockRes();
+    await addImage(req, res, mockNext);
+    expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({ color: 'Black' }));
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
+
+describe('updateImage', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('should return 200 with the updated image when color is provided', async () => {
+    const img = makeImage({ color: 'Black' });
+    mockUpdate.mockResolvedValue(img);
+    const req = { params: { id: '1', imageId: '1' }, body: { color: 'Black' } } as unknown as Request;
+    const res = mockRes();
+    await updateImage(req, res, mockNext);
+    expect(mockUpdate).toHaveBeenCalledWith(1, 1, { color: 'Black' });
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: img,
+      message: 'Image updated successfully',
+    });
+  });
+
+  it('should call next when image not found', async () => {
+    const err = Object.assign(new Error('not found'), { code: 'IMAGE_NOT_FOUND', status: 404 });
+    mockUpdate.mockRejectedValue(err);
+    const req = { params: { id: '1', imageId: '99' }, body: { color: 'Black' } } as unknown as Request;
+    const res = mockRes();
+    await updateImage(req, res, mockNext);
     expect(mockNext).toHaveBeenCalledWith(err);
   });
 });

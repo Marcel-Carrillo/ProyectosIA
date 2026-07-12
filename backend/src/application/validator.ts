@@ -161,6 +161,16 @@ export function validateProductImageData(data: Record<string, unknown>): void {
   if (typeof url === 'string' && url.length > 500) {
     throw new ValidationError("Field 'url' must not exceed 500 characters");
   }
+
+  const color = data['color'];
+  if (color !== undefined && color !== null) {
+    if (typeof color !== 'string') {
+      throw new ValidationError("Field 'color' must be a string or null");
+    }
+    if (color.length > 50) {
+      throw new ValidationError("Field 'color' must not exceed 50 characters");
+    }
+  }
 }
 
 export function validateCategoryData(data: Record<string, unknown>): void {
