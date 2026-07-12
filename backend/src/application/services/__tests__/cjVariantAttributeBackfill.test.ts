@@ -74,18 +74,18 @@ describe('planVariantAttributeUpdates', () => {
 });
 
 describe('backfillVariantAttributes', () => {
-  let mockCjCatalogItemUpdate: jest.Mock;
-  let mockProductVariantUpdate: jest.Mock;
-  let client: { cjCatalogItem: { update: jest.Mock }; productVariant: { update: jest.Mock } };
+  let executeRaw: jest.Mock;
+  let client: { $executeRaw: jest.Mock };
 
   beforeEach(() => {
-    mockCjCatalogItemUpdate = jest.fn().mockResolvedValue({});
-    mockProductVariantUpdate = jest.fn().mockResolvedValue({});
-    client = {
-      cjCatalogItem: { update: mockCjCatalogItemUpdate },
-      productVariant: { update: mockProductVariantUpdate },
-    };
+    executeRaw = jest.fn().mockResolvedValue(1);
+    client = { $executeRaw: executeRaw };
   });
+
+  function sqlTextOf(callArgs: unknown[]): string {
+    const strings = callArgs[0] as TemplateStringsArray;
+    return strings.join('');
+  }
 
   it('should_update_catalog_item_and_linked_variant_size_color', async () => {
     const result = await backfillVariantAttributes(client as never, [
@@ -99,15 +99,11 @@ describe('backfillVariantAttributes', () => {
     ]);
 
     expect(result).toEqual({ itemsUpdated: 1, variantsUpdated: 1 });
-    expect(mockCjCatalogItemUpdate).toHaveBeenCalledWith({
-      where: { id: 1 },
-      data: { size: 'XXL', color: 'Black' },
-    });
-    expect(mockProductVariantUpdate).toHaveBeenCalledWith({
-      where: { id: 10 },
-      data: { size: 'XXL', color: 'Black' },
-    });
-    expect(mockProductVariantUpdate.mock.calls[0][0].data).not.toHaveProperty('status');
+    expect(executeRaw).toHaveBeenCalledTimes(2);
+    expect(sqlTextOf(executeRaw.mock.calls[0])).toContain('"CjCatalogItem"');
+    const variantSql = sqlTextOf(executeRaw.mock.calls[1]);
+    expect(variantSql).toContain('"ProductVariant"');
+    expect(variantSql).not.toContain('status');
   });
 
   it('should_update_only_catalog_item_when_not_promoted', async () => {
@@ -122,13 +118,13 @@ describe('backfillVariantAttributes', () => {
     ]);
 
     expect(result).toEqual({ itemsUpdated: 1, variantsUpdated: 0 });
-    expect(mockProductVariantUpdate).not.toHaveBeenCalled();
+    expect(executeRaw).toHaveBeenCalledTimes(1);
   });
 
   it('should_be_idempotent_when_called_with_an_empty_plan', async () => {
     const result = await backfillVariantAttributes(client as never, []);
 
     expect(result).toEqual({ itemsUpdated: 0, variantsUpdated: 0 });
-    expect(mockCjCatalogItemUpdate).not.toHaveBeenCalled();
+    expect(executeRaw).not.toHaveBeenCalled();
   });
 });

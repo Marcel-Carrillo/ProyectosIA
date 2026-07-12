@@ -42,12 +42,23 @@ async function main() {
 
   const { updates, skippedAmbiguous } = planVariantAttributeUpdates(candidates);
 
+  // Chunked so each transaction stays short-lived against remote/production
+  // DBs. backfillVariantAttributes now does bulk UPDATE...FROM(VALUES)
+  // statements (2 per chunk) rather than one round trip per row, so a
+  // larger chunk size is safe and keeps total round trips low.
+  const CHUNK_SIZE = 2000;
   let itemsUpdated = 0;
   let variantsUpdated = 0;
-  if (updates.length > 0) {
-    const result = await prisma.$transaction((tx) => backfillVariantAttributes(tx, updates));
-    itemsUpdated = result.itemsUpdated;
-    variantsUpdated = result.variantsUpdated;
+  for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
+    const chunk = updates.slice(i, i + CHUNK_SIZE);
+    const result = await prisma.$transaction((tx) => backfillVariantAttributes(tx, chunk), {
+      timeout: 60_000,
+    });
+    itemsUpdated += result.itemsUpdated;
+    variantsUpdated += result.variantsUpdated;
+    console.log(
+      `[backfill-cj-variant-attributes] progress: ${Math.min(i + CHUNK_SIZE, updates.length)}/${updates.length}`
+    );
   }
 
   console.log(

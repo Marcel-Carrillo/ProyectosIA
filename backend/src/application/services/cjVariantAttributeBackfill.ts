@@ -107,27 +107,46 @@ export interface BackfillVariantAttributesResult {
   variantsUpdated: number;
 }
 
+// Bulk UPDATE ... FROM (VALUES ...) instead of one UPDATE per row: against a
+// remote/production DB, thousands of sequential round trips inside a single
+// transaction can exceed Prisma's transaction timeout and hold row locks far
+// longer than necessary. This does 2 statements total per batch regardless
+// of batch size.
 export async function backfillVariantAttributes(
   client: Prisma.TransactionClient,
   planned: PlannedVariantAttributeUpdate[]
 ): Promise<BackfillVariantAttributesResult> {
-  let itemsUpdated = 0;
+  if (planned.length === 0) {
+    return { itemsUpdated: 0, variantsUpdated: 0 };
+  }
+
+  const itemRows = Prisma.join(
+    planned.map(
+      (u) => Prisma.sql`(${u.cjCatalogItemId}::integer, ${u.size}::varchar(50), ${u.color}::varchar(50))`
+    )
+  );
+  const itemsUpdated = await client.$executeRaw`
+    UPDATE "CjCatalogItem" AS t
+    SET size = v.size, color = v.color, "updatedAt" = now()
+    FROM (VALUES ${itemRows}) AS v(id, size, color)
+    WHERE t.id = v.id
+  `;
+
+  const variantPlanned = planned.filter((u) => u.productVariantId != null);
   let variantsUpdated = 0;
-
-  for (const update of planned) {
-    await client.cjCatalogItem.update({
-      where: { id: update.cjCatalogItemId },
-      data: { size: update.size, color: update.color },
-    });
-    itemsUpdated += 1;
-
-    if (update.productVariantId != null) {
-      await client.productVariant.update({
-        where: { id: update.productVariantId },
-        data: { size: update.size, color: update.color },
-      });
-      variantsUpdated += 1;
-    }
+  if (variantPlanned.length > 0) {
+    const variantRows = Prisma.join(
+      variantPlanned.map(
+        (u) =>
+          Prisma.sql`(${u.productVariantId}::integer, ${u.size}::varchar(50), ${u.color}::varchar(50))`
+      )
+    );
+    variantsUpdated = await client.$executeRaw`
+      UPDATE "ProductVariant" AS t
+      SET size = v.size, color = v.color, "updatedAt" = now()
+      FROM (VALUES ${variantRows}) AS v(id, size, color)
+      WHERE t.id = v.id
+    `;
   }
 
   return { itemsUpdated, variantsUpdated };
