@@ -96,9 +96,9 @@
 
 ## 14. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md` before any Git command.
-- [ ] 14.2 Verify all tasks are `[x]`, the three reports exist under `openspec/changes/cj-variant-color-images/reports/`, and docs are updated.
-- [ ] 14.3 Run and report `git status`, `git branch --show-current`, `git diff --stat`; stage only change-related files (never `.env*`, `node_modules/`, `dist/`, `coverage/`).
-- [ ] 14.4 Create Conventional Commit, e.g. `feat(catalog): associate product images with variant color and react to color selection`, referencing OpenSpec change `cj-variant-color-images` and test evidence.
-- [ ] 14.5 Push `feature/cj-variant-color-images` to origin.
-- [ ] 14.6 Check no duplicate PR exists, then `gh pr create --base develop` (never `master`) with summary, OpenSpec change name, verification status, and an explicit note that the production `ProductImage.color` backfill (~11,221 already-promoted `CjCatalogItem` records) must be run manually against production after this deploys, mirroring the `cj-variant-attribute-extraction` backfill follow-up. Report the PR URL in chat.
+- [x] 14.1 Load and apply `ai-specs/skills/commit/SKILL.md` before any Git command.
+- [x] 14.2 Verify all tasks are `[x]`, the three reports exist under `openspec/changes/cj-variant-color-images/reports/`, and docs are updated.
+- [x] 14.3 Run and report `git status`, `git branch --show-current`, `git diff --stat`; stage only change-related files (never `.env*`, `node_modules/`, `dist/`, `coverage/`).
+- [x] 14.4 Create Conventional Commit, e.g. `feat(catalog): associate product images with variant color and react to color selection`, referencing OpenSpec change `cj-variant-color-images` and test evidence.
+- [x] 14.5 Push `feature/cj-variant-color-images` to origin.
+- [x] 14.6 Check no duplicate PR exists, then `gh pr create --base develop` (never `master`) with summary, OpenSpec change name, verification status, and an explicit note that the production `ProductImage.color` backfill (~11,221 already-promoted `CjCatalogItem` records) must be run manually against production after this deploys, mirroring the `cj-variant-attribute-extraction` backfill follow-up. Report the PR URL in chat.
