@@ -18,9 +18,9 @@ const makeProduct = () =>
       { productId: 1, sku: 'EJS-1-OLD', publicPrice: 10, status: 'Inactive', stockPolicy: 'SupplierManaged' },
     ],
     images: [
-      { productId: 1, url: 'https://img/2.jpg', sortOrder: 2 },
-      { productId: 1, url: 'https://img/0.jpg', sortOrder: 0 },
-      { productId: 1, url: 'https://img/1.jpg', sortOrder: 1 },
+      { productId: 1, url: 'https://img/2.jpg', sortOrder: 2, color: 'Red' },
+      { productId: 1, url: 'https://img/0.jpg', sortOrder: 0, color: null },
+      { productId: 1, url: 'https://img/1.jpg', sortOrder: 1, color: 'Blue' },
     ],
   });
 
@@ -58,6 +58,17 @@ describe('serializePublicProduct', () => {
   it('orders images by sortOrder', () => {
     const dto = serializePublicProduct(makeProduct());
     expect(dto.images.map((i) => i.sortOrder)).toEqual([0, 1, 2]);
+  });
+
+  it('exposes only the customer-safe allow-list of image fields', () => {
+    const dto = serializePublicProduct(makeProduct());
+    expect(Object.keys(dto.images[0]!).sort()).toEqual(['altText', 'color', 'id', 'sortOrder', 'url'].sort());
+  });
+
+  it('includes each image color, with null for shared/product-level images', () => {
+    const dto = serializePublicProduct(makeProduct());
+    // Ordered by sortOrder: 0 (null), 1 (Blue), 2 (Red)
+    expect(dto.images.map((i) => i.color)).toEqual([null, 'Blue', 'Red']);
   });
 
   it('includes the gtin value when present', () => {

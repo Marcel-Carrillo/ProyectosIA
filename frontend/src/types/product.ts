@@ -42,6 +42,7 @@ export interface ProductImage {
   url: string;
   altText: string | null;
   sortOrder: number;
+  color: string | null;
   createdAt: string;
 }
 

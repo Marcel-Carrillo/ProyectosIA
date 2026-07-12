@@ -179,7 +179,22 @@ describe('CjCatalogPromotionService', () => {
 
       expect(mockProductUpdate).toHaveBeenCalledWith({ where: { id: 20 }, data: { mainImageUrl: 'https://img/p.jpg' } });
       expect(mockProductImageCreate).toHaveBeenCalledWith({
-        data: { productId: 20, url: 'https://img/p.jpg', altText: 'Test Dress', sortOrder: 0 },
+        data: { productId: 20, url: 'https://img/p.jpg', altText: 'Test Dress', sortOrder: 0, color: null },
+      });
+    });
+
+    it('should_persist_the_variants_derived_color_on_its_image_record', async () => {
+      const item = buildCatalogItem({
+        rawPayload: { product: {}, variant: { variantImage: 'https://img/v.jpg', variantKey: 'Black-XXL' } },
+      });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      expect(mockProductImageCreate).toHaveBeenCalledWith({
+        data: { productId: 20, url: 'https://img/v.jpg', altText: 'Test Dress', sortOrder: 0, color: 'Black' },
       });
     });
 
@@ -210,10 +225,10 @@ describe('CjCatalogPromotionService', () => {
 
       expect(mockProductImageCreate).toHaveBeenCalledTimes(2);
       expect(mockProductImageCreate).toHaveBeenNthCalledWith(1, {
-        data: { productId: 20, url: 'A', altText: 'Test Dress', sortOrder: 0 },
+        data: { productId: 20, url: 'A', altText: 'Test Dress', sortOrder: 0, color: null },
       });
       expect(mockProductImageCreate).toHaveBeenNthCalledWith(2, {
-        data: { productId: 20, url: 'B', altText: 'Test Dress', sortOrder: 1 },
+        data: { productId: 20, url: 'B', altText: 'Test Dress', sortOrder: 1, color: null },
       });
     });
 
@@ -229,7 +244,7 @@ describe('CjCatalogPromotionService', () => {
 
       expect(mockProductUpdate).toHaveBeenCalledWith({ where: { id: 20 }, data: { mainImageUrl: 'https://img/v.jpg' } });
       expect(mockProductImageCreate).toHaveBeenCalledWith({
-        data: { productId: 20, url: 'https://img/v.jpg', altText: 'Test Dress', sortOrder: 0 },
+        data: { productId: 20, url: 'https://img/v.jpg', altText: 'Test Dress', sortOrder: 0, color: null },
       });
     });
 
