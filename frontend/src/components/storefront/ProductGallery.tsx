@@ -30,9 +30,22 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productName, se
   // useLayoutEffect (not useEffect) so the reset is applied before the
   // browser paints — avoids a one-frame flash where a stale activeIdx from
   // the previous color momentarily indexes past the new displayed set.
+  //
+  // The main/hero image must show the SELECTED COLOR's own photo, not just
+  // whichever image happens to sort first. The shared (color: null) image
+  // is almost always sortOrder 0, so defaulting to index 0 here would leave
+  // the hero image stuck on the generic shot every time a color with its
+  // own photo is picked — only the thumbnail strip would visibly react.
+  // Prefer the first image matching the selected color; fall back to index
+  // 0 (the shared image, or whatever the fallback list's first item is)
+  // only when that color has no dedicated photo.
   useLayoutEffect(() => {
-    setActiveIdx(0);
-  }, [selectedColor, images]);
+    const colorIdx = selectedColor != null ? displayed.findIndex((img) => img.color === selectedColor) : -1;
+    setActiveIdx(colorIdx >= 0 ? colorIdx : 0);
+    // `displayed` is intentionally omitted: it's a new array every render
+    // (from .sort()/.filter()), so including it would re-run this on every
+    // render instead of only when the effective image set can change.
+  }, [selectedColor, images]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeImage = displayed[activeIdx] ?? null;
   const mainSrc = activeImage?.url ?? PLACEHOLDER_IMG;

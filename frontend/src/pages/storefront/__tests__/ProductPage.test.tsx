@@ -357,11 +357,13 @@ describe('ProductPage gallery color wiring', () => {
 
     await screen.findByRole('heading', { name: 'Dress' });
     // VariantSelector auto-selects the first color (Red) on mount, so the
-    // gallery should already be filtered to Red + shared images.
+    // gallery should already be filtered to Red + shared images, with Red's
+    // own photo as the main/hero image (not just present as a thumbnail).
     await waitFor(() => {
       expect(screen.queryByAltText('Blue image')).not.toBeInTheDocument();
     });
-    expect(screen.getByAltText('Red image')).toBeInTheDocument();
+    expect(screen.getAllByAltText('Red image').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Red image');
 
     const blueButton = screen.getByRole('button', { name: /blue/i });
     fireEvent.click(blueButton);
@@ -369,7 +371,8 @@ describe('ProductPage gallery color wiring', () => {
     await waitFor(() => {
       expect(screen.queryByAltText('Red image')).not.toBeInTheDocument();
     });
-    expect(screen.getByAltText('Blue image')).toBeInTheDocument();
+    expect(screen.getAllByAltText('Blue image').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue image');
     expect(screen.getAllByAltText('Shared').length).toBeGreaterThan(0);
   });
 
