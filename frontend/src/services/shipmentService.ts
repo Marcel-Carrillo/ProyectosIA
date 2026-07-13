@@ -14,17 +14,17 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/shipments`;
 export function mapShipmentError(code: string): string {
   switch (code) {
     case 'SHIPMENT_NOT_FOUND':
-      return 'Shipment not found.';
+      return 'Envío no encontrado.';
     case 'CUSTOMER_ORDER_NOT_FOUND':
-      return 'Customer order not found.';
+      return 'Pedido de cliente no encontrado.';
     case 'SUPPLIER_ORDER_NOT_FOUND':
-      return 'Supplier order not found.';
+      return 'Pedido a proveedor no encontrado.';
     case 'SHIPMENT_STATUS_TRANSITION_INVALID':
-      return 'This status change is not allowed.';
+      return 'No se permite este cambio de estado.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

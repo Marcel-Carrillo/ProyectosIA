@@ -6,6 +6,7 @@ import {
 } from '../../services/customerService';
 import CustomerAddressFormModal from './CustomerAddressFormModal';
 import { Customer, CustomerAddress } from '../../types/customer';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 type CustomerAddressesSectionProps = {
   customer: Customer | null;
@@ -35,7 +36,7 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
       const res = await customerService.listAddresses(customer.id);
       setAddresses(res.data);
     } catch {
-      setError('Unable to load addresses. Please try again later.');
+      setError('No se pudieron cargar las direcciones. Inténtelo de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -84,32 +85,32 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
       >
         <Modal.Header closeButton>
           <Modal.Title>
-            Addresses — {customer?.firstName} {customer?.lastName}
+            Direcciones — {customer?.firstName} {customer?.lastName}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           {!loading && !error && addresses.length === 0 && (
             <Alert variant="info" data-testid="addresses-empty-state">
-              No addresses on file.
+              No hay direcciones registradas.
             </Alert>
           )}
           {!loading && !error && addresses.length > 0 && (
             <Table hover size="sm" data-testid="addresses-table">
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Full Name</th>
-                  <th>Street</th>
-                  <th>City</th>
-                  <th>Country</th>
-                  <th>Actions</th>
+                  <th>Tipo</th>
+                  <th>Nombre completo</th>
+                  <th>Calle</th>
+                  <th>Ciudad</th>
+                  <th>País</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {addresses.map((a) => (
                   <tr key={a.id} data-testid={`address-row-${a.id}`}>
-                    <td>{a.type}</td>
+                    <td>{adminStatusLabel(a.type)}</td>
                     <td>{a.fullName}</td>
                     <td>
                       {a.streetLine1}
@@ -125,7 +126,7 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
                         onClick={() => setToEditAddress(a)}
                         data-testid={`btn-edit-address-${a.id}`}
                       >
-                        Edit
+                        Editar
                       </Button>
                       <Button
                         size="sm"
@@ -133,7 +134,7 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
                         onClick={() => setToDeleteAddress(a)}
                         data-testid={`btn-delete-address-${a.id}`}
                       >
-                        Delete
+                        Eliminar
                       </Button>
                     </td>
                   </tr>
@@ -148,10 +149,10 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
             onClick={() => setShowAdd(true)}
             data-testid="btn-add-address"
           >
-            Add address
+            Añadir dirección
           </Button>
           <Button variant="secondary" onClick={handleHide}>
-            Close
+            Cerrar
           </Button>
         </Modal.Footer>
       </Modal>
@@ -187,12 +188,12 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
         fullscreen="sm-down"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Delete address</Modal.Title>
+          <Modal.Title>Eliminar dirección</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {deleteAddressError && <Alert variant="danger">{deleteAddressError}</Alert>}
           {!deleteAddressError && (
-            <>Are you sure you want to delete this address? This action cannot be undone.</>
+            <>¿Está seguro de que desea eliminar esta dirección? Esta acción no se puede deshacer.</>
           )}
         </Modal.Body>
         <Modal.Footer>
@@ -200,7 +201,7 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
             variant="secondary"
             onClick={() => { setToDeleteAddress(null); setDeleteAddressError(''); }}
           >
-            Cancel
+            Cancelar
           </Button>
           {!deleteAddressError && (
             <Button
@@ -209,7 +210,7 @@ const CustomerAddressesSection: React.FC<CustomerAddressesSectionProps> = ({
               onClick={handleDeleteAddress}
               data-testid="btn-confirm-delete-address"
             >
-              {deletingAddress ? 'Deleting…' : 'Delete'}
+              {deletingAddress ? 'Eliminando…' : 'Eliminar'}
             </Button>
           )}
         </Modal.Footer>

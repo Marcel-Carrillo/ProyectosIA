@@ -85,7 +85,7 @@ describe('ShipmentsPage', () => {
         <ShipmentsPage />
       </MemoryRouter>
     );
-    await waitFor(() => expect(screen.getAllByText(/No shipments found/i).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText(/No se encontraron envíos/i).length).toBeGreaterThan(0));
   });
 
   it('opens create modal on button click', async () => {
@@ -95,9 +95,9 @@ describe('ShipmentsPage', () => {
         <ShipmentsPage />
       </MemoryRouter>
     );
-    await waitFor(() => expect(screen.getAllByText(/No shipments found/i).length).toBeGreaterThan(0));
-    fireEvent.click(screen.getByText('+ New Shipment'));
-    expect(screen.getByText('Create Shipment')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText(/No se encontraron envíos/i).length).toBeGreaterThan(0));
+    fireEvent.click(screen.getByText('+ Nuevo envío'));
+    expect(screen.getByText('Crear envío')).toBeInTheDocument();
   });
 
   it('navigates to detail on View click', async () => {
@@ -108,7 +108,7 @@ describe('ShipmentsPage', () => {
       </MemoryRouter>
     );
     await waitFor(() => expect(screen.getAllByText(/DHL/i).length).toBeGreaterThan(0));
-    const viewButtons = screen.getAllByText('View');
+    const viewButtons = screen.getAllByText('Ver');
     fireEvent.click(viewButtons[0]!);
     expect(mockNavigate).toHaveBeenCalledWith('/admin/shipments/1');
   });

@@ -7,6 +7,7 @@ import {
   CreateSupplierInput,
   UpdateSupplierInput,
 } from '../../types/supplier';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 type SupplierFormModalProps = {
   show: boolean;
@@ -67,22 +68,22 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
 
   const validate = (): string | null => {
     const name = formData.name.trim();
-    if (!name) return 'Name is required.';
-    if (name.length > 150) return 'Name must not exceed 150 characters.';
+    if (!name) return 'El nombre es obligatorio.';
+    if (name.length > 150) return 'El nombre no debe superar los 150 caracteres.';
     if (formData.contactName && formData.contactName.length > 150)
-      return 'Contact name must not exceed 150 characters.';
+      return 'El nombre de contacto no debe superar los 150 caracteres.';
     if (formData.contactEmail) {
       if (!EMAIL_REGEX.test(formData.contactEmail))
-        return 'Contact email must be a valid email address.';
+        return 'El correo electrónico de contacto debe ser válido.';
       if (formData.contactEmail.length > 255)
-        return 'Contact email must not exceed 255 characters.';
+        return 'El correo electrónico de contacto no debe superar los 255 caracteres.';
     }
     if (formData.contactPhone && formData.contactPhone.length > 30)
-      return 'Contact phone must not exceed 30 characters.';
+      return 'El teléfono de contacto no debe superar los 30 caracteres.';
     if (formData.website && formData.website.length > 500)
-      return 'Website must not exceed 500 characters.';
+      return 'El sitio web no debe superar los 500 caracteres.';
     if (formData.notes && formData.notes.length > 2000)
-      return 'Notes must not exceed 2000 characters.';
+      return 'Las notas no deben superar los 2000 caracteres.';
     return null;
   };
 
@@ -132,13 +133,13 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
     <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-supplier-form">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>{initial ? 'Edit supplier' : 'New supplier'}</Modal.Title>
+          <Modal.Title>{initial ? 'Editar proveedor' : 'Nuevo proveedor'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Form.Group className="mb-3">
-            <Form.Label>Name *</Form.Label>
+            <Form.Label>Nombre *</Form.Label>
             <Form.Control
               type="text"
               value={formData.name}
@@ -148,7 +149,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Contact name</Form.Label>
+            <Form.Label>Nombre de contacto</Form.Label>
             <Form.Control
               type="text"
               value={formData.contactName}
@@ -158,7 +159,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Contact email</Form.Label>
+            <Form.Label>Correo electrónico de contacto</Form.Label>
             <Form.Control
               type="email"
               value={formData.contactEmail}
@@ -168,7 +169,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Contact phone</Form.Label>
+            <Form.Label>Teléfono de contacto</Form.Label>
             <Form.Control
               type="text"
               value={formData.contactPhone}
@@ -178,7 +179,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Website</Form.Label>
+            <Form.Label>Sitio web</Form.Label>
             <Form.Control
               type="text"
               value={formData.website}
@@ -189,22 +190,22 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
 
           {initial && (
             <Form.Group className="mb-3">
-              <Form.Label>Status</Form.Label>
+              <Form.Label>Estado</Form.Label>
               <Form.Select
                 value={formData.status}
                 onChange={(e) => handleChange('status', e.target.value as SupplierStatus)}
                 data-testid="select-supplier-status"
               >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Blocked">Blocked</option>
+                <option value="Active">{adminStatusLabel('Active')}</option>
+                <option value="Inactive">{adminStatusLabel('Inactive')}</option>
+                <option value="Blocked">{adminStatusLabel('Blocked')}</option>
               </Form.Select>
             </Form.Group>
           )}
 
           <Form.Group className="mb-3">
             <Form.Label>
-              Notes <span className="text-muted">(internal)</span>
+              Notas <span className="text-muted">(internas)</span>
             </Form.Label>
             <Form.Control
               as="textarea"
@@ -217,10 +218,10 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ show, onHide, onS
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide} data-testid="btn-modal-cancel">
-            Cancel
+            Cancelar
           </Button>
           <Button type="submit" variant="primary" disabled={saving} data-testid="btn-modal-save">
-            {saving ? 'Saving…' : initial ? 'Save changes' : 'Create'}
+            {saving ? 'Guardando…' : initial ? 'Guardar cambios' : 'Crear'}
           </Button>
         </Modal.Footer>
       </Form>

@@ -107,7 +107,7 @@ describe('CustomerOrderDetailPage', () => {
   it('renders status timeline with paid milestone', async () => {
     renderDetail();
     expect(await screen.findByTestId('order-status-timeline')).toBeInTheDocument();
-    expect(screen.getByText('Last updated')).toBeInTheDocument();
+    expect(screen.getByText('Última actualización')).toBeInTheDocument();
   });
 
   it('does not render supplier cost fields', async () => {

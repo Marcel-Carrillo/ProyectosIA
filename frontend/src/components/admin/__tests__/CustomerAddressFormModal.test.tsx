@@ -100,7 +100,7 @@ describe('CustomerAddressFormModal', () => {
       />
     );
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(screen.getByText(/full name is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/nombre completo es obligatorio/i)).toBeInTheDocument();
     expect(mocked.createAddress).not.toHaveBeenCalled();
   });
 
@@ -117,7 +117,7 @@ describe('CustomerAddressFormModal', () => {
       target: { value: 'Jane' },
     });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(screen.getByText(/street line 1 is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/línea 1 de la calle es obligatoria/i)).toBeInTheDocument();
   });
 
   it('creates an address and calls onSuccess', async () => {
@@ -158,7 +158,7 @@ describe('CustomerAddressFormModal', () => {
     );
     fillRequiredFields();
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(await screen.findByText(/check the form fields/i)).toBeInTheDocument();
+    expect(await screen.findByText(/revise los campos del formulario/i)).toBeInTheDocument();
   });
 
   it('pre-populates fields from the initial address in edit mode', () => {

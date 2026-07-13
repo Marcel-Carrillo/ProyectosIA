@@ -13,7 +13,7 @@ function buildMilestones(order: CustomerOrder): Milestone[] {
   const items: Milestone[] = [
     {
       key: 'created',
-      label: 'Created',
+      label: 'Creado',
       at: order.createdAt,
       status: 'PendingPayment',
     },
@@ -21,7 +21,7 @@ function buildMilestones(order: CustomerOrder): Milestone[] {
   if (order.paidAt) {
     items.push({
       key: 'paid',
-      label: 'Paid',
+      label: 'Pagado',
       at: order.paidAt,
       status: 'Paid',
     });
@@ -29,14 +29,14 @@ function buildMilestones(order: CustomerOrder): Milestone[] {
   if (order.cancelledAt) {
     items.push({
       key: 'cancelled',
-      label: 'Cancelled',
+      label: 'Cancelado',
       at: order.cancelledAt,
       status: 'Cancelled',
     });
   }
   items.push({
     key: 'updated',
-    label: 'Last updated',
+    label: 'Última actualización',
     at: order.updatedAt,
     status: order.status,
   });
@@ -68,7 +68,7 @@ const OrderStatusTimeline: React.FC<OrderStatusTimelineProps> = ({ order }) => {
         ))}
       </ul>
       <p className="small text-muted mb-0">
-        Shows key milestones only. Intermediate status transitions are not recorded yet.
+        Muestra solo los hitos principales. Las transiciones intermedias de estado aún no se registran.
       </p>
     </div>
   );

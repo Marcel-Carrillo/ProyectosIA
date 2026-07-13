@@ -60,7 +60,7 @@ const CustomersPage: React.FC = () => {
       setCustomers(res.data.items);
       setTotal(res.data.total);
     } catch {
-      setError('Unable to load customers. Please try again later.');
+      setError('No se pudieron cargar los clientes. Intente de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ const CustomersPage: React.FC = () => {
     } catch (err) {
       const code = extractCustomerErrorCode(err);
       if (code === 'CUSTOMER_HAS_ORDERS') {
-        setDeleteError('This customer cannot be deleted because they have orders.');
+        setDeleteError('Este cliente no puede eliminarse porque tiene pedidos.');
       } else {
         setDeleteError(extractCustomerErrorMessage(err));
       }
@@ -105,18 +105,18 @@ const CustomersPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">Customers</h1>
+        <h1 className="h3 mb-0">Clientes</h1>
         <Button variant="primary" onClick={() => setShowCreate(true)} data-testid="btn-new-customer">
-          New customer
+          Nuevo cliente
         </Button>
       </div>
 
       <Row className="g-2 mb-3 align-items-end">
         <Col xs={12} md={9}>
-          <Form.Label className="small mb-1">Search</Form.Label>
+          <Form.Label className="small mb-1">Buscar</Form.Label>
           <Form.Control
             type="search"
-            placeholder="Search by name or email…"
+            placeholder="Buscar por nombre o correo electrónico…"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
             data-testid="filter-search"
@@ -129,7 +129,7 @@ const CustomersPage: React.FC = () => {
             onClick={handleReset}
             data-testid="btn-filter-reset"
           >
-            Reset
+            Restablecer
           </Button>
         </Col>
       </Row>
@@ -142,7 +142,7 @@ const CustomersPage: React.FC = () => {
       {!loading && error && <ErrorAlert message={error} />}
       {!loading && !error && customers.length === 0 && (
         <Alert variant="info" data-testid="empty-state">
-          No customers found.
+          No se encontraron clientes.
         </Alert>
       )}
 
@@ -167,7 +167,7 @@ const CustomersPage: React.FC = () => {
                     onClick={() => setAddressesCustomer(c)}
                     data-testid={`btn-addresses-${c.id}`}
                   >
-                    Addresses
+                    Direcciones
                   </Button>
                   <Button
                     variant="outline-primary"
@@ -175,7 +175,7 @@ const CustomersPage: React.FC = () => {
                     onClick={() => setToEdit(c)}
                     data-testid={`btn-edit-${c.id}`}
                   >
-                    Edit
+                    Editar
                   </Button>
                   <Button
                     variant="outline-danger"
@@ -183,7 +183,7 @@ const CustomersPage: React.FC = () => {
                     onClick={() => setToDelete(c)}
                     data-testid={`btn-delete-${c.id}`}
                   >
-                    Delete
+                    Eliminar
                   </Button>
                 </div>
               </div>
@@ -194,12 +194,12 @@ const CustomersPage: React.FC = () => {
             <Table hover data-testid="customers-table">
               <thead>
                 <tr>
-                  <th>First Name</th>
-                  <th>Last Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Created</th>
-                  <th>Actions</th>
+                  <th>Nombre</th>
+                  <th>Apellidos</th>
+                  <th>Correo electrónico</th>
+                  <th>Teléfono</th>
+                  <th>Creado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -218,7 +218,7 @@ const CustomersPage: React.FC = () => {
                         onClick={() => setAddressesCustomer(c)}
                         data-testid={`btn-addresses-${c.id}`}
                       >
-                        Addresses
+                        Direcciones
                       </Button>
                       <Button
                         size="sm"
@@ -227,7 +227,7 @@ const CustomersPage: React.FC = () => {
                         onClick={() => setToEdit(c)}
                         data-testid={`btn-edit-${c.id}`}
                       >
-                        Edit
+                        Editar
                       </Button>
                       <Button
                         size="sm"
@@ -235,7 +235,7 @@ const CustomersPage: React.FC = () => {
                         onClick={() => setToDelete(c)}
                         data-testid={`btn-delete-${c.id}`}
                       >
-                        Delete
+                        Eliminar
                       </Button>
                     </td>
                   </tr>
@@ -271,20 +271,20 @@ const CustomersPage: React.FC = () => {
 
       <Modal show={toDelete !== null} onHide={() => setToDelete(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
-          <Modal.Title>Delete customer</Modal.Title>
+          <Modal.Title>Eliminar cliente</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {deleteError && <Alert variant="danger">{deleteError}</Alert>}
           {!deleteError && (
             <>
-              Are you sure you want to permanently delete &quot;{toDelete?.firstName}{' '}
-              {toDelete?.lastName}&quot;? This action cannot be undone.
+              ¿Está seguro de que desea eliminar permanentemente a &quot;{toDelete?.firstName}{' '}
+              {toDelete?.lastName}&quot;? Esta acción no se puede deshacer.
             </>
           )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => { setToDelete(null); setDeleteError(''); }}>
-            Cancel
+            Cancelar
           </Button>
           {!deleteError && (
             <Button
@@ -293,7 +293,7 @@ const CustomersPage: React.FC = () => {
               onClick={handleDelete}
               data-testid="btn-confirm-delete"
             >
-              {deleting ? 'Deleting…' : 'Delete'}
+              {deleting ? 'Eliminando…' : 'Eliminar'}
             </Button>
           )}
         </Modal.Footer>

@@ -66,7 +66,7 @@ describe('CjConnectionPanel', () => {
         onCatalogRefreshNeeded={noop}
       />
     );
-    expect(screen.getByTestId('cj-connection-status')).toHaveTextContent('Connected');
+    expect(screen.getByTestId('cj-connection-status')).toHaveTextContent('Conectado');
     expect(screen.getByText(/cj-account-123/)).toBeInTheDocument();
   });
 
@@ -80,9 +80,9 @@ describe('CjConnectionPanel', () => {
         onCatalogRefreshNeeded={noop}
       />
     );
-    expect(screen.getByText(/Never verified/)).toBeInTheDocument();
-    expect(screen.getByText(/Never synced/)).toBeInTheDocument();
-    expect(screen.getByText(/Account ref: —/)).toBeInTheDocument();
+    expect(screen.getByText(/Nunca verificada/)).toBeInTheDocument();
+    expect(screen.getByText(/Nunca sincronizada/)).toBeInTheDocument();
+    expect(screen.getByText(/Ref\. de cuenta: —/)).toBeInTheDocument();
   });
 
   it('disables Sync for a Disconnected/Error connection and enables it when Connected', () => {
@@ -124,7 +124,7 @@ describe('CjConnectionPanel', () => {
 
     fireEvent.click(screen.getByTestId('btn-verify-connection'));
     await waitFor(() => expect(onRefreshConnection).toHaveBeenCalled());
-    expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/healthy/i);
+    expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/Conexión correcta/i);
   });
 
   it('disables the Verify button while the request is in flight', async () => {
@@ -196,6 +196,6 @@ describe('CjConnectionPanel', () => {
 
     fireEvent.click(screen.getByTestId('btn-verify-connection'));
 
-    expect(await screen.findByTestId('cj-connection-error')).toHaveTextContent(/not ready/i);
+    expect(await screen.findByTestId('cj-connection-error')).toHaveTextContent(/no está lista/i);
   });
 });

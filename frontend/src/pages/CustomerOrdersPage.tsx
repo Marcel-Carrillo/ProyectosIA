@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import Pagination from '../components/Pagination';
 import StatusBadge from '../components/admin/StatusBadge';
+import { adminStatusLabel } from '../utils/adminStatusLabels';
 import { CustomerOrder, CustomerOrderStatus, PaymentStatus, FulfillmentStatus } from '../types/customerOrder';
 
 const PAGE_SIZE = 20;
@@ -70,7 +71,7 @@ const CustomerOrdersPage: React.FC = () => {
       setOrders(res.data.items);
       setTotal(res.data.total);
     } catch {
-      setError('Unable to load customer orders. Please try again later.');
+      setError('No se pudieron cargar los pedidos de clientes. Intente de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -85,58 +86,58 @@ const CustomerOrdersPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">Customer Orders</h1>
+        <h1 className="h3 mb-0">Pedidos de clientes</h1>
       </div>
 
       <Row className="g-2 mb-3">
         <Col xs={12} md={4}>
-          <Form.Label className="small mb-1">Search</Form.Label>
+          <Form.Label className="small mb-1">Buscar</Form.Label>
           <Form.Control
             type="search"
-            placeholder="Order #, customer name or email…"
+            placeholder="N.º de pedido, nombre o correo del cliente…"
             value={searchInput}
             onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
             data-testid="order-search"
           />
         </Col>
         <Col xs={12} md={2}>
-          <Form.Label className="small mb-1">Order status</Form.Label>
+          <Form.Label className="small mb-1">Estado del pedido</Form.Label>
           <Form.Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
-            <option value="">All</option>
-            {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="">Todos</option>
+            {ORDER_STATUSES.map((s) => <option key={s} value={s}>{adminStatusLabel(s)}</option>)}
           </Form.Select>
         </Col>
         <Col xs={12} md={2}>
-          <Form.Label className="small mb-1">Payment</Form.Label>
+          <Form.Label className="small mb-1">Pago</Form.Label>
           <Form.Select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value); setPage(1); }}>
-            <option value="">All</option>
-            {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="">Todos</option>
+            {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{adminStatusLabel(s)}</option>)}
           </Form.Select>
         </Col>
         <Col xs={12} md={2}>
-          <Form.Label className="small mb-1">Fulfillment</Form.Label>
+          <Form.Label className="small mb-1">Cumplimiento</Form.Label>
           <Form.Select value={fulfillmentFilter} onChange={(e) => { setFulfillmentFilter(e.target.value); setPage(1); }}>
-            <option value="">All</option>
-            {FULFILLMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="">Todos</option>
+            {FULFILLMENT_STATUSES.map((s) => <option key={s} value={s}>{adminStatusLabel(s)}</option>)}
           </Form.Select>
         </Col>
         <Col xs={6} md={2}>
-          <Form.Label className="small mb-1">Created from</Form.Label>
+          <Form.Label className="small mb-1">Creado desde</Form.Label>
           <Form.Control
             type="date"
             value={createdFrom}
             onChange={(e) => { setCreatedFrom(e.target.value); setPage(1); }}
-            aria-label="Created from date"
+            aria-label="Fecha de creación desde"
             data-testid="order-date-from"
           />
         </Col>
         <Col xs={6} md={2}>
-          <Form.Label className="small mb-1">Created to</Form.Label>
+          <Form.Label className="small mb-1">Creado hasta</Form.Label>
           <Form.Control
             type="date"
             value={createdTo}
             onChange={(e) => { setCreatedTo(e.target.value); setPage(1); }}
-            aria-label="Created to date"
+            aria-label="Fecha de creación hasta"
             data-testid="order-date-to"
           />
         </Col>
@@ -145,7 +146,7 @@ const CustomerOrdersPage: React.FC = () => {
       {loading && <LoadingSpinner />}
       {error && <ErrorAlert message={error} />}
       {!loading && !error && orders.length === 0 && (
-        <p className="text-muted" data-testid="orders-empty">No customer orders found.</p>
+        <p className="text-muted" data-testid="orders-empty">No se encontraron pedidos de clientes.</p>
       )}
 
       {!loading && !error && orders.length > 0 && (
@@ -154,13 +155,13 @@ const CustomerOrdersPage: React.FC = () => {
             <Table responsive hover className="align-middle">
               <thead>
                 <tr>
-                  <th>Order #</th>
-                  <th>Customer</th>
+                  <th>N.º de pedido</th>
+                  <th>Cliente</th>
                   <th>Total</th>
-                  <th>Order</th>
-                  <th>Payment</th>
-                  <th>Fulfillment</th>
-                  <th>Created</th>
+                  <th>Pedido</th>
+                  <th>Pago</th>
+                  <th>Cumplimiento</th>
+                  <th>Creado</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,7 +175,7 @@ const CustomerOrdersPage: React.FC = () => {
                     <td>
                       {order.customer
                         ? `${order.customer.firstName} ${order.customer.lastName}`
-                        : `Customer #${order.customerId}`}
+                        : `Cliente n.º ${order.customerId}`}
                     </td>
                     <td>{order.totalAmount} {order.currency}</td>
                     <td><StatusBadge status={order.status} /></td>

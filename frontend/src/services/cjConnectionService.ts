@@ -17,17 +17,17 @@ export function mapCjConnectionError(code: string, httpStatus?: number): string 
   // plain text, not `{ error: { code } }`), so 429 must be detected via HTTP
   // status, checked before the code switch.
   if (httpStatus === 429) {
-    return 'Too many verification attempts. Please wait a few minutes and try again.';
+    return 'Demasiados intentos de verificación. Espere unos minutos e inténtelo de nuevo.';
   }
   switch (code) {
     case 'CJ_CONNECTION_NOT_FOUND':
-      return 'No CJ Dropshipping connection is configured for this supplier yet.';
+      return 'Aún no hay una conexión con CJ Dropshipping configurada para este proveedor.';
     case 'CJ_CONNECTION_NOT_READY':
-      return 'The CJ Dropshipping connection is not ready. Verify the connection first.';
+      return 'La conexión con CJ Dropshipping no está lista. Verifique la conexión primero.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

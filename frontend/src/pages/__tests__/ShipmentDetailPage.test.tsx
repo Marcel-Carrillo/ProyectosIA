@@ -63,7 +63,7 @@ describe('ShipmentDetailPage', () => {
   it('renders shipment details', async () => {
     mockGetById.mockResolvedValue({ success: true, data: pendingShipment, message: 'ok' });
     renderPage();
-    expect(await screen.findByText('Shipment #1')).toBeInTheDocument();
+    expect(await screen.findByText('Envío #1')).toBeInTheDocument();
     expect(screen.getByText('FedEx')).toBeInTheDocument();
     expect(screen.getByText(/ORD-000010/i)).toBeInTheDocument();
   });
@@ -71,16 +71,16 @@ describe('ShipmentDetailPage', () => {
   it('shows allowed transitions for Pending', async () => {
     mockGetById.mockResolvedValue({ success: true, data: pendingShipment, message: 'ok' });
     renderPage();
-    expect(await screen.findByText('Shipment #1')).toBeInTheDocument();
-    expect(screen.getByText('→ Shipped')).toBeInTheDocument();
-    expect(screen.getByText('→ Failed')).toBeInTheDocument();
-    expect(screen.getByText('→ Returned')).toBeInTheDocument();
+    expect(await screen.findByText('Envío #1')).toBeInTheDocument();
+    expect(screen.getByText('→ Enviado')).toBeInTheDocument();
+    expect(screen.getByText('→ Fallido')).toBeInTheDocument();
+    expect(screen.getByText('→ Devuelto')).toBeInTheDocument();
   });
 
   it('shows terminal state message for Delivered', async () => {
     mockGetById.mockResolvedValue({ success: true, data: deliveredShipment, message: 'ok' });
     renderPage();
-    expect(await screen.findByText(/terminal state/i)).toBeInTheDocument();
+    expect(await screen.findByText(/estado terminal/i)).toBeInTheDocument();
   });
 
   it('calls updateStatus when transition button clicked', async () => {
@@ -88,14 +88,14 @@ describe('ShipmentDetailPage', () => {
     const shipped = { ...pendingShipment, status: 'Shipped' as const, shippedAt: '2024-01-02T00:00:00.000Z' };
     mockUpdateStatus.mockResolvedValue({ success: true, data: shipped, message: 'ok' });
     renderPage();
-    fireEvent.click(await screen.findByText('→ Shipped'));
+    fireEvent.click(await screen.findByText('→ Enviado'));
     await waitFor(() => expect(mockUpdateStatus).toHaveBeenCalledWith(1, { status: 'Shipped' }));
   });
 
   it('navigates back on Back button click', async () => {
     mockGetById.mockResolvedValue({ success: true, data: pendingShipment, message: 'ok' });
     renderPage();
-    fireEvent.click(await screen.findByText('← Back'));
+    fireEvent.click(await screen.findByText('← Volver'));
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 });

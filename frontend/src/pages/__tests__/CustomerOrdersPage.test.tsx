@@ -99,6 +99,6 @@ describe('CustomerOrdersPage', () => {
   it('shows error state', async () => {
     mockedList.mockRejectedValue(new Error('fail'));
     renderPage();
-    expect(await screen.findByText(/Unable to load customer orders/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no se pudieron cargar los pedidos/i)).toBeInTheDocument();
   });
 });

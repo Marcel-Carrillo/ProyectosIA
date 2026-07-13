@@ -45,7 +45,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      setError('Name is required.');
+      setError('El nombre es obligatorio.');
       return;
     }
     setSaving(true);
@@ -82,12 +82,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
     <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-create-product">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>New product</Modal.Title>
+          <Modal.Title>Nuevo producto</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form.Group className="mb-3">
-            <Form.Label>Name *</Form.Label>
+            <Form.Label>Nombre *</Form.Label>
             <Form.Control
               type="text"
               value={formData.name}
@@ -97,7 +97,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Description</Form.Label>
+            <Form.Label>Descripción</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
@@ -107,7 +107,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Brand</Form.Label>
+            <Form.Label>Marca</Form.Label>
             <Form.Control
               type="text"
               value={formData.brand}
@@ -124,17 +124,17 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
               data-testid="input-product-gtin"
             />
             <Form.Text className="text-muted">
-              8, 12, 13, or 14-digit product barcode (EAN/UPC). Leave blank if unknown.
+              Código de barras de 8, 12, 13 o 14 dígitos (EAN/UPC). Déjelo en blanco si no lo conoce.
             </Form.Text>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Category</Form.Label>
+            <Form.Label>Categoría</Form.Label>
             <Form.Select
               value={formData.categoryId}
               onChange={(e) => handleChange('categoryId', e.target.value)}
               data-testid="select-product-category"
             >
-              <option value="">— None —</option>
+              <option value="">— Ninguna —</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -143,7 +143,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Main image URL</Form.Label>
+            <Form.Label>URL de imagen principal</Form.Label>
             <Form.Control
               type="text"
               value={formData.mainImageUrl}
@@ -175,10 +175,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ show, onHide, onSuc
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide} data-testid="btn-modal-cancel">
-            Cancel
+            Cancelar
           </Button>
           <Button type="submit" variant="primary" disabled={saving} data-testid="btn-modal-save">
-            {saving ? 'Saving…' : 'Create'}
+            {saving ? 'Guardando…' : 'Crear'}
           </Button>
         </Modal.Footer>
       </Form>

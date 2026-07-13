@@ -8,6 +8,7 @@ import {
   UpdateCustomerOrderStatusInput,
 } from '../../types/customerOrder';
 import StatusBadge from './StatusBadge';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 const ORDER_STATUSES: CustomerOrderStatus[] = [
   'PendingPayment',
@@ -74,7 +75,7 @@ const OrderStatusControl: React.FC<OrderStatusControlProps> = ({
     <form onSubmit={handleSubmit} data-testid="order-status-control">
       <Row className="g-3 mb-3">
         <Col md={4}>
-          <div className="small text-muted mb-1">Order status</div>
+          <div className="small text-muted mb-1">Estado del pedido</div>
           <StatusBadge status={order.status} data-testid="badge-order-status" />
           <Form.Select
             className="mt-2"
@@ -84,13 +85,13 @@ const OrderStatusControl: React.FC<OrderStatusControlProps> = ({
           >
             {ORDER_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {adminStatusLabel(s)}
               </option>
             ))}
           </Form.Select>
         </Col>
         <Col md={4}>
-          <div className="small text-muted mb-1">Payment status</div>
+          <div className="small text-muted mb-1">Estado del pago</div>
           <StatusBadge status={order.paymentStatus} data-testid="badge-payment-status" />
           <Form.Select
             className="mt-2"
@@ -100,13 +101,13 @@ const OrderStatusControl: React.FC<OrderStatusControlProps> = ({
           >
             {PAYMENT_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {adminStatusLabel(s)}
               </option>
             ))}
           </Form.Select>
         </Col>
         <Col md={4}>
-          <div className="small text-muted mb-1">Fulfillment status</div>
+          <div className="small text-muted mb-1">Estado de cumplimiento</div>
           <StatusBadge status={order.fulfillmentStatus} data-testid="badge-fulfillment-status" />
           <Form.Select
             className="mt-2"
@@ -116,7 +117,7 @@ const OrderStatusControl: React.FC<OrderStatusControlProps> = ({
           >
             {FULFILLMENT_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {adminStatusLabel(s)}
               </option>
             ))}
           </Form.Select>
@@ -124,7 +125,7 @@ const OrderStatusControl: React.FC<OrderStatusControlProps> = ({
       </Row>
       {error && <div className="text-danger small mb-2">{error}</div>}
       <Button type="submit" variant="primary" disabled={saving} className="admin-touch-btn" data-testid="btn-save-status">
-        {saving ? 'Saving…' : 'Update statuses'}
+        {saving ? 'Guardando…' : 'Actualizar estados'}
       </Button>
     </form>
   );

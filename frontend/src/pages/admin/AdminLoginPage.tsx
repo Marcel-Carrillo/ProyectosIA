@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { extractAuthError } from '../../services/adminAuthService';
 import Seo from '../../components/storefront/Seo';
+import i18n from '../../i18n';
 
 const AdminLoginPage: React.FC = () => {
   const { login } = useAdminAuth();
+
+  useEffect(() => {
+    void i18n.changeLanguage('es');
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/products';
@@ -32,14 +37,14 @@ const AdminLoginPage: React.FC = () => {
 
   return (
     <Container className="py-5" style={{ maxWidth: 420 }}>
-      <Seo title="Admin sign in | Mavile" noindex />
+      <Seo title="Inicio de sesión admin | Mavile" noindex />
       <Card>
         <Card.Body>
-          <h1 className="h4 mb-3">Admin sign in</h1>
+          <h1 className="h4 mb-3">Inicio de sesión de administración</h1>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="admin-email">
-              <Form.Label>Email</Form.Label>
+              <Form.Label>Correo electrónico</Form.Label>
               <Form.Control
                 type="email"
                 value={email}
@@ -49,7 +54,7 @@ const AdminLoginPage: React.FC = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3" controlId="admin-password">
-              <Form.Label>Password</Form.Label>
+              <Form.Label>Contraseña</Form.Label>
               <Form.Control
                 type="password"
                 value={password}
@@ -59,7 +64,7 @@ const AdminLoginPage: React.FC = () => {
               />
             </Form.Group>
             <Button type="submit" variant="dark" className="w-100" disabled={submitting}>
-              {submitting ? 'Signing in…' : 'Sign in'}
+              {submitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
             </Button>
           </Form>
         </Card.Body>

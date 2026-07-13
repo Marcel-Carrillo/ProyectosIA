@@ -48,7 +48,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryId) {
-      setError('Select a category before promoting.');
+      setError('Seleccione una categoría antes de promocionar.');
       return;
     }
     setSubmitting(true);
@@ -76,20 +76,20 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   return (
     <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-promote-cj">
       <Modal.Header closeButton>
-        <Modal.Title>Promote {items.length} CJ catalog item{items.length === 1 ? '' : 's'}</Modal.Title>
+        <Modal.Title>Promocionar {items.length} artículo{items.length === 1 ? '' : 's'} del catálogo CJ</Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Form.Group className="mb-3">
-            <Form.Label>Category *</Form.Label>
+            <Form.Label>Categoría *</Form.Label>
             <Form.Select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               data-testid="select-promote-category"
             >
-              <option value="">Select a category…</option>
+              <option value="">Seleccione una categoría…</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -101,7 +101,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
           <Form.Group className="mb-3">
             <Form.Check
               type="checkbox"
-              label="Activate immediately (visible on storefront)"
+              label="Activar inmediatamente (visible en la tienda)"
               checked={activateOnPromote}
               onChange={(e) => setActivateOnPromote(e.target.checked)}
               data-testid="checkbox-activate-on-promote"
@@ -112,10 +112,10 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
             <Table size="sm" data-testid="promote-items-table">
               <thead>
                 <tr>
-                  <th>Item</th>
-                  <th>Cost</th>
-                  <th>Public price</th>
-                  <th>Compare-at price</th>
+                  <th>Artículo</th>
+                  <th>Coste</th>
+                  <th>Precio público</th>
+                  <th>Precio de comparación</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,7 +135,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
                         type="number"
                         step="0.01"
                         min="0"
-                        placeholder="Default markup"
+                        placeholder="Margen predeterminado"
                         value={overrides[item.id]?.publicPrice ?? ''}
                         onChange={(e) => handlePriceChange(item.id, 'publicPrice', e.target.value)}
                         data-testid={`input-price-${item.id}`}
@@ -159,10 +159,10 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide} disabled={submitting} data-testid="btn-modal-cancel">
-            Cancel
+            Cancelar
           </Button>
           <Button variant="primary" type="submit" disabled={submitting} data-testid="btn-modal-promote">
-            {submitting ? 'Promoting…' : 'Promote'}
+            {submitting ? 'Promocionando…' : 'Promocionar'}
           </Button>
         </Modal.Footer>
       </Form>

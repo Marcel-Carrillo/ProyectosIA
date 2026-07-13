@@ -57,7 +57,7 @@ describe('ProductFormModal', () => {
     renderModal(<ProductFormModal show onHide={vi.fn()} onSuccess={vi.fn()} categories={[]} />);
     fireEvent.change(screen.getByTestId('input-product-name'), { target: { value: 'Dup' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(await screen.findByText(/already exists/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Ya existe/i)).toBeInTheDocument();
   });
 
   it('includes ES translation in create payload when provided', async () => {

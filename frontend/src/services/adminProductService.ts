@@ -28,23 +28,23 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/products`;
 export function mapProductError(code: string): string {
   switch (code) {
     case 'PRODUCT_REQUIRES_ACTIVE_VARIANT':
-      return 'Product requires at least one active variant before it can be activated.';
+      return 'El producto requiere al menos una variante activa antes de poder activarse.';
     case 'PRODUCT_ARCHIVED_CANNOT_REACTIVATE':
-      return 'Archived products cannot change status.';
+      return 'Los productos archivados no pueden cambiar de estado.';
     case 'PRODUCT_SLUG_CONFLICT':
-      return 'A product with this name already exists. Try adjusting the product name.';
+      return 'Ya existe un producto con este nombre. Intente modificar el nombre del producto.';
     case 'PRODUCT_NOT_FOUND':
-      return 'Product not found.';
+      return 'Producto no encontrado.';
     case 'VARIANT_NOT_FOUND':
-      return 'Variant not found.';
+      return 'Variante no encontrada.';
     case 'VARIANT_SKU_CONFLICT':
-      return 'A variant with this SKU already exists.';
+      return 'Ya existe una variante con este SKU.';
     case 'VARIANT_COMPARE_PRICE_INVALID':
-      return 'Compare-at price must be greater than the public price.';
+      return 'El precio de comparación debe ser mayor que el precio público.';
     case 'IMAGE_NOT_FOUND':
-      return 'Image not found.';
+      return 'Imagen no encontrada.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

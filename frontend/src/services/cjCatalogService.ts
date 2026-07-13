@@ -16,25 +16,25 @@ const cjBase = (supplierId: number) => `${API_BASE_URL}/api/admin/suppliers/${su
 export function mapCjCatalogError(code: string): string {
   switch (code) {
     case 'CJ_PROMOTION_CATEGORY_REQUIRED':
-      return 'Select a category before promoting.';
+      return 'Seleccione una categoría antes de promocionar.';
     case 'CJ_PROMOTION_PRICE_REQUIRED':
-      return 'Enter a public price — no default markup is configured.';
+      return 'Introduzca un precio público: no hay un margen predeterminado configurado.';
     case 'CJ_CATALOG_ITEM_SYNC_FAILED_CANNOT_PROMOTE':
-      return 'One or more selected items failed to sync and cannot be promoted.';
+      return 'Uno o más artículos seleccionados no se pudieron sincronizar y no pueden promocionarse.';
     case 'CJ_CATALOG_ITEM_NOT_FOUND':
-      return 'One or more selected items could not be found.';
+      return 'No se pudieron encontrar uno o más artículos seleccionados.';
     case 'CJ_CATALOG_ITEM_NOT_PROMOTED':
-      return 'This item has not been promoted yet.';
+      return 'Este artículo aún no ha sido promocionado.';
     case 'CJ_PROMOTION_VALIDATION_FAILED':
-      return 'One or more items failed validation. Please review your selection.';
+      return 'Uno o más artículos no superaron la validación. Revise su selección.';
     case 'CJ_CONNECTION_NOT_READY':
-      return 'The CJ Dropshipping connection is not ready. Verify the connection first.';
+      return 'La conexión con CJ Dropshipping no está lista. Verifique la conexión primero.';
     case 'CJ_CONNECTION_NOT_FOUND':
-      return 'No CJ Dropshipping connection is configured for this supplier.';
+      return 'No hay una conexión con CJ Dropshipping configurada para este proveedor.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

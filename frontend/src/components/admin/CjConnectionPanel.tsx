@@ -68,8 +68,8 @@ const CjConnectionPanel: React.FC<CjConnectionPanelProps> = ({
       {!connection && (
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
           <div className="flex-grow-1">
-            <div className="fw-semibold">CJ Dropshipping connection</div>
-            <div className="admin-card-row__meta">Not configured yet.</div>
+            <div className="fw-semibold">Conexión con CJ Dropshipping</div>
+            <div className="admin-card-row__meta">Aún no está configurada.</div>
           </div>
           <div className="admin-card-row__actions">
             <Button
@@ -78,7 +78,7 @@ const CjConnectionPanel: React.FC<CjConnectionPanelProps> = ({
               onClick={onConfigureClick}
               data-testid="btn-configure-connection"
             >
-              Configure connection
+              Configurar conexión
             </Button>
           </div>
         </div>
@@ -91,11 +91,11 @@ const CjConnectionPanel: React.FC<CjConnectionPanelProps> = ({
               <div className="fw-semibold">
                 {connection.provider} <StatusBadge status={connection.status} data-testid="cj-connection-status" />
               </div>
-              <div className="admin-card-row__meta">Account ref: {connection.externalAccountRef ?? '—'}</div>
+              <div className="admin-card-row__meta">Ref. de cuenta: {connection.externalAccountRef ?? '—'}</div>
               <div className="admin-card-row__meta">
-                Last verified: {formatTimestamp(connection.lastVerifiedAt, 'Never verified')}
+                Última verificación: {formatTimestamp(connection.lastVerifiedAt, 'Nunca verificada')}
                 {' · '}
-                Last synced: {formatTimestamp(connection.lastSyncedAt, 'Never synced')}
+                Última sincronización: {formatTimestamp(connection.lastSyncedAt, 'Nunca sincronizada')}
               </div>
             </div>
 
@@ -106,7 +106,7 @@ const CjConnectionPanel: React.FC<CjConnectionPanelProps> = ({
                 onClick={onConfigureClick}
                 data-testid="btn-edit-connection"
               >
-                Edit
+                Editar
               </Button>
               <Button
                 variant="outline-primary"
@@ -115,7 +115,7 @@ const CjConnectionPanel: React.FC<CjConnectionPanelProps> = ({
                 onClick={handleVerify}
                 data-testid="btn-verify-connection"
               >
-                {verifying ? 'Verifying…' : 'Verify'}
+                {verifying ? 'Verificando…' : 'Verificar'}
               </Button>
               <Button
                 variant="primary"
@@ -124,14 +124,14 @@ const CjConnectionPanel: React.FC<CjConnectionPanelProps> = ({
                 onClick={handleSync}
                 data-testid="btn-sync-catalog"
               >
-                {syncing ? 'Syncing…' : 'Sync catalog'}
+                {syncing ? 'Sincronizando…' : 'Sincronizar catálogo'}
               </Button>
             </div>
           </div>
 
           {!canSync && (
             <div className="admin-card-row__meta" data-testid="cj-sync-disabled-hint">
-              Verify the connection before syncing.
+              Verifique la conexión antes de sincronizar.
             </div>
           )}
 
@@ -146,14 +146,14 @@ const CjConnectionPanel: React.FC<CjConnectionPanelProps> = ({
               className="mt-2 mb-0"
               data-testid="cj-verify-result"
             >
-              {verifyResult.healthy ? 'Connection healthy.' : 'Connection check failed.'}
+              {verifyResult.healthy ? 'Conexión correcta.' : 'La verificación de la conexión ha fallado.'}
               {verifyResult.reason ? ` ${verifyResult.reason}` : ''}
             </Alert>
           )}
           {syncResult && (
             <Alert variant="info" className="mt-2 mb-0" data-testid="cj-sync-result">
-              Sync complete: {syncResult.itemsUpserted} item{syncResult.itemsUpserted === 1 ? '' : 's'} upserted
-              {syncResult.itemsFailed > 0 ? `, ${syncResult.itemsFailed} failed` : ''}.
+              Sincronización completada: {syncResult.itemsUpserted} artículo{syncResult.itemsUpserted === 1 ? '' : 's'} actualizado{syncResult.itemsUpserted === 1 ? '' : 's'}
+              {syncResult.itemsFailed > 0 ? `, ${syncResult.itemsFailed} con error` : ''}.
             </Alert>
           )}
         </>

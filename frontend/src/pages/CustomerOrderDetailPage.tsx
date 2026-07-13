@@ -54,7 +54,7 @@ const CustomerOrderDetailPage: React.FC = () => {
 
   const loadOrder = useCallback(async () => {
     if (!orderId || Number.isNaN(orderId)) {
-      setError('Invalid order id.');
+      setError('Identificador de pedido no válido.');
       setLoading(false);
       return;
     }
@@ -70,7 +70,7 @@ const CustomerOrderDetailPage: React.FC = () => {
       const returnRes = await returnRequestService.getAll({ customerOrderId: orderId });
       setReturnRequests(returnRes.items);
     } catch {
-      setError('Unable to load customer order.');
+      setError('No se pudo cargar el pedido del cliente.');
     } finally {
       setLoading(false);
     }
@@ -120,7 +120,7 @@ const CustomerOrderDetailPage: React.FC = () => {
       setReturnReason('');
       setSelectedReturnItem(null);
     } catch (err) {
-      setReturnError(err instanceof Error ? err.message : 'Failed to create return request.');
+      setReturnError(err instanceof Error ? err.message : 'No se pudo crear la solicitud de devolución.');
     } finally {
       setReturnSubmitting(false);
     }
@@ -150,7 +150,7 @@ const CustomerOrderDetailPage: React.FC = () => {
       setRefundReason('');
       setRefundPayRef('');
     } catch (err) {
-      setRefundError(err instanceof Error ? err.message : 'Failed to create refund.');
+      setRefundError(err instanceof Error ? err.message : 'No se pudo crear el reembolso.');
     } finally {
       setRefundSubmitting(false);
     }
@@ -177,7 +177,7 @@ const CustomerOrderDetailPage: React.FC = () => {
   return (
     <div className="admin-page">
       <p className="mb-3">
-        <Link to="/customer-orders">← Back to orders</Link>
+        <Link to="/customer-orders">← Volver a pedidos</Link>
       </p>
 
       <div className="admin-page-header mb-3">
@@ -191,7 +191,7 @@ const CustomerOrderDetailPage: React.FC = () => {
 
       <Card className="mb-4">
         <Card.Body>
-          <Card.Title className="h6">Status timeline</Card.Title>
+          <Card.Title className="h6">Cronología de estado</Card.Title>
           <OrderStatusTimeline order={order} />
         </Card.Body>
       </Card>
@@ -200,15 +200,15 @@ const CustomerOrderDetailPage: React.FC = () => {
         <Col md={6}>
           <Card className="h-100">
             <Card.Body>
-              <Card.Title className="h6">Customer</Card.Title>
+              <Card.Title className="h6">Cliente</Card.Title>
               {order.customer ? (
                 <>
                   <div>{order.customer.firstName} {order.customer.lastName}</div>
                   <div className="small text-muted">{order.customer.email}</div>
-                  <Link to={`/customers`} className="small">View customers</Link>
+                  <Link to={`/customers`} className="small">Ver clientes</Link>
                 </>
               ) : (
-                <div>Customer #{order.customerId}</div>
+                <div>Cliente #{order.customerId}</div>
               )}
             </Card.Body>
           </Card>
@@ -216,10 +216,10 @@ const CustomerOrderDetailPage: React.FC = () => {
         <Col md={6}>
           <Card className="h-100">
             <Card.Body>
-              <Card.Title className="h6">Totals</Card.Title>
+              <Card.Title className="h6">Totales</Card.Title>
               <div>Subtotal: {order.subtotalAmount} {order.currency}</div>
-              <div>Shipping: {order.shippingAmount} {order.currency}</div>
-              <div>Discount: {order.discountAmount} {order.currency}</div>
+              <div>Envío: {order.shippingAmount} {order.currency}</div>
+              <div>Descuento: {order.discountAmount} {order.currency}</div>
               <div className="fw-semibold">Total: {order.totalAmount} {order.currency}</div>
             </Card.Body>
           </Card>
@@ -230,7 +230,7 @@ const CustomerOrderDetailPage: React.FC = () => {
         <Col md={6}>
           <Card>
             <Card.Body>
-              <Card.Title className="h6">Shipping address</Card.Title>
+              <Card.Title className="h6">Dirección de envío</Card.Title>
               <div className="small">{formatAddress(order.shippingAddressSnapshot)}</div>
             </Card.Body>
           </Card>
@@ -238,7 +238,7 @@ const CustomerOrderDetailPage: React.FC = () => {
         <Col md={6}>
           <Card>
             <Card.Body>
-              <Card.Title className="h6">Billing address</Card.Title>
+              <Card.Title className="h6">Dirección de facturación</Card.Title>
               <div className="small">{formatAddress(order.billingAddressSnapshot)}</div>
             </Card.Body>
           </Card>
@@ -247,14 +247,14 @@ const CustomerOrderDetailPage: React.FC = () => {
 
       <Card className="mb-4">
         <Card.Body>
-          <Card.Title className="h6">Line items</Card.Title>
+          <Card.Title className="h6">Líneas del pedido</Card.Title>
           <Table responsive size="sm" className="mb-0">
             <thead>
               <tr>
-                <th>Product</th>
+                <th>Producto</th>
                 <th>SKU</th>
-                <th>Qty</th>
-                <th>Unit</th>
+                <th>Cant.</th>
+                <th>Precio unit.</th>
                 <th>Total</th>
                 {canCreateReturn && <th></th>}
               </tr>
@@ -275,7 +275,7 @@ const CustomerOrderDetailPage: React.FC = () => {
                         onClick={() => { setSelectedReturnItem(item); setShowReturnModal(true); }}
                         data-testid={`btn-create-return-${item.id}`}
                       >
-                        Create Return
+                        Crear devolución
                       </button>
                     </td>
                   )}
@@ -288,7 +288,7 @@ const CustomerOrderDetailPage: React.FC = () => {
 
       <Card className="mb-4">
         <Card.Body>
-          <Card.Title className="h6">Supplier orders</Card.Title>
+          <Card.Title className="h6">Pedidos a proveedores</Card.Title>
           {isEligibleForGeneration && (
             <div className="mb-3">
               <button
@@ -298,14 +298,14 @@ const CustomerOrderDetailPage: React.FC = () => {
                 disabled={generating}
                 data-testid="btn-generate-supplier-orders"
               >
-                {generating ? 'Generating…' : 'Generate supplier orders'}
+                {generating ? 'Generando…' : 'Generar pedidos a proveedores'}
               </button>
             </div>
           )}
           {generateMessage && <div className="text-success small mb-2">{generateMessage}</div>}
           {generateError && <div className="text-danger small mb-2">{generateError}</div>}
           {supplierOrders.length === 0 ? (
-            <p className="text-muted small mb-0">No supplier orders yet.</p>
+            <p className="text-muted small mb-0">Aún no hay pedidos a proveedores.</p>
           ) : (
             <ul className="mb-0">
               {supplierOrders.map((so) => (
@@ -323,7 +323,7 @@ const CustomerOrderDetailPage: React.FC = () => {
       <Card className="mb-4">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <Card.Title className="h6 mb-0">Refunds</Card.Title>
+            <Card.Title className="h6 mb-0">Reembolsos</Card.Title>
             {canCreateRefund && (
               <Button
                 size="sm"
@@ -332,21 +332,21 @@ const CustomerOrderDetailPage: React.FC = () => {
                 onClick={() => setShowRefundModal(true)}
                 data-testid="btn-create-refund"
               >
-                Create refund
+                Crear reembolso
               </Button>
             )}
           </div>
           {refunds.length === 0 ? (
-            <p className="text-muted small mb-0">No refunds yet.</p>
+            <p className="text-muted small mb-0">Aún no hay reembolsos.</p>
           ) : (
             <Table responsive size="sm" className="mb-0">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Reason</th>
-                  <th>Created</th>
+                  <th>Importe</th>
+                  <th>Estado</th>
+                  <th>Motivo</th>
+                  <th>Creado</th>
                   <th></th>
                 </tr>
               </thead>
@@ -360,7 +360,7 @@ const CustomerOrderDetailPage: React.FC = () => {
                     <td>{new Date(r.createdAt).toLocaleDateString()}</td>
                     <td>
                       <Link to={`/refunds/${r.id}`} className="btn btn-sm btn-outline-secondary">
-                        View
+                        Ver
                       </Link>
                     </td>
                   </tr>
@@ -374,26 +374,26 @@ const CustomerOrderDetailPage: React.FC = () => {
       <Card className="mb-4">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <Card.Title className="h6 mb-0">Return Requests</Card.Title>
+            <Card.Title className="h6 mb-0">Solicitudes de devolución</Card.Title>
             <Link
               to={`/return-requests?customerOrderId=${order.id}`}
               className="small"
               data-testid="link-return-requests-filter"
             >
-              View all for this order
+              Ver todas de este pedido
             </Link>
           </div>
           {returnRequests.length === 0 ? (
-            <p className="text-muted small mb-0">No return requests yet.</p>
+            <p className="text-muted small mb-0">Aún no hay solicitudes de devolución.</p>
           ) : (
             <Table responsive size="sm" className="mb-0">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Item ID</th>
-                  <th>Status</th>
-                  <th>Reason</th>
-                  <th>Requested</th>
+                  <th>ID artículo</th>
+                  <th>Estado</th>
+                  <th>Motivo</th>
+                  <th>Solicitado</th>
                   <th></th>
                 </tr>
               </thead>
@@ -410,7 +410,7 @@ const CustomerOrderDetailPage: React.FC = () => {
                         to={`/return-requests/${rr.id}`}
                         className="btn btn-sm btn-outline-secondary"
                       >
-                        View
+                        Ver
                       </Link>
                     </td>
                   </tr>
@@ -423,7 +423,7 @@ const CustomerOrderDetailPage: React.FC = () => {
 
       <Card>
         <Card.Body>
-          <Card.Title className="h6">Update statuses</Card.Title>
+          <Card.Title className="h6">Actualizar estados</Card.Title>
           <OrderStatusControl
             order={order}
             saving={saving}
@@ -435,12 +435,12 @@ const CustomerOrderDetailPage: React.FC = () => {
 
       <Modal show={showRefundModal} onHide={() => setShowRefundModal(false)} fullscreen="sm-down">
         <Modal.Header closeButton>
-          <Modal.Title>Create Refund</Modal.Title>
+          <Modal.Title>Crear reembolso</Modal.Title>
         </Modal.Header>
         <form onSubmit={(e) => void handleCreateRefund(e)}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Amount (€) <span className="text-danger">*</span></Form.Label>
+              <Form.Label>Importe (€) <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 type="number"
                 step="0.01"
@@ -452,7 +452,7 @@ const CustomerOrderDetailPage: React.FC = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Reason</Form.Label>
+              <Form.Label>Motivo</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -463,13 +463,13 @@ const CustomerOrderDetailPage: React.FC = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Payment Provider Reference</Form.Label>
+              <Form.Label>Referencia del proveedor de pago</Form.Label>
               <Form.Control
                 type="text"
                 maxLength={150}
                 value={refundPayRef}
                 onChange={(e) => setRefundPayRef(e.target.value)}
-                placeholder="e.g. PAY-123456"
+                placeholder="p. ej. PAY-123456"
                 data-testid="input-refund-pay-ref"
               />
             </Form.Group>
@@ -477,7 +477,7 @@ const CustomerOrderDetailPage: React.FC = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowRefundModal(false)}>
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="submit"
@@ -486,7 +486,7 @@ const CustomerOrderDetailPage: React.FC = () => {
               disabled={refundSubmitting}
               data-testid="btn-submit-refund"
             >
-              {refundSubmitting ? 'Creating…' : 'Create refund'}
+              {refundSubmitting ? 'Creando…' : 'Crear reembolso'}
             </Button>
           </Modal.Footer>
         </form>
@@ -498,18 +498,18 @@ const CustomerOrderDetailPage: React.FC = () => {
         fullscreen="sm-down"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Create Return Request</Modal.Title>
+          <Modal.Title>Crear solicitud de devolución</Modal.Title>
         </Modal.Header>
         <form onSubmit={(e) => void handleCreateReturn(e)}>
           <Modal.Body>
             {selectedReturnItem && (
               <div className="mb-3 p-2 bg-light rounded small">
-                <div><strong>Item:</strong> {selectedReturnItem.productNameSnapshot}</div>
+                <div><strong>Artículo:</strong> {selectedReturnItem.productNameSnapshot}</div>
                 <div><strong>SKU:</strong> {selectedReturnItem.skuSnapshot}</div>
               </div>
             )}
             <Form.Group className="mb-3">
-              <Form.Label>Reason <span className="text-danger">*</span></Form.Label>
+              <Form.Label>Motivo <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -528,7 +528,7 @@ const CustomerOrderDetailPage: React.FC = () => {
               variant="secondary"
               onClick={() => { setShowReturnModal(false); setReturnReason(''); setReturnError(''); }}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="submit"
@@ -537,7 +537,7 @@ const CustomerOrderDetailPage: React.FC = () => {
               disabled={returnSubmitting || returnReason.trim().length === 0}
               data-testid="btn-submit-return"
             >
-              {returnSubmitting ? 'Creating…' : 'Create return request'}
+              {returnSubmitting ? 'Creando…' : 'Crear solicitud de devolución'}
             </Button>
           </Modal.Footer>
         </form>

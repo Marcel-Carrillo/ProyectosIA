@@ -52,34 +52,34 @@ const CjConnectionModal: React.FC<CjConnectionModalProps> = ({
   return (
     <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-configure-cj-connection">
       <Modal.Header closeButton>
-        <Modal.Title>{connection ? 'Edit' : 'Configure'} CJ Dropshipping connection</Modal.Title>
+        <Modal.Title>{connection ? 'Editar' : 'Configurar'} conexión con CJ Dropshipping</Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Form.Group className="mb-3">
-            <Form.Label>External account reference (optional, not a credential)</Form.Label>
+            <Form.Label>Referencia externa de cuenta (opcional, no es una credencial)</Form.Label>
             <Form.Control
               type="text"
               maxLength={MAX_EXTERNAL_ACCOUNT_REF_LENGTH}
               value={externalAccountRef}
               onChange={(e) => setExternalAccountRef(e.target.value.slice(0, MAX_EXTERNAL_ACCOUNT_REF_LENGTH))}
-              placeholder="e.g. cj-account-123"
+              placeholder="p. ej. cj-account-123"
               data-testid="input-external-account-ref"
             />
             <Form.Text muted>
-              This is a CJ Dropshipping account reference, not an API key or password. The CJ Dropshipping API
-              key is configured server-side and is never entered here.
+              Se trata de una referencia de cuenta de CJ Dropshipping, no de una clave API ni de una contraseña. La clave API
+              de CJ Dropshipping se configura en el servidor y nunca se introduce aquí.
             </Form.Text>
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide} disabled={submitting} data-testid="btn-modal-cancel">
-            Cancel
+            Cancelar
           </Button>
           <Button variant="primary" type="submit" disabled={submitting} data-testid="btn-modal-save-connection">
-            {submitting ? 'Saving…' : 'Save'}
+            {submitting ? 'Guardando…' : 'Guardar'}
           </Button>
         </Modal.Footer>
       </Form>

@@ -34,13 +34,13 @@ describe('CjConnectionModal', () => {
   it('renders with an empty input in create mode', () => {
     render(<CjConnectionModal show onHide={noop} supplierId={3} connection={null} onSuccess={noop} />);
     expect(screen.getByTestId('input-external-account-ref')).toHaveValue('');
-    expect(screen.getByText(/Configure CJ Dropshipping connection/i)).toBeInTheDocument();
+    expect(screen.getByText(/Configurar conexión con CJ Dropshipping/i)).toBeInTheDocument();
   });
 
   it('pre-fills the input in edit mode', () => {
     render(<CjConnectionModal show onHide={noop} supplierId={3} connection={existingConnection} onSuccess={noop} />);
     expect(screen.getByTestId('input-external-account-ref')).toHaveValue('existing-ref');
-    expect(screen.getByText(/Edit CJ Dropshipping connection/i)).toBeInTheDocument();
+    expect(screen.getByText(/Editar conexión con CJ Dropshipping/i)).toBeInTheDocument();
   });
 
   it('truncates typed input beyond 150 characters', () => {
@@ -84,7 +84,7 @@ describe('CjConnectionModal', () => {
 
     fireEvent.click(screen.getByTestId('btn-modal-save-connection'));
 
-    expect(await screen.findByText(/check the form fields/i)).toBeInTheDocument();
+    expect(await screen.findByText(/revise los campos del formulario/i)).toBeInTheDocument();
     expect(onHide).not.toHaveBeenCalled();
   });
 

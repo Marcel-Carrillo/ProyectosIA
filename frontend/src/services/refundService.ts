@@ -13,26 +13,26 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/refunds`;
 export function mapRefundError(code: string): string {
   switch (code) {
     case 'REFUND_NOT_FOUND':
-      return 'Refund not found.';
+      return 'Reembolso no encontrado.';
     case 'REFUND_ORDER_NOT_PAID':
-      return 'Cannot create a refund: the order has not been paid.';
+      return 'No se puede crear un reembolso: el pedido no ha sido pagado.';
     case 'REFUND_AMOUNT_EXCEEDS_BALANCE':
-      return 'The refund amount exceeds the available refundable balance.';
+      return 'El importe del reembolso supera el saldo reembolsable disponible.';
     case 'REFUND_TRANSITION_INVALID':
-      return 'This status change is not allowed.';
+      return 'No se permite este cambio de estado.';
     case 'CUSTOMER_ORDER_NOT_FOUND':
-      return 'Customer order not found.';
+      return 'Pedido de cliente no encontrado.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred.';
+      return 'Ha ocurrido un error inesperado.';
   }
 }
 
 function handleAxiosError(err: AxiosError): never {
   const data = err.response?.data as { error?: { code?: string; message?: string } } | undefined;
   const code = data?.error?.code ?? '';
-  const message = mapRefundError(code) || data?.error?.message || 'An unexpected error occurred.';
+  const message = mapRefundError(code) || data?.error?.message || 'Ha ocurrido un error inesperado.';
   throw new Error(message);
 }
 

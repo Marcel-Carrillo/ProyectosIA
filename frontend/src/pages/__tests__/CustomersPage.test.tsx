@@ -101,7 +101,7 @@ describe('CustomersPage', () => {
   it('shows an error message when the request fails', async () => {
     mockedService.list.mockRejectedValue(new Error('boom'));
     renderPage();
-    expect(await screen.findByText(/unable to load customers/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no se pudieron cargar los clientes/i)).toBeInTheDocument();
   });
 
   it('re-queries after the search debounce', async () => {
@@ -175,7 +175,7 @@ describe('CustomersPage', () => {
     fireEvent.click(screen.getAllByTestId('btn-delete-1')[0]);
     fireEvent.click(screen.getByTestId('btn-confirm-delete'));
     expect(
-      await screen.findByText(/this customer cannot be deleted because they have orders/i)
+      await screen.findByText(/no puede eliminarse porque tiene pedidos/i)
     ).toBeInTheDocument();
     expect(screen.queryByTestId('btn-confirm-delete')).not.toBeInTheDocument();
   });
@@ -187,7 +187,7 @@ describe('CustomersPage', () => {
     expect(await screen.findByTestId('customer-row-1')).toBeInTheDocument();
     fireEvent.click(screen.getAllByTestId('btn-delete-1')[0]);
     fireEvent.click(screen.getByTestId('btn-confirm-delete'));
-    expect(await screen.findByText(/unexpected error/i)).toBeInTheDocument();
+    expect(await screen.findByText(/error inesperado/i)).toBeInTheDocument();
   });
 });
 

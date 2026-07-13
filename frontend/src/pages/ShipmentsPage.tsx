@@ -23,6 +23,7 @@ import {
   shipmentService,
   extractShipmentErrorMessage,
 } from '../services/shipmentService';
+import { adminStatusLabel } from '../utils/adminStatusLabels';
 
 const STATUSES: ShipmentStatus[] = ['Pending', 'Shipped', 'InTransit', 'Delivered', 'Failed', 'Returned'];
 
@@ -95,11 +96,11 @@ const ShipmentsPage: React.FC = () => {
     <Container fluid className="py-4">
       <Row className="mb-3 align-items-center">
         <Col>
-          <h2 className="mb-0">Shipments</h2>
+          <h2 className="mb-0">Envíos</h2>
         </Col>
         <Col xs="auto">
           <Button variant="primary" onClick={() => setShowCreate(true)}>
-            + New Shipment
+            + Nuevo envío
           </Button>
         </Col>
       </Row>
@@ -109,25 +110,25 @@ const ShipmentsPage: React.FC = () => {
           <Form.Select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            aria-label="Filter by status"
+            aria-label="Filtrar por estado"
           >
-            <option value="">All Statuses</option>
+            <option value="">Todos los estados</option>
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{adminStatusLabel(s)}</option>
             ))}
           </Form.Select>
         </Col>
         <Col xs={12} md={4}>
           <Form.Control
             type="number"
-            placeholder="Filter by Customer Order ID"
+            placeholder="Filtrar por ID de pedido de cliente"
             value={filterCustomerOrderId}
             onChange={(e) => { setFilterCustomerOrderId(e.target.value); setPage(1); }}
           />
         </Col>
         <Col xs={12} md="auto">
           <Button variant="outline-secondary" onClick={() => { setFilterStatus(''); setFilterCustomerOrderId(''); setPage(1); }}>
-            Clear
+            Limpiar
           </Button>
         </Col>
       </Row>
@@ -137,7 +138,7 @@ const ShipmentsPage: React.FC = () => {
       {loading ? (
         <div className="text-center py-5">
           <Spinner animation="border" role="status">
-            <span className="visually-hidden">Loading...</span>
+            <span className="visually-hidden">Cargando…</span>
           </Spinner>
         </div>
       ) : (
@@ -148,11 +149,11 @@ const ShipmentsPage: React.FC = () => {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Customer Order</th>
-                  <th>Carrier</th>
-                  <th>Tracking</th>
-                  <th>Status</th>
-                  <th>Created</th>
+                  <th>Pedido de cliente</th>
+                  <th>Transportista</th>
+                  <th>Seguimiento</th>
+                  <th>Estado</th>
+                  <th>Creado</th>
                   <th></th>
                 </tr>
               </thead>
@@ -160,7 +161,7 @@ const ShipmentsPage: React.FC = () => {
                 {shipments.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center text-muted py-4">
-                      No shipments found.
+                      No se encontraron envíos.
                     </td>
                   </tr>
                 ) : (
@@ -181,7 +182,7 @@ const ShipmentsPage: React.FC = () => {
                         ) : '—'}
                       </td>
                       <td>
-                        <Badge bg={SHIPMENT_STATUS_COLORS[s.status]}>{s.status}</Badge>
+                        <Badge bg={SHIPMENT_STATUS_COLORS[s.status]}>{adminStatusLabel(s.status)}</Badge>
                       </td>
                       <td>{new Date(s.createdAt).toLocaleDateString()}</td>
                       <td>
@@ -190,7 +191,7 @@ const ShipmentsPage: React.FC = () => {
                           size="sm"
                           onClick={() => navigate(`/admin/shipments/${s.id}`)}
                         >
-                          View
+                          Ver
                         </Button>
                       </td>
                     </tr>
@@ -203,20 +204,20 @@ const ShipmentsPage: React.FC = () => {
           {/* Mobile cards */}
           <div className="d-md-none">
             {shipments.length === 0 ? (
-              <p className="text-center text-muted py-4">No shipments found.</p>
+              <p className="text-center text-muted py-4">No se encontraron envíos.</p>
             ) : (
               shipments.map((s) => (
                 <Card key={s.id} className="mb-3">
                   <Card.Body>
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <strong>Shipment #{s.id}</strong>
-                      <Badge bg={SHIPMENT_STATUS_COLORS[s.status]}>{s.status}</Badge>
+                      <strong>Envío #{s.id}</strong>
+                      <Badge bg={SHIPMENT_STATUS_COLORS[s.status]}>{adminStatusLabel(s.status)}</Badge>
                     </div>
-                    <p className="mb-1 text-muted small">Customer Order: #{s.customerOrderId}</p>
-                    {s.carrier && <p className="mb-1 text-muted small">Carrier: {s.carrier}</p>}
+                    <p className="mb-1 text-muted small">Pedido de cliente: #{s.customerOrderId}</p>
+                    {s.carrier && <p className="mb-1 text-muted small">Transportista: {s.carrier}</p>}
                     {s.trackingNumber && (
                       <p className="mb-1 text-muted small">
-                        Tracking:{' '}
+                        Seguimiento:{' '}
                         {s.trackingUrl ? (
                           <a href={s.trackingUrl} target="_blank" rel="noreferrer">
                             {s.trackingNumber}
@@ -232,7 +233,7 @@ const ShipmentsPage: React.FC = () => {
                       className="mt-2"
                       onClick={() => navigate(`/admin/shipments/${s.id}`)}
                     >
-                      View Details
+                      Ver detalles
                     </Button>
                   </Card.Body>
                 </Card>
@@ -249,10 +250,10 @@ const ShipmentsPage: React.FC = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                Previous
+                Anterior
               </Button>
               <span className="align-self-center small">
-                Page {page} of {totalPages}
+                Página {page} de {totalPages}
               </span>
               <Button
                 variant="outline-secondary"
@@ -260,7 +261,7 @@ const ShipmentsPage: React.FC = () => {
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next
+                Siguiente
               </Button>
             </div>
           )}
@@ -270,13 +271,13 @@ const ShipmentsPage: React.FC = () => {
       {/* Create Modal */}
       <Modal show={showCreate} onHide={() => setShowCreate(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Create Shipment</Modal.Title>
+          <Modal.Title>Crear envío</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {createError && <Alert variant="danger">{createError}</Alert>}
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Customer Order ID *</Form.Label>
+              <Form.Label>ID de pedido de cliente *</Form.Label>
               <Form.Control
                 type="number"
                 value={form.customerOrderId || ''}
@@ -286,7 +287,7 @@ const ShipmentsPage: React.FC = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Supplier Order ID</Form.Label>
+              <Form.Label>ID de pedido a proveedor</Form.Label>
               <Form.Control
                 type="number"
                 value={form.supplierOrderId ?? ''}
@@ -299,14 +300,14 @@ const ShipmentsPage: React.FC = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Carrier</Form.Label>
+              <Form.Label>Transportista</Form.Label>
               <Form.Control
                 value={form.carrier ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value || null }))}
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Tracking Number</Form.Label>
+              <Form.Label>Número de seguimiento</Form.Label>
               <Form.Control
                 value={form.trackingNumber ?? ''}
                 onChange={(e) =>
@@ -315,7 +316,7 @@ const ShipmentsPage: React.FC = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Tracking URL</Form.Label>
+              <Form.Label>URL de seguimiento</Form.Label>
               <Form.Control
                 value={form.trackingUrl ?? ''}
                 onChange={(e) =>
@@ -327,14 +328,14 @@ const ShipmentsPage: React.FC = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowCreate(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             variant="primary"
             onClick={() => void handleCreate()}
             disabled={createLoading || !form.customerOrderId}
           >
-            {createLoading ? 'Creating…' : 'Create'}
+            {createLoading ? 'Creando…' : 'Crear'}
           </Button>
         </Modal.Footer>
       </Modal>

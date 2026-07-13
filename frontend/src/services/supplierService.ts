@@ -16,11 +16,11 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/suppliers`;
 export function mapSupplierError(code: string): string {
   switch (code) {
     case 'SUPPLIER_NOT_FOUND':
-      return 'Supplier not found.';
+      return 'Proveedor no encontrado.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

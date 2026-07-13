@@ -13,28 +13,28 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/return-requests`;
 export function mapReturnRequestError(code: string): string {
   switch (code) {
     case 'RETURN_REQUEST_NOT_FOUND':
-      return 'Return request not found.';
+      return 'Solicitud de devolución no encontrada.';
     case 'CUSTOMER_ORDER_NOT_FOUND':
-      return 'Customer order not found.';
+      return 'Pedido de cliente no encontrado.';
     case 'CUSTOMER_ORDER_ITEM_NOT_FOUND':
-      return 'Order item not found.';
+      return 'Artículo del pedido no encontrado.';
     case 'RETURN_REQUEST_ORDER_CANCELLED':
-      return 'Cannot create a return request: the order has been cancelled.';
+      return 'No se puede crear una solicitud de devolución: el pedido ha sido cancelado.';
     case 'RETURN_REQUEST_ITEM_MISMATCH':
-      return 'The selected item does not belong to this order.';
+      return 'El artículo seleccionado no pertenece a este pedido.';
     case 'RETURN_REQUEST_TRANSITION_INVALID':
-      return 'This status change is not allowed.';
+      return 'No se permite este cambio de estado.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred.';
+      return 'Ha ocurrido un error inesperado.';
   }
 }
 
 function handleAxiosError(err: AxiosError): never {
   const data = err.response?.data as { error?: { code?: string; message?: string } } | undefined;
   const code = data?.error?.code ?? '';
-  const message = mapReturnRequestError(code) || data?.error?.message || 'An unexpected error occurred.';
+  const message = mapReturnRequestError(code) || data?.error?.message || 'Ha ocurrido un error inesperado.';
   throw new Error(message);
 }
 

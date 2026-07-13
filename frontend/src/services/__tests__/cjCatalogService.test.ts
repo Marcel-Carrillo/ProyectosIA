@@ -12,22 +12,22 @@ const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('mapCjCatalogError', () => {
   it.each([
-    ['CJ_PROMOTION_CATEGORY_REQUIRED', 'category'],
-    ['CJ_PROMOTION_PRICE_REQUIRED', 'price'],
-    ['CJ_CATALOG_ITEM_SYNC_FAILED_CANNOT_PROMOTE', 'failed to sync'],
-    ['CJ_CATALOG_ITEM_NOT_FOUND', 'could not be found'],
-    ['CJ_CATALOG_ITEM_NOT_PROMOTED', 'not been promoted'],
-    ['CJ_PROMOTION_VALIDATION_FAILED', 'failed validation'],
-    ['CJ_CONNECTION_NOT_READY', 'not ready'],
-    ['CJ_CONNECTION_NOT_FOUND', 'No CJ Dropshipping connection'],
-    ['VALIDATION_ERROR', 'check the form fields'],
+    ['CJ_PROMOTION_CATEGORY_REQUIRED', 'categoría'],
+    ['CJ_PROMOTION_PRICE_REQUIRED', 'precio público'],
+    ['CJ_CATALOG_ITEM_SYNC_FAILED_CANNOT_PROMOTE', 'sincronizar'],
+    ['CJ_CATALOG_ITEM_NOT_FOUND', 'encontrar'],
+    ['CJ_CATALOG_ITEM_NOT_PROMOTED', 'promocionado'],
+    ['CJ_PROMOTION_VALIDATION_FAILED', 'validación'],
+    ['CJ_CONNECTION_NOT_READY', 'no está lista'],
+    ['CJ_CONNECTION_NOT_FOUND', 'CJ Dropshipping'],
+    ['VALIDATION_ERROR', 'campos del formulario'],
   ])('maps %s to a specific message', (code, fragment) => {
     expect(mapCjCatalogError(code)).toContain(fragment);
   });
 
   it('returns a generic fallback for unknown or empty codes', () => {
-    expect(mapCjCatalogError('SOMETHING_ELSE')).toMatch(/unexpected error/i);
-    expect(mapCjCatalogError('')).toMatch(/unexpected error/i);
+    expect(mapCjCatalogError('SOMETHING_ELSE')).toMatch(/error inesperado/i);
+    expect(mapCjCatalogError('')).toMatch(/error inesperado/i);
   });
 });
 
@@ -83,13 +83,13 @@ describe('cjCatalogService', () => {
 describe('extractCjCatalogErrorMessage / extractCjCatalogErrorCode', () => {
   it('extracts the mapped message and raw code from an axios error response', () => {
     const err = { response: { data: { error: { code: 'CJ_PROMOTION_PRICE_REQUIRED' } } } };
-    expect(extractCjCatalogErrorMessage(err)).toContain('price');
+    expect(extractCjCatalogErrorMessage(err)).toContain('precio público');
     expect(extractCjCatalogErrorCode(err)).toBe('CJ_PROMOTION_PRICE_REQUIRED');
   });
 
   it('falls back gracefully when the error has no response', () => {
     const err = new Error('network down');
-    expect(extractCjCatalogErrorMessage(err)).toMatch(/unexpected error/i);
+    expect(extractCjCatalogErrorMessage(err)).toMatch(/error inesperado/i);
     expect(extractCjCatalogErrorCode(err)).toBe('');
   });
 });

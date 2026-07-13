@@ -7,6 +7,7 @@ import ErrorAlert from '../components/ErrorAlert';
 import Pagination from '../components/Pagination';
 import StatusBadge from '../components/admin/StatusBadge';
 import { SupplierOrder, SupplierOrderStatus } from '../types/supplierOrder';
+import { adminStatusLabel } from '../utils/adminStatusLabels';
 
 const PAGE_SIZE = 20;
 
@@ -58,7 +59,7 @@ const SupplierOrdersPage: React.FC = () => {
       setOrders(res.data.items);
       setTotal(res.data.total);
     } catch {
-      setError('Unable to load supplier orders. Please try again later.');
+      setError('No se pudieron cargar los pedidos a proveedor. Inténtelo de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -73,29 +74,29 @@ const SupplierOrdersPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">Supplier Orders</h1>
+        <h1 className="h3 mb-0">Pedidos a proveedor</h1>
       </div>
 
       <Row className="g-2 mb-3">
         <Col xs={12} md={3}>
-          <Form.Label className="small mb-1">Search</Form.Label>
+          <Form.Label className="small mb-1">Buscar</Form.Label>
           <Form.Control
             type="search"
-            placeholder="Supplier order #…"
+            placeholder="N.º de pedido a proveedor…"
             value={searchInput}
             onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
             data-testid="supplier-order-search"
           />
         </Col>
         <Col xs={12} md={2}>
-          <Form.Label className="small mb-1">Status</Form.Label>
+          <Form.Label className="small mb-1">Estado</Form.Label>
           <Form.Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
-            <option value="">All</option>
-            {SUPPLIER_ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="">Todos</option>
+            {SUPPLIER_ORDER_STATUSES.map((s) => <option key={s} value={s}>{adminStatusLabel(s)}</option>)}
           </Form.Select>
         </Col>
         <Col xs={12} md={2}>
-          <Form.Label className="small mb-1">Customer order ID</Form.Label>
+          <Form.Label className="small mb-1">ID de pedido de cliente</Form.Label>
           <Form.Control
             type="number"
             min={1}
@@ -104,7 +105,7 @@ const SupplierOrdersPage: React.FC = () => {
           />
         </Col>
         <Col xs={12} md={2}>
-          <Form.Label className="small mb-1">Supplier ID</Form.Label>
+          <Form.Label className="small mb-1">ID de proveedor</Form.Label>
           <Form.Control
             type="number"
             min={1}
@@ -117,7 +118,7 @@ const SupplierOrdersPage: React.FC = () => {
       {loading && <LoadingSpinner />}
       {error && <ErrorAlert message={error} />}
       {!loading && !error && orders.length === 0 && (
-        <p className="text-muted" data-testid="supplier-orders-empty">No supplier orders found.</p>
+        <p className="text-muted" data-testid="supplier-orders-empty">No se encontraron pedidos a proveedor.</p>
       )}
 
       {!loading && !error && orders.length > 0 && (
@@ -126,11 +127,11 @@ const SupplierOrdersPage: React.FC = () => {
             <Table responsive hover className="align-middle">
               <thead>
                 <tr>
-                  <th>Order #</th>
-                  <th>Customer order</th>
-                  <th>Supplier</th>
-                  <th>Status</th>
-                  <th>Created</th>
+                  <th>N.º de pedido</th>
+                  <th>Pedido de cliente</th>
+                  <th>Proveedor</th>
+                  <th>Estado</th>
+                  <th>Creado</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,7 +147,7 @@ const SupplierOrdersPage: React.FC = () => {
                         {order.customerOrder?.orderNumber ?? `#${order.customerOrderId}`}
                       </Link>
                     </td>
-                    <td>{order.supplier?.name ?? `Supplier #${order.supplierId}`}</td>
+                    <td>{order.supplier?.name ?? `Proveedor #${order.supplierId}`}</td>
                     <td><StatusBadge status={order.status} /></td>
                     <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   </tr>

@@ -68,15 +68,15 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     const lastName = formData.lastName.trim();
     const email = formData.email.trim();
 
-    if (!firstName) return 'First name is required.';
-    if (firstName.length > 100) return 'First name must not exceed 100 characters.';
-    if (!lastName) return 'Last name is required.';
-    if (lastName.length > 100) return 'Last name must not exceed 100 characters.';
-    if (!email) return 'Email is required.';
-    if (!EMAIL_REGEX.test(email)) return 'Email must be a valid email address.';
-    if (email.length > 255) return 'Email must not exceed 255 characters.';
+    if (!firstName) return 'El nombre es obligatorio.';
+    if (firstName.length > 100) return 'El nombre no debe superar los 100 caracteres.';
+    if (!lastName) return 'Los apellidos son obligatorios.';
+    if (lastName.length > 100) return 'Los apellidos no deben superar los 100 caracteres.';
+    if (!email) return 'El correo electrónico es obligatorio.';
+    if (!EMAIL_REGEX.test(email)) return 'El correo electrónico debe ser válido.';
+    if (email.length > 255) return 'El correo electrónico no debe superar los 255 caracteres.';
     if (formData.phone && formData.phone.length > 30)
-      return 'Phone must not exceed 30 characters.';
+      return 'El teléfono no debe superar los 30 caracteres.';
     return null;
   };
 
@@ -121,13 +121,13 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-customer-form">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>{initial ? 'Edit customer' : 'New customer'}</Modal.Title>
+          <Modal.Title>{initial ? 'Editar cliente' : 'Nuevo cliente'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Form.Group className="mb-3">
-            <Form.Label>First name *</Form.Label>
+            <Form.Label>Nombre *</Form.Label>
             <Form.Control
               type="text"
               value={formData.firstName}
@@ -137,7 +137,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Last name *</Form.Label>
+            <Form.Label>Apellidos *</Form.Label>
             <Form.Control
               type="text"
               value={formData.lastName}
@@ -147,7 +147,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Email *</Form.Label>
+            <Form.Label>Correo electrónico *</Form.Label>
             <Form.Control
               type="email"
               value={formData.email}
@@ -157,7 +157,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Phone</Form.Label>
+            <Form.Label>Teléfono</Form.Label>
             <Form.Control
               type="text"
               value={formData.phone}
@@ -168,7 +168,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide} data-testid="btn-modal-cancel">
-            Cancel
+            Cancelar
           </Button>
           <Button
             type="submit"
@@ -176,7 +176,7 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             disabled={saving}
             data-testid="btn-modal-save"
           >
-            {saving ? 'Saving…' : initial ? 'Save changes' : 'Create'}
+            {saving ? 'Guardando…' : initial ? 'Guardar cambios' : 'Crear'}
           </Button>
         </Modal.Footer>
       </Form>

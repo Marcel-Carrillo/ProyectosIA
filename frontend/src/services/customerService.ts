@@ -18,17 +18,17 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/customers`;
 export function mapCustomerError(code: string): string {
   switch (code) {
     case 'CUSTOMER_NOT_FOUND':
-      return 'Customer not found.';
+      return 'Cliente no encontrado.';
     case 'CUSTOMER_EMAIL_CONFLICT':
-      return 'A customer with this email already exists.';
+      return 'Ya existe un cliente con este correo electrónico.';
     case 'CUSTOMER_HAS_ORDERS':
-      return 'This customer cannot be deleted because they have orders.';
+      return 'Este cliente no puede eliminarse porque tiene pedidos.';
     case 'ADDRESS_NOT_FOUND':
-      return 'Address not found.';
+      return 'Dirección no encontrada.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

@@ -23,7 +23,7 @@ const SupplierOrderDetailPage: React.FC = () => {
 
   const loadOrder = useCallback(async () => {
     if (!orderId || Number.isNaN(orderId)) {
-      setError('Invalid supplier order id.');
+      setError('Identificador de pedido a proveedor no válido.');
       setLoading(false);
       return;
     }
@@ -33,7 +33,7 @@ const SupplierOrderDetailPage: React.FC = () => {
       const res = await supplierOrderService.getById(orderId);
       setOrder(res.data);
     } catch {
-      setError('Unable to load supplier order.');
+      setError('No se pudo cargar el pedido a proveedor.');
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ const SupplierOrderDetailPage: React.FC = () => {
   return (
     <div className="admin-page">
       <p className="mb-3">
-        <Link to="/supplier-orders">← Back to supplier orders</Link>
+        <Link to="/supplier-orders">← Volver a pedidos a proveedores</Link>
       </p>
 
       <div className="admin-page-header mb-3">
@@ -76,16 +76,16 @@ const SupplierOrderDetailPage: React.FC = () => {
 
       <Card className="mb-4">
         <Card.Body>
-          <div>Customer order:{' '}
+          <div>Pedido del cliente:{' '}
             <Link to={`/customer-orders/${order.customerOrderId}`}>
               {order.customerOrder?.orderNumber ?? `#${order.customerOrderId}`}
             </Link>
           </div>
-          <div>Supplier: {order.supplier?.name ?? `Supplier #${order.supplierId}`}</div>
-          {order.trackingNumber && <div>Tracking: {order.trackingNumber}</div>}
+          <div>Proveedor: {order.supplier?.name ?? `Proveedor #${order.supplierId}`}</div>
+          {order.trackingNumber && <div>Seguimiento: {order.trackingNumber}</div>}
           {order.trackingUrl && (
             <div>
-              <a href={order.trackingUrl} target="_blank" rel="noreferrer">Tracking link</a>
+              <a href={order.trackingUrl} target="_blank" rel="noreferrer">Enlace de seguimiento</a>
             </div>
           )}
           {order.internalNotes && <div className="small text-muted mt-2">{order.internalNotes}</div>}
@@ -94,14 +94,14 @@ const SupplierOrderDetailPage: React.FC = () => {
 
       <Card className="mb-4">
         <Card.Body>
-          <Card.Title className="h6">Line items</Card.Title>
+          <Card.Title className="h6">Líneas del pedido</Card.Title>
           <Table responsive size="sm" className="mb-0">
             <thead>
               <tr>
-                <th>Ref</th>
-                <th>Qty</th>
-                <th>Cost</th>
-                <th>Status</th>
+                <th>Ref.</th>
+                <th>Cant.</th>
+                <th>Coste</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -120,7 +120,7 @@ const SupplierOrderDetailPage: React.FC = () => {
 
       <Card>
         <Card.Body>
-          <Card.Title className="h6">Update status</Card.Title>
+          <Card.Title className="h6">Actualizar estado</Card.Title>
           <SupplierOrderStatusControl
             order={order}
             saving={saving}

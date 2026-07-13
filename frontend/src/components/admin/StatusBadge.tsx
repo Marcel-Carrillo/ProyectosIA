@@ -2,6 +2,7 @@ import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { ProductStatus } from '../../types/product';
 import { SupplierStatus } from '../../types/supplier';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 export type StatusValue = ProductStatus | SupplierStatus | string;
 
@@ -33,7 +34,7 @@ const VARIANT: Record<string, string> = {
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status, ...rest }) => (
   <Badge bg={VARIANT[status] ?? 'secondary'} data-testid={rest['data-testid']}>
-    {status}
+    {adminStatusLabel(status)}
   </Badge>
 );
 

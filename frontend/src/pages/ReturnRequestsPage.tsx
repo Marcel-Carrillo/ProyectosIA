@@ -7,6 +7,7 @@ import ErrorAlert from '../components/ErrorAlert';
 import Pagination from '../components/Pagination';
 import StatusBadge from '../components/admin/StatusBadge';
 import { ReturnRequest, ReturnRequestStatus } from '../types/returnRequest';
+import { adminStatusLabel } from '../utils/adminStatusLabels';
 
 const PAGE_SIZE = 20;
 
@@ -46,7 +47,7 @@ const ReturnRequestsPage: React.FC = () => {
       setReturnRequests(result.items);
       setTotal(result.total);
     } catch {
-      setError('Unable to load return requests. Please try again later.');
+      setError('No se pudieron cargar las solicitudes de devolución. Inténtelo de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ const ReturnRequestsPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">Return Requests</h1>
+        <h1 className="h3 mb-0">Solicitudes de devolución</h1>
       </div>
 
       <Row className="g-2 mb-3">
@@ -69,19 +70,19 @@ const ReturnRequestsPage: React.FC = () => {
           <Form.Select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            aria-label="Filter by status"
+            aria-label="Filtrar por estado"
             data-testid="select-status-filter"
           >
-            <option value="">All statuses</option>
+            <option value="">Todos los estados</option>
             {RETURN_REQUEST_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{adminStatusLabel(s)}</option>
             ))}
           </Form.Select>
         </Col>
         <Col xs={12} md={3}>
           <Form.Control
             type="number"
-            placeholder="Filter by Order ID"
+            placeholder="Filtrar por ID de pedido"
             value={orderFilter}
             onChange={(e) => { setOrderFilter(e.target.value); setPage(1); }}
             data-testid="input-order-filter"
@@ -98,18 +99,18 @@ const ReturnRequestsPage: React.FC = () => {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Order ID</th>
-                <th>Item ID</th>
-                <th>Status</th>
-                <th>Reason</th>
-                <th>Requested</th>
+                <th>ID de pedido</th>
+                <th>ID de artículo</th>
+                <th>Estado</th>
+                <th>Motivo</th>
+                <th>Solicitado</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {returnRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">No return requests found.</td>
+                  <td colSpan={7} className="text-center text-muted py-4">No se encontraron solicitudes de devolución.</td>
                 </tr>
               ) : (
                 returnRequests.map((r) => (
@@ -126,7 +127,7 @@ const ReturnRequestsPage: React.FC = () => {
                     <td>{new Date(r.requestedAt).toLocaleDateString()}</td>
                     <td>
                       <Link to={`/return-requests/${r.id}`} className="btn btn-sm btn-outline-primary">
-                        View
+                        Ver
                       </Link>
                     </td>
                   </tr>

@@ -74,7 +74,7 @@ describe('SuppliersPage', () => {
   it('shows an error message when the request fails', async () => {
     mockedService.list.mockRejectedValue(new Error('boom'));
     renderPage();
-    expect(await screen.findByText(/unable to load suppliers/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no se pudieron cargar los proveedores/i)).toBeInTheDocument();
   });
 
   it('re-queries with the selected status filter', async () => {
@@ -144,6 +144,6 @@ describe('SuppliersPage', () => {
     expect(await screen.findByTestId('supplier-row-1')).toBeInTheDocument();
     fireEvent.click(screen.getAllByTestId('btn-deactivate-1')[0]);
     fireEvent.click(screen.getByTestId('btn-confirm-deactivate'));
-    expect(await screen.findByText(/unexpected error/i)).toBeInTheDocument();
+    expect(await screen.findByText(/error inesperado/i)).toBeInTheDocument();
   });
 });

@@ -102,7 +102,7 @@ describe('ProductDetailPage', () => {
     setup(makeProduct({ status: 'Draft' }), [variant('Active')]);
     mockedAdmin.update.mockRejectedValue(makeAxiosError('PRODUCT_REQUIRES_ACTIVE_VARIANT', 422));
     fireEvent.click(await screen.findByTestId('btn-activate'));
-    expect(await screen.findByText(/requires at least one active variant/i)).toBeInTheDocument();
+    expect(await screen.findByText(/requiere al menos una variante activa/i)).toBeInTheDocument();
   });
 
   it('saves the general form via update and shows success', async () => {
@@ -111,7 +111,7 @@ describe('ProductDetailPage', () => {
     mockedAdmin.update.mockResolvedValue({ success: true, data: makeProduct({ name: 'New' }), message: '' });
     fireEvent.click(screen.getByTestId('btn-save'));
     await waitFor(() => expect(mockedAdmin.update).toHaveBeenCalled());
-    expect(await screen.findByText(/saved successfully/i)).toBeInTheDocument();
+    expect(await screen.findByText(/guardado correctamente/i)).toBeInTheDocument();
   });
 
   it('shows the existing gtin value in the input', async () => {

@@ -6,6 +6,7 @@ import {
   UpdateSupplierOrderStatusInput,
 } from '../../types/supplierOrder';
 import StatusBadge from './StatusBadge';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 const SUPPLIER_ORDER_STATUSES: SupplierOrderStatus[] = [
   'Draft',
@@ -52,7 +53,7 @@ const SupplierOrderStatusControl: React.FC<SupplierOrderStatusControlProps> = ({
     <form onSubmit={handleSubmit} data-testid="supplier-order-status-control">
       <Row className="g-3 mb-3">
         <Col md={4}>
-          <div className="small text-muted mb-1">Status</div>
+          <div className="small text-muted mb-1">Estado</div>
           <StatusBadge status={order.status} data-testid="badge-supplier-order-status" />
           <Form.Select
             className="mt-2"
@@ -61,12 +62,12 @@ const SupplierOrderStatusControl: React.FC<SupplierOrderStatusControlProps> = ({
             data-testid="select-supplier-order-status"
           >
             {SUPPLIER_ORDER_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{adminStatusLabel(s)}</option>
             ))}
           </Form.Select>
         </Col>
         <Col md={4}>
-          <Form.Label className="small">Tracking number</Form.Label>
+          <Form.Label className="small">Número de seguimiento</Form.Label>
           <Form.Control
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
@@ -74,7 +75,7 @@ const SupplierOrderStatusControl: React.FC<SupplierOrderStatusControlProps> = ({
           />
         </Col>
         <Col md={4}>
-          <Form.Label className="small">Tracking URL</Form.Label>
+          <Form.Label className="small">URL de seguimiento</Form.Label>
           <Form.Control
             value={trackingUrl}
             onChange={(e) => setTrackingUrl(e.target.value)}
@@ -84,7 +85,7 @@ const SupplierOrderStatusControl: React.FC<SupplierOrderStatusControlProps> = ({
       </Row>
       {error && <div className="text-danger small mb-2">{error}</div>}
       <Button type="submit" variant="primary" disabled={saving} data-testid="btn-save-supplier-status">
-        {saving ? 'Saving…' : 'Update status'}
+        {saving ? 'Guardando…' : 'Actualizar estado'}
       </Button>
     </form>
   );

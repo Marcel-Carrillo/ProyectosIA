@@ -7,6 +7,7 @@ import ErrorAlert from '../components/ErrorAlert';
 import Pagination from '../components/Pagination';
 import StatusBadge from '../components/admin/StatusBadge';
 import { Refund, RefundStatus } from '../types/refund';
+import { adminStatusLabel } from '../utils/adminStatusLabels';
 
 const PAGE_SIZE = 20;
 
@@ -44,7 +45,7 @@ const RefundsPage: React.FC = () => {
       setRefunds(result.items);
       setTotal(result.total);
     } catch {
-      setError('Unable to load refunds. Please try again later.');
+      setError('No se pudieron cargar los reembolsos. Inténtelo de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -59,7 +60,7 @@ const RefundsPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">Refunds</h1>
+        <h1 className="h3 mb-0">Reembolsos</h1>
       </div>
 
       <Row className="g-2 mb-3">
@@ -67,19 +68,19 @@ const RefundsPage: React.FC = () => {
           <Form.Select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            aria-label="Filter by status"
+            aria-label="Filtrar por estado"
             data-testid="select-status-filter"
           >
-            <option value="">All statuses</option>
+            <option value="">Todos los estados</option>
             {REFUND_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{adminStatusLabel(s)}</option>
             ))}
           </Form.Select>
         </Col>
         <Col xs={12} md={3}>
           <Form.Control
             type="number"
-            placeholder="Filter by Order ID"
+            placeholder="Filtrar por ID de pedido"
             value={orderFilter}
             onChange={(e) => { setOrderFilter(e.target.value); setPage(1); }}
             data-testid="input-order-filter"
@@ -96,18 +97,18 @@ const RefundsPage: React.FC = () => {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Order ID</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Reason</th>
-                <th>Created</th>
+                <th>ID de pedido</th>
+                <th>Importe</th>
+                <th>Estado</th>
+                <th>Motivo</th>
+                <th>Creado</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {refunds.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">No refunds found.</td>
+                  <td colSpan={7} className="text-center text-muted py-4">No se encontraron reembolsos.</td>
                 </tr>
               ) : (
                 refunds.map((r) => (
@@ -124,7 +125,7 @@ const RefundsPage: React.FC = () => {
                     <td>{new Date(r.createdAt).toLocaleDateString()}</td>
                     <td>
                       <Link to={`/refunds/${r.id}`} className="btn btn-sm btn-outline-primary">
-                        View
+                        Ver
                       </Link>
                     </td>
                   </tr>

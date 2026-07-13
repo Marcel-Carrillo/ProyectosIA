@@ -9,6 +9,7 @@ import {
   UpdateVariantInput,
 } from '../../types/product';
 import StatusBadge from './StatusBadge';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 type VariantFormMode = 'create' | 'edit';
 
@@ -77,7 +78,7 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.sku.trim()) {
-      setError('SKU is required.');
+      setError('El SKU es obligatorio.');
       return;
     }
     setSaving(true);
@@ -120,7 +121,7 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
     <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-variant">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>{mode === 'create' ? 'Add variant' : 'Edit variant'}</Modal.Title>
+          <Modal.Title>{mode === 'create' ? 'Añadir variante' : 'Editar variante'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
@@ -135,7 +136,7 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Size</Form.Label>
+            <Form.Label>Talla</Form.Label>
             <Form.Control type="text" value={form.size} onChange={(e) => set('size', e.target.value)} />
           </Form.Group>
           <Form.Group className="mb-3">
@@ -144,7 +145,7 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
           </Form.Group>
           {mode === 'edit' && initial?.supplierCost != null && (
             <Form.Group className="mb-3">
-              <Form.Label>Supplier cost (read-only)</Form.Label>
+              <Form.Label>Coste de proveedor (solo lectura)</Form.Label>
               <Form.Control
                 type="text"
                 value={new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(
@@ -155,12 +156,12 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
                 data-testid="input-variant-supplier-cost"
               />
               {initial.supplierName && (
-                <Form.Text className="text-muted">Supplier: {initial.supplierName}</Form.Text>
+                <Form.Text className="text-muted">Proveedor: {initial.supplierName}</Form.Text>
               )}
             </Form.Group>
           )}
           <Form.Group className="mb-3">
-            <Form.Label>Public price *</Form.Label>
+            <Form.Label>Precio público *</Form.Label>
             <Form.Control
               type="number"
               step="0.01"
@@ -175,12 +176,12 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
               Number(form.publicPrice) > 0 &&
               Number(form.publicPrice) <= initial.supplierCost && (
                 <Form.Text className="text-danger">
-                  Warning: public price is at or below the supplier cost.
+                  Advertencia: el precio público es igual o inferior al coste del proveedor.
                 </Form.Text>
               )}
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Compare-at price</Form.Label>
+            <Form.Label>Precio de comparación</Form.Label>
             <Form.Control
               type="number"
               step="0.01"
@@ -190,27 +191,27 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Stock policy</Form.Label>
+            <Form.Label>Política de stock</Form.Label>
             <Form.Select value={form.stockPolicy} onChange={(e) => set('stockPolicy', e.target.value)}>
-              <option value="SupplierManaged">Supplier managed</option>
-              <option value="InternalStock">Internal stock</option>
-              <option value="Hybrid">Hybrid</option>
+              <option value="SupplierManaged">{adminStatusLabel('SupplierManaged')}</option>
+              <option value="InternalStock">{adminStatusLabel('InternalStock')}</option>
+              <option value="Hybrid">{adminStatusLabel('Hybrid')}</option>
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Status</Form.Label>
+            <Form.Label>Estado</Form.Label>
             <Form.Select value={form.status} onChange={(e) => set('status', e.target.value)}>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="Active">{adminStatusLabel('Active')}</option>
+              <option value="Inactive">{adminStatusLabel('Inactive')}</option>
             </Form.Select>
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide}>
-            Cancel
+            Cancelar
           </Button>
           <Button type="submit" variant="primary" disabled={saving} data-testid="btn-variant-save">
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Guardando…' : 'Guardar'}
           </Button>
         </Modal.Footer>
       </Form>
@@ -280,13 +281,13 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
     <>
       <div className="d-flex justify-content-end mb-2">
         <Button size="sm" variant="primary" onClick={openCreate} data-testid="btn-add-variant">
-          Add variant
+          Añadir variante
         </Button>
       </div>
 
       {variants.length === 0 ? (
         <Alert variant="info" className="mb-0">
-          No variants yet. Add at least one active variant to activate the product.
+          Aún no hay variantes. Añada al menos una variante activa para activar el producto.
         </Alert>
       ) : (
         <>
@@ -297,7 +298,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   <code>{v.sku}</code>
                 </div>
                 <div className="admin-card-row__field">
-                  <span className="admin-card-row__label">Size</span>
+                  <span className="admin-card-row__label">Talla</span>
                   <span>{v.size ?? '—'}</span>
                 </div>
                 <div className="admin-card-row__field">
@@ -305,29 +306,29 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   <span>{v.color ?? '—'}</span>
                 </div>
                 <div className="admin-card-row__field">
-                  <span className="admin-card-row__label">Supplier cost</span>
+                  <span className="admin-card-row__label">Coste de proveedor</span>
                   <span>{formatPrice(v.supplierCost)}</span>
                 </div>
                 <div className="admin-card-row__field">
-                  <span className="admin-card-row__label">Public price</span>
+                  <span className="admin-card-row__label">Precio público</span>
                   <span>{formatPrice(v.publicPrice)}</span>
                 </div>
                 <div className="admin-card-row__field">
-                  <span className="admin-card-row__label">Margin</span>
+                  <span className="admin-card-row__label">Margen</span>
                   <span>
                     <Margin variant={v} />
                   </span>
                 </div>
                 <div className="admin-card-row__field">
-                  <span className="admin-card-row__label">Compare-at</span>
+                  <span className="admin-card-row__label">Precio de comparación</span>
                   <span>{formatPrice(v.compareAtPrice)}</span>
                 </div>
                 <div className="admin-card-row__field">
-                  <span className="admin-card-row__label">Stock policy</span>
-                  <span>{v.stockPolicy}</span>
+                  <span className="admin-card-row__label">Política de stock</span>
+                  <span>{adminStatusLabel(v.stockPolicy)}</span>
                 </div>
                 <div className="admin-card-row__field">
-                  <span className="admin-card-row__label">Status</span>
+                  <span className="admin-card-row__label">Estado</span>
                   <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
                 </div>
                 <div className="admin-card-row__actions">
@@ -337,7 +338,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                     onClick={() => openEdit(v)}
                     data-testid={`btn-edit-variant-${v.id}`}
                   >
-                    Edit
+                    Editar
                   </Button>
                   <Button
                     variant="outline-danger"
@@ -345,7 +346,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                     onClick={() => setDeleting(v)}
                     data-testid={`btn-delete-variant-${v.id}`}
                   >
-                    Delete
+                    Eliminar
                   </Button>
                 </div>
               </div>
@@ -357,15 +358,15 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
             <thead>
               <tr>
                 <th>SKU</th>
-                <th>Size</th>
+                <th>Talla</th>
                 <th>Color</th>
-                <th>Supplier cost</th>
-                <th>Public price</th>
-                <th>Margin</th>
-                <th>Compare-at</th>
-                <th>Stock policy</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Coste de proveedor</th>
+                <th>Precio público</th>
+                <th>Margen</th>
+                <th>Precio de comparación</th>
+                <th>Política de stock</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -382,7 +383,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                     <Margin variant={v} />
                   </td>
                   <td>{formatPrice(v.compareAtPrice)}</td>
-                  <td>{v.stockPolicy}</td>
+                  <td>{adminStatusLabel(v.stockPolicy)}</td>
                   <td>
                     <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
                   </td>
@@ -394,7 +395,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                       onClick={() => openEdit(v)}
                       data-testid={`btn-edit-variant-${v.id}`}
                     >
-                      Edit
+                      Editar
                     </Button>
                     <Button
                       size="sm"
@@ -402,7 +403,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                       onClick={() => setDeleting(v)}
                       data-testid={`btn-delete-variant-${v.id}`}
                     >
-                      Delete
+                      Eliminar
                     </Button>
                   </td>
                 </tr>
@@ -424,15 +425,15 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
 
       <Modal show={deleting !== null} onHide={() => setDeleting(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
-          <Modal.Title>Delete variant</Modal.Title>
+          <Modal.Title>Eliminar variante</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {deleteError && <Alert variant="danger">{deleteError}</Alert>}
-          Are you sure you want to delete variant <code>{deleting?.sku}</code>?
+          ¿Está seguro de que desea eliminar la variante <code>{deleting?.sku}</code>?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setDeleting(null)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             variant="danger"
@@ -440,7 +441,7 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
             onClick={confirmDelete}
             data-testid="btn-confirm-delete-variant"
           >
-            {removing ? 'Deleting…' : 'Delete'}
+            {removing ? 'Eliminando…' : 'Eliminar'}
           </Button>
         </Modal.Footer>
       </Modal>

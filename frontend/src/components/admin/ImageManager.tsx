@@ -28,7 +28,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addForm.url.trim()) {
-      setAddError('Image URL is required.');
+      setAddError('La URL de la imagen es obligatoria.');
       return;
     }
     setAdding(true);
@@ -93,7 +93,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
       {opError && <Alert variant="danger">{opError}</Alert>}
 
       {sorted.length === 0 ? (
-        <Alert variant="info">No images yet.</Alert>
+        <Alert variant="info">Aún no hay imágenes.</Alert>
       ) : (
         <Row className="g-3 mb-3">
           {sorted.map((image) => {
@@ -108,9 +108,9 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                     style={{ height: 120, objectFit: 'cover' }}
                   />
                   <Card.Body className="p-2">
-                    {isMain && <div className="badge bg-primary mb-1">Main</div>}
+                    {isMain && <div className="badge bg-primary mb-1">Principal</div>}
                     <Form.Group className="mb-2">
-                      <Form.Label className="small mb-0">Order</Form.Label>
+                      <Form.Label className="small mb-0">Orden</Form.Label>
                       <Form.Control
                         type="number"
                         size="sm"
@@ -127,7 +127,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                       onClick={() => handleSetMain(image)}
                       data-testid={`btn-set-main-${image.id}`}
                     >
-                      {isMain ? 'Main image' : 'Set as main'}
+                      {isMain ? 'Imagen principal' : 'Establecer como principal'}
                     </Button>
                     <Button
                       size="sm"
@@ -136,7 +136,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                       onClick={() => setDeleting(image)}
                       data-testid={`btn-delete-image-${image.id}`}
                     >
-                      Delete
+                      Eliminar
                     </Button>
                   </Card.Body>
                 </Card>
@@ -148,7 +148,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
 
       <Card>
         <Card.Header className="py-2">
-          <strong>Add image</strong>
+          <strong>Añadir imagen</strong>
         </Card.Header>
         <Card.Body>
           {addError && <Alert variant="danger">{addError}</Alert>}
@@ -164,7 +164,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                 />
               </Col>
               <Col xs={12} md={3}>
-                <Form.Label className="small mb-1">Alt text</Form.Label>
+                <Form.Label className="small mb-1">Texto alternativo</Form.Label>
                 <Form.Control
                   type="text"
                   value={addForm.altText}
@@ -173,7 +173,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                 />
               </Col>
               <Col xs={12} md={2}>
-                <Form.Label className="small mb-1">Order</Form.Label>
+                <Form.Label className="small mb-1">Orden</Form.Label>
                 <Form.Control
                   type="number"
                   value={addForm.sortOrder}
@@ -189,7 +189,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                   disabled={adding}
                   data-testid="btn-add-image"
                 >
-                  {adding ? '…' : 'Add'}
+                  {adding ? '…' : 'Añadir'}
                 </Button>
               </Col>
             </Row>
@@ -199,12 +199,12 @@ const ImageManager: React.FC<ImageManagerProps> = ({
 
       <Modal show={deleting !== null} onHide={() => setDeleting(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
-          <Modal.Title>Delete image</Modal.Title>
+          <Modal.Title>Eliminar imagen</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Are you sure you want to delete this image?</Modal.Body>
+        <Modal.Body>¿Está seguro de que desea eliminar esta imagen?</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setDeleting(null)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             variant="danger"
@@ -212,7 +212,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
             onClick={confirmDelete}
             data-testid="btn-confirm-delete-image"
           >
-            {removing ? 'Deleting…' : 'Delete'}
+            {removing ? 'Eliminando…' : 'Eliminar'}
           </Button>
         </Modal.Footer>
       </Modal>

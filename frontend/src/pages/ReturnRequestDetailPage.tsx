@@ -20,7 +20,7 @@ const ReturnRequestDetailPage: React.FC = () => {
 
   const loadReturnRequest = useCallback(async () => {
     if (!returnRequestId || Number.isNaN(returnRequestId)) {
-      setError('Invalid return request id.');
+      setError('ID de solicitud de devolución no válido.');
       setLoading(false);
       return;
     }
@@ -30,7 +30,7 @@ const ReturnRequestDetailPage: React.FC = () => {
       const data = await returnRequestService.getById(returnRequestId);
       setReturnRequest(data);
     } catch {
-      setError('Unable to load return request.');
+      setError('No se pudo cargar la solicitud de devolución.');
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ const ReturnRequestDetailPage: React.FC = () => {
       const updated = await returnRequestService.updateStatus(returnRequest.id, update);
       setReturnRequest(updated);
     } catch (err) {
-      setStatusError(err instanceof Error ? err.message : 'Failed to update return request status.');
+      setStatusError(err instanceof Error ? err.message : 'No se pudo actualizar el estado de la solicitud de devolución.');
     } finally {
       setSaving(false);
     }
@@ -61,11 +61,11 @@ const ReturnRequestDetailPage: React.FC = () => {
   return (
     <div className="admin-page">
       <p className="mb-3">
-        <Link to="/return-requests">← Back to return requests</Link>
+        <Link to="/return-requests">← Volver a solicitudes de devolución</Link>
       </p>
 
       <div className="admin-page-header mb-3">
-        <h1 className="h3 mb-0">Return Request #{returnRequest.id}</h1>
+        <h1 className="h3 mb-0">Solicitud de devolución #{returnRequest.id}</h1>
         <div className="mt-2">
           <StatusBadge status={returnRequest.status} />
         </div>
@@ -74,41 +74,41 @@ const ReturnRequestDetailPage: React.FC = () => {
       <Row>
         <Col md={6}>
           <Card className="mb-4">
-            <Card.Header>Details</Card.Header>
+            <Card.Header>Detalles</Card.Header>
             <Card.Body>
               <dl className="row mb-0">
-                <dt className="col-sm-5">Customer Order</dt>
+                <dt className="col-sm-5">Pedido de cliente</dt>
                 <dd className="col-sm-7">
                   <Link to={`/customer-orders/${returnRequest.customerOrderId}`}>
                     #{returnRequest.customerOrderId}
                   </Link>
                 </dd>
 
-                <dt className="col-sm-5">Order Item ID</dt>
+                <dt className="col-sm-5">ID de artículo del pedido</dt>
                 <dd className="col-sm-7">#{returnRequest.customerOrderItemId}</dd>
 
-                <dt className="col-sm-5">Reason</dt>
+                <dt className="col-sm-5">Motivo</dt>
                 <dd className="col-sm-7">{returnRequest.reason}</dd>
 
-                <dt className="col-sm-5">Requested At</dt>
+                <dt className="col-sm-5">Fecha de solicitud</dt>
                 <dd className="col-sm-7">{new Date(returnRequest.requestedAt).toLocaleString()}</dd>
 
-                <dt className="col-sm-5">Approved At</dt>
+                <dt className="col-sm-5">Fecha de aprobación</dt>
                 <dd className="col-sm-7">
                   {returnRequest.approvedAt ? new Date(returnRequest.approvedAt).toLocaleString() : '—'}
                 </dd>
 
-                <dt className="col-sm-5">Rejected At</dt>
+                <dt className="col-sm-5">Fecha de rechazo</dt>
                 <dd className="col-sm-7">
                   {returnRequest.rejectedAt ? new Date(returnRequest.rejectedAt).toLocaleString() : '—'}
                 </dd>
 
-                <dt className="col-sm-5">Received At</dt>
+                <dt className="col-sm-5">Fecha de recepción</dt>
                 <dd className="col-sm-7">
                   {returnRequest.receivedAt ? new Date(returnRequest.receivedAt).toLocaleString() : '—'}
                 </dd>
 
-                <dt className="col-sm-5">Created</dt>
+                <dt className="col-sm-5">Creado</dt>
                 <dd className="col-sm-7">{new Date(returnRequest.createdAt).toLocaleString()}</dd>
               </dl>
             </Card.Body>
@@ -117,7 +117,7 @@ const ReturnRequestDetailPage: React.FC = () => {
 
         <Col md={6}>
           <Card className="mb-4">
-            <Card.Header>Update Status</Card.Header>
+            <Card.Header>Actualizar estado</Card.Header>
             <Card.Body>
               <ReturnRequestStatusControl
                 returnRequest={returnRequest}

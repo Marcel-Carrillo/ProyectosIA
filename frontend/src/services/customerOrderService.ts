@@ -15,21 +15,21 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/customer-orders`;
 export function mapCustomerOrderError(code: string): string {
   switch (code) {
     case 'CUSTOMER_ORDER_NOT_FOUND':
-      return 'Customer order not found.';
+      return 'Pedido de cliente no encontrado.';
     case 'CUSTOMER_NOT_FOUND':
-      return 'Customer not found.';
+      return 'Cliente no encontrado.';
     case 'VARIANT_NOT_FOUND':
-      return 'Product variant not found.';
+      return 'Variante de producto no encontrada.';
     case 'ORDER_STATUS_TRANSITION_INVALID':
     case 'PAYMENT_STATUS_TRANSITION_INVALID':
     case 'FULFILLMENT_STATUS_TRANSITION_INVALID':
-      return 'This status change is not allowed.';
+      return 'No se permite este cambio de estado.';
     case 'CUSTOMER_ORDER_NOT_ELIGIBLE':
-      return 'This customer order is not eligible for supplier orders.';
+      return 'Este pedido de cliente no es apto para pedidos a proveedores.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

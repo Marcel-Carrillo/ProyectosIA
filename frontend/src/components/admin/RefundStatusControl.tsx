@@ -2,6 +2,7 @@ import React from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { Refund, RefundStatus, UpdateRefundStatusInput, REFUND_TRANSITIONS } from '../../types/refund';
 import StatusBadge from './StatusBadge';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 type RefundStatusControlProps = {
   refund: Refund;
@@ -41,9 +42,9 @@ const RefundStatusControl: React.FC<RefundStatusControlProps> = ({
   if (isTerminal) {
     return (
       <div data-testid="refund-status-control">
-        <div className="small text-muted mb-1">Status</div>
+        <div className="small text-muted mb-1">Estado</div>
         <StatusBadge status={refund.status} data-testid="badge-refund-status" />
-        <p className="text-muted small mt-2">This refund is in a terminal state and cannot be updated.</p>
+        <p className="text-muted small mt-2">Este reembolso está en un estado final y no puede actualizarse.</p>
       </div>
     );
   }
@@ -51,28 +52,28 @@ const RefundStatusControl: React.FC<RefundStatusControlProps> = ({
   return (
     <form onSubmit={handleSubmit} data-testid="refund-status-control">
       <div className="mb-3">
-        <div className="small text-muted mb-1">Current Status</div>
+        <div className="small text-muted mb-1">Estado actual</div>
         <StatusBadge status={refund.status} data-testid="badge-refund-status" />
       </div>
       <div className="mb-3">
-        <Form.Label className="small">New Status</Form.Label>
+        <Form.Label className="small">Nuevo estado</Form.Label>
         <Form.Select
           value={status}
           onChange={(e) => setStatus(e.target.value as RefundStatus)}
           data-testid="select-refund-status"
         >
-          <option value={refund.status}>{refund.status} (current)</option>
+          <option value={refund.status}>{adminStatusLabel(refund.status)} (actual)</option>
           {allowedTransitions.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{adminStatusLabel(s)}</option>
           ))}
         </Form.Select>
       </div>
       <div className="mb-3">
-        <Form.Label className="small">Payment Provider Reference</Form.Label>
+        <Form.Label className="small">Referencia del proveedor de pago</Form.Label>
         <Form.Control
           value={paymentProviderReference}
           onChange={(e) => setPaymentProviderReference(e.target.value)}
-          placeholder="e.g. PAY-123456"
+          placeholder="p. ej. PAY-123456"
           maxLength={150}
           data-testid="input-payment-provider-reference"
         />
@@ -84,7 +85,7 @@ const RefundStatusControl: React.FC<RefundStatusControlProps> = ({
         disabled={saving || status === refund.status}
         data-testid="btn-save-refund-status"
       >
-        {saving ? 'Saving…' : 'Update status'}
+        {saving ? 'Guardando…' : 'Actualizar estado'}
       </Button>
     </form>
   );

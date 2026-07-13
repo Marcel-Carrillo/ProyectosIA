@@ -20,7 +20,7 @@ const RefundDetailPage: React.FC = () => {
 
   const loadRefund = useCallback(async () => {
     if (!refundId || Number.isNaN(refundId)) {
-      setError('Invalid refund id.');
+      setError('ID de reembolso no válido.');
       setLoading(false);
       return;
     }
@@ -30,7 +30,7 @@ const RefundDetailPage: React.FC = () => {
       const data = await refundService.getById(refundId);
       setRefund(data);
     } catch {
-      setError('Unable to load refund.');
+      setError('No se pudo cargar el reembolso.');
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ const RefundDetailPage: React.FC = () => {
       const updated = await refundService.updateStatus(refund.id, update);
       setRefund(updated);
     } catch (err) {
-      setStatusError(err instanceof Error ? err.message : 'Failed to update refund status.');
+      setStatusError(err instanceof Error ? err.message : 'No se pudo actualizar el estado del reembolso.');
     } finally {
       setSaving(false);
     }
@@ -61,11 +61,11 @@ const RefundDetailPage: React.FC = () => {
   return (
     <div className="admin-page">
       <p className="mb-3">
-        <Link to="/refunds">← Back to refunds</Link>
+        <Link to="/refunds">← Volver a reembolsos</Link>
       </p>
 
       <div className="admin-page-header mb-3">
-        <h1 className="h3 mb-0">Refund #{refund.id}</h1>
+        <h1 className="h3 mb-0">Reembolso #{refund.id}</h1>
         <div className="mt-2">
           <StatusBadge status={refund.status} data-testid="detail-badge-refund" />
         </div>
@@ -74,32 +74,32 @@ const RefundDetailPage: React.FC = () => {
       <Row>
         <Col md={6}>
           <Card className="mb-4">
-            <Card.Header>Details</Card.Header>
+            <Card.Header>Detalles</Card.Header>
             <Card.Body>
               <dl className="row mb-0">
-                <dt className="col-sm-5">Customer Order</dt>
+                <dt className="col-sm-5">Pedido de cliente</dt>
                 <dd className="col-sm-7">
                   <Link to={`/customer-orders/${refund.customerOrderId}`}>
                     #{refund.customerOrderId}
                   </Link>
                 </dd>
 
-                <dt className="col-sm-5">Amount</dt>
+                <dt className="col-sm-5">Importe</dt>
                 <dd className="col-sm-7">€{parseFloat(refund.amount).toFixed(2)}</dd>
 
-                <dt className="col-sm-5">Reason</dt>
+                <dt className="col-sm-5">Motivo</dt>
                 <dd className="col-sm-7">{refund.reason ?? '—'}</dd>
 
-                <dt className="col-sm-5">Return Request ID</dt>
+                <dt className="col-sm-5">ID de solicitud de devolución</dt>
                 <dd className="col-sm-7">{refund.returnRequestId ?? '—'}</dd>
 
-                <dt className="col-sm-5">Payment Reference</dt>
+                <dt className="col-sm-5">Referencia de pago</dt>
                 <dd className="col-sm-7">{refund.paymentProviderReference ?? '—'}</dd>
 
-                <dt className="col-sm-5">Created</dt>
+                <dt className="col-sm-5">Creado</dt>
                 <dd className="col-sm-7">{new Date(refund.createdAt).toLocaleString()}</dd>
 
-                <dt className="col-sm-5">Processed At</dt>
+                <dt className="col-sm-5">Fecha de procesamiento</dt>
                 <dd className="col-sm-7">
                   {refund.processedAt ? new Date(refund.processedAt).toLocaleString() : '—'}
                 </dd>
@@ -110,7 +110,7 @@ const RefundDetailPage: React.FC = () => {
 
         <Col md={6}>
           <Card className="mb-4">
-            <Card.Header>Update Status</Card.Header>
+            <Card.Header>Actualizar estado</Card.Header>
             <Card.Body>
               <RefundStatusControl
                 refund={refund}

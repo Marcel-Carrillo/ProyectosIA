@@ -10,6 +10,7 @@ import {
   CreateCustomerAddressInput,
   UpdateCustomerAddressInput,
 } from '../../types/customer';
+import { adminStatusLabel } from '../../utils/adminStatusLabels';
 
 type CustomerAddressFormModalProps = {
   show: boolean;
@@ -80,22 +81,22 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
   };
 
   const validate = (): string | null => {
-    if (!formData.fullName.trim()) return 'Full name is required.';
-    if (formData.fullName.length > 150) return 'Full name must not exceed 150 characters.';
-    if (!formData.streetLine1.trim()) return 'Street line 1 is required.';
-    if (formData.streetLine1.length > 150) return 'Street line 1 must not exceed 150 characters.';
+    if (!formData.fullName.trim()) return 'El nombre completo es obligatorio.';
+    if (formData.fullName.length > 150) return 'El nombre completo no debe superar los 150 caracteres.';
+    if (!formData.streetLine1.trim()) return 'La línea 1 de la calle es obligatoria.';
+    if (formData.streetLine1.length > 150) return 'La línea 1 de la calle no debe superar los 150 caracteres.';
     if (formData.streetLine2 && formData.streetLine2.length > 150)
-      return 'Street line 2 must not exceed 150 characters.';
-    if (!formData.city.trim()) return 'City is required.';
-    if (formData.city.length > 100) return 'City must not exceed 100 characters.';
-    if (!formData.province.trim()) return 'Province is required.';
-    if (formData.province.length > 100) return 'Province must not exceed 100 characters.';
-    if (!formData.postalCode.trim()) return 'Postal code is required.';
-    if (formData.postalCode.length > 20) return 'Postal code must not exceed 20 characters.';
-    if (!formData.country.trim()) return 'Country is required.';
-    if (formData.country.length > 100) return 'Country must not exceed 100 characters.';
+      return 'La línea 2 de la calle no debe superar los 150 caracteres.';
+    if (!formData.city.trim()) return 'La ciudad es obligatoria.';
+    if (formData.city.length > 100) return 'La ciudad no debe superar los 100 caracteres.';
+    if (!formData.province.trim()) return 'La provincia es obligatoria.';
+    if (formData.province.length > 100) return 'La provincia no debe superar los 100 caracteres.';
+    if (!formData.postalCode.trim()) return 'El código postal es obligatorio.';
+    if (formData.postalCode.length > 20) return 'El código postal no debe superar los 20 caracteres.';
+    if (!formData.country.trim()) return 'El país es obligatorio.';
+    if (formData.country.length > 100) return 'El país no debe superar los 100 caracteres.';
     if (formData.phone && formData.phone.length > 30)
-      return 'Phone must not exceed 30 characters.';
+      return 'El teléfono no debe superar los 30 caracteres.';
     return null;
   };
 
@@ -155,25 +156,25 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
     >
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>{initial ? 'Edit address' : 'New address'}</Modal.Title>
+          <Modal.Title>{initial ? 'Editar dirección' : 'Nueva dirección'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Form.Group className="mb-3">
-            <Form.Label>Type *</Form.Label>
+            <Form.Label>Tipo *</Form.Label>
             <Form.Select
               value={formData.type}
               onChange={(e) => handleChange('type', e.target.value as AddressType)}
               data-testid="select-address-type"
             >
-              <option value="Shipping">Shipping</option>
-              <option value="Billing">Billing</option>
+              <option value="Shipping">{adminStatusLabel('Shipping')}</option>
+              <option value="Billing">{adminStatusLabel('Billing')}</option>
             </Form.Select>
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Full name *</Form.Label>
+            <Form.Label>Nombre completo *</Form.Label>
             <Form.Control
               type="text"
               value={formData.fullName}
@@ -183,7 +184,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Phone</Form.Label>
+            <Form.Label>Teléfono</Form.Label>
             <Form.Control
               type="text"
               value={formData.phone}
@@ -193,7 +194,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Street line 1 *</Form.Label>
+            <Form.Label>Línea 1 de la calle *</Form.Label>
             <Form.Control
               type="text"
               value={formData.streetLine1}
@@ -203,7 +204,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Street line 2</Form.Label>
+            <Form.Label>Línea 2 de la calle</Form.Label>
             <Form.Control
               type="text"
               value={formData.streetLine2}
@@ -215,7 +216,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
           <Row>
             <Col xs={12} md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>City *</Form.Label>
+                <Form.Label>Ciudad *</Form.Label>
                 <Form.Control
                   type="text"
                   value={formData.city}
@@ -226,7 +227,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
             </Col>
             <Col xs={12} md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Province *</Form.Label>
+                <Form.Label>Provincia *</Form.Label>
                 <Form.Control
                   type="text"
                   value={formData.province}
@@ -240,7 +241,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
           <Row>
             <Col xs={12} md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Postal code *</Form.Label>
+                <Form.Label>Código postal *</Form.Label>
                 <Form.Control
                   type="text"
                   value={formData.postalCode}
@@ -251,7 +252,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
             </Col>
             <Col xs={12} md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Country *</Form.Label>
+                <Form.Label>País *</Form.Label>
                 <Form.Control
                   type="text"
                   value={formData.country}
@@ -264,7 +265,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide} data-testid="btn-modal-cancel">
-            Cancel
+            Cancelar
           </Button>
           <Button
             type="submit"
@@ -272,7 +273,7 @@ const CustomerAddressFormModal: React.FC<CustomerAddressFormModalProps> = ({
             disabled={saving}
             data-testid="btn-modal-save"
           >
-            {saving ? 'Saving…' : initial ? 'Save changes' : 'Add address'}
+            {saving ? 'Guardando…' : initial ? 'Guardar cambios' : 'Añadir dirección'}
           </Button>
         </Modal.Footer>
       </Form>

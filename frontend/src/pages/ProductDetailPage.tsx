@@ -89,7 +89,7 @@ const ProductDetailPage: React.FC = () => {
         navigate('/products');
         return;
       }
-      setLoadError('Unable to load the product. Please try again later.');
+      setLoadError('No se pudo cargar el producto. Inténtelo de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -182,7 +182,7 @@ const ProductDetailPage: React.FC = () => {
     if (status === 'Archived') {
       return (
         <Alert variant="secondary" className="mb-0">
-          This product is Archived. Status changes are not allowed.
+          Este producto está archivado. No se permiten cambios de estado.
         </Alert>
       );
     }
@@ -202,9 +202,9 @@ const ProductDetailPage: React.FC = () => {
             disabled={!canActivate || statusSaving}
             onClick={() => handleStatusChange('Active')}
             data-testid="btn-activate"
-            title={!canActivate ? 'Add an active variant first' : undefined}
+            title={!canActivate ? 'Añada primero una variante activa' : undefined}
           >
-            Activate
+            Activar
           </Button>
         )}
 
@@ -216,7 +216,7 @@ const ProductDetailPage: React.FC = () => {
             onClick={() => handleStatusChange('Inactive')}
             data-testid="btn-deactivate"
           >
-            Set Inactive
+            Marcar como inactivo
           </Button>
         )}
 
@@ -228,7 +228,7 @@ const ProductDetailPage: React.FC = () => {
             onClick={() => handleStatusChange('Inactive')}
             data-testid="btn-deactivate"
           >
-            Deactivate
+            Desactivar
           </Button>
         )}
 
@@ -240,12 +240,12 @@ const ProductDetailPage: React.FC = () => {
             onClick={() => handleStatusChange('Archived')}
             data-testid="btn-archive"
           >
-            Archive
+            Archivar
           </Button>
         )}
 
         {!canActivate && status !== 'Active' && (
-          <span className="text-muted small">Add an active variant to enable activation.</span>
+          <span className="text-muted small">Añada una variante activa para poder activar.</span>
         )}
       </div>
     );
@@ -254,7 +254,7 @@ const ProductDetailPage: React.FC = () => {
   return (
     <div className="admin-page">
       <Button variant="link" className="mb-3 ps-0" onClick={() => navigate('/products')}>
-        ← Back to Products
+        ← Volver a productos
       </Button>
 
       {loading && <LoadingSpinner />}
@@ -274,7 +274,7 @@ const ProductDetailPage: React.FC = () => {
             <Card.Body>
               {saveSuccess && (
                 <Alert variant="success" dismissible onClose={() => setSaveSuccess(false)}>
-                  Saved successfully.
+                  Guardado correctamente.
                 </Alert>
               )}
               {saveError && <Alert variant="danger">{saveError}</Alert>}
@@ -282,7 +282,7 @@ const ProductDetailPage: React.FC = () => {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Name *</Form.Label>
+                      <Form.Label>Nombre *</Form.Label>
                       <Form.Control
                         type="text"
                         value={formData.name}
@@ -295,14 +295,14 @@ const ProductDetailPage: React.FC = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>
-                        Slug <small className="text-muted">(read-only, auto-generated)</small>
+                        Slug <small className="text-muted">(solo lectura, generado automáticamente)</small>
                       </Form.Label>
                       <Form.Control type="text" value={product.slug} readOnly plaintext className="text-muted" />
                     </Form.Group>
                   </Col>
                 </Row>
                 <Form.Group className="mb-3">
-                  <Form.Label>Description</Form.Label>
+                  <Form.Label>Descripción</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={3}
@@ -313,7 +313,7 @@ const ProductDetailPage: React.FC = () => {
                 <Row>
                   <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Brand</Form.Label>
+                      <Form.Label>Marca</Form.Label>
                       <Form.Control
                         type="text"
                         value={formData.brand}
@@ -323,12 +323,12 @@ const ProductDetailPage: React.FC = () => {
                   </Col>
                   <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Category</Form.Label>
+                      <Form.Label>Categoría</Form.Label>
                       <Form.Select
                         value={formData.categoryId}
                         onChange={(e) => setFormData((p) => ({ ...p, categoryId: e.target.value }))}
                       >
-                        <option value="">— None —</option>
+                        <option value="">— Ninguna —</option>
                         {categories.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name}
@@ -339,7 +339,7 @@ const ProductDetailPage: React.FC = () => {
                   </Col>
                   <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Main image URL</Form.Label>
+                      <Form.Label>URL de imagen principal</Form.Label>
                       <Form.Control
                         type="text"
                         value={formData.mainImageUrl}
@@ -359,7 +359,7 @@ const ProductDetailPage: React.FC = () => {
                         data-testid="input-gtin"
                       />
                       <Form.Text className="text-muted">
-                        8, 12, 13, or 14-digit product barcode (EAN/UPC). Leave blank if unknown.
+                        Código de barras del producto de 8, 12, 13 o 14 dígitos (EAN/UPC). Déjelo en blanco si no lo conoce.
                       </Form.Text>
                     </Form.Group>
                   </Col>
@@ -417,7 +417,7 @@ const ProductDetailPage: React.FC = () => {
                   </Col>
                 </Row>
                 <Button type="submit" variant="primary" disabled={saving} data-testid="btn-save">
-                  {saving ? 'Saving…' : 'Save changes'}
+                  {saving ? 'Guardando…' : 'Guardar cambios'}
                 </Button>
               </Form>
             </Card.Body>
@@ -425,14 +425,14 @@ const ProductDetailPage: React.FC = () => {
 
           <Card className="mb-4" data-testid="status-section">
             <Card.Header>
-              <strong>Status</strong>
+              <strong>Estado</strong>
             </Card.Header>
             <Card.Body>{renderStatusControls()}</Card.Body>
           </Card>
 
           <Card className="mb-4" data-testid="variants-section">
             <Card.Header>
-              <strong>Variants</strong>
+              <strong>Variantes</strong>
             </Card.Header>
             <Card.Body>
               <VariantTable productId={product.id as number} variants={variants} onVariantsChange={refetchVariants} />
@@ -441,7 +441,7 @@ const ProductDetailPage: React.FC = () => {
 
           <Card className="mb-4" data-testid="images-section">
             <Card.Header>
-              <strong>Images</strong>
+              <strong>Imágenes</strong>
             </Card.Header>
             <Card.Body>
               <ImageManager

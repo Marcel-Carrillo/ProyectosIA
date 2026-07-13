@@ -82,7 +82,7 @@ const ProductsPage: React.FC = () => {
       setProducts(res.data.items);
       setTotal(res.data.total);
     } catch {
-      setError('Unable to load products. Please try again later.');
+      setError('No se pudieron cargar los productos. Intente de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -122,9 +122,9 @@ const ProductsPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">Products</h1>
+        <h1 className="h3 mb-0">Productos</h1>
         <Button variant="primary" onClick={() => setShowCreate(true)} data-testid="btn-new-product">
-          New product
+          Nuevo producto
         </Button>
       </div>
 
@@ -143,7 +143,7 @@ const ProductsPage: React.FC = () => {
       {!loading && error && <ErrorAlert message={error} />}
       {!loading && !error && products.length === 0 && (
         <Alert variant="info" data-testid="empty-state">
-          No products found.
+          No se encontraron productos.
         </Alert>
       )}
 
@@ -184,7 +184,7 @@ const ProductsPage: React.FC = () => {
                     className="btn btn-outline-primary admin-touch-btn"
                     data-testid={`btn-edit-${product.id}`}
                   >
-                    Edit
+                    Editar
                   </Link>
                   <Button
                     variant="outline-danger"
@@ -192,7 +192,7 @@ const ProductsPage: React.FC = () => {
                     onClick={() => setToDelete(product)}
                     data-testid={`btn-delete-${product.id}`}
                   >
-                    Delete
+                    Eliminar
                   </Button>
                 </div>
               </div>
@@ -203,12 +203,12 @@ const ProductsPage: React.FC = () => {
             <Table hover data-testid="products-table">
             <thead>
               <tr>
-                <th>Image</th>
-                <th>Name</th>
+                <th>Imagen</th>
+                <th>Nombre</th>
                 <th>Slug</th>
-                <th>Status</th>
-                <th>Category</th>
-                <th>Actions</th>
+                <th>Estado</th>
+                <th>Categoría</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -241,7 +241,7 @@ const ProductsPage: React.FC = () => {
                       className="btn btn-sm btn-outline-primary me-2"
                       data-testid={`btn-edit-${product.id}`}
                     >
-                      Edit
+                      Editar
                     </Link>
                     <Button
                       size="sm"
@@ -249,7 +249,7 @@ const ProductsPage: React.FC = () => {
                       onClick={() => setToDelete(product)}
                       data-testid={`btn-delete-${product.id}`}
                     >
-                      Delete
+                      Eliminar
                     </Button>
                   </td>
                 </tr>
@@ -276,15 +276,15 @@ const ProductsPage: React.FC = () => {
 
       <Modal show={toDelete !== null} onHide={() => setToDelete(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
-          <Modal.Title>Delete product</Modal.Title>
+          <Modal.Title>Eliminar producto</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {deleteError && <Alert variant="danger">{deleteError}</Alert>}
-          Are you sure you want to delete &quot;{toDelete?.name}&quot;?
+          ¿Está seguro de que desea eliminar &quot;{toDelete?.name}&quot;?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setToDelete(null)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             variant="danger"
@@ -292,7 +292,7 @@ const ProductsPage: React.FC = () => {
             onClick={handleDelete}
             data-testid="btn-confirm-delete"
           >
-            {deleting ? 'Deleting…' : 'Delete'}
+            {deleting ? 'Eliminando…' : 'Eliminar'}
           </Button>
         </Modal.Footer>
       </Modal>

@@ -52,7 +52,7 @@ describe('CustomerFormModal', () => {
   it('shows a validation error when first name is empty', () => {
     render(<CustomerFormModal show onHide={noop} onSuccess={noop} />);
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(screen.getByText(/first name is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/nombre es obligatorio/i)).toBeInTheDocument();
     expect(mocked.create).not.toHaveBeenCalled();
   });
 
@@ -62,7 +62,7 @@ describe('CustomerFormModal', () => {
       target: { value: 'Jane' },
     });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(screen.getByText(/last name is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/apellidos son obligatorios/i)).toBeInTheDocument();
   });
 
   it('shows a validation error when email is empty', () => {
@@ -74,7 +74,7 @@ describe('CustomerFormModal', () => {
       target: { value: 'Doe' },
     });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/correo electrónico es obligatorio/i)).toBeInTheDocument();
   });
 
   it('shows a validation error for an invalid email format', () => {
@@ -93,7 +93,7 @@ describe('CustomerFormModal', () => {
     // validation (same as a real browser). Submit the form directly to
     // exercise the JS validation path.
     fireEvent.submit(screen.getByTestId('btn-modal-save').closest('form')!);
-    expect(screen.getByText(/valid email/i)).toBeInTheDocument();
+    expect(screen.getByText(/correo electrónico debe ser válido/i)).toBeInTheDocument();
   });
 
   it('creates a customer and calls onSuccess', async () => {
@@ -131,7 +131,7 @@ describe('CustomerFormModal', () => {
       target: { value: 'jane@example.com' },
     });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(await screen.findByText(/customer with this email already exists/i)).toBeInTheDocument();
+    expect(await screen.findByText(/ya existe un cliente con este correo/i)).toBeInTheDocument();
   });
 
   it('maps VALIDATION_ERROR from the API to a UI message', async () => {
@@ -147,14 +147,14 @@ describe('CustomerFormModal', () => {
       target: { value: 'jane@example.com' },
     });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(await screen.findByText(/check the form fields/i)).toBeInTheDocument();
+    expect(await screen.findByText(/revise los campos del formulario/i)).toBeInTheDocument();
   });
 
   it('shows CUSTOMER_NOT_FOUND in edit mode', async () => {
     mocked.update.mockRejectedValue(makeAxiosError('CUSTOMER_NOT_FOUND', 404));
     render(<CustomerFormModal show onHide={noop} onSuccess={noop} initial={existing} />);
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(await screen.findByText(/customer not found/i)).toBeInTheDocument();
+    expect(await screen.findByText(/cliente no encontrado/i)).toBeInTheDocument();
   });
 
   it('pre-populates fields from the initial customer in edit mode', () => {

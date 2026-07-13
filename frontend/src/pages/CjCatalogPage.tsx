@@ -18,6 +18,7 @@ import CjConnectionModal from '../components/admin/CjConnectionModal';
 import { CjCatalogItem, CjPromotionState, CjSyncStatus } from '../types/cjCatalog';
 import { CjConnection } from '../types/cjConnection';
 import { Category } from '../types/category';
+import { adminStatusLabel } from '../utils/adminStatusLabels';
 
 const PAGE_SIZE = 20;
 
@@ -192,7 +193,7 @@ const CjCatalogPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">CJ Catalog</h1>
+        <h1 className="h3 mb-0">Catálogo CJ</h1>
       </div>
 
       {connectionLoading && (
@@ -230,28 +231,28 @@ const CjCatalogPage: React.FC = () => {
         <>
           <Row className="g-2 mb-3 align-items-end">
             <Col xs={12} md={4}>
-              <Form.Label className="small mb-1">Sync status</Form.Label>
+              <Form.Label className="small mb-1">Estado de sincronización</Form.Label>
               <Form.Select
                 value={syncStatusFilter}
                 onChange={(e) => handleFilterChange('syncStatus', e.target.value)}
                 data-testid="filter-sync-status"
               >
-                <option value="">All</option>
-                <option value="Synced">Synced</option>
-                <option value="Failed">Failed</option>
+                <option value="">Todos</option>
+                <option value="Synced">{adminStatusLabel('Synced')}</option>
+                <option value="Failed">{adminStatusLabel('Failed')}</option>
               </Form.Select>
             </Col>
             <Col xs={12} md={4}>
-              <Form.Label className="small mb-1">Promotion state</Form.Label>
+              <Form.Label className="small mb-1">Estado de promoción</Form.Label>
               <Form.Select
                 value={promotionStateFilter}
                 onChange={(e) => handleFilterChange('promotionState', e.target.value)}
                 data-testid="filter-promotion-state"
               >
-                <option value="">All</option>
-                <option value="NotPromoted">Not promoted</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <option value="">Todos</option>
+                <option value="NotPromoted">{adminStatusLabel('NotPromoted')}</option>
+                <option value="Active">{adminStatusLabel('Active')}</option>
+                <option value="Inactive">{adminStatusLabel('Inactive')}</option>
               </Form.Select>
             </Col>
             <Col xs={12} md={4}>
@@ -261,16 +262,16 @@ const CjCatalogPage: React.FC = () => {
                 onClick={handleReset}
                 data-testid="btn-filter-reset"
               >
-                Reset
+                Restablecer
               </Button>
             </Col>
           </Row>
 
           {selectedIds.size > 0 && (
             <Alert variant="light" className="d-flex align-items-center gap-2" data-testid="bulk-action-bar">
-              <span>{selectedIds.size} selected</span>
+              <span>{selectedIds.size} seleccionados</span>
               <Button size="sm" onClick={() => setShowPromoteModal(true)} data-testid="btn-promote-selected">
-                Promote selected
+                Promocionar seleccionados
               </Button>
               <Button
                 size="sm"
@@ -278,7 +279,7 @@ const CjCatalogPage: React.FC = () => {
                 onClick={() => setSelectedIds(new Set())}
                 data-testid="btn-clear-selection"
               >
-                Clear
+                Limpiar
               </Button>
             </Alert>
           )}
@@ -297,7 +298,7 @@ const CjCatalogPage: React.FC = () => {
           {!loading && error && <ErrorAlert message={error} />}
           {!loading && !error && items.length === 0 && (
             <Alert variant="info" data-testid="empty-state">
-              No CJ catalog items found.
+              No se encontraron artículos en el catálogo CJ.
             </Alert>
           )}
 
@@ -332,7 +333,7 @@ const CjCatalogPage: React.FC = () => {
                           onClick={() => handleDeactivate(item.id)}
                           data-testid={`btn-deactivate-${item.id}`}
                         >
-                          Deactivate
+                          Desactivar
                         </Button>
                       )}
                       {item.promotionState === 'Inactive' && (
@@ -343,7 +344,7 @@ const CjCatalogPage: React.FC = () => {
                           onClick={() => handleActivate(item.id)}
                           data-testid={`btn-activate-${item.id}`}
                         >
-                          Activate
+                          Activar
                         </Button>
                       )}
                     </div>
@@ -363,14 +364,14 @@ const CjCatalogPage: React.FC = () => {
                           data-testid="checkbox-select-all"
                         />
                       </th>
-                      <th>Title</th>
+                      <th>Título</th>
                       <th>SKU</th>
-                      <th>Cost</th>
-                      <th>Stock</th>
-                      <th>Sync</th>
-                      <th>Promotion</th>
-                      <th>Product</th>
-                      <th>Actions</th>
+                      <th>Coste</th>
+                      <th>Existencias</th>
+                      <th>Sincronización</th>
+                      <th>Promoción</th>
+                      <th>Producto</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -416,7 +417,7 @@ const CjCatalogPage: React.FC = () => {
                               onClick={() => handleDeactivate(item.id)}
                               data-testid={`btn-deactivate-${item.id}`}
                             >
-                              Deactivate
+                              Desactivar
                             </Button>
                           )}
                           {item.promotionState === 'Inactive' && (
@@ -427,7 +428,7 @@ const CjCatalogPage: React.FC = () => {
                               onClick={() => handleActivate(item.id)}
                               data-testid={`btn-activate-${item.id}`}
                             >
-                              Activate
+                              Activar
                             </Button>
                           )}
                         </td>

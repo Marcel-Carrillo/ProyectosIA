@@ -64,7 +64,7 @@ describe('ProductsPage', () => {
   it('shows an error message when the request fails', async () => {
     mockedAdmin.list.mockRejectedValue(new Error('boom'));
     renderPage();
-    expect(await screen.findByText(/unable to load products/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no se pudieron cargar los productos/i)).toBeInTheDocument();
   });
 
   it('always restricts and forwards filters: status filter triggers a re-query', async () => {

@@ -58,7 +58,7 @@ const SuppliersPage: React.FC = () => {
       setSuppliers(res.data.items);
       setTotal(res.data.total);
     } catch {
-      setError('Unable to load suppliers. Please try again later.');
+      setError('No se pudieron cargar los proveedores. Intente de nuevo más tarde.');
     } finally {
       setLoading(false);
     }
@@ -102,34 +102,34 @@ const SuppliersPage: React.FC = () => {
   return (
     <div className="admin-page">
       <div className="admin-page-header">
-        <h1 className="h3 mb-0">Suppliers</h1>
+        <h1 className="h3 mb-0">Proveedores</h1>
         <Button variant="primary" onClick={() => setShowCreate(true)} data-testid="btn-new-supplier">
-          New supplier
+          Nuevo proveedor
         </Button>
       </div>
 
       <Row className="g-2 mb-3 align-items-end">
         <Col xs={12} md={5}>
-          <Form.Label className="small mb-1">Search</Form.Label>
+          <Form.Label className="small mb-1">Buscar</Form.Label>
           <Form.Control
             type="search"
-            placeholder="Search by name…"
+            placeholder="Buscar por nombre…"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
             data-testid="filter-search"
           />
         </Col>
         <Col xs={12} md={4}>
-          <Form.Label className="small mb-1">Status</Form.Label>
+          <Form.Label className="small mb-1">Estado</Form.Label>
           <Form.Select
             value={statusFilter}
             onChange={(e) => handleStatusChange(e.target.value)}
             data-testid="filter-status"
           >
-            <option value="">All statuses</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-            <option value="Blocked">Blocked</option>
+            <option value="">Todos los estados</option>
+            <option value="Active">Activo</option>
+            <option value="Inactive">Inactivo</option>
+            <option value="Blocked">Bloqueado</option>
           </Form.Select>
         </Col>
         <Col xs={12} md={3}>
@@ -139,7 +139,7 @@ const SuppliersPage: React.FC = () => {
             onClick={handleReset}
             data-testid="btn-filter-reset"
           >
-            Reset
+            Restablecer
           </Button>
         </Col>
       </Row>
@@ -152,7 +152,7 @@ const SuppliersPage: React.FC = () => {
       {!loading && error && <ErrorAlert message={error} />}
       {!loading && !error && suppliers.length === 0 && (
         <Alert variant="info" data-testid="empty-state">
-          No suppliers found.
+          No se encontraron proveedores.
         </Alert>
       )}
 
@@ -175,7 +175,7 @@ const SuppliersPage: React.FC = () => {
                     className="btn btn-outline-secondary admin-touch-btn"
                     data-testid={`btn-cj-catalog-${s.id}`}
                   >
-                    CJ Catalog
+                    Catálogo CJ
                   </Link>
                   <Button
                     variant="outline-primary"
@@ -183,7 +183,7 @@ const SuppliersPage: React.FC = () => {
                     onClick={() => setToEdit(s)}
                     data-testid={`btn-edit-${s.id}`}
                   >
-                    Edit
+                    Editar
                   </Button>
                   <Button
                     variant="outline-danger"
@@ -192,7 +192,7 @@ const SuppliersPage: React.FC = () => {
                     data-testid={`btn-deactivate-${s.id}`}
                     disabled={s.status === 'Inactive'}
                   >
-                    Deactivate
+                    Desactivar
                   </Button>
                 </div>
               </div>
@@ -203,11 +203,11 @@ const SuppliersPage: React.FC = () => {
             <Table hover data-testid="suppliers-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Contact Name</th>
-                  <th>Contact Email</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>Nombre</th>
+                  <th>Nombre de contacto</th>
+                  <th>Correo de contacto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -225,7 +225,7 @@ const SuppliersPage: React.FC = () => {
                         className="btn btn-sm btn-outline-secondary me-2"
                         data-testid={`btn-cj-catalog-${s.id}`}
                       >
-                        CJ Catalog
+                        Catálogo CJ
                       </Link>
                       <Button
                         size="sm"
@@ -234,7 +234,7 @@ const SuppliersPage: React.FC = () => {
                         onClick={() => setToEdit(s)}
                         data-testid={`btn-edit-${s.id}`}
                       >
-                        Edit
+                        Editar
                       </Button>
                       <Button
                         size="sm"
@@ -243,7 +243,7 @@ const SuppliersPage: React.FC = () => {
                         data-testid={`btn-deactivate-${s.id}`}
                         disabled={s.status === 'Inactive'}
                       >
-                        Deactivate
+                        Desactivar
                       </Button>
                     </td>
                   </tr>
@@ -279,16 +279,16 @@ const SuppliersPage: React.FC = () => {
 
       <Modal show={toDeactivate !== null} onHide={() => setToDeactivate(null)} fullscreen="sm-down">
         <Modal.Header closeButton>
-          <Modal.Title>Deactivate supplier</Modal.Title>
+          <Modal.Title>Desactivar proveedor</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {deactivateError && <Alert variant="danger">{deactivateError}</Alert>}
-          Are you sure you want to deactivate &quot;{toDeactivate?.name}&quot;? Their status will be
-          set to Inactive. This can be undone by editing the supplier.
+          ¿Está seguro de que desea desactivar &quot;{toDeactivate?.name}&quot;? Su estado se
+          establecerá en Inactivo. Esto puede deshacerse editando el proveedor.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setToDeactivate(null)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             variant="danger"
@@ -296,7 +296,7 @@ const SuppliersPage: React.FC = () => {
             onClick={handleDeactivate}
             data-testid="btn-confirm-deactivate"
           >
-            {deactivating ? 'Deactivating…' : 'Deactivate'}
+            {deactivating ? 'Desactivando…' : 'Desactivar'}
           </Button>
         </Modal.Footer>
       </Modal>

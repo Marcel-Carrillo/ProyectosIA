@@ -86,7 +86,7 @@ export async function adminRefresh() {
 
 export function extractAuthError(error: unknown): string {
   const code = (error as AxiosError<AuthApiError>).response?.data?.error?.code;
-  if (code === 'INVALID_CREDENTIALS') return 'Invalid email or password.';
-  if (code === 'ADMIN_DISABLED') return 'This admin account is disabled.';
-  return 'An unexpected error occurred.';
+  if (code === 'INVALID_CREDENTIALS') return 'Correo electrónico o contraseña incorrectos.';
+  if (code === 'ADMIN_DISABLED') return 'Esta cuenta de administrador está deshabilitada.';
+  return 'Ha ocurrido un error inesperado.';
 }

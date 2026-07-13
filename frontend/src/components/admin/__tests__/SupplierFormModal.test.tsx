@@ -54,7 +54,7 @@ describe('SupplierFormModal', () => {
   it('shows a validation error when name is empty', () => {
     render(<SupplierFormModal show onHide={noop} onSuccess={noop} />);
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(screen.getByText(/name is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/nombre es obligatorio/i)).toBeInTheDocument();
     expect(mocked.create).not.toHaveBeenCalled();
   });
 
@@ -69,7 +69,7 @@ describe('SupplierFormModal', () => {
     // validation (same as a real browser). Submit the form directly to
     // exercise the JS validation path.
     fireEvent.submit(screen.getByTestId('btn-modal-save').closest('form')!);
-    expect(screen.getByText(/valid email/i)).toBeInTheDocument();
+    expect(screen.getByText(/correo electrónico de contacto debe ser válido/i)).toBeInTheDocument();
   });
 
   it('creates a supplier and calls onSuccess', async () => {
@@ -89,14 +89,14 @@ describe('SupplierFormModal', () => {
     render(<SupplierFormModal show onHide={noop} onSuccess={noop} />);
     fireEvent.change(screen.getByTestId('input-supplier-name'), { target: { value: 'Acme' } });
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(await screen.findByText(/check the form fields/i)).toBeInTheDocument();
+    expect(await screen.findByText(/revise los campos del formulario/i)).toBeInTheDocument();
   });
 
   it('shows SUPPLIER_NOT_FOUND in edit mode', async () => {
     mocked.update.mockRejectedValue(makeAxiosError('SUPPLIER_NOT_FOUND', 404));
     render(<SupplierFormModal show onHide={noop} onSuccess={noop} initial={existing} />);
     fireEvent.click(screen.getByTestId('btn-modal-save'));
-    expect(await screen.findByText(/supplier not found/i)).toBeInTheDocument();
+    expect(await screen.findByText(/proveedor no encontrado/i)).toBeInTheDocument();
   });
 
   it('pre-populates fields from the initial supplier in edit mode', () => {

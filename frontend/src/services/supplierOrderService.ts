@@ -15,21 +15,21 @@ const ADMIN_BASE = `${API_BASE_URL}/api/admin/supplier-orders`;
 export function mapSupplierOrderError(code: string): string {
   switch (code) {
     case 'SUPPLIER_ORDER_NOT_FOUND':
-      return 'Supplier order not found.';
+      return 'Pedido a proveedor no encontrado.';
     case 'CUSTOMER_ORDER_NOT_FOUND':
-      return 'Customer order not found.';
+      return 'Pedido de cliente no encontrado.';
     case 'CUSTOMER_ORDER_NOT_ELIGIBLE':
-      return 'This customer order is not eligible for supplier orders.';
+      return 'Este pedido de cliente no es apto para pedidos a proveedores.';
     case 'VARIANT_SUPPLIER_MISSING':
-      return 'A product variant has no supplier assigned.';
+      return 'Una variante de producto no tiene proveedor asignado.';
     case 'SUPPLIER_BLOCKED':
-      return 'The supplier is blocked and cannot receive orders.';
+      return 'El proveedor está bloqueado y no puede recibir pedidos.';
     case 'SUPPLIER_ORDER_STATUS_TRANSITION_INVALID':
-      return 'This status change is not allowed.';
+      return 'No se permite este cambio de estado.';
     case 'VALIDATION_ERROR':
-      return 'Please check the form fields and try again.';
+      return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
-      return 'An unexpected error occurred. Please try again.';
+      return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
 }
 

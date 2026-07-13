@@ -64,7 +64,7 @@ describe('VariantTable', () => {
     expect(costInput).toBeDisabled();
     expect((costInput as HTMLInputElement).value).toContain('35');
     // publicPrice 29.90 <= supplierCost 35 → warning visible
-    expect(screen.getByText(/public price is at or below the supplier cost/i)).toBeInTheDocument();
+    expect(screen.getByText(/precio público es igual o inferior al coste del proveedor/i)).toBeInTheDocument();
   });
 
   it('opens the add-variant modal', () => {

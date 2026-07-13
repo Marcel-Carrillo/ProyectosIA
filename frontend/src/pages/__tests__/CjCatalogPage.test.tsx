@@ -133,7 +133,7 @@ describe('CjCatalogPage', () => {
 
     const card = await screen.findByTestId('cj-catalog-card-row-1');
     expect(within(card).getByText('Black Dress')).toBeInTheDocument();
-    expect(within(card).getByTestId('promotion-badge-1')).toHaveTextContent('NotPromoted');
+    expect(within(card).getByTestId('promotion-badge-1')).toHaveTextContent('Sin promocionar');
     const checkbox = within(card).getByTestId('checkbox-select-1') as HTMLInputElement;
     expect(checkbox.disabled).toBe(false);
   });
@@ -145,12 +145,12 @@ describe('CjCatalogPage', () => {
     renderPage();
 
     const activeCard = await screen.findByTestId('cj-catalog-card-row-2');
-    expect(within(activeCard).getByTestId('promotion-badge-2')).toHaveTextContent('Active');
+    expect(within(activeCard).getByTestId('promotion-badge-2')).toHaveTextContent('Activo');
     expect(within(activeCard).getByTestId('btn-deactivate-2')).toBeInTheDocument();
     expect(within(activeCard).queryByTestId('btn-activate-2')).not.toBeInTheDocument();
 
     const inactiveCard = screen.getByTestId('cj-catalog-card-row-3');
-    expect(within(inactiveCard).getByTestId('promotion-badge-3')).toHaveTextContent('Inactive');
+    expect(within(inactiveCard).getByTestId('promotion-badge-3')).toHaveTextContent('Inactivo');
     expect(within(inactiveCard).getByTestId('btn-activate-3')).toBeInTheDocument();
     expect(within(inactiveCard).queryByTestId('btn-deactivate-3')).not.toBeInTheDocument();
 
@@ -178,7 +178,7 @@ describe('CjCatalogPage', () => {
     mockListCatalog.mockRejectedValue({ response: { data: { error: { code: 'CJ_CONNECTION_NOT_FOUND' } } } });
     renderPage();
 
-    expect(await screen.findByText(/No CJ Dropshipping connection/i)).toBeInTheDocument();
+    expect(await screen.findByText(/No hay una conexión con CJ Dropshipping/i)).toBeInTheDocument();
   });
 
   it('refetches with the sync status filter applied', async () => {
@@ -199,7 +199,7 @@ describe('CjCatalogPage', () => {
     const card = await screen.findByTestId('cj-catalog-card-row-1');
 
     fireEvent.click(within(card).getByTestId('checkbox-select-1'));
-    expect(await screen.findByTestId('bulk-action-bar')).toHaveTextContent('1 selected');
+    expect(await screen.findByTestId('bulk-action-bar')).toHaveTextContent('1 seleccionados');
 
     fireEvent.click(screen.getByTestId('checkbox-select-all'));
     expect(screen.queryByTestId('bulk-action-bar')).not.toBeInTheDocument();
@@ -258,7 +258,6 @@ describe('CjCatalogPage', () => {
 
   it('shows a mapped error and keeps the modal open when promote fails', async () => {
     mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
-    mockPromote.mockRejectedValue({ response: { data: { error: { code: 'CJ_PROMOTION_CATEGORY_REQUIRED' } } } });
     renderPage();
     const card = await screen.findByTestId('cj-catalog-card-row-1');
 
@@ -266,11 +265,13 @@ describe('CjCatalogPage', () => {
     fireEvent.click(await screen.findByTestId('btn-promote-selected'));
     const modal = await screen.findByTestId('modal-promote-cj');
 
-    fireEvent.change(within(modal).getByTestId('select-promote-category'), { target: { value: '1' } });
     fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
 
-    expect(await within(modal).findByText(/Select a category before promoting/i)).toBeInTheDocument();
+    expect(
+      await within(modal).findByText(/Seleccione una categoría antes de promocionar/i)
+    ).toBeInTheDocument();
     expect(screen.getByTestId('modal-promote-cj')).toBeInTheDocument();
+    expect(mockPromote).not.toHaveBeenCalled();
     expect(mockListCatalog).toHaveBeenCalledTimes(1);
   });
 
@@ -306,7 +307,7 @@ describe('CjCatalogPage', () => {
 
     fireEvent.click(within(card).getByTestId('btn-deactivate-2'));
 
-    expect(await screen.findByTestId('action-error')).toHaveTextContent(/not been promoted/i);
+    expect(await screen.findByTestId('action-error')).toHaveTextContent(/aún no ha sido promocionado/i);
     expect(mockListCatalog).toHaveBeenCalledTimes(1);
   });
 
@@ -345,7 +346,7 @@ describe('CjCatalogPage', () => {
       fireEvent.click(within(modal).getByTestId('btn-modal-save-connection'));
 
       await waitFor(() => expect(mockConfigureConnection).toHaveBeenCalledWith(3, { externalAccountRef: 'cj-account-123' }));
-      expect(await screen.findByTestId('cj-connection-status')).toHaveTextContent('Disconnected');
+      expect(await screen.findByTestId('cj-connection-status')).toHaveTextContent('Desconectado');
       expect(screen.getByTestId('cj-connection-panel')).toHaveTextContent('cj-account-123');
     });
 
@@ -356,7 +357,7 @@ describe('CjCatalogPage', () => {
 
       fireEvent.click(await screen.findByTestId('btn-verify-connection'));
 
-      expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/healthy/i);
+      expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/Conexión correcta/i);
       expect(mockGetConnection).toHaveBeenCalledTimes(2);
     });
 
@@ -381,7 +382,7 @@ describe('CjCatalogPage', () => {
 
       fireEvent.click(await screen.findByTestId('btn-verify-connection'));
 
-      expect(await screen.findByTestId('cj-connection-error')).toHaveTextContent(/too many/i);
+      expect(await screen.findByTestId('cj-connection-error')).toHaveTextContent(/demasiados intentos/i);
     });
 
     it('disables the verify button while the request is in flight', async () => {
@@ -414,7 +415,7 @@ describe('CjCatalogPage', () => {
       fireEvent.click(screen.getByTestId('btn-sync-catalog'));
 
       expect(await screen.findByTestId('cj-sync-result')).toHaveTextContent('3');
-      expect(screen.getByTestId('cj-sync-result')).toHaveTextContent('1 failed');
+      expect(screen.getByTestId('cj-sync-result')).toHaveTextContent('1 con error');
       await waitFor(() => expect(mockListCatalog).toHaveBeenCalledTimes(2));
     });
 
@@ -433,10 +434,10 @@ describe('CjCatalogPage', () => {
 
       fireEvent.click(await screen.findByTestId('btn-verify-connection'));
 
-      expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/healthy/i);
+      expect(await screen.findByTestId('cj-verify-result')).toHaveTextContent(/Conexión correcta/i);
       await waitFor(() => expect(mockGetConnection).toHaveBeenCalledTimes(2));
       expect(screen.queryByTestId('connection-loading-state')).not.toBeInTheDocument();
-      expect(screen.getByTestId('cj-verify-result')).toHaveTextContent(/healthy/i);
+      expect(screen.getByTestId('cj-verify-result')).toHaveTextContent(/Conexión correcta/i);
     });
 
     it('does not clear the bulk selection or refetch the catalog when Verify triggers a delayed background connection refresh', async () => {
@@ -465,7 +466,7 @@ describe('CjCatalogPage', () => {
       mockListCatalog.mockResolvedValue({ data: { items: [], total: 0, page: 1, pageSize: 20 } });
       renderPage();
 
-      expect(await screen.findByText(/unexpected error/i)).toBeInTheDocument();
+      expect(await screen.findByText(/error inesperado/i)).toBeInTheDocument();
       expect(screen.queryByTestId('btn-configure-connection')).not.toBeInTheDocument();
       expect(screen.queryByTestId('cj-connection-panel')).not.toBeInTheDocument();
       await waitFor(() => expect(mockListCatalog).toHaveBeenCalled());

@@ -12,21 +12,21 @@ const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('mapCjConnectionError', () => {
   it.each([
-    ['CJ_CONNECTION_NOT_FOUND', 'is configured'],
-    ['CJ_CONNECTION_NOT_READY', 'not ready'],
-    ['VALIDATION_ERROR', 'check the form fields'],
+    ['CJ_CONNECTION_NOT_FOUND', 'conexión con CJ Dropshipping'],
+    ['CJ_CONNECTION_NOT_READY', 'no está lista'],
+    ['VALIDATION_ERROR', 'campos del formulario'],
   ])('maps %s to a specific message', (code, fragment) => {
     expect(mapCjConnectionError(code)).toContain(fragment);
   });
 
   it('returns a generic fallback for unknown or empty codes', () => {
-    expect(mapCjConnectionError('SOMETHING_ELSE')).toMatch(/unexpected error/i);
-    expect(mapCjConnectionError('')).toMatch(/unexpected error/i);
+    expect(mapCjConnectionError('SOMETHING_ELSE')).toMatch(/error inesperado/i);
+    expect(mapCjConnectionError('')).toMatch(/error inesperado/i);
   });
 
   it('maps HTTP 429 to a rate-limit message even with an empty code', () => {
-    expect(mapCjConnectionError('', 429)).toMatch(/too many/i);
-    expect(mapCjConnectionError('', 429)).toMatch(/try again/i);
+    expect(mapCjConnectionError('', 429)).toMatch(/Demasiados intentos/i);
+    expect(mapCjConnectionError('', 429)).toMatch(/inténtelo de nuevo/i);
   });
 });
 
@@ -91,19 +91,19 @@ describe('cjConnectionService', () => {
 describe('extractCjConnectionErrorMessage / extractCjConnectionErrorCode', () => {
   it('extracts the mapped message and raw code from an axios error response', () => {
     const err = { response: { data: { error: { code: 'CJ_CONNECTION_NOT_READY' } } } };
-    expect(extractCjConnectionErrorMessage(err)).toContain('not ready');
+    expect(extractCjConnectionErrorMessage(err)).toContain('no está lista');
     expect(extractCjConnectionErrorCode(err)).toBe('CJ_CONNECTION_NOT_READY');
   });
 
   it('extracts the 429 rate-limit message from a real express-rate-limit response (plain-text body, no code)', () => {
     const err = { response: { status: 429, data: 'Too many requests, please try again later.' } };
-    expect(extractCjConnectionErrorMessage(err)).toMatch(/too many/i);
+    expect(extractCjConnectionErrorMessage(err)).toMatch(/Demasiados intentos/i);
     expect(extractCjConnectionErrorCode(err)).toBe('');
   });
 
   it('falls back gracefully when the error has no response', () => {
     const err = new Error('network down');
-    expect(extractCjConnectionErrorMessage(err)).toMatch(/unexpected error/i);
+    expect(extractCjConnectionErrorMessage(err)).toMatch(/error inesperado/i);
     expect(extractCjConnectionErrorCode(err)).toBe('');
   });
 });
