@@ -13,6 +13,7 @@ import {
   CjOrderNotPushedError,
   CjApiUnavailableError,
   CjCarrierAllowListExhaustedError,
+  CjSandboxOnlyError,
 } from '../validator';
 import { prisma } from '../../infrastructure/prismaClient';
 import { logger } from '../../infrastructure/logger';
@@ -180,6 +181,20 @@ export class CjOrderPushService {
       throw new CjOrderAlreadyPushedError();
     }
     return updated;
+  }
+
+  // QA-only: drives a CJ sandbox order through CJ's own sandbox-testing
+  // endpoints (simulate payment, step shipping status forward) so the
+  // fulfillment-automation flow can be exercised end-to-end without a real
+  // warehouse. Hard-gated to sandbox orders — must never be reachable for a
+  // real (isSandbox: 0) order even if a caller bypasses the frontend.
+  async simulateSandboxAdvance(supplierOrderId: number): Promise<void> {
+    const order = await this.supplierOrderRepo.findById(supplierOrderId);
+    if (!order) throw new SupplierOrderNotFoundError();
+    if (!order.externalOrderId) throw new CjOrderNotPushedError();
+    if (!order.sandbox) throw new CjSandboxOnlyError();
+
+    await this.cjClient.simulateSandboxAdvance(order.externalOrderId);
   }
 
   async getOrderStatus(supplierOrderId: number): Promise<SupplierOrder> {

@@ -161,6 +161,32 @@ async function requestWithRetry<T>(path: string, init: RequestInit): Promise<T> 
   throw new CjApiError(lastStatus || 502, 'request failed after retries');
 }
 
+// Fires a sandbox-testing POST and returns CJ's envelope as-is, even on a
+// logical failure (success: false) — callers of the sandbox endpoints are
+// inherently probing "can this order move forward from wherever it
+// currently is", so a rejected transition is an expected, non-exceptional
+// outcome. Only transport failures and auth rejection are thrown.
+async function sandboxPost(path: string, body: object): Promise<CjEnvelope<unknown>> {
+  const token = await getValidToken();
+  let response: Response;
+  try {
+    response = await fetch(`${CJ_API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'CJ-Access-Token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch {
+    throw new CjApiError(502, 'upstream unreachable');
+  }
+  if (response.status === 401 || response.status === 403) {
+    throw new CjApiError(response.status, 'authentication rejected');
+  }
+  const parsed = (await response.json().catch(() => null)) as CjEnvelope<unknown> | null;
+  if (!parsed) throw new CjApiError(response.status, 'request failed');
+  return parsed;
+}
+
 export class CjApiClient implements ICjClient {
   async verifyConnection(): Promise<CjVerifyResult> {
     try {
@@ -219,6 +245,18 @@ export class CjApiClient implements ICjClient {
       `/shopping/order/getOrderDetail?orderId=${encodeURIComponent(externalOrderId)}`,
       { method: 'GET' }
     );
+  }
+
+  async simulateSandboxAdvance(externalOrderId: string): Promise<void> {
+    // CJ models a sandbox order as a real shopping cart: CREATED -> IN_CART
+    // -> UNPAID has no documented API and must be advanced manually from the
+    // CJ dashboard first. From UNPAID onward this drives it forward:
+    // simulate payment, then step the shipping status 300 -> 400 -> 500
+    // (CJ rejects skipping a hop). Each call is independently best-effort.
+    await sandboxPost('/shopping/sandbox/simulatePay', { orderId: externalOrderId });
+    for (const targetStatus of [400, 500]) {
+      await sandboxPost('/shopping/sandbox/updateStatus', { orderId: externalOrderId, targetStatus });
+    }
   }
 }
 

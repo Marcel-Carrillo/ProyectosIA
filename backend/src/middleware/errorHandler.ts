@@ -34,6 +34,7 @@ import {
   CjCatalogItemNotFoundError,
   CjPromotionValidationError,
   CjCarrierAllowListExhaustedError,
+  CjSandboxOnlyError,
 } from '../application/validator';
 import {
   CustomerNotFoundError,
@@ -172,6 +173,8 @@ export function globalErrorHandler(
   } else if (err instanceof CjOrderNotPushedError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof CjCarrierAllowListExhaustedError) {
+    statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjSandboxOnlyError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof CjCatalogItemNotPromotedError) {
     statusCode = 422; code = err.code; message = err.message;

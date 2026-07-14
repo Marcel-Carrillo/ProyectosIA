@@ -4,17 +4,41 @@ import { SupplierOrder } from '../../../domain/models/supplierOrder';
 const mockQuoteFreight = jest.fn();
 const mockPushOrder = jest.fn();
 const mockGetOrderStatus = jest.fn();
+const mockSimulateSandboxAdvance = jest.fn();
+const mockSupplierOrderRepoFindById = jest.fn();
+const mockSyncOne = jest.fn();
 
 jest.mock('../../../application/services/cjOrderPushService', () => ({
   CjOrderPushService: jest.fn().mockImplementation(() => ({
     quoteFreight: mockQuoteFreight,
     pushOrder: mockPushOrder,
     getOrderStatus: mockGetOrderStatus,
+    simulateSandboxAdvance: mockSimulateSandboxAdvance,
   })),
 }));
 
+jest.mock('../../../application/services/cjOrderStatusSyncService', () => ({
+  CjOrderStatusSyncOrchestrator: jest.fn().mockImplementation(() => ({
+    syncOne: mockSyncOne,
+  })),
+}));
+
+jest.mock('../../../application/services/shipmentService', () => ({
+  ShipmentService: jest.fn().mockImplementation(() => ({})),
+}));
+
+jest.mock('../../../infrastructure/repositories/shipmentRepository', () => ({
+  ShipmentRepository: jest.fn().mockImplementation(() => ({})),
+}));
+
+jest.mock('../../../infrastructure/repositories/automationAlertRepository', () => ({
+  AutomationAlertRepository: jest.fn().mockImplementation(() => ({})),
+}));
+
 jest.mock('../../../infrastructure/repositories/supplierOrderRepository', () => ({
-  SupplierOrderRepository: jest.fn().mockImplementation(() => ({})),
+  SupplierOrderRepository: jest.fn().mockImplementation(() => ({
+    findById: mockSupplierOrderRepoFindById,
+  })),
   SupplierOrderNotFoundError: class SupplierOrderNotFoundError extends Error {},
 }));
 
@@ -30,7 +54,7 @@ jest.mock('../../../infrastructure/external/cjClient', () => ({
   cjClient: {},
 }));
 
-import { freightQuote, push, getOrderStatus } from '../cjOrderPushController';
+import { freightQuote, push, getOrderStatus, simulateSandboxAdvance } from '../cjOrderPushController';
 
 const makeOrder = () => new SupplierOrder({ id: 1, supplierOrderNumber: 'SPO-000001', customerOrderId: 1, supplierId: 1 });
 
@@ -128,6 +152,43 @@ describe('cjOrderPushController', () => {
       await getOrderStatus(req, mockRes(), mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(err);
+    });
+  });
+
+  describe('simulateSandboxAdvance', () => {
+    it('should_advance_then_sync_then_return_the_refreshed_order', async () => {
+      mockSimulateSandboxAdvance.mockResolvedValue(undefined);
+      const refreshed = makeOrder();
+      mockSupplierOrderRepoFindById.mockResolvedValue(refreshed);
+      mockSyncOne.mockResolvedValue(true);
+      const req = { params: { id: '1' } } as unknown as Request;
+      const res = mockRes();
+
+      await simulateSandboxAdvance(req, res, mockNext);
+
+      expect(mockSimulateSandboxAdvance).toHaveBeenCalledWith(1);
+      expect(mockSyncOne).toHaveBeenCalledWith(refreshed);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, data: refreshed }));
+    });
+
+    it('should_call_next_when_the_service_rejects_a_real_non_sandbox_order', async () => {
+      const err = Object.assign(new Error('sandbox only'), { code: 'CJ_SANDBOX_ONLY', status: 422 });
+      mockSimulateSandboxAdvance.mockRejectedValue(err);
+      const req = { params: { id: '1' } } as unknown as Request;
+
+      await simulateSandboxAdvance(req, mockRes(), mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(err);
+      expect(mockSyncOne).not.toHaveBeenCalled();
+    });
+
+    it('should_call_next_with_validation_error_for_non_numeric_id', async () => {
+      const req = { params: { id: 'abc' } } as unknown as Request;
+
+      await simulateSandboxAdvance(req, mockRes(), mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({ code: 'VALIDATION_ERROR' }));
+      expect(mockSimulateSandboxAdvance).not.toHaveBeenCalled();
     });
   });
 });

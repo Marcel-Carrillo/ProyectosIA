@@ -1147,6 +1147,17 @@ export class CjOrderNotPushedError extends Error {
   }
 }
 
+export class CjSandboxOnlyError extends Error {
+  readonly code = 'CJ_SANDBOX_ONLY' as const;
+  readonly status = 422;
+
+  constructor(message = 'This action only applies to supplier orders pushed as CJ Dropshipping sandbox orders') {
+    super(message);
+    this.name = 'CjSandboxOnlyError';
+    Object.setPrototypeOf(this, CjSandboxOnlyError.prototype);
+  }
+}
+
 export class CjCarrierAllowListExhaustedError extends Error {
   readonly code = 'CJ_CARRIER_ALLOWLIST_EXHAUSTED' as const;
   readonly status = 422;

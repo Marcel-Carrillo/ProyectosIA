@@ -33,6 +33,14 @@ export interface SupplierOrder {
   trackingNumber?: string | null;
   trackingUrl?: string | null;
   internalNotes?: string | null;
+  externalProvider?: string | null;
+  externalOrderId?: string | null;
+  externalOrderStatus?: string | null;
+  externalTrackingNumber?: string | null;
+  externalTrackingProvider?: string | null;
+  sandbox: boolean;
+  pushedAt?: string | null;
+  lastStatusSyncedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   items?: SupplierOrderItem[];
