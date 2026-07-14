@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 
 const mockFindAll = jest.fn();
 
@@ -11,13 +12,20 @@ import fulfillmentAutomationAdminRoutes from '../fulfillmentAutomationRoutes';
 import { requireAdminAuth } from '../../../middleware/requireAdminAuth';
 import { notFoundHandler, globalErrorHandler } from '../../../middleware/errorHandler';
 
+// Mirrors the production mounting in src/index.ts: a rate limiter runs ahead
+// of requireAdminAuth on this path, so the limiter also protects the
+// authorization check itself, not just the handler behind it.
 const buildApp = (withAuth: boolean) => {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
   const app = express();
   app.use(express.json());
-  const adminRouter = express.Router();
-  if (withAuth) adminRouter.use(requireAdminAuth);
-  adminRouter.use('/fulfillment-automation', fulfillmentAutomationAdminRoutes);
-  app.use('/api/admin', adminRouter);
+  const middleware = withAuth ? [limiter, requireAdminAuth] : [limiter];
+  app.use('/api/admin/fulfillment-automation', ...middleware, fulfillmentAutomationAdminRoutes);
   app.use(notFoundHandler);
   app.use(globalErrorHandler);
   return app;
