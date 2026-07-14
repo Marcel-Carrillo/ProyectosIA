@@ -1605,6 +1605,53 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/supplier-orders/{id}/cj/sandbox-advance:
+    post:
+      summary: Simulate payment and ship progress for a CJ Dropshipping sandbox order (admin, QA-only)
+      description: >
+        Best-effort helper for exercising the fulfillment-automation flow end-to-end without a
+        real warehouse: calls CJ Dropshipping's sandbox `simulatePay` then steps `updateStatus`
+        forward, then immediately re-syncs the order (same orchestrator as the hourly
+        `cjOrderStatusSync` job) so the resulting `Shipment` reflects without waiting for the
+        next scheduled run. Hard-gated to supplier orders pushed with `sandbox: true` — rejects
+        with `CJ_SANDBOX_ONLY` for a real order. CJ's own sandbox order lifecycle requires a
+        manual dashboard step (CREATED -> IN_CART -> UNPAID) with no documented API equivalent;
+        this endpoint only drives the steps reachable from UNPAID onward. Never exposed on
+        `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: CJ Dropshipping sandbox order advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierOrderResponse'
+        '404':
+          description: Supplier order not found (SUPPLIER_ORDER_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            Order was never pushed (CJ_ORDER_NOT_PUSHED), or the order is not a sandbox order
+            (CJ_SANDBOX_ONLY)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/public/products:
     get:
       summary: List products (public storefront)

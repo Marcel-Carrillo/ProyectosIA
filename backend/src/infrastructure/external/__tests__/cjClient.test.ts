@@ -160,6 +160,60 @@ describe('CjApiClient', () => {
     });
   });
 
+  describe('simulateSandboxAdvance', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(envelopeResponse(200, authSuccessBody));
+    });
+
+    it('should_call_simulatePay_then_updateStatus_400_then_500_in_order', async () => {
+      fetchMock
+        .mockResolvedValueOnce(envelopeResponse(200, { code: 200, result: true, success: true, data: true }))
+        .mockResolvedValueOnce(envelopeResponse(200, { code: 200, result: true, success: true, data: true }))
+        .mockResolvedValueOnce(envelopeResponse(200, { code: 200, result: true, success: true, data: true }));
+
+      await client.simulateSandboxAdvance('cj-order-1');
+
+      const calledPaths = fetchMock.mock.calls
+        .filter(([url]) => !String(url).includes('getAccessToken'))
+        .map(([url]) => String(url));
+      expect(calledPaths).toEqual([
+        expect.stringContaining('/shopping/sandbox/simulatePay'),
+        expect.stringContaining('/shopping/sandbox/updateStatus'),
+        expect.stringContaining('/shopping/sandbox/updateStatus'),
+      ]);
+      const updateStatusBodies = fetchMock.mock.calls
+        .filter(([url]) => String(url).includes('updateStatus'))
+        .map(([, init]) => JSON.parse((init as RequestInit).body as string));
+      expect(updateStatusBodies).toEqual([
+        { orderId: 'cj-order-1', targetStatus: 400 },
+        { orderId: 'cj-order-1', targetStatus: 500 },
+      ]);
+    });
+
+    it('should_not_throw_and_should_still_attempt_later_steps_when_a_step_is_a_logical_failure', async () => {
+      // e.g. simulatePay rejected because the order is still at IN_CART —
+      // an expected, non-exceptional outcome for a best-effort QA helper.
+      fetchMock
+        .mockResolvedValueOnce(
+          envelopeResponse(200, { code: 812, result: false, success: false, message: 'not UNPAID', data: null })
+        )
+        .mockResolvedValueOnce(
+          envelopeResponse(200, { code: 816, result: false, success: false, message: 'invalid transition', data: null })
+        )
+        .mockResolvedValueOnce(envelopeResponse(200, { code: 200, result: true, success: true, data: true }));
+
+      await expect(client.simulateSandboxAdvance('cj-order-1')).resolves.toBeUndefined();
+    });
+
+    it('should_throw_CjApiError_on_auth_rejection_and_not_attempt_further_steps', async () => {
+      fetchMock.mockResolvedValueOnce(envelopeResponse(403, { code: 403, result: false, success: false, data: null }));
+
+      await expect(client.simulateSandboxAdvance('cj-order-1')).rejects.toBeInstanceOf(CjApiError);
+      const nonAuthCalls = fetchMock.mock.calls.filter(([url]) => !String(url).includes('getAccessToken'));
+      expect(nonAuthCalls.length).toBe(1);
+    });
+  });
+
   describe('error handling and retries', () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(envelopeResponse(200, authSuccessBody));

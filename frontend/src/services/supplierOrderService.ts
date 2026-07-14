@@ -28,6 +28,12 @@ export function mapSupplierOrderError(code: string): string {
       return 'No se permite este cambio de estado.';
     case 'VALIDATION_ERROR':
       return 'Revise los campos del formulario e inténtelo de nuevo.';
+    case 'CJ_ORDER_NOT_PUSHED':
+      return 'Este pedido todavía no se ha empujado a CJ Dropshipping.';
+    case 'CJ_SANDBOX_ONLY':
+      return 'Esta acción solo está disponible para pedidos sandbox de CJ Dropshipping.';
+    case 'CJ_API_UNAVAILABLE':
+      return 'La API de CJ Dropshipping no está disponible en este momento.';
     default:
       return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
@@ -66,6 +72,11 @@ export const supplierOrderService = {
     const response = await axios.get<SupplierOrderListResponse>(ADMIN_BASE, {
       params: { customerOrderId, pageSize: 100 },
     });
+    return response.data;
+  },
+
+  simulateSandboxAdvance: async (id: number): Promise<SupplierOrderResponse> => {
+    const response = await axios.post<SupplierOrderResponse>(`${ADMIN_BASE}/${id}/cj/sandbox-advance`);
     return response.data;
   },
 };

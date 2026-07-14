@@ -119,4 +119,10 @@ export interface ICjClient {
   calculateFreight(params: CjFreightCalculateParams): Promise<CjFreightOption[]>;
   createOrder(params: Omit<CjOrderCreateParams, 'isSandbox'>): Promise<CjOrderCreateResult>;
   getOrderDetail(externalOrderId: string): Promise<CjOrderDetail>;
+  // QA-only: drives a sandbox order (isSandbox: 1) through CJ's own
+  // sandbox-testing endpoints (simulate payment, then step the shipping
+  // status forward) so a test order's lifecycle can be exercised without a
+  // real warehouse. Best-effort — see cjClient.ts for why individual steps
+  // never throw on a CJ logical failure.
+  simulateSandboxAdvance(externalOrderId: string): Promise<void>;
 }

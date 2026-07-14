@@ -24,6 +24,7 @@ import {
   CjOrderNotPushedError,
   CjApiUnavailableError,
   CjCarrierAllowListExhaustedError,
+  CjSandboxOnlyError,
 } from '../../validator';
 
 function makeOrder(overrides: Partial<ConstructorParameters<typeof SupplierOrder>[0]> = {}) {
@@ -65,6 +66,7 @@ function makeMockCjClient(): jest.Mocked<ICjClient> {
     calculateFreight: jest.fn(),
     createOrder: jest.fn(),
     getOrderDetail: jest.fn(),
+    simulateSandboxAdvance: jest.fn(),
   };
 }
 
@@ -345,6 +347,41 @@ describe('CjOrderPushService', () => {
 
       await expect(service.getOrderStatus(1)).rejects.toBeInstanceOf(CjOrderNotPushedError);
       expect(cjClient.getOrderDetail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('simulateSandboxAdvance', () => {
+    it('should_call_the_client_with_the_external_order_id_for_a_pushed_sandbox_order', async () => {
+      supplierOrderRepo.findById.mockResolvedValue(
+        makeOrder({ externalOrderId: 'cj-order-1', sandbox: true })
+      );
+
+      await service.simulateSandboxAdvance(1);
+
+      expect(cjClient.simulateSandboxAdvance).toHaveBeenCalledWith('cj-order-1');
+    });
+
+    it('should_throw_SupplierOrderNotFoundError_when_order_missing', async () => {
+      supplierOrderRepo.findById.mockResolvedValue(null);
+
+      await expect(service.simulateSandboxAdvance(999)).rejects.toBeInstanceOf(SupplierOrderNotFoundError);
+      expect(cjClient.simulateSandboxAdvance).not.toHaveBeenCalled();
+    });
+
+    it('should_throw_CjOrderNotPushedError_when_the_order_was_never_pushed_to_CJ', async () => {
+      supplierOrderRepo.findById.mockResolvedValue(makeOrder({ sandbox: true }));
+
+      await expect(service.simulateSandboxAdvance(1)).rejects.toBeInstanceOf(CjOrderNotPushedError);
+      expect(cjClient.simulateSandboxAdvance).not.toHaveBeenCalled();
+    });
+
+    it('should_throw_CjSandboxOnlyError_and_never_call_the_client_for_a_real_non_sandbox_order', async () => {
+      supplierOrderRepo.findById.mockResolvedValue(
+        makeOrder({ externalOrderId: 'cj-order-1', sandbox: false })
+      );
+
+      await expect(service.simulateSandboxAdvance(1)).rejects.toBeInstanceOf(CjSandboxOnlyError);
+      expect(cjClient.simulateSandboxAdvance).not.toHaveBeenCalled();
     });
   });
 });
