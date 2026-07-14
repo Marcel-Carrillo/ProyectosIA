@@ -172,9 +172,17 @@ Examples:
 * `cjCatalogItemId`: Foreign key referencing the `CjCatalogItem` this variant was promoted from (optional, unique) — **INTERNAL ONLY, never returned by API**. Nullable+unique; `ON DELETE SET NULL` (a promoted variant survives even if its source staging row is ever deleted, since `CjCatalogItem` rows are disposable/re-syncable). Never cleared once set, including on deactivation — it is the permanent link back to the CJ origin that allows reactivating or re-syncing cost/stock later.
 * `stockPolicy`: Stock policy (valid values: SupplierManaged, InternalStock, Hybrid)
 * `status`: Variant status (valid values: Active, Inactive, OutOfStock, Archived)
+* `stockQuantity`: Available stock for this variant (integer, default 0). **Public.** Written only by the system — kept in sync from the linked `CjCatalogItem.stockQuantity` during CJ catalog sync and promotion; read-only through `PATCH`/`POST` admin variant endpoints (any client-supplied value is silently ignored). Drives storefront combination availability: a size/color combination is only selectable when its variant is active, non-deleted, and `stockQuantity > 0`.
+* `shippingCostEstimate`: Estimated per-unit freight cost (optional, 2 decimals) — **ADMIN ONLY, never returned by customer-facing APIs**. Populated by `POST /api/admin/products/:id/variants/:variantId/freight-estimate` (lowest CJ freight quote for the variant's linked `CjCatalogItem` and a destination country); `null` until refreshed at least once.
 * `deletedAt`: Soft-delete timestamp — null means active, non-null means deleted
 * `createdAt`: Date and time when the variant was created
 * `updatedAt`: Date and time when the variant was last updated
+
+**Derived (admin-only, not persisted) fields returned on admin variant responses:**
+
+* `netMargin`: `publicPrice - supplierCost - shippingCostEstimate`, treating a `null` `supplierCost` or `shippingCostEstimate` as `0`. Recomputed on every admin read/write, never stored.
+* `shippingEstimateMissing`: `true` when `shippingCostEstimate` is `null` — flags that `netMargin` is an approximation until the estimate is refreshed.
+* `marginWarning`: `true` when `netMargin < 0` or `netMargin < AutomationSettings.targetMargin`. Drives the "Margen bajo" / "Vendiendo con pérdida" badge in the admin variant table.
 
 **Validation Rules:**
 
@@ -186,10 +194,12 @@ Examples:
 * Supplier cost is optional but must be greater than or equal to 0 if provided
 * Stock policy must be one of: SupplierManaged, InternalStock, Hybrid
 * Status must be one of: Active, Inactive, OutOfStock, Archived
+* Stock quantity must be greater than or equal to 0; not settable through the admin update/create endpoints (system-managed only)
+* Shipping cost estimate must be greater than or equal to 0 if provided; only settable through the freight-estimate endpoint, not through `PATCH`/`POST`
 
 **Supplier Field Protection (CRITICAL):**
 
-The fields `supplierId`, `supplierReference`, and `supplierCost` **must never appear in any customer-facing API response**. Admin endpoints (`/api/admin/products/:id/variants*`, behind admin auth) DO return them (plus a derived `supplierName`) via a dedicated `adminVariantSelect` so administrators can see cost and margin; every customer-facing serializer allow-lists its own fields and automated isolation tests assert their absence on all `/api/public/*` responses. `cjCatalogItemId` remains internal-only and is never returned by any API, admin included.
+The fields `supplierId`, `supplierReference`, `supplierCost`, and `shippingCostEstimate` (plus the derived `netMargin`/`marginWarning`/`shippingEstimateMissing`) **must never appear in any customer-facing API response**. Admin endpoints (`/api/admin/products/:id/variants*`, behind admin auth) DO return them (plus a derived `supplierName`) via a dedicated `adminVariantSelect` so administrators can see cost and margin; every customer-facing serializer allow-lists its own fields (including `stockQuantity`, which IS public) and automated isolation tests assert the supplier/margin fields' absence on all `/api/public/*` responses. `cjCatalogItemId` remains internal-only and is never returned by any API, admin included.
 
 **Relationships:**
 
@@ -330,6 +340,7 @@ Represents a customer's shipping or billing address.
 * `province`: Province, region, or state (max 100 characters)
 * `postalCode`: Postal code (max 20 characters)
 * `country`: Country name or ISO code (max 100 characters)
+* `isDefault`: Whether this is the customer's default address for its `type` (boolean, default `false`)
 * `createdAt`: Date and time when the address was created
 * `updatedAt`: Date and time when the address was last updated
 
@@ -344,10 +355,13 @@ Represents a customer's shipping or billing address.
 * Postal code is required and cannot exceed 20 characters
 * Country is required and cannot exceed 100 characters
 * Phone is optional and cannot exceed 30 characters
+* **One default per type invariant**: a customer may have at most one `isDefault: true` address per `type` (Shipping, Billing). Enforced by a partial unique index (`CustomerAddress_customerId_type_default_unique`, on `(customerId, type)` where `isDefault = true`) plus a transactional "unset the previous default, then write the new one" write path in both the self-service (`/api/public/account/addresses`) and admin (`/api/admin/customers/:customerId/addresses`) repositories. A `P2002` unique-constraint race maps to `409 ADDRESS_DEFAULT_CONFLICT`.
 
 **Relationships:**
 
 * `customer`: Many-to-one relationship with Customer model
+
+**Checkout integration:** at checkout, an authenticated buyer's shipping/billing forms are prefilled from their default address of the matching `type` (falling back to `CustomerAccount`/`Customer` profile contact fields when no default exists for that type); guest checkouts are never prefilled. Buyers may also check "save as default" per address section at checkout, which persists the entered address as the new default of that type after a successful payment.
 
 ### 8. CustomerOrder
 
@@ -865,6 +879,50 @@ This is intentionally never persisted as a column on `CjCatalogItem` — it stay
 * `supplierIntegration`: Many-to-one relationship with SupplierIntegration model
 * `promotedVariant`: One-to-one relationship with ProductVariant model (inverse of `ProductVariant.cjCatalogItemId`) — null until an admin promotes this item
 
+### 19. AutomationSettings
+
+Singleton configuration row for the shipping-margin guardrail and fulfillment automation. Admin-editable without a redeploy via `GET`/`PATCH /api/admin/settings/automation`; lazily created with documented defaults on first read (id `1`).
+
+**Fields:**
+
+* `id`: Unique identifier (Primary Key) — always `1` in practice (singleton)
+* `targetMargin`: Minimum acceptable `ProductVariant.netMargin` before the admin panel flags a `marginWarning` (2 decimals, default `5.00`)
+* `defaultFreightDestinationCountry`: ISO country code used as the default destination for freight-estimate quotes when none is explicitly requested (2 characters, default `ES`)
+* `carrierAllowList`: Optional list of CJ Dropshipping carrier names; when non-empty, automated logistics selection only considers quotes from these carriers (empty array means "cheapest overall")
+* `createdAt` / `updatedAt`: Standard timestamps
+
+**Validation Rules:**
+
+* `targetMargin` must be greater than or equal to 0
+* `defaultFreightDestinationCountry` must be a 2-character ISO country code
+* Never exposed through any `/api/public/*` response — admin-only
+
+**Note:** `FULFILLMENT_AUTOMATION_ENABLED` (whether automation runs at all) is a pure environment-variable kill-switch, deliberately **not** a column on this table — it mirrors the existing `SUPPLIER_AUTO_PROVISION_ENABLED` pattern and cannot be toggled without a deploy.
+
+### 20. AutomationAlert
+
+Queryable record of a failed automatic fulfillment step (supplier-order generation, CJ push, or CJ status-sync shipment transition), so a failure is never silent even though it never rolls back the customer order's `Paid` status. Surfaced to admins via `GET /api/admin/fulfillment-automation/alerts`.
+
+**Fields:**
+
+* `id`: Unique identifier (Primary Key)
+* `type`: Alert type (free-form, max 50 characters — e.g. `SupplierOrderGenerationFailed`, `CjCarrierAllowListExhausted`, `ShipmentTransitionSkipped`, `CjStatusSyncFailed`)
+* `customerOrderId`: Foreign key referencing the CustomerOrder (optional; `ON DELETE SET NULL`)
+* `supplierOrderId`: Foreign key referencing the SupplierOrder (optional; `ON DELETE SET NULL`)
+* `message`: Non-sensitive failure summary (max 500 characters) — **never contains CJ/Stripe secrets or cost figures**
+* `resolvedAt`: Timestamp when an admin marked the alert resolved (optional; null means open/unresolved)
+* `createdAt`: Date and time when the alert was recorded
+
+**Validation Rules:**
+
+* `message` must never include API keys, tokens, or supplier/shipping cost figures
+* Alert-recording failures must never mask or roll back the original automation failure (best-effort write, caught independently)
+
+**Relationships:**
+
+* `customerOrder`: Many-to-one relationship with CustomerOrder model (optional)
+* `supplierOrder`: Many-to-one relationship with SupplierOrder model (optional)
+
 ## Entity Relationship Diagram
 
 ```mermaid
@@ -909,6 +967,8 @@ erDiagram
         Int cjCatalogItemId FK
         String stockPolicy
         String status
+        Int stockQuantity
+        Decimal shippingCostEstimate
         DateTime deletedAt
         DateTime createdAt
         DateTime updatedAt
@@ -959,6 +1019,7 @@ erDiagram
         String province
         String postalCode
         String country
+        Boolean isDefault
         DateTime createdAt
         DateTime updatedAt
     }

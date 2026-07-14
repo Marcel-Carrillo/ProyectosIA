@@ -57,6 +57,7 @@ const variant = (status: 'Active' | 'Inactive'): ProductVariant => ({
   compareAtPrice: null,
   stockPolicy: 'SupplierManaged',
   status,
+  stockQuantity: 5,
   deletedAt: null,
   createdAt: '',
   updatedAt: '',

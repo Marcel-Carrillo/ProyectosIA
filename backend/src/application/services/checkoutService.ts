@@ -8,7 +8,11 @@ import { CustomerOrder } from '../../domain/models/customerOrder';
 import { logger } from '../../infrastructure/logger';
 import { paymentService } from './paymentService';
 
-const variantSelectForOrder = {
+// Exported only so the shipping-margin-guardrail regression test (see
+// checkoutService.test.ts) can assert, at the type level, that this select
+// never reaches into supplierCost/shippingCostEstimate — checkout pricing
+// must stay fully independent of the admin-only margin guardrail.
+export const variantSelectForOrder = {
   id: true,
   sku: true,
   size: true,

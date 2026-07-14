@@ -69,6 +69,11 @@ jest.mock('../../../infrastructure/logger', () => ({
   logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
+const mockRunForPaidOrder = jest.fn();
+jest.mock('../fulfillmentAutomationService', () => ({
+  fulfillmentAutomationService: { runForPaidOrder: (...args: unknown[]) => mockRunForPaidOrder(...args) },
+}));
+
 const makeOrder = (overrides: Partial<ConstructorParameters<typeof CustomerOrder>[0]> = {}) =>
   new CustomerOrder({
     id: 1,
@@ -338,6 +343,7 @@ describe('handlePaymentIntentSucceeded (via webhook)', () => {
   beforeEach(() => {
     mockWebhookEventRepo.findByStripeEventId.mockResolvedValue(null);
     mockWebhookEventRepo.create.mockResolvedValue({});
+    mockRunForPaidOrder.mockResolvedValue(undefined);
   });
 
   it('sets status=Paid, paymentStatus=Paid, paidAt for PendingPayment order', async () => {
@@ -350,6 +356,31 @@ describe('handlePaymentIntentSucceeded (via webhook)', () => {
         data: expect.objectContaining({ status: 'Paid', paymentStatus: 'Paid' }),
       })
     );
+  });
+
+  it('calls fulfillmentAutomationService.runForPaidOrder after marking the order Paid', async () => {
+    mockConstructEvent.mockReturnValue(makeEvent('pi_123', 'ch_123'));
+    mockOrderRepo.findByStripePaymentIntentId.mockResolvedValue(makeOrder());
+    mockOrderUpdate.mockResolvedValue({});
+    await service.handleWebhookEvent(Buffer.from('{}'), 'sig');
+    expect(mockRunForPaidOrder).toHaveBeenCalledWith(1);
+  });
+
+  it('also calls fulfillmentAutomationService.runForPaidOrder on the already-Paid (webhook retry) branch', async () => {
+    mockConstructEvent.mockReturnValue(makeEvent('pi_123'));
+    mockOrderRepo.findByStripePaymentIntentId.mockResolvedValue(makeOrder({ paymentStatus: 'Paid' }));
+    await service.handleWebhookEvent(Buffer.from('{}'), 'sig');
+    expect(mockRunForPaidOrder).toHaveBeenCalledWith(1);
+  });
+
+  it('does not propagate an error thrown by fulfillmentAutomationService — the webhook event still gets recorded', async () => {
+    mockConstructEvent.mockReturnValue(makeEvent('pi_123', 'ch_123'));
+    mockOrderRepo.findByStripePaymentIntentId.mockResolvedValue(makeOrder());
+    mockOrderUpdate.mockResolvedValue({});
+    mockRunForPaidOrder.mockRejectedValue(new Error('unexpected automation crash'));
+
+    await expect(service.handleWebhookEvent(Buffer.from('{}'), 'sig')).resolves.not.toThrow();
+    expect(mockWebhookEventRepo.create).toHaveBeenCalled();
   });
 
   it('does not mark Paid when intent amount does not match the order total', async () => {

@@ -9,7 +9,8 @@ const makeVariant = (
   id: number,
   size: string | null,
   color: string | null,
-  deleted = false
+  deleted = false,
+  stockQuantity = 5
 ): ProductVariant => ({
   id,
   productId: 1,
@@ -20,6 +21,7 @@ const makeVariant = (
   compareAtPrice: null,
   stockPolicy: 'SupplierManaged',
   status: 'Active',
+  stockQuantity,
   deletedAt: deleted ? '2026-01-01T00:00:00Z' : null,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
@@ -60,5 +62,29 @@ describe('VariantSelector', () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ id: 2, size: 'M', color: 'Black' })
     );
+  });
+});
+
+describe('VariantSelector stock availability', () => {
+  const stockVariants: ProductVariant[] = [
+    makeVariant(1, 'S', 'Black', false, 5),
+    makeVariant(2, 'S', 'White', false, 0), // zero stock
+    makeVariant(3, 'S', 'Blue', false, 3),
+    makeVariant(4, 'M', 'Black', false, 5),
+  ];
+
+  it('disables a color with zero stock for the selected size, leaving others selectable', () => {
+    renderWithI18n(<VariantSelector variants={stockVariants} onVariantChange={vi.fn()} />);
+    fireEvent.click(screen.getByLabelText(/Size S/));
+    expect(screen.getByLabelText(/Color White \(unavailable\)/i)).toBeDisabled();
+    expect(screen.getByLabelText(/Color Black/i)).not.toBeDisabled();
+    expect(screen.getByLabelText(/Color Blue/i)).not.toBeDisabled();
+  });
+
+  it('does not call onVariantChange with a zero-stock variant', () => {
+    const onChange = vi.fn();
+    renderWithI18n(<VariantSelector variants={stockVariants} onVariantChange={onChange} />);
+    fireEvent.click(screen.getByLabelText(/Size S/));
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ color: 'White' }));
   });
 });

@@ -3,6 +3,7 @@ import {
   validateCategoryData,
   validateProductData,
   isValidGtinFormat,
+  validateAutomationSettingsData,
   ValidationError,
 } from './validator';
 
@@ -159,5 +160,46 @@ describe('isValidGtinFormat', () => {
 
   it('returns false for an empty string', () => {
     expect(isValidGtinFormat('')).toBe(false);
+  });
+});
+
+describe('validateAutomationSettingsData', () => {
+  it('passes with no fields provided (all optional)', () => {
+    expect(() => validateAutomationSettingsData({})).not.toThrow();
+  });
+
+  it('passes with all valid fields', () => {
+    expect(() =>
+      validateAutomationSettingsData({
+        targetMargin: 7.5,
+        defaultFreightDestinationCountry: 'FR',
+        carrierAllowList: ['DHL', 'UPS'],
+      })
+    ).not.toThrow();
+  });
+
+  it('rejects a non-numeric targetMargin', () => {
+    expect(() => validateAutomationSettingsData({ targetMargin: 'not-a-number' })).toThrow(
+      ValidationError
+    );
+  });
+
+  it('rejects a negative targetMargin', () => {
+    expect(() => validateAutomationSettingsData({ targetMargin: -1 })).toThrow(ValidationError);
+  });
+
+  it('rejects a defaultFreightDestinationCountry that is not 2 letters', () => {
+    expect(() =>
+      validateAutomationSettingsData({ defaultFreightDestinationCountry: 'ESP' })
+    ).toThrow(ValidationError);
+  });
+
+  it('rejects a carrierAllowList that is not an array of strings', () => {
+    expect(() => validateAutomationSettingsData({ carrierAllowList: [1, 2] })).toThrow(
+      ValidationError
+    );
+    expect(() => validateAutomationSettingsData({ carrierAllowList: 'DHL' })).toThrow(
+      ValidationError
+    );
   });
 });

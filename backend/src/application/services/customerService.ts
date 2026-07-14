@@ -102,7 +102,7 @@ export class CustomerService {
     if (!address) throw new AddressNotFoundError();
 
     validateCustomerAddressData(data as unknown as Record<string, unknown>, { requireAll: false });
-    return this.repo.updateAddress(addressId, data);
+    return this.repo.updateAddress(addressId, customerId, data);
   }
 
   async deleteAddress(customerId: number, addressId: number): Promise<void> {

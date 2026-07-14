@@ -12,6 +12,9 @@ export class ProductVariant {
   stockPolicy: StockPolicy;
   status: ProductVariantStatus;
   cjCatalogItemId?: number | null;
+  // Public-safe: synced from the linked CjCatalogItem during catalog sync/
+  // promotion. Never client-settable via the admin create/update endpoints.
+  stockQuantity: number;
   // Supplier sourcing data — populated only when the variant was read through
   // an admin select. Public serializers allow-list their own fields, so these
   // never reach customer-facing responses.
@@ -19,6 +22,18 @@ export class ProductVariant {
   supplierReference?: string | null;
   supplierCost?: number | null;
   supplierName?: string | null;
+  // Admin-only margin breakdown — only ever populated when the row was read
+  // via adminVariantSelect (which always selects supplierCost alongside
+  // shippingCostEstimate). Gating on `data.supplierCost !== undefined` (not
+  // `!= null`) distinguishes "field not selected at all" (customer-safe
+  // select) from "selected but null" (admin select, no cost set yet) — this
+  // keeps these fields structurally absent from any object built via the
+  // public variantSelect.
+  shippingCostEstimate?: number | null;
+  netMargin?: number | null;
+  shippingEstimateMissing?: boolean;
+  // Set by the service layer after construction (needs AutomationSettings.targetMargin).
+  marginWarning?: boolean;
   deletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -34,10 +49,12 @@ export class ProductVariant {
     stockPolicy?: string;
     status?: string;
     cjCatalogItemId?: number | null;
+    stockQuantity?: unknown;
     supplierId?: number | null;
     supplierReference?: string | null;
     supplierCost?: unknown;
     supplier?: { name: string } | null;
+    shippingCostEstimate?: unknown;
     deletedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
@@ -52,6 +69,7 @@ export class ProductVariant {
     this.stockPolicy = (data.stockPolicy as StockPolicy) ?? 'SupplierManaged';
     this.status = (data.status as ProductVariantStatus) ?? 'Active';
     this.cjCatalogItemId = data.cjCatalogItemId ?? null;
+    this.stockQuantity = data.stockQuantity != null ? Number(data.stockQuantity) : 0;
     this.supplierId = data.supplierId ?? null;
     this.supplierReference = data.supplierReference ?? null;
     this.supplierCost = data.supplierCost != null ? Number(data.supplierCost) : null;
@@ -59,5 +77,13 @@ export class ProductVariant {
     this.deletedAt = data.deletedAt ?? null;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
+
+    if (data.supplierCost !== undefined) {
+      const supplierCostNum = data.supplierCost != null ? Number(data.supplierCost) : 0;
+      const shippingEstimateNum = data.shippingCostEstimate != null ? Number(data.shippingCostEstimate) : 0;
+      this.shippingCostEstimate = data.shippingCostEstimate != null ? Number(data.shippingCostEstimate) : null;
+      this.shippingEstimateMissing = data.shippingCostEstimate == null;
+      this.netMargin = Number((this.publicPrice - supplierCostNum - shippingEstimateNum).toFixed(2));
+    }
   }
 }

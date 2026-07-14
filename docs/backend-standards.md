@@ -1743,7 +1743,7 @@ The outbound integration to CJ Dropshipping's REST API lives at `backend/src/inf
 
 ### Scheduled Lambda Job Pattern (non-HTTP entry point)
 
-Some background work (e.g. `backend/src/jobs/supplierAutoProvisionHandler.ts`) must run on a schedule rather than in response to an HTTP request. This project's convention for that:
+Some background work (e.g. `backend/src/jobs/supplierAutoProvisionHandler.ts`, `backend/src/jobs/cjOrderStatusSyncHandler.ts`) must run on a schedule rather than in response to an HTTP request. This project's convention for that:
 
 - **Live in `backend/src/jobs/`**, not `src/presentation/controllers/` — a scheduled job is a distinct kind of entry point from an HTTP controller, even though it wires the same Application-layer services.
 - **A plain exported `handler(event?)` async function**, not `serverless-http`-wrapped — there is no HTTP request/response to bridge, so `src/lambda.ts`'s `serverless(app)` pattern does not apply here.
@@ -1752,6 +1752,16 @@ Some background work (e.g. `backend/src/jobs/supplierAutoProvisionHandler.ts`) m
 - **A kill-switch environment variable**, checked first before any DB/API call, so the job can be disabled without a redeploy if it misbehaves.
 - **Manual testing without `serverless-offline`**: `serverless-offline` does not execute `schedule` events. Exercise the handler locally by invoking its exported `handler()` directly (e.g. a temporary `ts-node` script loading `dotenv/config`), never by adding a temporary HTTP route.
 - **Never wrap a job's full external-API-calling span in `prisma.$transaction(...)`, even to pin a connection for something like an advisory lock.** AWS Lambda freezes the execution environment's CPU as soon as the handler's returned promise resolves; this has been observed (see `openspec/changes/cj-catalog-auto-provisioning/reports/2026-07-09-production-incident-lock-transaction-revert.md`) to leave Prisma's interactive transaction `idle in transaction` in Postgres forever — the COMMIT/ROLLBACK never completes on the wire — permanently holding whatever the transaction touched (e.g. a session-scoped advisory lock) until a human runs `pg_terminate_backend`. This failure is deterministic under a real Lambda deploy and invisible to mocked unit tests. If a mechanism genuinely needs to pin one physical connection across a long-running span, use a dedicated raw connection outside Prisma's pool instead, and validate the fix with a real `aws lambda invoke` against a deployed function before considering it verified — not just mocked tests.
+
+### Fulfillment Automation Orchestration Pattern
+
+`fulfillmentAutomationService.ts` composes, for a single paid customer order: auto-generating its supplier order(s) (reusing the existing idempotent `generateFromCustomerOrder` logic), then auto-pushing each CJ-fulfilled supplier order that has no `externalOrderId` yet (cheapest-logistics auto-selection, optionally constrained by `AutomationSettings.carrierAllowList`). It is called — **awaited, not fire-and-forget** — from `paymentService.handlePaymentIntentSucceeded` after the order is marked `Paid`, per the same Lambda-freeze risk documented above for `$transaction`. A companion scheduled job, `cjOrderStatusSyncHandler.ts`, pulls CJ order status for supplier orders with a non-null `externalOrderId` and a non-terminal `externalOrderStatus`, and advances each linked `Shipment` one legal state-machine hop at a time toward the mapped target (see `domain/models/cjOrderStatus.ts` for the CJ-status → `ShipmentStatus` mapping) rather than attempting to jump directly to the final state — this keeps a sync that missed intermediate polls safe and re-entrant.
+
+Rules that apply to both:
+
+- **A single boolean kill-switch, `FULFILLMENT_AUTOMATION_ENABLED`**, gates both the payment-success auto-generation/push and the status-sync job — checked first, before any DB/API call, mirroring the existing `SUPPLIER_AUTO_PROVISION_ENABLED` convention. It is a pure environment variable, never an `AutomationSettings` column, so it cannot be toggled without a deploy.
+- **Failures never roll back the order's `Paid` status.** Every automation failure (generation, push, or an illegal mapped shipment transition) is caught, logged without secrets or cost figures, and recorded via `AutomationAlertRepository` — a best-effort write whose own failure is caught independently so a broken alert write can never mask the original failure or crash the caller.
+- **`AutomationSettings` is a singleton row** (`targetMargin`, `defaultFreightDestinationCountry`, `carrierAllowList`), lazily created with documented defaults on first read via `GET /api/admin/settings/automation`, editable via `PATCH` without a redeploy.
 
 ### Derived State via Relation Join (Pattern)
 

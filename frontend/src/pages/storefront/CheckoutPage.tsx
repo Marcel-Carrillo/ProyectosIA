@@ -7,6 +7,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { authenticatedCheckout, guestCheckout, validateCoupon } from '../../services/checkoutService';
 import { getStripeConfig } from '../../services/paymentService';
+import { addressService, SelfServiceCustomerAddress } from '../../services/addressService';
 import { PublicOrder } from '../../types/auth';
 import PaymentForm from '../../components/storefront/PaymentForm';
 import PriceTag from '../../components/storefront/PriceTag';
@@ -15,12 +16,29 @@ import { apiErrorKey } from '../../utils/apiErrorKey';
 
 const emptyAddress = {
   fullName: '',
+  phone: '',
   streetLine1: '',
+  streetLine2: '',
   city: '',
   province: '',
   postalCode: '',
   country: 'Spain',
 };
+
+const OPTIONAL_ADDRESS_FIELDS = new Set<keyof typeof emptyAddress>(['phone', 'streetLine2']);
+
+function addressToFormState(addr: SelfServiceCustomerAddress): typeof emptyAddress {
+  return {
+    fullName: addr.fullName,
+    phone: addr.phone ?? '',
+    streetLine1: addr.streetLine1,
+    streetLine2: addr.streetLine2 ?? '',
+    city: addr.city,
+    province: addr.province,
+    postalCode: addr.postalCode,
+    country: addr.country,
+  };
+}
 
 type Step = 'details' | 'payment';
 
@@ -37,6 +55,9 @@ const CheckoutPage: React.FC = () => {
   const [guest, setGuest] = useState({ email: '', firstName: '', lastName: '', phone: '' });
   const [shipping, setShipping] = useState(emptyAddress);
   const [billing, setBilling] = useState(emptyAddress);
+  const [sameAsShipping, setSameAsShipping] = useState(false);
+  const [saveShippingDefault, setSaveShippingDefault] = useState(false);
+  const [saveBillingDefault, setSaveBillingDefault] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [error, setError] = useState('');
@@ -53,6 +74,45 @@ const CheckoutPage: React.FC = () => {
       .then(({ publishableKey }) => setStripePromise(loadStripe(publishableKey)))
       .catch(() => setError(t('errors.PAYMENT_GATEWAY_UNAVAILABLE', { ns: 'common' })));
   }, []);
+
+  // Prefill shipping/billing from the buyer's default addresses, falling
+  // back to profile-only prefill (name/phone) when no default exists. Guest
+  // buyers never run this — their forms start empty.
+  useEffect(() => {
+    if (!isAuthenticated || !customer) return;
+
+    const profileOnly = {
+      ...emptyAddress,
+      fullName: `${customer.firstName} ${customer.lastName}`.trim(),
+      phone: customer.phone ?? '',
+    };
+    setShipping(profileOnly);
+    setBilling(profileOnly);
+
+    let cancelled = false;
+    addressService
+      .list()
+      .then((addresses) => {
+        if (cancelled) return;
+        const defaultShipping = addresses.find((a) => a.type === 'Shipping' && a.isDefault);
+        const defaultBilling = addresses.find((a) => a.type === 'Billing' && a.isDefault);
+        if (defaultShipping) setShipping(addressToFormState(defaultShipping));
+        if (defaultBilling) setBilling(addressToFormState(defaultBilling));
+      })
+      .catch(() => {
+        // Prefill is a convenience, not a checkout blocker — keep the
+        // profile-only baseline already applied above on failure.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, customer]);
+
+  // "Usar mismos datos": while enabled, billing mirrors shipping and further
+  // shipping edits keep propagating.
+  useEffect(() => {
+    if (sameAsShipping) setBilling(shipping);
+  }, [sameAsShipping, shipping]);
 
   if (!items.length && step === 'details') return <Navigate to="/cart" replace />;
 
@@ -97,7 +157,48 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
+    if (isAuthenticated) {
+      const saves: Promise<unknown>[] = [];
+      if (saveShippingDefault) {
+        saves.push(
+          addressService
+            .create({
+              type: 'Shipping',
+              isDefault: true,
+              fullName: shipping.fullName,
+              phone: shipping.phone || undefined,
+              streetLine1: shipping.streetLine1,
+              streetLine2: shipping.streetLine2 || undefined,
+              city: shipping.city,
+              province: shipping.province,
+              postalCode: shipping.postalCode,
+              country: shipping.country,
+            })
+            .catch((err) => console.error('Failed to save shipping address as default:', err))
+        );
+      }
+      if (saveBillingDefault) {
+        const billingSource = sameAsShipping ? shipping : billing;
+        saves.push(
+          addressService
+            .create({
+              type: 'Billing',
+              isDefault: true,
+              fullName: billingSource.fullName,
+              phone: billingSource.phone || undefined,
+              streetLine1: billingSource.streetLine1,
+              streetLine2: billingSource.streetLine2 || undefined,
+              city: billingSource.city,
+              province: billingSource.province,
+              postalCode: billingSource.postalCode,
+              country: billingSource.country,
+            })
+            .catch((err) => console.error('Failed to save billing address as default:', err))
+        );
+      }
+      await Promise.all(saves);
+    }
     clearCart();
     navigate(`/order-confirmation/${pendingOrder!.orderNumber}`, {
       state: { order: pendingOrder, paymentStatus: 'processing' },
@@ -179,15 +280,35 @@ const CheckoutPage: React.FC = () => {
                   className="storefront-field__input"
                   value={shipping[key]}
                   onChange={(e) => setShipping({ ...shipping, [key]: e.target.value })}
-                  required
+                  required={!OPTIONAL_ADDRESS_FIELDS.has(key)}
                 />
               </label>
             ))}
           </div>
+          {isAuthenticated && (
+            <label className="storefront-checkout__toggle">
+              <input
+                type="checkbox"
+                checked={saveShippingDefault}
+                onChange={(e) => setSaveShippingDefault(e.target.checked)}
+                data-testid="checkbox-save-shipping-default"
+              />
+              <span>{t('saveAsDefault')}</span>
+            </label>
+          )}
         </section>
 
         <section className="storefront-checkout__section">
           <h2 className="storefront-checkout__section-title">{t('billingAddress')}</h2>
+          <label className="storefront-checkout__toggle">
+            <input
+              type="checkbox"
+              checked={sameAsShipping}
+              onChange={(e) => setSameAsShipping(e.target.checked)}
+              data-testid="checkbox-same-as-shipping"
+            />
+            <span>{t('useSameData')}</span>
+          </label>
           <div className="storefront-checkout__grid">
             {(Object.keys(emptyAddress) as Array<keyof typeof emptyAddress>).map((key) => (
               <label className="storefront-field" key={`bill-${key}`}>
@@ -196,11 +317,23 @@ const CheckoutPage: React.FC = () => {
                   className="storefront-field__input"
                   value={billing[key]}
                   onChange={(e) => setBilling({ ...billing, [key]: e.target.value })}
-                  required
+                  required={!OPTIONAL_ADDRESS_FIELDS.has(key)}
+                  disabled={sameAsShipping}
                 />
               </label>
             ))}
           </div>
+          {isAuthenticated && (
+            <label className="storefront-checkout__toggle">
+              <input
+                type="checkbox"
+                checked={saveBillingDefault}
+                onChange={(e) => setSaveBillingDefault(e.target.checked)}
+                data-testid="checkbox-save-billing-default"
+              />
+              <span>{t('saveAsDefault')}</span>
+            </label>
+          )}
         </section>
 
         <section className="storefront-checkout__section">

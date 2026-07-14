@@ -2,6 +2,7 @@ import { SupplierOrder, SupplierOrderItem } from '../../../domain/models/supplie
 import { ISupplierOrderRepository } from '../../../domain/repositories/supplierOrderRepository';
 import { ISupplierIntegrationRepository } from '../../../domain/repositories/supplierIntegrationRepository';
 import { ICjCatalogItemRepository } from '../../../domain/repositories/cjCatalogItemRepository';
+import { IAutomationSettingsRepository } from '../../../domain/repositories/automationSettingsRepository';
 import { CjCatalogItem } from '../../../domain/models/cjCatalogItem';
 import { SupplierIntegration } from '../../../domain/models/supplierIntegration';
 import { ICjClient } from '../../../infrastructure/external/cjTypes';
@@ -14,10 +15,16 @@ jest.mock('../../../infrastructure/prismaClient', () => ({
   },
 }));
 
-import { CjOrderPushService } from '../cjOrderPushService';
+import { CjOrderPushService, selectCheapestLogistic } from '../cjOrderPushService';
 import { SupplierOrderNotFoundError } from '../../../infrastructure/repositories/supplierOrderRepository';
 import { SupplierIntegrationNotFoundError } from '../../../infrastructure/repositories/supplierIntegrationRepository';
-import { CjItemNotMappedError, CjOrderAlreadyPushedError, CjOrderNotPushedError, CjApiUnavailableError } from '../../validator';
+import {
+  CjItemNotMappedError,
+  CjOrderAlreadyPushedError,
+  CjOrderNotPushedError,
+  CjApiUnavailableError,
+  CjCarrierAllowListExhaustedError,
+} from '../../validator';
 
 function makeOrder(overrides: Partial<ConstructorParameters<typeof SupplierOrder>[0]> = {}) {
   return new SupplierOrder({
@@ -76,6 +83,7 @@ describe('CjOrderPushService', () => {
   let integrationRepo: jest.Mocked<ISupplierIntegrationRepository>;
   let catalogRepo: jest.Mocked<ICjCatalogItemRepository>;
   let cjClient: jest.Mocked<ICjClient>;
+  let settingsRepo: jest.Mocked<IAutomationSettingsRepository>;
   let service: CjOrderPushService;
 
   beforeEach(() => {
@@ -92,6 +100,7 @@ describe('CjOrderPushService', () => {
       updateExternalOrderStatus: jest.fn(),
       generateNextSupplierOrderNumber: jest.fn(),
       recomputeCustomerFulfillmentStatus: jest.fn(),
+      findPushedNonTerminal: jest.fn(),
     };
     integrationRepo = {
       findBySupplierId: jest.fn(),
@@ -109,7 +118,11 @@ describe('CjOrderPushService', () => {
       findManyByIds: jest.fn(),
     };
     cjClient = makeMockCjClient();
-    service = new CjOrderPushService(supplierOrderRepo, integrationRepo, catalogRepo, cjClient);
+    settingsRepo = {
+      get: jest.fn().mockResolvedValue({ id: 1, targetMargin: 5, defaultFreightDestinationCountry: 'ES', carrierAllowList: [] }),
+      update: jest.fn(),
+    };
+    service = new CjOrderPushService(supplierOrderRepo, integrationRepo, catalogRepo, cjClient, settingsRepo);
     mockCustomerOrderFindUnique.mockResolvedValue({ shippingAddressSnapshot: addressSnapshot });
   });
 
@@ -223,6 +236,81 @@ describe('CjOrderPushService', () => {
 
       const callArgs = cjClient.createOrder.mock.calls[0][0];
       expect(callArgs).not.toHaveProperty('isSandbox');
+    });
+
+    it('should_auto_select_the_cheapest_logistic_option_when_logisticName_is_omitted', async () => {
+      supplierOrderRepo.findById.mockResolvedValue(makeOrder());
+      integrationRepo.findBySupplierId.mockResolvedValue(new SupplierIntegration({ id: 1, supplierId: 1, status: 'Connected' }));
+      catalogRepo.findByExternalRef.mockResolvedValue(makeCatalogItem());
+      cjClient.calculateFreight.mockResolvedValue([
+        { logisticName: 'Expensive', logisticAging: '3-5', logisticPrice: 9.5, totalPostageFee: 9.5 },
+        { logisticName: 'Cheap', logisticAging: '7-10', logisticPrice: 3.2, totalPostageFee: 3.2 },
+      ]);
+      cjClient.createOrder.mockResolvedValue({ orderId: 'cj-order-1' });
+      supplierOrderRepo.updateExternalOrder.mockResolvedValue(makeOrder({ externalOrderId: 'cj-order-1' }));
+
+      await service.pushOrder(1, {});
+
+      expect(cjClient.calculateFreight).toHaveBeenCalled();
+      expect(cjClient.createOrder).toHaveBeenCalledWith(expect.objectContaining({ logisticName: 'Cheap' }));
+    });
+
+    it('should_restrict_auto_selection_to_the_configured_carrier_allow_list', async () => {
+      supplierOrderRepo.findById.mockResolvedValue(makeOrder());
+      integrationRepo.findBySupplierId.mockResolvedValue(new SupplierIntegration({ id: 1, supplierId: 1, status: 'Connected' }));
+      catalogRepo.findByExternalRef.mockResolvedValue(makeCatalogItem());
+      settingsRepo.get.mockResolvedValue({
+        id: 1, targetMargin: 5, defaultFreightDestinationCountry: 'ES', carrierAllowList: ['Standard'],
+      });
+      cjClient.calculateFreight.mockResolvedValue([
+        { logisticName: 'Cheap', logisticAging: '7-10', logisticPrice: 3.2, totalPostageFee: 3.2 },
+        { logisticName: 'Standard', logisticAging: '5-8', logisticPrice: 6, totalPostageFee: 6 },
+      ]);
+      cjClient.createOrder.mockResolvedValue({ orderId: 'cj-order-1' });
+      supplierOrderRepo.updateExternalOrder.mockResolvedValue(makeOrder({ externalOrderId: 'cj-order-1' }));
+
+      await service.pushOrder(1, {});
+
+      expect(cjClient.createOrder).toHaveBeenCalledWith(expect.objectContaining({ logisticName: 'Standard' }));
+    });
+
+    it('should_throw_CjCarrierAllowListExhaustedError_when_no_quoted_option_matches_the_allow_list', async () => {
+      supplierOrderRepo.findById.mockResolvedValue(makeOrder());
+      integrationRepo.findBySupplierId.mockResolvedValue(new SupplierIntegration({ id: 1, supplierId: 1, status: 'Connected' }));
+      catalogRepo.findByExternalRef.mockResolvedValue(makeCatalogItem());
+      settingsRepo.get.mockResolvedValue({
+        id: 1, targetMargin: 5, defaultFreightDestinationCountry: 'ES', carrierAllowList: ['OnlyThis'],
+      });
+      cjClient.calculateFreight.mockResolvedValue([
+        { logisticName: 'Cheap', logisticAging: '7-10', logisticPrice: 3.2, totalPostageFee: 3.2 },
+      ]);
+
+      await expect(service.pushOrder(1, {})).rejects.toBeInstanceOf(CjCarrierAllowListExhaustedError);
+      expect(cjClient.createOrder).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('selectCheapestLogistic', () => {
+    const options = [
+      { logisticName: 'Expensive', logisticAging: '3-5', logisticPrice: 9.5, totalPostageFee: 9.5 },
+      { logisticName: 'Cheap', logisticAging: '7-10', logisticPrice: 3.2, totalPostageFee: 3.2 },
+      { logisticName: 'Mid', logisticAging: '5-7', logisticPrice: 6, totalPostageFee: 6 },
+    ];
+
+    it('should_return_the_cheapest_option_when_allowList_is_empty', () => {
+      expect(selectCheapestLogistic(options, [])).toBe('Cheap');
+    });
+
+    it('should_return_the_cheapest_option_within_the_allow_list', () => {
+      expect(selectCheapestLogistic(options, ['Expensive', 'Mid'])).toBe('Mid');
+    });
+
+    it('should_return_null_when_no_option_matches_the_allow_list', () => {
+      expect(selectCheapestLogistic(options, ['Nonexistent'])).toBeNull();
+    });
+
+    it('should_return_null_when_options_is_empty', () => {
+      expect(selectCheapestLogistic([], [])).toBeNull();
     });
   });
 

@@ -1,6 +1,7 @@
 import { ISupplierOrderRepository } from '../../domain/repositories/supplierOrderRepository';
 import { ISupplierIntegrationRepository } from '../../domain/repositories/supplierIntegrationRepository';
 import { ICjCatalogItemRepository } from '../../domain/repositories/cjCatalogItemRepository';
+import { IAutomationSettingsRepository } from '../../domain/repositories/automationSettingsRepository';
 import { ICjClient, CjFreightOption } from '../../infrastructure/external/cjTypes';
 import { CjApiError } from '../../infrastructure/external/cjClient';
 import { SupplierOrder } from '../../domain/models/supplierOrder';
@@ -11,9 +12,18 @@ import {
   CjOrderAlreadyPushedError,
   CjOrderNotPushedError,
   CjApiUnavailableError,
+  CjCarrierAllowListExhaustedError,
 } from '../validator';
 import { prisma } from '../../infrastructure/prismaClient';
 import { logger } from '../../infrastructure/logger';
+
+// Pure helper, exported for isolated unit testing. Empty allowList means no
+// restriction — cheapest of everything (design.md Decision 5).
+export function selectCheapestLogistic(options: CjFreightOption[], allowList: string[]): string | null {
+  const candidates = allowList.length > 0 ? options.filter((o) => allowList.includes(o.logisticName)) : options;
+  if (candidates.length === 0) return null;
+  return candidates.reduce((min, o) => (o.logisticPrice < min.logisticPrice ? o : min)).logisticName;
+}
 
 // Best-effort country-name -> ISO 3166-1 alpha-2 mapping. CustomerAddress.country
 // is stored as free text (e.g. "Spain", "España"), but CJ's shippingCountryCode
@@ -61,7 +71,8 @@ export class CjOrderPushService {
     private readonly supplierOrderRepo: ISupplierOrderRepository,
     private readonly integrationRepo: ISupplierIntegrationRepository,
     private readonly catalogRepo: ICjCatalogItemRepository,
-    private readonly cjClient: ICjClient
+    private readonly cjClient: ICjClient,
+    private readonly settingsRepo: IAutomationSettingsRepository
   ) {}
 
   async quoteFreight(supplierOrderId: number): Promise<CjFreightOption[]> {
@@ -90,7 +101,7 @@ export class CjOrderPushService {
     }
   }
 
-  async pushOrder(supplierOrderId: number, input: { logisticName: string }): Promise<SupplierOrder> {
+  async pushOrder(supplierOrderId: number, input: { logisticName?: string }): Promise<SupplierOrder> {
     const order = await this.supplierOrderRepo.findById(supplierOrderId);
     if (!order) throw new SupplierOrderNotFoundError();
     if (order.externalOrderId) throw new CjOrderAlreadyPushedError();
@@ -102,6 +113,24 @@ export class CjOrderPushService {
     const address = await this.resolveShippingAddress(order);
     const countryCode = resolveCountryCode(address.country);
 
+    let logisticName = input.logisticName;
+    if (!logisticName) {
+      let quote: CjFreightOption[];
+      try {
+        quote = await this.cjClient.calculateFreight({ startCountryCode: 'CN', endCountryCode: countryCode, products });
+      } catch (err) {
+        logger.error('CJ Dropshipping freight quote failed during auto-selection', {
+          supplierOrderId,
+          status: err instanceof CjApiError ? err.status : undefined,
+        });
+        throw new CjApiUnavailableError();
+      }
+      const settings = await this.settingsRepo.get();
+      const selected = selectCheapestLogistic(quote, settings.carrierAllowList);
+      if (!selected) throw new CjCarrierAllowListExhaustedError();
+      logisticName = selected;
+    }
+
     let result;
     try {
       // Note: createOrder's params type has NO isSandbox field at all — cjClient
@@ -109,7 +138,7 @@ export class CjOrderPushService {
       // here that could pass one through.
       result = await this.cjClient.createOrder({
         orderNumber: order.supplierOrderNumber,
-        logisticName: input.logisticName,
+        logisticName,
         fromCountryCode: 'CN',
         products,
         shippingCustomerName: address.fullName,

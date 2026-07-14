@@ -311,7 +311,7 @@ describe('ProductPage gallery color wiring', () => {
     });
   });
 
-  it('selecting a color-bearing variant filters the gallery to that colors images', async () => {
+  it('selecting a color-bearing variant changes only the main/hero gallery image', async () => {
     mockGetById.mockResolvedValue({
       data: {
         ...baseProduct,
@@ -326,6 +326,7 @@ describe('ProductPage gallery color wiring', () => {
             compareAtPrice: null,
             stockPolicy: 'SupplierManaged',
             status: 'Active',
+            stockQuantity: 5,
             deletedAt: null,
             createdAt: '',
             updatedAt: '',
@@ -340,6 +341,7 @@ describe('ProductPage gallery color wiring', () => {
             compareAtPrice: null,
             stockPolicy: 'SupplierManaged',
             status: 'Active',
+            stockQuantity: 5,
             deletedAt: null,
             createdAt: '',
             updatedAt: '',
@@ -357,22 +359,24 @@ describe('ProductPage gallery color wiring', () => {
 
     await screen.findByRole('heading', { name: 'Dress' });
     // VariantSelector auto-selects the first color (Red) on mount, so the
-    // gallery should already be filtered to Red + shared images, with Red's
-    // own photo as the main/hero image (not just present as a thumbnail).
+    // main/hero image should already show Red's own photo — but the
+    // thumbnail strip always shows every image regardless of selected color.
     await waitFor(() => {
-      expect(screen.queryByAltText('Blue image')).not.toBeInTheDocument();
+      expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Red image');
     });
+    expect(screen.getAllByAltText('Blue image').length).toBeGreaterThan(0);
     expect(screen.getAllByAltText('Red image').length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Red image');
+    expect(screen.getAllByAltText('Shared').length).toBeGreaterThan(0);
 
     const blueButton = screen.getByRole('button', { name: /blue/i });
     fireEvent.click(blueButton);
 
     await waitFor(() => {
-      expect(screen.queryByAltText('Red image')).not.toBeInTheDocument();
+      expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue image');
     });
+    // Thumbnail strip is unchanged — all three images remain present.
+    expect(screen.getAllByAltText('Red image').length).toBeGreaterThan(0);
     expect(screen.getAllByAltText('Blue image').length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue image');
     expect(screen.getAllByAltText('Shared').length).toBeGreaterThan(0);
   });
 

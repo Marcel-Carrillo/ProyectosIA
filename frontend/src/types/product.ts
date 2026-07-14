@@ -25,12 +25,21 @@ export interface ProductVariant {
   compareAtPrice: number | null;
   stockPolicy: StockPolicy;
   status: ProductVariantStatus;
+  // Synced from the linked CjCatalogItem during catalog sync/promotion; 0
+  // when unmapped. Never client-settable — write payloads must not include it.
+  stockQuantity: number;
   // Supplier sourcing data returned only by /api/admin variant endpoints.
   // Read-only in the admin UI: write payloads must never include these fields.
   supplierId?: number | null;
   supplierReference?: string | null;
   supplierCost?: number | null;
   supplierName?: string | null;
+  // Admin-only margin breakdown (shipping-margin-guardrail) — never sent by
+  // the client, only ever read from admin variant responses.
+  shippingCostEstimate?: number | null;
+  netMargin?: number | null;
+  shippingEstimateMissing?: boolean;
+  marginWarning?: boolean;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;

@@ -17,6 +17,8 @@ import refundAdminRoutes from './routes/admin/refundRoutes';
 import reviewAdminRoutes from './routes/admin/reviewRoutes';
 import shipmentAdminRoutes from './routes/admin/shipmentRoutes';
 import returnRequestAdminRoutes from './routes/admin/returnRequestRoutes';
+import settingsAdminRoutes from './routes/admin/settingsRoutes';
+import fulfillmentAutomationAdminRoutes from './routes/admin/fulfillmentAutomationRoutes';
 import adminAuthRoutes from './routes/admin/adminAuthRoutes';
 import productPublicRoutes from './routes/public/productRoutes';
 import categoryPublicRoutes from './routes/public/categoryRoutes';
@@ -124,6 +126,8 @@ adminRouter.use('/refunds', refundAdminRoutes);
 adminRouter.use('/reviews', reviewAdminRoutes);
 adminRouter.use('/shipments', shipmentAdminRoutes);
 adminRouter.use('/return-requests', returnRequestAdminRoutes);
+adminRouter.use('/settings', settingsAdminRoutes);
+adminRouter.use('/fulfillment-automation', fulfillmentAutomationAdminRoutes);
 app.use('/api/admin', adminRouter);
 // NOTE: No /api/public/suppliers route exists — suppliers are admin-only and must
 // never be exposed on customer-facing surfaces.

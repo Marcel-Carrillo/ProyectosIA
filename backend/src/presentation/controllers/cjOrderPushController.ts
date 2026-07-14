@@ -3,6 +3,7 @@ import { CjOrderPushService } from '../../application/services/cjOrderPushServic
 import { SupplierOrderRepository } from '../../infrastructure/repositories/supplierOrderRepository';
 import { SupplierIntegrationRepository } from '../../infrastructure/repositories/supplierIntegrationRepository';
 import { CjCatalogItemRepository } from '../../infrastructure/repositories/cjCatalogItemRepository';
+import { AutomationSettingsRepository } from '../../infrastructure/repositories/automationSettingsRepository';
 import { cjClient } from '../../infrastructure/external/cjClient';
 import { logger } from '../../infrastructure/logger';
 import { ValidationError, validateCjOrderPushData } from '../../application/validator';
@@ -21,7 +22,8 @@ const cjOrderPushService = new CjOrderPushService(
   new SupplierOrderRepository(),
   new SupplierIntegrationRepository(),
   new CjCatalogItemRepository(),
-  cjClient
+  cjClient,
+  new AutomationSettingsRepository()
 );
 
 export async function freightQuote(req: Request, res: Response, next: NextFunction): Promise<void> {
