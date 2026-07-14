@@ -3,7 +3,7 @@
   "shipping": {
     "eyebrow": "Help",
     "title": "Shipping",
-    "intro": "We deliver across mainland Spain in 2–4 business days. Free shipping on orders over €100.",
+    "intro": "We deliver across mainland Spain in 2–4 business days. Free shipping on all orders.",
     "sections": [
       {
         "heading": "Delivery times",
@@ -11,7 +11,7 @@
       },
       {
         "heading": "Rates",
-        "body": "Standard shipping: €8. Free on orders over €100. You will receive a tracking number by email as soon as your order leaves our Madrid warehouse."
+        "body": "Free shipping on all orders. You will receive a tracking number by email as soon as your order leaves our Madrid warehouse."
       },
       {
         "heading": "Tracking",

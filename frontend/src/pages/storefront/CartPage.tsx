@@ -18,8 +18,7 @@ const CartPage: React.FC = () => {
   );
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const shipping = subtotal >= 100 ? 0 : 8;
-  const total = subtotal + (items.length ? shipping : 0);
+  const total = subtotal;
 
   if (!items.length) {
     return (
@@ -110,7 +109,7 @@ const CartPage: React.FC = () => {
             </div>
             <div className="storefront-cart__summary-row">
               <dt>{t('summary.shipping')}</dt>
-              <dd>{shipping === 0 ? t('summary.free') : <PriceTag publicPrice={shipping} />}</dd>
+              <dd>{t('summary.free')}</dd>
             </div>
           </dl>
           <div className="storefront-cart__summary-total">
