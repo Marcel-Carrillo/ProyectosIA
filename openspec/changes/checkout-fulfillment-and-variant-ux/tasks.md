@@ -140,10 +140,10 @@
 
 ## 17. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 17.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any git commands.
-- [ ] 17.2 Verify all tasks above are marked `[x]`, all required reports exist under `openspec/changes/checkout-fulfillment-and-variant-ux/reports/`, and documentation updates are complete.
-- [ ] 17.3 Run `git status`, `git branch --show-current`, and `git diff --stat`; stage all relevant files (code, tests, docs, OpenSpec artifacts), excluding `.env`, `node_modules/`, `dist/`, `coverage/`, and any secrets.
-- [ ] 17.4 Create a Conventional Commit (English message) summarizing the four sub-capabilities, referencing the OpenSpec change name and test status.
-- [ ] 17.5 Push the branch to `origin` with `-u`.
-- [ ] 17.6 Check for an existing PR on this branch; if none exists, create one with `gh pr create --base develop`, including a summary, the OpenSpec change name, verification status (unit/curl/E2E), and known limitations (e.g. sandbox-only CJ automation in this increment).
-- [ ] 17.7 Report the PR URL in chat.
+- [x] 17.1 Load and apply `ai-specs/skills/commit/SKILL.md` before running any git commands. Verified: skill read in full before any git command.
+- [x] 17.2 Verify all tasks above are marked `[x]`, all required reports exist under `openspec/changes/checkout-fulfillment-and-variant-ux/reports/`, and documentation updates are complete. Verified: an independent adversarial-review subagent pass (`ai-specs/skills/adversarial-review/SKILL.md`) found 2 Major findings before this step; both fixed (`ProductRepository.findById`/`VariantSelector` now exclude non-Active variants; `PATCH /api/admin/settings/automation` now validated) and re-verified live (987/987 backend, `VariantSelector`/`ProductGallery` frontend tests, curl 400-vs-200 checks) before proceeding.
+- [x] 17.3 Run `git status`, `git branch --show-current`, and `git diff --stat`; stage all relevant files (code, tests, docs, OpenSpec artifacts), excluding `.env`, `node_modules/`, `dist/`, `coverage/`, and any secrets. Verified: confirmed remote `Marcel-Carrillo/ProyectosIA`, branch `feature/checkout-fulfillment-and-variant-ux`, no secrets/env/build-artifact files in the diff; 125 files staged.
+- [x] 17.4 Create a Conventional Commit (English message) summarizing the four sub-capabilities, referencing the OpenSpec change name and test status. Verified: commit `d0c6833`.
+- [x] 17.5 Push the branch to `origin` with `-u`. Verified: `git push -u origin feature/checkout-fulfillment-and-variant-ux` succeeded.
+- [x] 17.6 Check for an existing PR on this branch; if none exists, create one with `gh pr create --base develop`, including a summary, the OpenSpec change name, verification status (unit/curl/E2E), and known limitations (e.g. sandbox-only CJ automation in this increment). Verified: no existing PR (`gh pr status`); created PR #112.
+- [x] 17.7 Report the PR URL in chat. Verified: https://github.com/Marcel-Carrillo/ProyectosIA/pull/112
