@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { CjOrderPushService } from '../../application/services/cjOrderPushService';
-import { SupplierOrderRepository } from '../../infrastructure/repositories/supplierOrderRepository';
+import { CjOrderStatusSyncOrchestrator } from '../../application/services/cjOrderStatusSyncService';
+import { ShipmentService } from '../../application/services/shipmentService';
+import { SupplierOrderRepository, SupplierOrderNotFoundError } from '../../infrastructure/repositories/supplierOrderRepository';
 import { SupplierIntegrationRepository } from '../../infrastructure/repositories/supplierIntegrationRepository';
 import { CjCatalogItemRepository } from '../../infrastructure/repositories/cjCatalogItemRepository';
 import { AutomationSettingsRepository } from '../../infrastructure/repositories/automationSettingsRepository';
+import { ShipmentRepository } from '../../infrastructure/repositories/shipmentRepository';
+import { AutomationAlertRepository } from '../../infrastructure/repositories/automationAlertRepository';
 import { cjClient } from '../../infrastructure/external/cjClient';
 import { logger } from '../../infrastructure/logger';
 import { ValidationError, validateCjOrderPushData } from '../../application/validator';
@@ -18,12 +22,22 @@ function parseSupplierOrderIdParam(value: string): number {
   return id;
 }
 
+const supplierOrderRepo = new SupplierOrderRepository();
 const cjOrderPushService = new CjOrderPushService(
-  new SupplierOrderRepository(),
+  supplierOrderRepo,
   new SupplierIntegrationRepository(),
   new CjCatalogItemRepository(),
   cjClient,
   new AutomationSettingsRepository()
+);
+// Same orchestrator used by the scheduled cjOrderStatusSync job — reused
+// here so a sandbox-advance click reflects in the Shipment/admin/store
+// immediately instead of waiting for the next hourly run.
+const cjOrderStatusSyncOrchestrator = new CjOrderStatusSyncOrchestrator(
+  cjOrderPushService,
+  new ShipmentRepository(),
+  new ShipmentService(new ShipmentRepository()),
+  new AutomationAlertRepository()
 );
 
 export async function freightQuote(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -53,6 +67,27 @@ export async function getOrderStatus(req: Request, res: Response, next: NextFunc
     const supplierOrderId = parseSupplierOrderIdParam(req.params['id'] as string);
     const order = await cjOrderPushService.getOrderStatus(supplierOrderId);
     res.json({ success: true, data: order, message: 'CJ Dropshipping order status retrieved successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// QA-only: sandbox orders never receive real warehouse activity, so this
+// drives CJ's own sandbox-testing endpoints (simulate payment, advance
+// shipping status) and immediately re-syncs, so the Shipment/admin/store
+// reflect the result without waiting for the hourly job. 422s with
+// CJ_SANDBOX_ONLY for a real (non-sandbox) order — see CjOrderPushService.
+export async function simulateSandboxAdvance(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const supplierOrderId = parseSupplierOrderIdParam(req.params['id'] as string);
+    await cjOrderPushService.simulateSandboxAdvance(supplierOrderId);
+
+    const order = await supplierOrderRepo.findById(supplierOrderId);
+    if (!order) throw new SupplierOrderNotFoundError();
+    await cjOrderStatusSyncOrchestrator.syncOne(order);
+
+    const updated = await supplierOrderRepo.findById(supplierOrderId);
+    res.json({ success: true, data: updated, message: 'CJ Dropshipping sandbox order advanced' });
   } catch (err) {
     next(err);
   }

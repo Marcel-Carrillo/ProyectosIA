@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Table, Card } from 'react-bootstrap';
+import { Table, Card, Badge, Button } from 'react-bootstrap';
 import {
   supplierOrderService,
   extractSupplierOrderErrorMessage,
@@ -20,6 +20,8 @@ const SupplierOrderDetailPage: React.FC = () => {
   const [error, setError] = useState('');
   const [statusError, setStatusError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [sandboxAdvancing, setSandboxAdvancing] = useState(false);
+  const [sandboxError, setSandboxError] = useState('');
 
   const loadOrder = useCallback(async () => {
     if (!orderId || Number.isNaN(orderId)) {
@@ -54,6 +56,20 @@ const SupplierOrderDetailPage: React.FC = () => {
       setStatusError(extractSupplierOrderErrorMessage(err));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSimulateSandboxAdvance = async () => {
+    if (!order) return;
+    setSandboxAdvancing(true);
+    setSandboxError('');
+    try {
+      const res = await supplierOrderService.simulateSandboxAdvance(order.id);
+      setOrder(res.data);
+    } catch (err) {
+      setSandboxError(extractSupplierOrderErrorMessage(err));
+    } finally {
+      setSandboxAdvancing(false);
     }
   };
 
@@ -115,6 +131,49 @@ const SupplierOrderDetailPage: React.FC = () => {
               ))}
             </tbody>
           </Table>
+        </Card.Body>
+      </Card>
+
+      <Card className="mb-4">
+        <Card.Body>
+          <Card.Title className="h6">CJ Dropshipping</Card.Title>
+          {order.externalOrderId ? (
+            <>
+              <div>
+                Pedido externo: <code>{order.externalOrderId}</code>{' '}
+                <Badge bg={order.sandbox ? 'warning' : 'success'} text={order.sandbox ? 'dark' : undefined}>
+                  {order.sandbox ? 'Sandbox' : 'Real'}
+                </Badge>
+              </div>
+              <div>Estado en CJ: {order.externalOrderStatus ?? '—'}</div>
+              {order.lastStatusSyncedAt && (
+                <div className="small text-muted">
+                  Última sincronización: {new Date(order.lastStatusSyncedAt).toLocaleString('es-ES')}
+                </div>
+              )}
+              {order.sandbox && (
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    variant="outline-secondary"
+                    disabled={sandboxAdvancing}
+                    onClick={() => void handleSimulateSandboxAdvance()}
+                    data-testid="btn-cj-sandbox-advance"
+                  >
+                    {sandboxAdvancing ? 'Simulando…' : 'Simular pago + envío (sandbox)'}
+                  </Button>
+                  <p className="small text-muted mt-2 mb-0">
+                    Herramienta de QA: solo afecta a pedidos sandbox de CJ. Si el pedido sigue en
+                    &quot;carrito&quot; o &quot;pendiente de pago&quot; en el panel de CJ, primero hay
+                    que avanzarlo manualmente ahí — CJ no expone esa parte del ciclo por API.
+                  </p>
+                  {sandboxError && <ErrorAlert message={sandboxError} />}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-muted">Todavía no se ha empujado a CJ Dropshipping.</div>
+          )}
         </Card.Body>
       </Card>
 

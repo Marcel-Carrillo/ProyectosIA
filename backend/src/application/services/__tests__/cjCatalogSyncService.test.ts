@@ -19,6 +19,7 @@ function makeMockCjClient(): jest.Mocked<ICjClient> {
     calculateFreight: jest.fn(),
     createOrder: jest.fn(),
     getOrderDetail: jest.fn(),
+    simulateSandboxAdvance: jest.fn(),
   };
 }
 
