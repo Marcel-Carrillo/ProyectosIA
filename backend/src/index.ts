@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import * as fs from 'fs';
@@ -113,6 +114,31 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use('/health', healthRoutes);
 
+// Mounted ahead of adminRouter (and its shared requireAdminAuth gate below) so
+// the rate limiter itself protects the authorization check on these two paths,
+// not just the handler behind it — resolves a CodeQL "missing rate limiting"
+// finding that flagged requireAdminAuth running unbounded before these routes
+// were reached via the nested router.
+const settingsRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const fulfillmentAutomationRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/admin/settings', settingsRateLimiter, requireAdminAuth, settingsAdminRoutes);
+app.use(
+  '/api/admin/fulfillment-automation',
+  fulfillmentAutomationRateLimiter,
+  requireAdminAuth,
+  fulfillmentAutomationAdminRoutes
+);
+
 const adminRouter = express.Router();
 adminRouter.use('/auth', adminAuthRoutes);
 adminRouter.use(requireAdminAuth);
@@ -126,8 +152,6 @@ adminRouter.use('/refunds', refundAdminRoutes);
 adminRouter.use('/reviews', reviewAdminRoutes);
 adminRouter.use('/shipments', shipmentAdminRoutes);
 adminRouter.use('/return-requests', returnRequestAdminRoutes);
-adminRouter.use('/settings', settingsAdminRoutes);
-adminRouter.use('/fulfillment-automation', fulfillmentAutomationAdminRoutes);
 app.use('/api/admin', adminRouter);
 // NOTE: No /api/public/suppliers route exists — suppliers are admin-only and must
 // never be exposed on customer-facing surfaces.
