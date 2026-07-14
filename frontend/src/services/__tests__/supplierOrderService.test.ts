@@ -20,6 +20,6 @@ describe('supplierOrderService', () => {
   });
 
   it('maps eligibility error', () => {
-    expect(mapSupplierOrderError('CUSTOMER_ORDER_NOT_ELIGIBLE')).toMatch(/eligible/i);
+    expect(mapSupplierOrderError('CUSTOMER_ORDER_NOT_ELIGIBLE')).toMatch(/no es apto/i);
   });
 });
