@@ -3,7 +3,7 @@
   "shipping": {
     "eyebrow": "Ayuda",
     "title": "Envíos",
-    "intro": "Entregamos en la península en 2–4 días laborables. Envío gratuito a partir de 100 €.",
+    "intro": "Entregamos en la península en 2–4 días laborables. Envío gratuito en todos los pedidos.",
     "sections": [
       {
         "heading": "Plazos de entrega",
@@ -11,7 +11,7 @@
       },
       {
         "heading": "Costes",
-        "body": "Envío estándar: 8 €. Gratuito en pedidos superiores a 100 €. Recibirás un email con el número de seguimiento en cuanto salga de nuestro almacén en Madrid."
+        "body": "Envío gratuito en todos los pedidos. Recibirás un email con el número de seguimiento en cuanto salga de nuestro almacén en Madrid."
       },
       {
         "heading": "Seguimiento",
