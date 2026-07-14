@@ -24,6 +24,7 @@ import ReturnRequestsPage from './pages/ReturnRequestsPage';
 import ReturnRequestDetailPage from './pages/ReturnRequestDetailPage';
 import RefundsPage from './pages/RefundsPage';
 import RefundDetailPage from './pages/RefundDetailPage';
+import FulfillmentAlertsPage from './pages/FulfillmentAlertsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import StorefrontLayout from './components/storefront/StorefrontLayout';
@@ -184,6 +185,7 @@ const App: React.FC = () => {
                 <Route path="return-requests/:id" element={<ReturnRequestDetailPage />} />
                 <Route path="refunds" element={<RefundsPage />} />
                 <Route path="refunds/:id" element={<RefundDetailPage />} />
+                <Route path="fulfillment-alerts" element={<FulfillmentAlertsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>

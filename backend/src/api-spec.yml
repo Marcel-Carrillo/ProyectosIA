@@ -765,6 +765,59 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/products/{id}/variants/{variantId}/freight-estimate:
+    post:
+      summary: Refresh shipping estimate for a variant (admin)
+      description: >-
+        Calls the CJ Dropshipping freight API for the variant's linked CjCatalogItem
+        and the requested (or AutomationSettings.defaultFreightDestinationCountry)
+        destination, persisting the lowest quoted price as shippingCostEstimate.
+        Returns the updated variant, including the recomputed netMargin/marginWarning.
+      tags:
+        - Admin — Product Variants
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - in: path
+          name: variantId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                destinationCountry:
+                  type: string
+                  description: ISO country code. Defaults to AutomationSettings.defaultFreightDestinationCountry.
+                  example: ES
+      responses:
+        '200':
+          description: Shipping estimate refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProductVariant'
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: CJ_ITEM_NOT_MAPPED — variant has no linked CjCatalogItem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/admin/products/{id}/images:
     get:
       summary: List images for product (admin)
@@ -3175,6 +3228,106 @@ paths:
       responses:
         '200': { description: Wishlist items }
 
+  /api/public/account/addresses:
+    get:
+      summary: List own addresses (self-service)
+      description: List all addresses owned by the authenticated customer.
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      responses:
+        '200':
+          description: Addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create own address (self-service)
+      description: >-
+        Add a new address for the authenticated customer. If isDefault is true, any
+        previous default address of the same type is unset in the same transaction.
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerAddressRequest'
+      responses:
+        '201':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: >-
+            ADDRESS_DEFAULT_CONFLICT — concurrent default-setting for the same
+            customer/type; retry the request.
+
+  /api/public/account/addresses/{id}:
+    patch:
+      summary: Update own address (self-service)
+      description: >-
+        Partially update an address owned by the authenticated customer.
+        Cross-customer access returns 404 ADDRESS_NOT_FOUND.
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerAddressRequest'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddressResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: ADDRESS_NOT_FOUND
+        '409':
+          description: ADDRESS_DEFAULT_CONFLICT
+    delete:
+      summary: Delete own address (self-service)
+      description: >-
+        Hard-delete an address owned by the authenticated customer.
+        Cross-customer access returns 404 ADDRESS_NOT_FOUND.
+      tags: [Customer Account]
+      security: [{ CustomerBearer: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Address deleted successfully (no body)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: ADDRESS_NOT_FOUND
+
   /api/public/account/products/{productId}/review-eligibility:
     get:
       summary: Check review eligibility for a product
@@ -3413,6 +3566,101 @@ paths:
       tags: [Coupons]
       responses:
         '200': { description: valid true/false with discountAmount or reason }
+
+  /api/admin/settings/automation:
+    get:
+      summary: Get fulfillment automation settings (admin)
+      description: >-
+        Returns the AutomationSettings singleton (targetMargin,
+        defaultFreightDestinationCountry, carrierAllowList). Lazily creates the row
+        with documented defaults on first read.
+      tags: [Admin — Settings]
+      security: [{ AdminBearer: [] }]
+      responses:
+        '200':
+          description: Automation settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, example: 1 }
+                      targetMargin: { type: number, format: decimal, example: 5.0 }
+                      defaultFreightDestinationCountry: { type: string, example: ES }
+                      carrierAllowList:
+                        type: array
+                        items: { type: string }
+                        example: []
+                      createdAt: { type: string, format: date-time }
+                      updatedAt: { type: string, format: date-time }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      summary: Update fulfillment automation settings (admin)
+      tags: [Admin — Settings]
+      security: [{ AdminBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: All fields are optional. Only provided fields are updated.
+              properties:
+                targetMargin: { type: number, format: decimal }
+                defaultFreightDestinationCountry: { type: string }
+                carrierAllowList:
+                  type: array
+                  items: { type: string }
+      responses:
+        '200':
+          description: Automation settings updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/admin/fulfillment-automation/alerts:
+    get:
+      summary: List automation alerts (admin)
+      description: >-
+        Lists automatic-fulfillment failures (supplier-order generation, CJ push,
+        CJ status-sync shipment transitions) with the affected customer/supplier
+        order id and a non-sensitive failure reason. Defaults to unresolved alerts.
+      tags: [Admin — Settings]
+      security: [{ AdminBearer: [] }]
+      parameters:
+        - in: query
+          name: resolved
+          schema: { type: boolean, default: false }
+          description: When true, list resolved alerts instead of open ones.
+      responses:
+        '200':
+          description: Automation alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        type: { type: string, example: SupplierOrderGenerationFailed }
+                        customerOrderId: { type: integer, nullable: true }
+                        supplierOrderId: { type: integer, nullable: true }
+                        message: { type: string }
+                        resolvedAt: { type: string, format: date-time, nullable: true }
+                        createdAt: { type: string, format: date-time }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
 components:
   parameters:
@@ -3981,6 +4229,13 @@ components:
         sortOrder:
           type: integer
           example: 0
+        color:
+          type: string
+          nullable: true
+          description: >-
+            Color this image depicts, matching ProductVariant.color's vocabulary. Null means the
+            image is shared/product-level and applies regardless of the selected variant's color.
+          example: Black
         createdAt:
           type: string
           format: date-time
@@ -4084,6 +4339,44 @@ components:
           readOnly: true
           example: CJ Dropshipping
           description: Admin-only. Resolved from the supplier relation.
+        stockQuantity:
+          type: integer
+          example: 12
+          description: >-
+            Public field, also included on admin responses. System-managed — kept in
+            sync from the linked CjCatalogItem during CJ sync/promotion; any
+            client-supplied value on PATCH/POST is silently ignored.
+        shippingCostEstimate:
+          type: number
+          format: decimal
+          nullable: true
+          readOnly: true
+          example: 3.5
+          description: >-
+            Admin-only. Never present on customer-facing responses. Null until
+            refreshed via POST .../variants/{variantId}/freight-estimate.
+        netMargin:
+          type: number
+          format: decimal
+          nullable: true
+          readOnly: true
+          example: 21.49
+          description: >-
+            Admin-only, derived (not persisted). publicPrice - supplierCost -
+            shippingCostEstimate, treating a null supplierCost or
+            shippingCostEstimate as 0.
+        shippingEstimateMissing:
+          type: boolean
+          readOnly: true
+          example: true
+          description: Admin-only, derived. True when shippingCostEstimate is null.
+        marginWarning:
+          type: boolean
+          readOnly: true
+          example: false
+          description: >-
+            Admin-only, derived. True when netMargin is negative or below the
+            configured AutomationSettings.targetMargin.
         deletedAt:
           type: string
           format: date-time
@@ -4219,6 +4512,14 @@ components:
           type: integer
           minimum: 0
           default: 0
+        color:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: >-
+            Optional color association, matching ProductVariant.color's vocabulary. Omit or set
+            null for a shared/product-level image.
+          example: Black
 
     CreateProductRequest:
       type: object
@@ -4324,7 +4625,8 @@ components:
       type: object
       description: >
         Customer-safe variant. Supplier fields (supplierId, supplierReference,
-        supplierCost) and deletedAt are never included.
+        supplierCost, shippingCostEstimate, netMargin, marginWarning) and
+        deletedAt are never included.
       properties:
         id:
           type: integer
@@ -4344,6 +4646,12 @@ components:
         compareAtPrice:
           type: number
           nullable: true
+        stockQuantity:
+          type: integer
+          example: 12
+          description: >-
+            Public. Drives storefront combination availability — a size/color
+            combination is only selectable when stockQuantity > 0.
         status:
           type: string
           example: Active
@@ -5071,6 +5379,14 @@ components:
           type: string
           maxLength: 100
           example: Spain
+        isDefault:
+          type: boolean
+          default: false
+          description: >-
+            Whether this is the customer's default address for its type. At most one
+            address per (customerId, type) may be true — creating/updating an address
+            with isDefault true unsets the previous default of the same type.
+          example: true
         createdAt:
           type: string
           format: date-time
@@ -5174,6 +5490,10 @@ components:
           type: string
           maxLength: 100
           example: Spain
+        isDefault:
+          type: boolean
+          default: false
+          example: true
 
     UpdateCustomerAddressRequest:
       type: object
@@ -5208,6 +5528,8 @@ components:
         country:
           type: string
           maxLength: 100
+        isDefault:
+          type: boolean
 
     CustomerResponse:
       type: object

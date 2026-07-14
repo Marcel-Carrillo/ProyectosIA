@@ -8,7 +8,7 @@ interface VariantSelectorProps {
 }
 
 function getActiveVariants(variants: ProductVariant[]): ProductVariant[] {
-  return variants.filter((v) => !v.deletedAt);
+  return variants.filter((v) => !v.deletedAt && v.status === 'Active');
 }
 
 function getDistinctValues(variants: ProductVariant[], key: 'size' | 'color'): string[] {
@@ -59,7 +59,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({ variants, onVariantCh
   }, [selectedSize, selectedColor, variants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isCombinationAvailable = (size: string | null, color: string | null): boolean =>
-    active.some((v) => v.size === size && v.color === color);
+    active.some((v) => v.size === size && v.color === color && v.stockQuantity > 0);
 
   if (!sizes.length && !colors.length) return null;
 

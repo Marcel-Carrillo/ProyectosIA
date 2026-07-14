@@ -9,6 +9,11 @@ import {
   AddressCreateData,
   AddressUpdateData,
 } from '../../domain/repositories/customerRepository';
+import {
+  unsetPreviousDefaultIfNeeded,
+  isAddressDefaultConflict,
+  AddressDefaultConflictError,
+} from './customerAddressDefaultTransaction';
 
 // ─── Domain error classes ────────────────────────────────────────────────────
 
@@ -163,39 +168,60 @@ export class CustomerRepository implements ICustomerRepository {
   }
 
   async createAddress(customerId: number, data: AddressCreateData): Promise<CustomerAddress> {
-    const row = await prisma.customerAddress.create({
-      data: {
-        customerId,
-        type: data.type,
-        fullName: data.fullName,
-        phone: data.phone ?? null,
-        streetLine1: data.streetLine1,
-        streetLine2: data.streetLine2 ?? null,
-        city: data.city,
-        province: data.province,
-        postalCode: data.postalCode,
-        country: data.country,
-      },
-    });
-    return new CustomerAddress(row);
+    try {
+      return await prisma.$transaction(async (tx) => {
+        await unsetPreviousDefaultIfNeeded(tx, customerId, data.type, data.isDefault);
+        const row = await tx.customerAddress.create({
+          data: {
+            customerId,
+            type: data.type,
+            isDefault: data.isDefault ?? false,
+            fullName: data.fullName,
+            phone: data.phone ?? null,
+            streetLine1: data.streetLine1,
+            streetLine2: data.streetLine2 ?? null,
+            city: data.city,
+            province: data.province,
+            postalCode: data.postalCode,
+            country: data.country,
+          },
+        });
+        return new CustomerAddress(row);
+      });
+    } catch (err) {
+      if (isAddressDefaultConflict(err)) throw new AddressDefaultConflictError();
+      throw err;
+    }
   }
 
-  async updateAddress(id: number, data: AddressUpdateData): Promise<CustomerAddress> {
-    const row = await prisma.customerAddress.update({
-      where: { id },
-      data: {
-        ...(data.type !== undefined && { type: data.type }),
-        ...(data.fullName !== undefined && { fullName: data.fullName }),
-        ...(data.phone !== undefined && { phone: data.phone }),
-        ...(data.streetLine1 !== undefined && { streetLine1: data.streetLine1 }),
-        ...(data.streetLine2 !== undefined && { streetLine2: data.streetLine2 }),
-        ...(data.city !== undefined && { city: data.city }),
-        ...(data.province !== undefined && { province: data.province }),
-        ...(data.postalCode !== undefined && { postalCode: data.postalCode }),
-        ...(data.country !== undefined && { country: data.country }),
-      },
-    });
-    return new CustomerAddress(row);
+  async updateAddress(id: number, customerId: number, data: AddressUpdateData): Promise<CustomerAddress> {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        if (data.isDefault) {
+          const current = await tx.customerAddress.findUniqueOrThrow({ where: { id }, select: { type: true } });
+          await unsetPreviousDefaultIfNeeded(tx, customerId, data.type ?? current.type, data.isDefault);
+        }
+        const row = await tx.customerAddress.update({
+          where: { id },
+          data: {
+            ...(data.type !== undefined && { type: data.type }),
+            ...(data.isDefault !== undefined && { isDefault: data.isDefault }),
+            ...(data.fullName !== undefined && { fullName: data.fullName }),
+            ...(data.phone !== undefined && { phone: data.phone }),
+            ...(data.streetLine1 !== undefined && { streetLine1: data.streetLine1 }),
+            ...(data.streetLine2 !== undefined && { streetLine2: data.streetLine2 }),
+            ...(data.city !== undefined && { city: data.city }),
+            ...(data.province !== undefined && { province: data.province }),
+            ...(data.postalCode !== undefined && { postalCode: data.postalCode }),
+            ...(data.country !== undefined && { country: data.country }),
+          },
+        });
+        return new CustomerAddress(row);
+      });
+    } catch (err) {
+      if (isAddressDefaultConflict(err)) throw new AddressDefaultConflictError();
+      throw err;
+    }
   }
 
   async deleteAddress(id: number): Promise<void> {

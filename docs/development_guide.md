@@ -105,6 +105,7 @@ stripe listen --forward-to http://localhost:3000/api/public/payments/webhook
 | `CJ_DEFAULT_MARKUP_MULTIPLIER` | Default markup applied to `CjCatalogItem.supplierCost` when an admin promotes an item without an explicit `publicPrice`. Promotion never publishes at raw cost — if this is unset and no explicit price is given, promotion fails with `CJ_PROMOTION_PRICE_REQUIRED` | No, but required in practice for bulk promotion without per-item prices |
 | `CJ_DEFAULT_CATEGORY_ID` | `Category.id` used by the scheduled `supplierAutoProvision` job (see below) when auto-promoting newly synced items with no human available to pick a category. Must reference an **existing** `Category` row | No — but auto-promotion is skipped (logged) for a run if unset/invalid |
 | `SUPPLIER_AUTO_PROVISION_ENABLED` | Kill-switch for the scheduled `supplierAutoProvision` job. Must be exactly `'true'` to run; anything else is a no-op | No — defaults to disabled |
+| `FULFILLMENT_AUTOMATION_ENABLED` | Kill-switch for automatic supplier-order generation + CJ push (triggered from `payment_intent.succeeded`) and for the scheduled `cjOrderStatusSync` job. Must be exactly `'true'` to run either; anything else is a no-op. Mirrors `SUPPLIER_AUTO_PROVISION_ENABLED` — a pure env var, never an `AutomationSettings` DB column, so it cannot be toggled without a deploy | No — defaults to disabled |
 
 ```env
 CJDROPSHIPPING_API_KEY=cj_test_replace_with_your_cj_dropshipping_api_key
@@ -113,7 +114,10 @@ CJ_SANDBOX_ORDERS=true
 CJ_DEFAULT_MARKUP_MULTIPLIER=2.5
 CJ_DEFAULT_CATEGORY_ID=
 SUPPLIER_AUTO_PROVISION_ENABLED=false
+FULFILLMENT_AUTOMATION_ENABLED=false
 ```
+
+The default freight destination country and carrier allow-list used by the shipping-margin guardrail and by automatic logistics selection are **not** environment variables — they live in the `AutomationSettings` singleton row, editable at runtime via `GET`/`PATCH /api/admin/settings/automation` (see `docs/data-model.md` and `docs/api-spec.yml`).
 
 Without a real key, `POST /api/admin/suppliers/:supplierId/cj/connection/verify` and `POST /api/admin/suppliers/:supplierId/cj/sync` will report the connection as unhealthy/not-ready — this is expected in local dev unless real CJ Dropshipping credentials are configured.
 

@@ -717,6 +717,11 @@ export function validateCustomerAddressData(
       throw new ValidationError("Field 'phone' must not exceed 30 characters");
     }
   }
+
+  const isDefault = data['isDefault'];
+  if (isDefault !== undefined && typeof isDefault !== 'boolean') {
+    throw new ValidationError("Field 'isDefault' must be a boolean");
+  }
 }
 
 const REFUND_STATUSES = ['Pending', 'Processing', 'Completed', 'Failed', 'Cancelled'] as const;
@@ -1072,15 +1077,19 @@ export function validateCjConnectionData(data: Record<string, unknown>): void {
 // Validates the order-push request body accepts ONLY logisticName. There is no
 // `isSandbox` field anywhere in this validator, so nothing downstream can ever
 // read one — sandbox mode is always forced server-side (design.md Decision 5).
-export function validateCjOrderPushData(data: Record<string, unknown>): { logisticName: string } {
+// logisticName is optional: when omitted, the caller (manual admin push or
+// automatic fulfillment) gets an auto-selected logistics option (cheapest,
+// or cheapest within the configured carrier allow-list) — see
+// cjOrderPushService.pushOrder.
+export function validateCjOrderPushData(data: Record<string, unknown>): { logisticName?: string } {
   const logisticName = data['logisticName'];
-  if (typeof logisticName !== 'string' || logisticName.trim().length === 0) {
-    throw new ValidationError("Field 'logisticName' is required and must be a non-empty string");
+  if (logisticName !== undefined && (typeof logisticName !== 'string' || logisticName.trim().length === 0)) {
+    throw new ValidationError("Field 'logisticName' must be a non-empty string when provided");
   }
   if ('isSandbox' in data) {
     throw new ValidationError("Field 'isSandbox' is not accepted — sandbox mode is always forced server-side");
   }
-  return { logisticName };
+  return { logisticName: typeof logisticName === 'string' ? logisticName : undefined };
 }
 
 export class CjConnectionNotReadyError extends Error {
@@ -1135,6 +1144,17 @@ export class CjOrderNotPushedError extends Error {
     super(message);
     this.name = 'CjOrderNotPushedError';
     Object.setPrototypeOf(this, CjOrderNotPushedError.prototype);
+  }
+}
+
+export class CjCarrierAllowListExhaustedError extends Error {
+  readonly code = 'CJ_CARRIER_ALLOWLIST_EXHAUSTED' as const;
+  readonly status = 422;
+
+  constructor(message = 'No freight option matches the configured carrier allow-list') {
+    super(message);
+    this.name = 'CjCarrierAllowListExhaustedError';
+    Object.setPrototypeOf(this, CjCarrierAllowListExhaustedError.prototype);
   }
 }
 
@@ -1288,4 +1308,32 @@ export function validateCjPromotionData(data: Record<string, unknown>): CjPromot
   }
 
   return { items, categoryId, activate };
+}
+
+export function validateAutomationSettingsData(data: Record<string, unknown>): void {
+  const targetMargin = data['targetMargin'];
+  if (targetMargin !== undefined) {
+    if (typeof targetMargin !== 'number' || !Number.isFinite(targetMargin) || targetMargin < 0) {
+      throw new ValidationError("Field 'targetMargin' must be a number greater than or equal to 0");
+    }
+  }
+
+  const defaultFreightDestinationCountry = data['defaultFreightDestinationCountry'];
+  if (defaultFreightDestinationCountry !== undefined) {
+    if (
+      typeof defaultFreightDestinationCountry !== 'string' ||
+      !/^[A-Za-z]{2}$/.test(defaultFreightDestinationCountry)
+    ) {
+      throw new ValidationError(
+        "Field 'defaultFreightDestinationCountry' must be a 2-letter ISO country code"
+      );
+    }
+  }
+
+  const carrierAllowList = data['carrierAllowList'];
+  if (carrierAllowList !== undefined) {
+    if (!Array.isArray(carrierAllowList) || carrierAllowList.some((c) => typeof c !== 'string')) {
+      throw new ValidationError("Field 'carrierAllowList' must be an array of strings");
+    }
+  }
 }

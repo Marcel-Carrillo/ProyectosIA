@@ -80,5 +80,8 @@ export interface ISupplierOrderRepository {
   updateExternalOrder(id: number, data: SupplierOrderExternalPushData): Promise<SupplierOrder | null>;
   updateExternalOrderStatus(id: number, data: SupplierOrderExternalStatusData): Promise<SupplierOrder>;
   generateNextSupplierOrderNumber(): Promise<string>;
+  // Candidate set for the scheduled CJ status-sync job: pushed to CJ
+  // (externalOrderId set) but not yet in a terminal externalOrderStatus.
+  findPushedNonTerminal(): Promise<SupplierOrder[]>;
   recomputeCustomerFulfillmentStatus(customerOrderId: number): Promise<void>;
 }

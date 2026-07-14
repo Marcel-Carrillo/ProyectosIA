@@ -89,13 +89,12 @@ describe('cjOrderPushController', () => {
       expect(mockPushOrder).not.toHaveBeenCalled();
     });
 
-    it('should_call_next_with_validation_error_when_logisticName_is_missing', async () => {
+    it('should_call_service_with_no_logisticName_when_omitted_to_trigger_auto_selection', async () => {
       const req = { params: { id: '1' }, body: {} } as unknown as Request;
 
       await push(req, mockRes(), mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({ code: 'VALIDATION_ERROR' }));
-      expect(mockPushOrder).not.toHaveBeenCalled();
+      expect(mockPushOrder).toHaveBeenCalledWith(1, { logisticName: undefined });
     });
 
     it('should_call_next_on_service_error', async () => {

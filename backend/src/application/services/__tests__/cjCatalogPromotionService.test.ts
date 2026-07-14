@@ -97,6 +97,8 @@ describe('CjCatalogPromotionService', () => {
       create: jest.fn(),
       update: jest.fn(),
       softDelete: jest.fn(),
+      findCjCatalogItemId: jest.fn(),
+      updateShippingCostEstimate: jest.fn(),
     };
     integrationRepo = {
       findBySupplierId: jest.fn(),
@@ -146,6 +148,7 @@ describe('CjCatalogPromotionService', () => {
             sku: 'CJ-vid-1',
             publicPrice: 39.99,
             cjCatalogItemId: 1,
+            stockQuantity: 5,
           }),
         })
       );

@@ -43,6 +43,10 @@ export function mapProductError(code: string): string {
       return 'El precio de comparación debe ser mayor que el precio público.';
     case 'IMAGE_NOT_FOUND':
       return 'Imagen no encontrada.';
+    case 'CJ_ITEM_NOT_MAPPED':
+      return 'Esta variante no está vinculada a un artículo del catálogo del proveedor; no se puede estimar el envío.';
+    case 'CJ_API_UNAVAILABLE':
+      return 'El servicio de CJ Dropshipping no está disponible en este momento. Inténtelo de nuevo más tarde.';
     default:
       return 'Ha ocurrido un error inesperado. Inténtelo de nuevo.';
   }
@@ -154,6 +158,23 @@ export const adminProductService = {
       await axios.delete(`${ADMIN_BASE}/${productId}/variants/${variantId}`);
     } catch (error) {
       console.error('Error deleting variant:', error);
+      throw error;
+    }
+  },
+
+  refreshFreightEstimate: async (
+    productId: number,
+    variantId: number,
+    destinationCountry?: string,
+  ): Promise<VariantResponse> => {
+    try {
+      const response = await axios.post<VariantResponse>(
+        `${ADMIN_BASE}/${productId}/variants/${variantId}/freight-estimate`,
+        destinationCountry ? { destinationCountry } : {},
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error refreshing freight estimate:', error);
       throw error;
     }
   },

@@ -40,6 +40,8 @@ const mockVariantRepo: jest.Mocked<IProductVariantRepository> = {
   create: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
+  findCjCatalogItemId: jest.fn(),
+  updateShippingCostEstimate: jest.fn(),
 };
 
 const mockTranslationRepo: jest.Mocked<IProductTranslationRepository> = {

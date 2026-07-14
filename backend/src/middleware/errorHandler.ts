@@ -33,6 +33,7 @@ import {
   CjCatalogItemSyncFailedCannotPromoteError,
   CjCatalogItemNotFoundError,
   CjPromotionValidationError,
+  CjCarrierAllowListExhaustedError,
 } from '../application/validator';
 import {
   CustomerNotFoundError,
@@ -40,6 +41,7 @@ import {
   CustomerHasOrdersError,
   AddressNotFoundError,
 } from '../infrastructure/repositories/customerRepository';
+import { AddressDefaultConflictError } from '../infrastructure/repositories/customerAddressDefaultTransaction';
 import {
   CustomerOrderNotFoundError,
   OrderNumberConflictError,
@@ -169,6 +171,8 @@ export function globalErrorHandler(
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof CjOrderNotPushedError) {
     statusCode = 422; code = err.code; message = err.message;
+  } else if (err instanceof CjCarrierAllowListExhaustedError) {
+    statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof CjCatalogItemNotPromotedError) {
     statusCode = 422; code = err.code; message = err.message;
   } else if (err instanceof CjPromotionPriceRequiredError) {
@@ -183,6 +187,8 @@ export function globalErrorHandler(
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof AddressNotFoundError) {
     statusCode = 404; code = err.code; message = err.message;
+  } else if (err instanceof AddressDefaultConflictError) {
+    statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof CustomerEmailConflictError) {
     statusCode = 409; code = err.code; message = err.message;
   } else if (err instanceof CustomerHasOrdersError) {

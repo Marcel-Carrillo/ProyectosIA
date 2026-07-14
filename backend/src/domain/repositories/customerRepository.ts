@@ -29,6 +29,7 @@ export interface CustomerListResult {
 
 export interface AddressCreateData {
   type: string;
+  isDefault?: boolean;
   fullName: string;
   phone?: string | null;
   streetLine1: string;
@@ -41,6 +42,7 @@ export interface AddressCreateData {
 
 export interface AddressUpdateData {
   type?: string;
+  isDefault?: boolean;
   fullName?: string;
   phone?: string | null;
   streetLine1?: string;
@@ -62,6 +64,6 @@ export interface ICustomerRepository {
   findAddressesByCustomerId(customerId: number): Promise<CustomerAddress[]>;
   findAddressById(id: number, customerId: number): Promise<CustomerAddress | null>;
   createAddress(customerId: number, data: AddressCreateData): Promise<CustomerAddress>;
-  updateAddress(id: number, data: AddressUpdateData): Promise<CustomerAddress>;
+  updateAddress(id: number, customerId: number, data: AddressUpdateData): Promise<CustomerAddress>;
   deleteAddress(id: number): Promise<void>;
 }

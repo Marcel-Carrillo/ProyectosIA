@@ -21,6 +21,12 @@ import {
   submitReview,
   listOwnReviews,
 } from '../../presentation/controllers/reviewAccountController';
+import {
+  listOwnAddresses,
+  createOwnAddress,
+  updateOwnAddress,
+  deleteOwnAddress,
+} from '../../presentation/controllers/customerAddressController';
 import { requireCustomerAuth } from '../../middleware/requireCustomerAuth';
 
 const accountLimiter = rateLimit({
@@ -53,5 +59,10 @@ router.delete('/wishlist/:productVariantId', removeWishlistItem);
 router.get('/products/:productId/review-eligibility', getReviewEligibility);
 router.post('/reviews', submitReview);
 router.get('/reviews', listOwnReviews);
+
+router.get('/addresses', listOwnAddresses);
+router.post('/addresses', createOwnAddress);
+router.patch('/addresses/:id', updateOwnAddress);
+router.delete('/addresses/:id', deleteOwnAddress);
 
 export default router;

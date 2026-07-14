@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Alert } from 'react-bootstrap';
+import { Table, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
 import { adminProductService, extractErrorMessage } from '../../services/adminProductService';
 import {
   ProductVariant,
@@ -242,6 +242,33 @@ const Margin: React.FC<{ variant: ProductVariant }> = ({ variant }) => {
   );
 };
 
+// Net margin over supplier cost + shipping estimate. A missing shipping
+// estimate is treated as 0 for the computation (per shipping-margin-guardrail
+// spec) but flagged visually with an asterisk so admins know it's an
+// approximation until they refresh the estimate.
+const NetMargin: React.FC<{ variant: ProductVariant }> = ({ variant }) => {
+  const { publicPrice, supplierCost, netMargin, shippingEstimateMissing, shippingCostEstimate } = variant;
+  if (supplierCost == null) return <>—</>;
+  const margin = netMargin ?? publicPrice - supplierCost - (shippingCostEstimate ?? 0);
+  const pct = publicPrice > 0 ? (margin / publicPrice) * 100 : 0;
+  return (
+    <span className={margin < 0 ? 'text-danger fw-semibold' : undefined}>
+      {formatPrice(margin)} ({pct.toFixed(0)}%)
+      {shippingEstimateMissing && <span className="text-muted"> *</span>}
+    </span>
+  );
+};
+
+const MarginWarningBadge: React.FC<{ variant: ProductVariant }> = ({ variant }) => {
+  if (!variant.marginWarning) return null;
+  const isNegative = (variant.netMargin ?? 0) < 0;
+  return (
+    <Badge bg={isNegative ? 'danger' : 'warning'} data-testid={`variant-margin-warning-${variant.id}`}>
+      {isNegative ? 'Vendiendo con pérdida' : 'Margen bajo'}
+    </Badge>
+  );
+};
+
 const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVariantsChange }) => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<VariantFormMode>('create');
@@ -249,6 +276,8 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
   const [deleting, setDeleting] = useState<ProductVariant | null>(null);
   const [deleteError, setDeleteError] = useState('');
   const [removing, setRemoving] = useState(false);
+  const [refreshingId, setRefreshingId] = useState<number | null>(null);
+  const [refreshError, setRefreshError] = useState('');
 
   const openCreate = () => {
     setModalMode('create');
@@ -260,6 +289,19 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
     setModalMode('edit');
     setEditing(variant);
     setShowModal(true);
+  };
+
+  const refreshEstimate = async (variant: ProductVariant) => {
+    setRefreshingId(variant.id as number);
+    setRefreshError('');
+    try {
+      await adminProductService.refreshFreightEstimate(productId, variant.id as number);
+      onVariantsChange();
+    } catch (err) {
+      setRefreshError(extractErrorMessage(err));
+    } finally {
+      setRefreshingId(null);
+    }
   };
 
   const confirmDelete = async () => {
@@ -284,6 +326,8 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
           Añadir variante
         </Button>
       </div>
+
+      {refreshError && <Alert variant="danger">{refreshError}</Alert>}
 
       {variants.length === 0 ? (
         <Alert variant="info" className="mb-0">
@@ -320,6 +364,17 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   </span>
                 </div>
                 <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Envío estimado</span>
+                  <span>{formatPrice(v.shippingCostEstimate)}</span>
+                </div>
+                <div className="admin-card-row__field">
+                  <span className="admin-card-row__label">Margen neto</span>
+                  <span>
+                    <NetMargin variant={v} />
+                  </span>
+                </div>
+                <MarginWarningBadge variant={v} />
+                <div className="admin-card-row__field">
                   <span className="admin-card-row__label">Precio de comparación</span>
                   <span>{formatPrice(v.compareAtPrice)}</span>
                 </div>
@@ -332,6 +387,15 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
                 </div>
                 <div className="admin-card-row__actions">
+                  <Button
+                    variant="outline-secondary"
+                    className="admin-touch-btn"
+                    disabled={refreshingId === v.id}
+                    onClick={() => refreshEstimate(v)}
+                    data-testid={`btn-refresh-shipping-estimate-${v.id}`}
+                  >
+                    {refreshingId === v.id ? 'Actualizando…' : 'Actualizar envío'}
+                  </Button>
                   <Button
                     variant="outline-primary"
                     className="admin-touch-btn"
@@ -363,6 +427,9 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                 <th>Coste de proveedor</th>
                 <th>Precio público</th>
                 <th>Margen</th>
+                <th>Envío estimado</th>
+                <th>Margen neto</th>
+                <th>Alerta</th>
                 <th>Precio de comparación</th>
                 <th>Política de stock</th>
                 <th>Estado</th>
@@ -382,12 +449,29 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   <td data-testid={`variant-margin-${v.id}`}>
                     <Margin variant={v} />
                   </td>
+                  <td data-testid={`variant-shipping-estimate-${v.id}`}>{formatPrice(v.shippingCostEstimate)}</td>
+                  <td data-testid={`variant-net-margin-${v.id}`}>
+                    <NetMargin variant={v} />
+                  </td>
+                  <td>
+                    <MarginWarningBadge variant={v} />
+                  </td>
                   <td>{formatPrice(v.compareAtPrice)}</td>
                   <td>{adminStatusLabel(v.stockPolicy)}</td>
                   <td>
                     <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
                   </td>
                   <td>
+                    <Button
+                      size="sm"
+                      variant="outline-secondary"
+                      className="me-2"
+                      disabled={refreshingId === v.id}
+                      onClick={() => refreshEstimate(v)}
+                      data-testid={`btn-refresh-shipping-estimate-${v.id}`}
+                    >
+                      {refreshingId === v.id ? 'Actualizando…' : 'Actualizar envío'}
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline-primary"

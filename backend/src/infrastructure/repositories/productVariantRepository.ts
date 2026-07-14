@@ -54,6 +54,7 @@ const variantSelect = {
   compareAtPrice: true,
   stockPolicy: true,
   status: true,
+  stockQuantity: true,
   deletedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -69,6 +70,7 @@ const adminVariantSelect = {
   supplierId: true,
   supplierReference: true,
   supplierCost: true,
+  shippingCostEstimate: true,
   supplier: { select: { name: true } },
 } as const;
 
@@ -172,6 +174,23 @@ export class ProductVariantRepository implements IProductVariantRepository {
     const row = await prisma.productVariant.update({
       where: { id },
       data: { deletedAt: new Date() },
+      select: adminVariantSelect,
+    });
+    return new ProductVariant(row);
+  }
+
+  async findCjCatalogItemId(id: number): Promise<number | null> {
+    const row = await prisma.productVariant.findFirst({
+      where: { id, deletedAt: null },
+      select: { cjCatalogItemId: true },
+    });
+    return row?.cjCatalogItemId ?? null;
+  }
+
+  async updateShippingCostEstimate(id: number, shippingCostEstimate: number): Promise<ProductVariant> {
+    const row = await prisma.productVariant.update({
+      where: { id },
+      data: { shippingCostEstimate },
       select: adminVariantSelect,
     });
     return new ProductVariant(row);

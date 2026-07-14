@@ -57,7 +57,7 @@ export interface ICjCatalogItemRepository {
   // deliberately set to Inactive/Archived.
   reconcilePromotedVariantStock(
     supplierIntegrationId: number
-  ): Promise<{ deactivated: number; reactivated: number }>;
+  ): Promise<{ deactivated: number; reactivated: number; stockQuantitySynced: number }>;
   findBySupplierIntegrationId(
     supplierIntegrationId: number,
     filters?: CjCatalogItemListFilters

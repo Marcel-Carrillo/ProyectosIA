@@ -2,12 +2,18 @@ import { Request, Response, NextFunction } from 'express';
 import { ProductVariantService } from '../../application/services/productVariantService';
 import { ProductRepository } from '../../infrastructure/repositories/productRepository';
 import { ProductVariantRepository } from '../../infrastructure/repositories/productVariantRepository';
+import { AutomationSettingsRepository } from '../../infrastructure/repositories/automationSettingsRepository';
+import { CjCatalogItemRepository } from '../../infrastructure/repositories/cjCatalogItemRepository';
+import { cjClient } from '../../infrastructure/external/cjClient';
 import { logger } from '../../infrastructure/logger';
 import { ProductVariantCreateData, ProductVariantUpdateData } from '../../domain/repositories/productRepository';
 
 const variantService = new ProductVariantService(
   new ProductVariantRepository(),
   new ProductRepository(),
+  new AutomationSettingsRepository(),
+  new CjCatalogItemRepository(),
+  cjClient,
 );
 
 export async function listVariants(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -64,6 +70,19 @@ export async function deleteVariant(req: Request, res: Response, next: NextFunct
     await variantService.softDelete(productId, variantId);
     logger.info('Variant deleted', { productId, variantId });
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function refreshFreightEstimate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const productId = parseInt(req.params['id'] as string, 10);
+    const variantId = parseInt(req.params['variantId'] as string, 10);
+    const destinationCountry = (req.body as { destinationCountry?: string })?.destinationCountry;
+    const variant = await variantService.refreshFreightEstimate(productId, variantId, destinationCountry);
+    logger.info('Variant freight estimate refreshed', { productId, variantId });
+    res.json({ success: true, data: variant, message: 'Freight estimate refreshed successfully' });
   } catch (err) {
     next(err);
   }

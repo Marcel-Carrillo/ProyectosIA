@@ -67,12 +67,14 @@ describe('variantSelect - supplier fields absent from selectable fields', () => 
 describe('ProductVariantRepository - findByCjCatalogItemId / create with cjCatalogItemId link', () => {
   const mockFindFirst = jest.fn();
   const mockCreate = jest.fn();
+  const mockUpdate = jest.fn();
 
   jest.mock('../../prismaClient', () => ({
     prisma: {
       productVariant: {
         findFirst: (...args: unknown[]) => mockFindFirst(...args),
         create: (...args: unknown[]) => mockCreate(...args),
+        update: (...args: unknown[]) => mockUpdate(...args),
       },
     },
   }));
@@ -154,6 +156,58 @@ describe('ProductVariantRepository - findByCjCatalogItemId / create with cjCatal
 
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ cjCatalogItemId: null }) })
+    );
+  });
+
+  it('should_ignore_a_client_supplied_stockQuantity_on_update_read_only_guarantee', async () => {
+    mockFindFirst.mockResolvedValue(dbRow); // findById() pre-check inside update()
+    mockUpdate.mockResolvedValue(dbRow);
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    await repo.update(1, {
+      publicPrice: 39.99,
+      // stockQuantity is intentionally not part of ProductVariantUpdateData —
+      // cast to bypass the type system the same way an Express controller
+      // casting req.body would, to prove the field has no write path.
+      ...({ stockQuantity: 999 } as unknown as Record<string, never>),
+    });
+
+    const call = mockUpdate.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+    expect(call.data).not.toHaveProperty('stockQuantity');
+  });
+
+  it('should_return_the_linked_cjCatalogItemId_via_a_narrow_select', async () => {
+    mockFindFirst.mockResolvedValue({ cjCatalogItemId: 42 });
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    const result = await repo.findCjCatalogItemId(1);
+
+    expect(result).toBe(42);
+    expect(mockFindFirst).toHaveBeenCalledWith({
+      where: { id: 1, deletedAt: null },
+      select: { cjCatalogItemId: true },
+    });
+  });
+
+  it('should_return_null_when_variant_has_no_linked_cjCatalogItemId', async () => {
+    mockFindFirst.mockResolvedValue({ cjCatalogItemId: null });
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    expect(await repo.findCjCatalogItemId(1)).toBeNull();
+  });
+
+  it('should_persist_shippingCostEstimate_via_updateShippingCostEstimate', async () => {
+    mockUpdate.mockResolvedValue(dbRow);
+    const repoModule = await import('../productVariantRepository');
+    const repo = new repoModule.ProductVariantRepository();
+
+    await repo.updateShippingCostEstimate(1, 4.5);
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 1 }, data: { shippingCostEstimate: 4.5 } })
     );
   });
 });
