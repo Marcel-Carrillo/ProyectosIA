@@ -236,6 +236,7 @@ export class CjCatalogPromotionService {
                 supplierId: integration.supplierId,
                 supplierReference: groupItem.catalogItem.externalRef,
                 supplierCost: groupItem.catalogItem.supplierCost,
+                stockQuantity: groupItem.catalogItem.stockQuantity,
                 stockPolicy: 'SupplierManaged',
                 // Always created Active, independent of `input.activate`
                 // (which only controls the parent Product's status) —

@@ -35,6 +35,7 @@ const Layout: React.FC = () => {
               <Nav.Link as={NavLink} to="/shipments">Envíos</Nav.Link>
               <Nav.Link as={NavLink} to="/return-requests">Solicitudes de devolución</Nav.Link>
               <Nav.Link as={NavLink} to="/refunds">Reembolsos</Nav.Link>
+              <Nav.Link as={NavLink} to="/fulfillment-alerts">Alertas de automatización</Nav.Link>
             </Nav>
             <div className="d-flex align-items-center gap-2 text-white-50 small">
               {admin?.email && <span>{admin.email}</span>}

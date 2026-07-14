@@ -14,8 +14,8 @@ const makeProduct = () =>
     mainImageUrl: 'https://img/main.jpg',
     categoryId: 3,
     variants: [
-      { productId: 1, sku: 'EJS-1', publicPrice: 20, status: 'Active', stockPolicy: 'SupplierManaged' },
-      { productId: 1, sku: 'EJS-1-OLD', publicPrice: 10, status: 'Inactive', stockPolicy: 'SupplierManaged' },
+      { productId: 1, sku: 'EJS-1', publicPrice: 20, status: 'Active', stockPolicy: 'SupplierManaged', stockQuantity: 8 },
+      { productId: 1, sku: 'EJS-1-OLD', publicPrice: 10, status: 'Inactive', stockPolicy: 'SupplierManaged', stockQuantity: 0 },
     ],
     images: [
       { productId: 1, url: 'https://img/2.jpg', sortOrder: 2, color: 'Red' },
@@ -45,7 +45,7 @@ describe('serializePublicProduct', () => {
       ].sort(),
     );
     expect(Object.keys(dto.variants[0]).sort()).toEqual(
-      ['color', 'compareAtPrice', 'id', 'publicPrice', 'sku', 'size', 'status'].sort(),
+      ['color', 'compareAtPrice', 'id', 'publicPrice', 'sku', 'size', 'status', 'stockQuantity'].sort(),
     );
   });
 
@@ -53,6 +53,11 @@ describe('serializePublicProduct', () => {
     const dto = serializePublicProduct(makeProduct());
     expect(dto.variants).toHaveLength(1);
     expect(dto.variants[0]?.sku).toBe('EJS-1');
+  });
+
+  it('includes the variant stockQuantity', () => {
+    const dto = serializePublicProduct(makeProduct());
+    expect(dto.variants[0]?.stockQuantity).toBe(8);
   });
 
   it('orders images by sortOrder', () => {
@@ -145,5 +150,23 @@ describe('serializePublicProduct', () => {
     expect(json).not.toContain('supplierReference');
     expect(json).not.toContain('supplierCost');
     expect(json).not.toContain('deletedAt');
+  });
+
+  it('never emits admin-only margin fields, even if present on the entity', () => {
+    const product = makeProduct();
+    // Simulate a future model leak: attach admin-only margin data onto the entity.
+    const variant = product.variants?.[0] as ProductVariant & Record<string, unknown>;
+    variant['shippingCostEstimate'] = 4.5;
+    variant['netMargin'] = 12.34;
+    variant['shippingEstimateMissing'] = false;
+    variant['marginWarning'] = true;
+
+    const dto = serializePublicProduct(product);
+    const json = JSON.stringify(dto);
+
+    expect(json).not.toContain('shippingCostEstimate');
+    expect(json).not.toContain('netMargin');
+    expect(json).not.toContain('shippingEstimateMissing');
+    expect(json).not.toContain('marginWarning');
   });
 });

@@ -1869,6 +1869,13 @@
   font-weight: var(--font-weight-medium);
 }
 
+.storefront-checkout__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-block: var(--spacing-2) var(--spacing-5);
+}
+
 .storefront-checkout__grid {
   display: grid;
   gap: var(--spacing-6);

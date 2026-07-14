@@ -3,10 +3,11 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import VariantTable from '../VariantTable';
 import { ProductVariant } from '../../../types/product';
-import { adminProductService } from '../../../services/adminProductService';
+import { adminProductService, extractErrorMessage } from '../../../services/adminProductService';
 
 vi.mock('../../../services/adminProductService');
 const mocked = adminProductService as Mocked<typeof adminProductService>;
+const mockedExtractErrorMessage = extractErrorMessage as unknown as ReturnType<typeof vi.fn>;
 
 const variant: ProductVariant = {
   id: 5,
@@ -18,6 +19,7 @@ const variant: ProductVariant = {
   compareAtPrice: null,
   stockPolicy: 'SupplierManaged',
   status: 'Active',
+  stockQuantity: 5,
   deletedAt: null,
   createdAt: '',
   updatedAt: '',
@@ -82,5 +84,82 @@ describe('VariantTable', () => {
     fireEvent.click(await screen.findByTestId('btn-confirm-delete-variant'));
     await waitFor(() => expect(mocked.deleteVariant).toHaveBeenCalledWith(1, 5));
     expect(onVariantsChange).toHaveBeenCalled();
+  });
+
+  it('shows the shipping estimate and net margin when the admin API provides them', () => {
+    const sourced: ProductVariant = {
+      ...variant,
+      supplierCost: 10,
+      shippingCostEstimate: 4,
+      netMargin: 15.9, // 29.9 - 10 - 4
+    };
+    render(<VariantTable productId={1} variants={[sourced]} onVariantsChange={vi.fn()} />);
+    expect(screen.getByTestId('variant-shipping-estimate-5').textContent).toContain('4');
+    expect(screen.getByTestId('variant-net-margin-5').textContent).toContain('15');
+  });
+
+  it('shows a warning badge when marginWarning is true, danger styling when netMargin is negative', () => {
+    const losing: ProductVariant = {
+      ...variant,
+      supplierCost: 40,
+      shippingCostEstimate: 5,
+      netMargin: -15.1,
+      marginWarning: true,
+    };
+    render(<VariantTable productId={1} variants={[losing]} onVariantsChange={vi.fn()} />);
+    expect(
+      within(screen.getByTestId('variant-row-5')).getByTestId('variant-margin-warning-5')
+    ).toBeInTheDocument();
+  });
+
+  it('does not show a warning badge when marginWarning is false', () => {
+    const healthy: ProductVariant = {
+      ...variant,
+      supplierCost: 5,
+      shippingCostEstimate: 2,
+      netMargin: 22.9,
+      marginWarning: false,
+    };
+    render(<VariantTable productId={1} variants={[healthy]} onVariantsChange={vi.fn()} />);
+    expect(
+      within(screen.getByTestId('variant-row-5')).queryByTestId('variant-margin-warning-5')
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows the missing-estimate indicator when shippingCostEstimate is null', () => {
+    const missing: ProductVariant = {
+      ...variant,
+      supplierCost: 10,
+      shippingCostEstimate: null,
+      shippingEstimateMissing: true,
+      netMargin: 19.9,
+    };
+    render(<VariantTable productId={1} variants={[missing]} onVariantsChange={vi.fn()} />);
+    expect(screen.getByTestId('variant-shipping-estimate-5').textContent).toBe('—');
+  });
+
+  it('calls refreshFreightEstimate and refetches on click', async () => {
+    mocked.refreshFreightEstimate.mockResolvedValue({ success: true, data: variant, message: '' });
+    const onVariantsChange = vi.fn();
+    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={onVariantsChange} />);
+    fireEvent.click(
+      within(screen.getByTestId('variant-row-5')).getByTestId('btn-refresh-shipping-estimate-5')
+    );
+    await waitFor(() => expect(mocked.refreshFreightEstimate).toHaveBeenCalledWith(1, 5));
+    expect(onVariantsChange).toHaveBeenCalled();
+  });
+
+  it('shows the error message when refreshFreightEstimate returns CJ_ITEM_NOT_MAPPED', async () => {
+    mocked.refreshFreightEstimate.mockRejectedValue({
+      response: { data: { error: { code: 'CJ_ITEM_NOT_MAPPED' } } },
+    });
+    mockedExtractErrorMessage.mockReturnValue(
+      'Esta variante no está vinculada a un artículo del catálogo del proveedor; no se puede estimar el envío.'
+    );
+    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={vi.fn()} />);
+    fireEvent.click(
+      within(screen.getByTestId('variant-row-5')).getByTestId('btn-refresh-shipping-estimate-5')
+    );
+    expect(await screen.findByText(/no está vinculada a un artículo/i)).toBeInTheDocument();
   });
 });

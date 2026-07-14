@@ -87,6 +87,11 @@ export interface IProductVariantRepository {
   create(data: ProductVariantCreateData): Promise<ProductVariant>;
   update(id: number, data: ProductVariantUpdateData): Promise<ProductVariant>;
   softDelete(id: number): Promise<ProductVariant>;
+  // Narrow, response-DTO-invisible: never merged into adminVariantSelect, so
+  // cjCatalogItemId cannot leak into any variant API response (see
+  // productVariantRepository.ts comments on the internal-only convention).
+  findCjCatalogItemId(id: number): Promise<number | null>;
+  updateShippingCostEstimate(id: number, shippingCostEstimate: number): Promise<ProductVariant>;
 }
 
 export interface ProductImageCreateData {

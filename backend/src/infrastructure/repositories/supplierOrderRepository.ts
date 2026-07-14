@@ -13,6 +13,7 @@ import {
   SupplierOrderExternalStatusData,
 } from '../../domain/repositories/supplierOrderRepository';
 import { CustomerOrderNotFoundError } from './customerOrderRepository';
+import { CJ_TERMINAL_STATUSES } from '../../domain/models/cjOrderStatus';
 
 export class SupplierOrderNotFoundError extends Error {
   readonly code = 'SUPPLIER_ORDER_NOT_FOUND' as const;
@@ -196,6 +197,17 @@ export class SupplierOrderRepository implements ISupplierOrderRepository {
       where: { customerOrderId },
       select: orderSelect,
       orderBy: { createdAt: 'asc' },
+    });
+    return rows.map(mapOrder);
+  }
+
+  async findPushedNonTerminal(): Promise<SupplierOrder[]> {
+    const rows = await prisma.supplierOrder.findMany({
+      where: {
+        externalOrderId: { not: null },
+        OR: [{ externalOrderStatus: null }, { externalOrderStatus: { notIn: [...CJ_TERMINAL_STATUSES] } }],
+      },
+      select: orderSelect,
     });
     return rows.map(mapOrder);
   }

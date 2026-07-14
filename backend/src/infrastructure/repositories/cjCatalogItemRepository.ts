@@ -94,10 +94,10 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
 
   async reconcilePromotedVariantStock(
     supplierIntegrationId: number
-  ): Promise<{ deactivated: number; reactivated: number }> {
+  ): Promise<{ deactivated: number; reactivated: number; stockQuantitySynced: number }> {
     // Only flips Active <-> OutOfStock. Inactive/Archived are admin decisions
     // this sync must never override; soft-deleted variants are skipped.
-    const [deactivated, reactivated] = await prisma.$transaction([
+    const [deactivated, reactivated, stockQuantitySynced] = await prisma.$transaction([
       prisma.productVariant.updateMany({
         where: {
           status: 'Active',
@@ -114,8 +114,21 @@ export class CjCatalogItemRepository implements ICjCatalogItemRepository {
         },
         data: { status: 'Active' },
       }),
+      // Copies the numeric stock value unconditionally. Prisma's updateMany
+      // cannot set a column from a related row's value, so this keeps
+      // ProductVariant.stockQuantity current even when the CJ stock change
+      // doesn't cross the Active/OutOfStock boundary (e.g. 12 -> 5).
+      prisma.$executeRaw`
+        UPDATE "ProductVariant" AS t
+        SET "stockQuantity" = c."stockQuantity", "updatedAt" = now()
+        FROM "CjCatalogItem" AS c
+        WHERE t."cjCatalogItemId" = c.id
+          AND c."supplierIntegrationId" = ${supplierIntegrationId}
+          AND t."deletedAt" IS NULL
+          AND t."stockQuantity" IS DISTINCT FROM c."stockQuantity"
+      `,
     ]);
-    return { deactivated: deactivated.count, reactivated: reactivated.count };
+    return { deactivated: deactivated.count, reactivated: reactivated.count, stockQuantitySynced };
   }
 
   async findBySupplierIntegrationId(

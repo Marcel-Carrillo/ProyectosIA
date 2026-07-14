@@ -150,4 +150,13 @@ export class ShipmentRepository implements IShipmentRepository {
       throw err;
     }
   }
+
+  async findBySupplierOrderId(supplierOrderId: number): Promise<Shipment | null> {
+    const row = await prisma.shipment.findFirst({
+      where: { supplierOrderId },
+      orderBy: { createdAt: 'desc' },
+      select: shipmentListSelect,
+    });
+    return row ? mapShipment(row) : null;
+  }
 }

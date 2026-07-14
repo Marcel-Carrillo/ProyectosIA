@@ -15,6 +15,7 @@ import {
   createVariant,
   updateVariant,
   deleteVariant,
+  refreshFreightEstimate,
 } from '../../presentation/controllers/productVariantController';
 import {
   listImages,
@@ -29,6 +30,7 @@ variantRouter.get('/:variantId', getVariantById);
 variantRouter.post('/', createVariant);
 variantRouter.patch('/:variantId', updateVariant);
 variantRouter.delete('/:variantId', deleteVariant);
+variantRouter.post('/:variantId/freight-estimate', refreshFreightEstimate);
 
 const imageRouter = Router({ mergeParams: true });
 imageRouter.get('/', listImages);

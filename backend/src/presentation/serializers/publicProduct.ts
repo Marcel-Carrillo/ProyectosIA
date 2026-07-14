@@ -20,6 +20,7 @@ export interface PublicVariantDTO {
   publicPrice: number;
   compareAtPrice: number | null;
   status: string;
+  stockQuantity: number;
 }
 
 export interface PublicProductImageDTO {
@@ -56,6 +57,7 @@ function serializeVariant(variant: ProductVariant): PublicVariantDTO {
     publicPrice: variant.publicPrice,
     compareAtPrice: variant.compareAtPrice ?? null,
     status: variant.status,
+    stockQuantity: variant.stockQuantity,
   };
 }
 

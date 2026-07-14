@@ -33,6 +33,7 @@ export class CustomerAddress {
   id?: number;
   customerId: number;
   type: string;
+  isDefault: boolean;
   fullName: string;
   phone?: string | null;
   streetLine1: string;
@@ -48,6 +49,7 @@ export class CustomerAddress {
     id?: number;
     customerId: number;
     type: string;
+    isDefault?: boolean;
     fullName: string;
     phone?: string | null;
     streetLine1: string;
@@ -62,6 +64,7 @@ export class CustomerAddress {
     this.id = data.id;
     this.customerId = data.customerId;
     this.type = data.type;
+    this.isDefault = data.isDefault ?? false;
     this.fullName = data.fullName;
     this.phone = data.phone ?? null;
     this.streetLine1 = data.streetLine1;

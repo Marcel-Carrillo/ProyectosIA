@@ -34,6 +34,12 @@ provider:
     CJ_DEFAULT_MARKUP_MULTIPLIER: '2.5'
     CJ_DEFAULT_CATEGORY_ID: ${ssm:/ecommerce/prod/CJ_DEFAULT_CATEGORY_ID, ''}
     SUPPLIER_AUTO_PROVISION_ENABLED: ${ssm:/ecommerce/prod/SUPPLIER_AUTO_PROVISION_ENABLED, 'false'}
+    # Kill-switch for the customer-order-paid -> supplier-order -> CJ-push
+    # automatic chain (fulfillment-automation). Gates both the payment
+    # webhook's automation call (inside the `app` Lambda) and the
+    # cjOrderStatusSync scheduled job below. Defaults off; sandbox-only CJ
+    # pushes remain forced regardless (CJ_SANDBOX_ORDERS).
+    FULFILLMENT_AUTOMATION_ENABLED: ${ssm:/ecommerce/prod/FULFILLMENT_AUTOMATION_ENABLED, 'false'}
     # Bounds supplierAutoProvision's per-run catalog sync window (design.md D2
     # in openspec/changes/cj-catalog-cursor-and-media). Cost is
     # calls = pages * (1 + pageSize) — one fetchCatalog call per page PLUS one
@@ -88,6 +94,19 @@ functions:
     timeout: 900
     events:
       - schedule: rate(1 day)
+
+  # Scheduled, IAM-only job (no HTTP surface, mirrors supplierAutoProvision
+  # above). Pulls CJ Dropshipping order status for supplier orders that have
+  # been pushed but not yet reached a terminal externalOrderStatus, and
+  # propagates changes into Shipment records — see fulfillment-automation
+  # spec. More frequent than the daily catalog sync since shipping status
+  # changes matter to customers in near-real-time. No-ops entirely when
+  # FULFILLMENT_AUTOMATION_ENABLED is not 'true'.
+  cjOrderStatusSync:
+    handler: src/jobs/cjOrderStatusSyncHandler.handler
+    timeout: 900
+    events:
+      - schedule: rate(1 hour)
 
 package:
   patterns:

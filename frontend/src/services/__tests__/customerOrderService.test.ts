@@ -34,6 +34,6 @@ describe('customerOrderService', () => {
   });
 
   it('maps transition error', () => {
-    expect(mapCustomerOrderError('ORDER_STATUS_TRANSITION_INVALID')).toMatch(/not allowed/i);
+    expect(mapCustomerOrderError('ORDER_STATUS_TRANSITION_INVALID')).toMatch(/no se permite/i);
   });
 });

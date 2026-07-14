@@ -34,4 +34,5 @@ export interface IShipmentRepository {
   findById(id: number): Promise<Shipment | null>;
   create(data: CreateShipmentData): Promise<Shipment>;
   updateStatus(id: number, data: UpdateShipmentStatusData): Promise<Shipment>;
+  findBySupplierOrderId(supplierOrderId: number): Promise<Shipment | null>;
 }

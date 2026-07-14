@@ -5,6 +5,8 @@ const mockCount = jest.fn();
 const mockUpsert = jest.fn();
 const mockFindUnique = jest.fn();
 const mockTransaction = jest.fn();
+const mockUpdateMany = jest.fn();
+const mockExecuteRaw = jest.fn();
 
 jest.mock('../../prismaClient', () => ({
   prisma: {
@@ -14,7 +16,11 @@ jest.mock('../../prismaClient', () => ({
       upsert: (...args: unknown[]) => mockUpsert(...args),
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
     },
+    productVariant: {
+      updateMany: (...args: unknown[]) => mockUpdateMany(...args),
+    },
     $transaction: (...args: unknown[]) => mockTransaction(...args),
+    $executeRaw: (...args: unknown[]) => mockExecuteRaw(...args),
   },
 }));
 
@@ -111,6 +117,30 @@ describe('CjCatalogItemRepository', () => {
 
       const options = mockTransaction.mock.calls[0]?.[1] as { timeout?: number } | undefined;
       expect(options?.timeout).toBeGreaterThan(5000);
+    });
+  });
+
+  describe('reconcilePromotedVariantStock', () => {
+    it('should_return_deactivated_reactivated_and_stockQuantitySynced_counts', async () => {
+      mockTransaction.mockResolvedValue([{ count: 2 }, { count: 1 }, 7]);
+
+      const result = await repo.reconcilePromotedVariantStock(5);
+
+      expect(result).toEqual({ deactivated: 2, reactivated: 1, stockQuantitySynced: 7 });
+    });
+
+    it('should_run_two_updateMany_calls_and_one_executeRaw_call_within_the_same_transaction', async () => {
+      mockTransaction.mockImplementation(async (arr: unknown[]) => {
+        expect(arr).toHaveLength(3);
+        return [{ count: 0 }, { count: 0 }, 0];
+      });
+      mockUpdateMany.mockResolvedValue({ count: 0 });
+      mockExecuteRaw.mockResolvedValue(0);
+
+      await repo.reconcilePromotedVariantStock(5);
+
+      expect(mockUpdateMany).toHaveBeenCalledTimes(2);
+      expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
     });
   });
 

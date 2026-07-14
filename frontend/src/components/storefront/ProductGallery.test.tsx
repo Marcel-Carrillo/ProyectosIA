@@ -29,78 +29,82 @@ const colorImages: ProductImage[] = [
   { id: 13, productId: 1, url: 'https://cdn.example.com/blue-1.jpg', altText: 'Blue detail 1', sortOrder: 3, color: 'Blue', createdAt: '2026-01-01T00:00:00Z' },
 ];
 
-describe('ProductGallery color filtering', () => {
-  it('filters to images matching the selected color plus shared (color=null) images', () => {
+describe('ProductGallery — thumbnail strip is unaffected by color', () => {
+  it('shows the full image list in the thumbnail strip regardless of selected color', () => {
     render(<ProductGallery images={colorImages} productName="Dress" selectedColor="Red" />);
-
-    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(3);
-    expect(screen.queryByAltText('Blue detail 1')).not.toBeInTheDocument();
-  });
-
-  it('shows the selected colors own photo as the main image, not the shared photo', () => {
-    // Regression: the main/hero image must reflect the color the shopper
-    // picked. The shared image is sortOrder 0 and always survives the
-    // filter, so naively defaulting to index 0 leaves the hero image stuck
-    // on the generic shot — only the thumbnail strip would visibly react.
-    render(<ProductGallery images={colorImages} productName="Dress" selectedColor="Red" />);
-
-    const main = screen.getAllByRole('img')[0];
-    expect(main).toHaveAttribute('alt', 'Red detail 1');
-    expect(main).toHaveAttribute('src', 'https://cdn.example.com/red-1.jpg');
-  });
-
-  it('falls back to the full image list when the filtered set would be empty', () => {
-    const noSharedImages = colorImages.filter((img) => img.color !== null);
-    render(<ProductGallery images={noSharedImages} productName="Dress" selectedColor="Green" />);
-
-    const list = within(screen.getByRole('list'));
-    expect(list.getAllByRole('listitem')).toHaveLength(3);
-    expect(list.getByAltText('Red detail 1')).toBeInTheDocument();
-    expect(list.getByAltText('Red detail 2')).toBeInTheDocument();
-    expect(list.getByAltText('Blue detail 1')).toBeInTheDocument();
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(4);
+    // Blue's photo is still present even though Red is selected.
+    expect(screen.getByAltText('Blue detail 1')).toBeInTheDocument();
   });
 
   it('renders the full list unchanged when selectedColor is not provided', () => {
     render(<ProductGallery images={colorImages} productName="Dress" />);
-
     expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(4);
   });
 
   it('renders the full list unchanged when selectedColor is explicitly null', () => {
     render(<ProductGallery images={colorImages} productName="Dress" selectedColor={null} />);
-
     expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(4);
   });
+});
 
-  it('resets the active image to the new colors own photo when selectedColor changes', () => {
+describe('ProductGallery — main image follows the selected color', () => {
+  it('shows the selected colors own photo as the main image, not the shared photo', () => {
+    render(<ProductGallery images={colorImages} productName="Dress" selectedColor="Red" />);
+    const main = screen.getAllByRole('img')[0];
+    expect(main).toHaveAttribute('alt', 'Red detail 1');
+    expect(main).toHaveAttribute('src', 'https://cdn.example.com/red-1.jpg');
+  });
+
+  it('defaults to the shared (sortOrder 0) image on first mount when the selected color has no dedicated photo', () => {
+    render(<ProductGallery images={colorImages} productName="Dress" selectedColor="Green" />);
+    const main = screen.getAllByRole('img')[0];
+    expect(main).toHaveAttribute('alt', 'Shared front');
+  });
+
+  it('switches the main image when selectedColor changes to a color with its own photo', () => {
     const { rerender } = render(
       <ProductGallery images={colorImages} productName="Dress" selectedColor="Blue" />
     );
-
-    // Filtered to Blue: shared (id:10, index 0) + Blue (id:13, index 1) —
-    // but the main image defaults to Blue's own photo (index 1), not shared.
-    const thumbs = within(screen.getByRole('list')).getAllByRole('listitem');
-    expect(thumbs).toHaveLength(2);
     expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue detail 1');
 
-    // Manually pick the shared thumbnail instead, to prove the reset below
-    // isn't a no-op.
-    fireEvent.click(thumbs[0]!);
-    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Shared front');
-
     rerender(<ProductGallery images={colorImages} productName="Dress" selectedColor="Red" />);
-
-    // Reset to Red's own photo (first Red image, sortOrder 1), not the
-    // shared image and not wherever the previous color's manual pick left it.
     expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Red detail 1');
   });
 
-  it('defaults to the shared image when the selected color has no dedicated photo', () => {
-    render(<ProductGallery images={colorImages} productName="Dress" selectedColor="Green" />);
+  it('REGRESSION: keeps the current main image when selectedColor changes to a color with no dedicated photo', () => {
+    // This is the behavior this change introduces — differs from the
+    // previously-merged "reset to index 0" fallback.
+    const { rerender } = render(
+      <ProductGallery images={colorImages} productName="Dress" selectedColor="Blue" />
+    );
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue detail 1');
 
-    // Green has no dedicated image; colorFiltered = [shared] (non-empty, so
-    // no full-list fallback) — main image is the shared photo.
-    const main = screen.getAllByRole('img')[0];
-    expect(main).toHaveAttribute('alt', 'Shared front');
+    // Green has no dedicated photo — main image must stay on Blue's photo,
+    // not reset to the shared (sortOrder 0) image.
+    rerender(<ProductGallery images={colorImages} productName="Dress" selectedColor="Green" />);
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue detail 1');
+  });
+
+  it('clicking a thumbnail still overrides the main image directly, regardless of selected color', () => {
+    render(<ProductGallery images={colorImages} productName="Dress" selectedColor="Red" />);
+    const thumbs = within(screen.getByRole('list')).getAllByRole('listitem');
+    fireEvent.click(thumbs[0]!); // shared/front thumbnail
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Shared front');
+  });
+
+  it('resets to the new products own hero image when the images prop itself changes (product navigation)', () => {
+    const otherProductImages: ProductImage[] = [
+      { id: 20, productId: 2, url: 'https://cdn.example.com/other.jpg', altText: 'Other product', sortOrder: 0, color: null, createdAt: '2026-01-01T00:00:00Z' },
+    ];
+    const { rerender } = render(
+      <ProductGallery images={colorImages} productName="Dress" selectedColor="Blue" />
+    );
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Blue detail 1');
+
+    // Simulate navigating to a different product: new images array, color
+    // that doesn't exist on the new product at all.
+    rerender(<ProductGallery images={otherProductImages} productName="Other" selectedColor="Blue" />);
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('alt', 'Other product');
   });
 });

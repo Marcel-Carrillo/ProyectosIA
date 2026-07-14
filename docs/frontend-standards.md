@@ -1156,6 +1156,22 @@ After confirmation, navigate to the order confirmation page with `state: { payme
 - Detail page only: render `order.shipments[]` with carrier, tracking link (`target="_blank" rel="noopener noreferrer"`), and shipped/delivered dates inside `data-testid="shipping-section"`.
 - List page: show `shippingStatus` badge only; never render the full `shipments[]` array.
 
+### Self-Service Address Book (Checkout Prefill + Save-as-Default)
+
+`services/addressService.ts` wraps `/api/public/account/addresses[/:id]`, mirroring the existing `reviewService.ts` pattern (auth headers, error mapping). Rules:
+
+- `CheckoutPage.tsx` prefills shipping/billing from the authenticated buyer's **default** address of the matching `type` (falling back to profile contact fields when no default exists); guest checkout forms always start empty — never call `addressService` for a guest.
+- The "usar mismos datos"/"use same data" toggle clones shipping into billing **and keeps mirroring on further edits** while enabled (not a one-time copy) — implemented as a `sameAsShipping` boolean plus a `useEffect` that re-mirrors on every shipping-field change, with the billing inputs `disabled` while the toggle is on.
+- The "save as default" checkbox is rendered per address section **only for authenticated buyers** (`isAuthenticated` check), never for guests. On successful payment, `handlePaymentSuccess` (async) calls `addressService.create(..., { isDefault: true })` per checked section — this runs client-side on Stripe confirmation success, independent of the payment webhook, so it must not assume the order is already `Paid` server-side.
+
+### Admin Margin Warning Badge
+
+`components/admin/VariantTable.tsx`'s `NetMargin`/`MarginWarningBadge` components render the shipping-margin guardrail (see `docs/backend-standards.md`'s Fulfillment Automation Orchestration Pattern):
+
+- `NetMargin` renders `—` whenever `supplierCost` is `null` — never fall back to computing a margin against an unknown cost, since that would silently show a misleading number. Render the computed margin (with a `*` suffix) only when `supplierCost` is known, and mark it visually when `shippingEstimateMissing` is true (the estimate is being treated as €0).
+- `MarginWarningBadge` renders nothing when `variant.marginWarning` is falsy; otherwise a "Margen bajo" (warning, yellow) or "Vendiendo con pérdida" (negative margin, red) badge, keyed off `variant.netMargin < 0`.
+- The "Actualizar envío"/"refresh shipping estimate" button (`adminProductService.refreshFreightEstimate`) surfaces a `422 CJ_ITEM_NOT_MAPPED` failure as a visible `<Alert variant="danger">`, not just a console error — a variant with no linked CJ catalog item is an expected, user-facing state, not a bug.
+
 ### Testing Stripe Components
 
 Mock `@stripe/react-stripe-js` in unit tests — never use real Stripe.js in Vitest:

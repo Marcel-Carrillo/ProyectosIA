@@ -62,6 +62,7 @@ const variantSelect = {
   compareAtPrice: true,
   stockPolicy: true,
   status: true,
+  stockQuantity: true,
   deletedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -121,7 +122,7 @@ export class ProductRepository implements IProductRepository {
       include: {
         variants: {
           select: variantSelect,
-          where: { deletedAt: null },
+          where: { deletedAt: null, status: 'Active' },
           orderBy: { createdAt: 'asc' },
         },
         images: { orderBy: { sortOrder: 'asc' } },

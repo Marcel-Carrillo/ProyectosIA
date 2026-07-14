@@ -14,6 +14,7 @@ import {
 } from '../validator';
 import { prisma } from '../../infrastructure/prismaClient';
 import { logger } from '../../infrastructure/logger';
+import { fulfillmentAutomationService } from './fulfillmentAutomationService';
 
 const RESUMABLE_PAYMENT_INTENT_STATUSES = new Set([
   'requires_payment_method',
@@ -211,6 +212,12 @@ export class PaymentService {
       logger.info('payment_intent.succeeded: order already Paid — skipping', {
         orderId: order.id,
       });
+      // Still (idempotently) run automation on a webhook retry — the
+      // generate/push guards are the actual idempotency mechanism, so
+      // re-invoking here is safe and required so a webhook that marked the
+      // order Paid but then crashed before triggering automation isn't left
+      // permanently unautomated even after Stripe retries.
+      await this.runFulfillmentAutomation(order.id!);
       return;
     }
 
@@ -249,6 +256,27 @@ export class PaymentService {
       orderNumber: order.orderNumber,
       chargeId: chargeId ?? undefined,
     });
+
+    // Awaited deliberately, not fire-and-forget: this Lambda deployment
+    // freezes its execution environment as soon as the handler's returned
+    // promise resolves, so an un-awaited call here could be silently lost
+    // mid-flight — unlike the welcome-email fire-and-forget pattern, losing
+    // this silently would defeat the "a stalled order is never silent"
+    // alerting requirement. fulfillmentAutomationService.runForPaidOrder()
+    // never throws (it catches and alerts internally), so this await cannot
+    // itself break webhook processing.
+    await this.runFulfillmentAutomation(order.id!);
+  }
+
+  private async runFulfillmentAutomation(customerOrderId: number): Promise<void> {
+    try {
+      await fulfillmentAutomationService.runForPaidOrder(customerOrderId);
+    } catch (err) {
+      logger.error('Unexpected error from fulfillmentAutomationService', {
+        customerOrderId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   private async handlePaymentIntentFailed(event: Stripe.Event): Promise<void> {

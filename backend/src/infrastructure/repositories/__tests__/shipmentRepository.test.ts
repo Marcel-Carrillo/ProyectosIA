@@ -3,6 +3,7 @@ import { ShipmentRepository, ShipmentNotFoundError } from '../shipmentRepository
 const mockFindMany = jest.fn();
 const mockCount = jest.fn();
 const mockFindUnique = jest.fn();
+const mockFindFirst = jest.fn();
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockTransaction = jest.fn();
@@ -13,6 +14,7 @@ jest.mock('../../../infrastructure/prismaClient', () => ({
       findMany: (...args: unknown[]) => mockFindMany(...args),
       count: (...args: unknown[]) => mockCount(...args),
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
+      findFirst: (...args: unknown[]) => mockFindFirst(...args),
       create: (...args: unknown[]) => mockCreate(...args),
       update: (...args: unknown[]) => mockUpdate(...args),
     },
@@ -150,6 +152,38 @@ describe('ShipmentRepository', () => {
       await expect(repo.updateStatus(999, { status: 'Shipped' })).rejects.toBeInstanceOf(
         ShipmentNotFoundError
       );
+    });
+  });
+
+  describe('findBySupplierOrderId', () => {
+    it('returns the most recent shipment linked to the supplier order', async () => {
+      const row = {
+        id: 1,
+        customerOrderId: 10,
+        supplierOrderId: 5,
+        carrier: 'DHL',
+        trackingNumber: 'TRK1',
+        trackingUrl: null,
+        status: 'Shipped',
+        shippedAt: new Date('2024-01-01'),
+        deliveredAt: null,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
+      };
+      mockFindFirst.mockResolvedValue(row);
+
+      const result = await repo.findBySupplierOrderId(5);
+
+      expect(result?.supplierOrderId).toBe(5);
+      expect(mockFindFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { supplierOrderId: 5 } })
+      );
+    });
+
+    it('returns null when no shipment is linked yet', async () => {
+      mockFindFirst.mockResolvedValue(null);
+      const result = await repo.findBySupplierOrderId(999);
+      expect(result).toBeNull();
     });
   });
 });

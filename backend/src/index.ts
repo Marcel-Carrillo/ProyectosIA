@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import * as fs from 'fs';
@@ -17,6 +18,8 @@ import refundAdminRoutes from './routes/admin/refundRoutes';
 import reviewAdminRoutes from './routes/admin/reviewRoutes';
 import shipmentAdminRoutes from './routes/admin/shipmentRoutes';
 import returnRequestAdminRoutes from './routes/admin/returnRequestRoutes';
+import settingsAdminRoutes from './routes/admin/settingsRoutes';
+import fulfillmentAutomationAdminRoutes from './routes/admin/fulfillmentAutomationRoutes';
 import adminAuthRoutes from './routes/admin/adminAuthRoutes';
 import productPublicRoutes from './routes/public/productRoutes';
 import categoryPublicRoutes from './routes/public/categoryRoutes';
@@ -110,6 +113,31 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use('/health', healthRoutes);
+
+// Mounted ahead of adminRouter (and its shared requireAdminAuth gate below) so
+// the rate limiter itself protects the authorization check on these two paths,
+// not just the handler behind it — resolves a CodeQL "missing rate limiting"
+// finding that flagged requireAdminAuth running unbounded before these routes
+// were reached via the nested router.
+const settingsRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const fulfillmentAutomationRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/admin/settings', settingsRateLimiter, requireAdminAuth, settingsAdminRoutes);
+app.use(
+  '/api/admin/fulfillment-automation',
+  fulfillmentAutomationRateLimiter,
+  requireAdminAuth,
+  fulfillmentAutomationAdminRoutes
+);
 
 const adminRouter = express.Router();
 adminRouter.use('/auth', adminAuthRoutes);

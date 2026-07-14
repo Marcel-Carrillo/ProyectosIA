@@ -117,6 +117,7 @@ export async function cleanLocalCatalog(prisma: Prisma.TransactionClient): Promi
   await prisma.returnRequest.deleteMany({});
   await prisma.shipment.deleteMany({});
   await prisma.review.deleteMany({});
+  await prisma.automationAlert.deleteMany({});
   await prisma.supplierOrderItem.deleteMany({});
   await prisma.supplierOrder.deleteMany({});
   await prisma.customerOrderItem.deleteMany({});
