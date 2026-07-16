@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
-import { adminProductService, extractErrorMessage } from '../../services/adminProductService';
+import React, { useEffect, useRef, useState } from 'react';
+import { Table, Button, Modal, Form, Alert, Badge, Spinner } from 'react-bootstrap';
+import { adminProductService, extractErrorMessage, extractErrorCode } from '../../services/adminProductService';
 import {
   ProductVariant,
   ProductVariantStatus,
@@ -276,8 +276,12 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
   const [deleting, setDeleting] = useState<ProductVariant | null>(null);
   const [deleteError, setDeleteError] = useState('');
   const [removing, setRemoving] = useState(false);
-  const [refreshingId, setRefreshingId] = useState<number | null>(null);
   const [refreshError, setRefreshError] = useState('');
+  const [fetchingShippingIds, setFetchingShippingIds] = useState<Set<number>>(new Set());
+  // Tracks variant ids already attempted this page view so a variant with no
+  // CJ mapping (CJ_ITEM_NOT_MAPPED — most manually-created variants) isn't
+  // retried forever every time `variants` changes identity on refetch.
+  const attemptedShippingIdsRef = useRef<Set<number>>(new Set());
 
   const openCreate = () => {
     setModalMode('create');
@@ -291,18 +295,51 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
     setShowModal(true);
   };
 
-  const refreshEstimate = async (variant: ProductVariant) => {
-    setRefreshingId(variant.id as number);
-    setRefreshError('');
-    try {
-      await adminProductService.refreshFreightEstimate(productId, variant.id as number);
-      onVariantsChange();
-    } catch (err) {
-      setRefreshError(extractErrorMessage(err));
-    } finally {
-      setRefreshingId(null);
-    }
-  };
+  // Fetches and persists the CJ shipping estimate automatically for every
+  // variant that's missing one — no manual action: the admin should already
+  // see the shipping-informed net margin without doing anything. Variants
+  // without a CJ mapping fail with CJ_ITEM_NOT_MAPPED, which is expected
+  // (not every variant comes from CJ) and is suppressed rather than shown as
+  // an error.
+  useEffect(() => {
+    const missing = variants.filter(
+      (v) =>
+        v.shippingEstimateMissing &&
+        v.id != null &&
+        !attemptedShippingIdsRef.current.has(v.id as number)
+    );
+    if (missing.length === 0) return;
+    const ids = missing.map((v) => v.id as number);
+    ids.forEach((id) => attemptedShippingIdsRef.current.add(id));
+    setFetchingShippingIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+
+    let cancelled = false;
+    Promise.allSettled(
+      missing.map((v) => adminProductService.refreshFreightEstimate(productId, v.id as number))
+    ).then((results) => {
+      if (cancelled) return;
+      setFetchingShippingIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      });
+      const unexpected = results.find(
+        (r): r is PromiseRejectedResult =>
+          r.status === 'rejected' && extractErrorCode(r.reason) !== 'CJ_ITEM_NOT_MAPPED'
+      );
+      if (unexpected) setRefreshError(extractErrorMessage(unexpected.reason));
+      if (results.some((r) => r.status === 'fulfilled')) onVariantsChange();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variants]);
 
   const confirmDelete = async () => {
     if (!deleting) return;
@@ -365,7 +402,13 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                 </div>
                 <div className="admin-card-row__field">
                   <span className="admin-card-row__label">Envío estimado</span>
-                  <span>{formatPrice(v.shippingCostEstimate)}</span>
+                  <span>
+                    {fetchingShippingIds.has(v.id as number) ? (
+                      <Spinner animation="border" size="sm" role="status" aria-label="Consultando envío" />
+                    ) : (
+                      formatPrice(v.shippingCostEstimate)
+                    )}
+                  </span>
                 </div>
                 <div className="admin-card-row__field">
                   <span className="admin-card-row__label">Margen neto</span>
@@ -387,15 +430,6 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
                 </div>
                 <div className="admin-card-row__actions">
-                  <Button
-                    variant="outline-secondary"
-                    className="admin-touch-btn"
-                    disabled={refreshingId === v.id}
-                    onClick={() => refreshEstimate(v)}
-                    data-testid={`btn-refresh-shipping-estimate-${v.id}`}
-                  >
-                    {refreshingId === v.id ? 'Actualizando…' : 'Actualizar envío'}
-                  </Button>
                   <Button
                     variant="outline-primary"
                     className="admin-touch-btn"
@@ -449,7 +483,13 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                   <td data-testid={`variant-margin-${v.id}`}>
                     <Margin variant={v} />
                   </td>
-                  <td data-testid={`variant-shipping-estimate-${v.id}`}>{formatPrice(v.shippingCostEstimate)}</td>
+                  <td data-testid={`variant-shipping-estimate-${v.id}`}>
+                    {fetchingShippingIds.has(v.id as number) ? (
+                      <Spinner animation="border" size="sm" role="status" aria-label="Consultando envío" />
+                    ) : (
+                      formatPrice(v.shippingCostEstimate)
+                    )}
+                  </td>
                   <td data-testid={`variant-net-margin-${v.id}`}>
                     <NetMargin variant={v} />
                   </td>
@@ -462,16 +502,6 @@ const VariantTable: React.FC<VariantTableProps> = ({ productId, variants, onVari
                     <StatusBadge status={v.status === 'Active' ? 'Active' : 'Inactive'} />
                   </td>
                   <td>
-                    <Button
-                      size="sm"
-                      variant="outline-secondary"
-                      className="me-2"
-                      disabled={refreshingId === v.id}
-                      onClick={() => refreshEstimate(v)}
-                      data-testid={`btn-refresh-shipping-estimate-${v.id}`}
-                    >
-                      {refreshingId === v.id ? 'Actualizando…' : 'Actualizar envío'}
-                    </Button>
                     <Button
                       size="sm"
                       variant="outline-primary"
