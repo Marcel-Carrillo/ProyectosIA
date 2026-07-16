@@ -2,7 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { configure, get, verify } from '../../presentation/controllers/cjConnectionController';
 import { sync, listCatalog } from '../../presentation/controllers/cjCatalogSyncController';
-import { promote, activate, deactivate } from '../../presentation/controllers/cjCatalogPromotionController';
+import { promote, activate, deactivate, freightEstimate } from '../../presentation/controllers/cjCatalogPromotionController';
 
 // verify() performs a credential check against the real CJ Dropshipping API on
 // every call — rate-limited to prevent it being used to brute-force/enumerate
@@ -25,6 +25,14 @@ const cjPromoteLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Mirrors cjVerifyLimiter: hits the live CJ freight-quote API per call.
+const cjFreightEstimateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const cjRouter = Router({ mergeParams: true });
 
 cjRouter.post('/connection', configure);
@@ -35,5 +43,6 @@ cjRouter.get('/catalog', listCatalog);
 cjRouter.post('/catalog/promote', cjPromoteLimiter, promote);
 cjRouter.post('/catalog/:cjCatalogItemId/activate', activate);
 cjRouter.post('/catalog/:cjCatalogItemId/deactivate', deactivate);
+cjRouter.get('/catalog/:cjCatalogItemId/freight-estimate', cjFreightEstimateLimiter, freightEstimate);
 
 export default cjRouter;

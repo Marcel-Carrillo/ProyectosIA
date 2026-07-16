@@ -189,7 +189,7 @@ const ShipmentsPage: React.FC = () => {
                         <Button
                           variant="outline-primary"
                           size="sm"
-                          onClick={() => navigate(`/admin/shipments/${s.id}`)}
+                          onClick={() => navigate(`/shipments/${s.id}`)}
                         >
                           Ver
                         </Button>
@@ -231,7 +231,7 @@ const ShipmentsPage: React.FC = () => {
                       variant="outline-primary"
                       size="sm"
                       className="mt-2"
-                      onClick={() => navigate(`/admin/shipments/${s.id}`)}
+                      onClick={() => navigate(`/shipments/${s.id}`)}
                     >
                       Ver detalles
                     </Button>

@@ -8,6 +8,7 @@ const mockListCatalog = vi.fn();
 const mockPromote = vi.fn();
 const mockActivate = vi.fn();
 const mockDeactivate = vi.fn();
+const mockFreightEstimate = vi.fn();
 const mockGetAllCategories = vi.fn();
 
 const mockGetConnection = vi.fn();
@@ -21,6 +22,7 @@ vi.mock('../../services/cjCatalogService', async () => ({
     promote: (...args: unknown[]) => mockPromote(...args),
     activate: (...args: unknown[]) => mockActivate(...args),
     deactivate: (...args: unknown[]) => mockDeactivate(...args),
+    freightEstimate: (...args: unknown[]) => mockFreightEstimate(...args),
   },
   extractCjCatalogErrorMessage: (await vi.importActual('../../services/cjCatalogService')).extractCjCatalogErrorMessage,
   mapCjCatalogError: (await vi.importActual('../../services/cjCatalogService')).mapCjCatalogError,
@@ -119,6 +121,11 @@ describe('CjCatalogPage', () => {
       { id: 1, name: 'Dresses', description: null, imageUrl: null, status: 'Active', parentId: null, createdAt: '', updatedAt: '' },
     ]);
     mockGetConnection.mockResolvedValue({ data: baseConnection });
+    mockFreightEstimate.mockResolvedValue({
+      success: true,
+      data: { shippingCostEstimate: 3.42, suggestedPublicPrice: 13.99 },
+      message: 'ok',
+    });
   });
 
   it('shows a loading state while fetching', async () => {
@@ -244,12 +251,15 @@ describe('CjCatalogPage', () => {
     const modal = await screen.findByTestId('modal-promote-cj');
 
     fireEvent.change(within(modal).getByTestId('select-promote-category'), { target: { value: '1' } });
+    // The public price is auto-filled from the automatic shipping-estimate
+    // fetch (cost + shipping + margin) before the admin ever clicks anything.
+    await waitFor(() => expect(within(modal).getByTestId('input-price-1')).toHaveValue(13.99));
     fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
 
     await waitFor(() =>
       expect(mockPromote).toHaveBeenCalledWith(
         3,
-        expect.objectContaining({ categoryId: 1, items: [{ cjCatalogItemId: 1, publicPrice: undefined, compareAtPrice: undefined }] })
+        expect.objectContaining({ categoryId: 1, items: [{ cjCatalogItemId: 1, publicPrice: 13.99, compareAtPrice: undefined }] })
       )
     );
     await waitFor(() => expect(screen.queryByTestId('modal-promote-cj')).not.toBeInTheDocument());

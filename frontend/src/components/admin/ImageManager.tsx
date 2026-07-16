@@ -105,7 +105,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({
                     variant="top"
                     src={image.url}
                     alt={image.altText ?? ''}
-                    style={{ height: 120, objectFit: 'cover' }}
+                    style={{ height: 220, objectFit: 'contain', background: '#f8f9fa' }}
                   />
                   <Card.Body className="p-2">
                     {isMain && <div className="badge bg-primary mb-1">Principal</div>}

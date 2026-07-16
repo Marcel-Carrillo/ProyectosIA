@@ -110,6 +110,6 @@ describe('ShipmentsPage', () => {
     await waitFor(() => expect(screen.getAllByText(/DHL/i).length).toBeGreaterThan(0));
     const viewButtons = screen.getAllByText('Ver');
     fireEvent.click(viewButtons[0]!);
-    expect(mockNavigate).toHaveBeenCalledWith('/admin/shipments/1');
+    expect(mockNavigate).toHaveBeenCalledWith('/shipments/1');
   });
 });
