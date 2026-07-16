@@ -118,7 +118,7 @@ const ShipmentDetailPage: React.FC = () => {
                   <Button
                     variant="link"
                     className="p-0"
-                    onClick={() => navigate(`/admin/customer-orders/${shipment.customerOrderId}`)}
+                    onClick={() => navigate(`/customer-orders/${shipment.customerOrderId}`)}
                   >
                     #{shipment.customerOrderId}
                     {shipment.customerOrder && ` — ${shipment.customerOrder.orderNumber}`}
@@ -132,7 +132,7 @@ const ShipmentDetailPage: React.FC = () => {
                       <Button
                         variant="link"
                         className="p-0"
-                        onClick={() => navigate(`/admin/supplier-orders/${shipment.supplierOrderId}`)}
+                        onClick={() => navigate(`/supplier-orders/${shipment.supplierOrderId}`)}
                       >
                         #{shipment.supplierOrderId}
                       </Button>

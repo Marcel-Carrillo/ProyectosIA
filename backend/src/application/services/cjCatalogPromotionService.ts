@@ -3,6 +3,8 @@ import { ICjCatalogItemRepository } from '../../domain/repositories/cjCatalogIte
 import { ICategoryRepository } from '../../domain/repositories';
 import { ISupplierIntegrationRepository } from '../../domain/repositories/supplierIntegrationRepository';
 import { IProductVariantRepository } from '../../domain/repositories/productRepository';
+import { IAutomationSettingsRepository } from '../../domain/repositories/automationSettingsRepository';
+import { ICjClient } from '../../infrastructure/external/cjTypes';
 import { CjCatalogItem } from '../../domain/models/cjCatalogItem';
 import { ProductService } from './productService';
 import { SupplierIntegrationNotFoundError } from '../../infrastructure/repositories/supplierIntegrationRepository';
@@ -12,10 +14,12 @@ import {
   CjPromotionValidationError,
   CjPromotionItemError,
   CjPromotionRequestInput,
+  CjApiUnavailableError,
 } from '../validator';
 import { logger } from '../../infrastructure/logger';
 import { extractCjImages, planProductImages } from './cjImageExtraction';
 import { setProductMainImage, createProductImageRecord } from './cjProductImageSync';
+import { roundToPsychologicalPrice } from './pricing';
 
 const DEFAULT_MARKUP_ENV = 'CJ_DEFAULT_MARKUP_MULTIPLIER';
 
@@ -64,7 +68,9 @@ export class CjCatalogPromotionService {
     private readonly categoryRepo: ICategoryRepository,
     private readonly productService: ProductService,
     private readonly variantRepo: IProductVariantRepository,
-    private readonly integrationRepo: ISupplierIntegrationRepository
+    private readonly integrationRepo: ISupplierIntegrationRepository,
+    private readonly settingsRepo: IAutomationSettingsRepository,
+    private readonly cjClient: ICjClient
   ) {}
 
   private getDefaultMarkupMultiplier(): number | undefined {
@@ -314,6 +320,46 @@ export class CjCatalogPromotionService {
     await this.variantRepo.update(variant.id, { status: 'Inactive' });
 
     return { productId: variant.productId, productVariantId: variant.id };
+  }
+
+  // Read-only freight lookup for a catalog item that hasn't been promoted to
+  // a ProductVariant yet — reuses the same CJ freight-quote client as
+  // ProductVariantService.refreshFreightEstimate, but keyed off the catalog
+  // item's own externalRef (vid) since no variant exists at this point. Lets
+  // the admin see the real supplier shipping cost, and a suggested public
+  // price that already includes it, before promoting/activating a product.
+  async estimateFreight(
+    supplierId: number,
+    cjCatalogItemId: number,
+    destinationCountry?: string
+  ): Promise<{ shippingCostEstimate: number; suggestedPublicPrice: number }> {
+    const { catalogItem } = await this.resolveOwnedCatalogItem(supplierId, cjCatalogItemId);
+
+    const settings = await this.settingsRepo.get();
+    const country = destinationCountry ?? settings.defaultFreightDestinationCountry;
+
+    let quote;
+    try {
+      quote = await this.cjClient.calculateFreight({
+        startCountryCode: 'CN',
+        endCountryCode: country,
+        products: [{ vid: catalogItem.externalRef, quantity: 1 }],
+      });
+    } catch {
+      throw new CjApiUnavailableError();
+    }
+    if (quote.length === 0) throw new CjApiUnavailableError('No freight options returned');
+
+    const lowest = quote.reduce((min, opt) => (opt.logisticPrice < min.logisticPrice ? opt : min));
+    const markup = this.getDefaultMarkupMultiplier();
+    const supplierCost = Number(catalogItem.supplierCost);
+    const rawPrice =
+      markup !== undefined ? supplierCost * markup + lowest.logisticPrice : supplierCost + lowest.logisticPrice;
+
+    return {
+      shippingCostEstimate: lowest.logisticPrice,
+      suggestedPublicPrice: roundToPsychologicalPrice(rawPrice),
+    };
   }
 
   private async resolveOwnedCatalogItem(

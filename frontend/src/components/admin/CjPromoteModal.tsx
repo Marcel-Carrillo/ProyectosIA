@@ -15,6 +15,8 @@ type CjPromoteModalProps = {
 
 type PriceOverride = { publicPrice: string; compareAtPrice: string };
 
+type FreightEstimateState = { shippingCostEstimate: number; suggestedPublicPrice: number } | 'error' | undefined;
+
 const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   show,
   onHide,
@@ -28,12 +30,15 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   const [overrides, setOverrides] = useState<Record<number, PriceOverride>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [freightEstimates, setFreightEstimates] = useState<Record<number, FreightEstimateState>>({});
+  const [estimatingId, setEstimatingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (show) {
       setCategoryId('');
       setActivateOnPromote(false);
       setOverrides({});
+      setFreightEstimates({});
       setError('');
     }
   }, [show]);
@@ -43,6 +48,26 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
       ...prev,
       [id]: { ...(prev[id] ?? { publicPrice: '', compareAtPrice: '' }), [field]: value },
     }));
+  };
+
+  // Fetches the real supplier shipping cost for this item before promoting,
+  // so the admin can see it (and the price it implies) instead of only
+  // discovering it after the variant already exists (VariantTable's
+  // "Actualizar envío"). Read-only — never blocks promoting without it.
+  const handleEstimateFreight = async (itemId: number) => {
+    setEstimatingId(itemId);
+    try {
+      const response = await cjCatalogService.freightEstimate(supplierId, itemId);
+      setFreightEstimates((prev) => ({ ...prev, [itemId]: response.data }));
+    } catch {
+      setFreightEstimates((prev) => ({ ...prev, [itemId]: 'error' }));
+    } finally {
+      setEstimatingId(null);
+    }
+  };
+
+  const applySuggestedPrice = (itemId: number, suggestedPublicPrice: number) => {
+    handlePriceChange(itemId, 'publicPrice', String(suggestedPublicPrice));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,45 +139,78 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
                 <tr>
                   <th>Artículo</th>
                   <th>Coste</th>
+                  <th>Envío estimado</th>
                   <th>Precio público</th>
                   <th>Precio de comparación</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      {item.title}
-                      {(item.size || item.color) && (
-                        <div className="admin-card-row__meta">
-                          {[item.size, item.color].filter(Boolean).join(' / ')}
-                        </div>
-                      )}
-                    </td>
-                    <td>{item.supplierCost}</td>
-                    <td>
-                      <Form.Control
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Margen predeterminado"
-                        value={overrides[item.id]?.publicPrice ?? ''}
-                        onChange={(e) => handlePriceChange(item.id, 'publicPrice', e.target.value)}
-                        data-testid={`input-price-${item.id}`}
-                      />
-                    </td>
-                    <td>
-                      <Form.Control
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={overrides[item.id]?.compareAtPrice ?? ''}
-                        onChange={(e) => handlePriceChange(item.id, 'compareAtPrice', e.target.value)}
-                        data-testid={`input-compare-price-${item.id}`}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {items.map((item) => {
+                  const estimate = freightEstimates[item.id];
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        {item.title}
+                        {(item.size || item.color) && (
+                          <div className="admin-card-row__meta">
+                            {[item.size, item.color].filter(Boolean).join(' / ')}
+                          </div>
+                        )}
+                      </td>
+                      <td>{item.supplierCost}</td>
+                      <td>
+                        {estimate && estimate !== 'error' ? (
+                          <div className="admin-card-row__meta">
+                            <div>{estimate.shippingCostEstimate.toFixed(2)} €</div>
+                            <Button
+                              size="sm"
+                              variant="link"
+                              className="p-0"
+                              onClick={() => applySuggestedPrice(item.id, estimate.suggestedPublicPrice)}
+                              data-testid={`btn-use-suggested-price-${item.id}`}
+                            >
+                              Usar precio sugerido ({estimate.suggestedPublicPrice.toFixed(2)} €)
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline-secondary"
+                            disabled={estimatingId === item.id}
+                            onClick={() => handleEstimateFreight(item.id)}
+                            data-testid={`btn-estimate-freight-${item.id}`}
+                          >
+                            {estimatingId === item.id ? 'Consultando…' : 'Consultar envío'}
+                          </Button>
+                        )}
+                        {estimate === 'error' && (
+                          <div className="text-danger small mt-1">No se pudo consultar el envío.</div>
+                        )}
+                      </td>
+                      <td>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Margen predeterminado"
+                          value={overrides[item.id]?.publicPrice ?? ''}
+                          onChange={(e) => handlePriceChange(item.id, 'publicPrice', e.target.value)}
+                          data-testid={`input-price-${item.id}`}
+                        />
+                      </td>
+                      <td>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={overrides[item.id]?.compareAtPrice ?? ''}
+                          onChange={(e) => handlePriceChange(item.id, 'compareAtPrice', e.target.value)}
+                          data-testid={`input-compare-price-${item.id}`}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </Table>
           </div>

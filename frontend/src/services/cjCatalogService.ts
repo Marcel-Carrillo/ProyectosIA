@@ -5,6 +5,7 @@ import {
   CjPromoteRequest,
   CjPromoteResponse,
   CjActionResponse,
+  CjFreightEstimateResponse,
   CjAdminApiError,
 } from '../types/cjCatalog';
 
@@ -31,6 +32,8 @@ export function mapCjCatalogError(code: string): string {
       return 'La conexión con CJ Dropshipping no está lista. Verifique la conexión primero.';
     case 'CJ_CONNECTION_NOT_FOUND':
       return 'No hay una conexión con CJ Dropshipping configurada para este proveedor.';
+    case 'CJ_API_UNAVAILABLE':
+      return 'No se pudo consultar el envío: la API de CJ Dropshipping no está disponible ahora mismo.';
     case 'VALIDATION_ERROR':
       return 'Revise los campos del formulario e inténtelo de nuevo.';
     default:
@@ -92,6 +95,18 @@ export const cjCatalogService = {
       return response.data;
     } catch (error) {
       console.error('Error deactivating CJ catalog item:', error);
+      throw error;
+    }
+  },
+
+  freightEstimate: async (supplierId: number, cjCatalogItemId: number): Promise<CjFreightEstimateResponse> => {
+    try {
+      const response = await axios.get<CjFreightEstimateResponse>(
+        `${cjBase(supplierId)}/catalog/${cjCatalogItemId}/freight-estimate`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error estimating CJ catalog item freight:', error);
       throw error;
     }
   },

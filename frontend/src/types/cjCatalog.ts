@@ -62,6 +62,12 @@ export interface CjActionResponse {
   message: string;
 }
 
+export interface CjFreightEstimateResponse {
+  success: boolean;
+  data: { shippingCostEstimate: number; suggestedPublicPrice: number };
+  message: string;
+}
+
 export interface CjAdminApiError {
   success: false;
   error: {

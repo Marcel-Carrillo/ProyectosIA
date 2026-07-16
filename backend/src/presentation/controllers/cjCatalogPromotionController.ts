@@ -7,6 +7,8 @@ import { ProductVariantRepository } from '../../infrastructure/repositories/prod
 import { ProductTranslationRepository } from '../../infrastructure/repositories/productTranslationRepository';
 import { ProductService } from '../../application/services/productService';
 import { SupplierIntegrationRepository } from '../../infrastructure/repositories/supplierIntegrationRepository';
+import { AutomationSettingsRepository } from '../../infrastructure/repositories/automationSettingsRepository';
+import { cjClient } from '../../infrastructure/external/cjClient';
 import { ValidationError, validateCjPromotionData } from '../../application/validator';
 
 function parseSupplierIdParam(value: string): number {
@@ -27,7 +29,9 @@ const cjCatalogPromotionService = new CjCatalogPromotionService(
   new CategoryRepository(),
   new ProductService(new ProductRepository(), productVariantRepository, new ProductTranslationRepository()),
   productVariantRepository,
-  new SupplierIntegrationRepository()
+  new SupplierIntegrationRepository(),
+  new AutomationSettingsRepository(),
+  cjClient
 );
 
 export async function promote(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -59,6 +63,18 @@ export async function deactivate(req: Request, res: Response, next: NextFunction
     const cjCatalogItemId = parseCjCatalogItemIdParam(req.params['cjCatalogItemId'] as string);
     const result = await cjCatalogPromotionService.deactivate(supplierId, cjCatalogItemId);
     res.json({ success: true, data: result, message: 'CJ catalog item deactivated' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function freightEstimate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const supplierId = parseSupplierIdParam(req.params['supplierId'] as string);
+    const cjCatalogItemId = parseCjCatalogItemIdParam(req.params['cjCatalogItemId'] as string);
+    const destinationCountry = typeof req.query['destinationCountry'] === 'string' ? req.query['destinationCountry'] : undefined;
+    const result = await cjCatalogPromotionService.estimateFreight(supplierId, cjCatalogItemId, destinationCountry);
+    res.json({ success: true, data: result, message: 'CJ catalog item freight estimate retrieved' });
   } catch (err) {
     next(err);
   }
