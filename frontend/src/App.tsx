@@ -126,6 +126,7 @@ const App: React.FC = () => {
           <CartProvider>
             <Routes>
               <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/admin" element={<Navigate to="/products" replace />} />
 
               <Route element={<CookieConsentProvider><StorefrontLayout /></CookieConsentProvider>}>
                 <Route path="/" element={<Navigate to="/catalog" replace />} />

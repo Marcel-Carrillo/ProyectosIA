@@ -1464,6 +1464,66 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/admin/suppliers/{supplierId}/cj/catalog/{cjCatalogItemId}/freight-estimate:
+    get:
+      summary: Estimate supplier shipping cost for a not-yet-promoted CJ catalog item (admin)
+      description: >
+        Calls CJ Dropshipping's freight calculation using the catalog item's own `externalRef`
+        (`vid`) — no `ProductVariant` needs to exist yet, unlike
+        `POST /api/admin/products/{id}/variants/{variantId}/freight-estimate`. Lets the admin
+        see the real supplier shipping cost, and a suggested public price that already
+        includes it (rounded up to a ",99" ending via the same rounding rule as elsewhere),
+        before promoting/activating a product. Read-only — never writes to the catalog item or
+        any variant. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: path
+          name: cjCatalogItemId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: destinationCountry
+          required: false
+          description: ISO country code; defaults to the store's configured default freight destination.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CJ catalog item freight estimate retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjFreightEstimateResponse'
+        '422':
+          description: Item not found for this supplier (CJ_CATALOG_ITEM_NOT_PROMOTED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/admin/supplier-orders/{id}/cj/freight-quote:
     post:
       summary: Quote CJ Dropshipping freight for a supplier order (admin)
@@ -5272,6 +5332,36 @@ components:
         message:
           type: string
           example: CJ catalog item activated
+
+    CjFreightEstimateResult:
+      type: object
+      properties:
+        shippingCostEstimate:
+          type: number
+          format: double
+          example: 3.42
+          description: Lowest `logisticPrice` returned by CJ Dropshipping's freight calculation.
+        suggestedPublicPrice:
+          type: number
+          format: double
+          example: 13.99
+          description: >
+            Supplier cost (times `CJ_DEFAULT_MARKUP_MULTIPLIER` if configured) plus
+            `shippingCostEstimate`, rounded up to a ",99" ending. A starting point only —
+            never applied automatically; the admin must still submit it (or their own price)
+            in the promote request.
+
+    CjFreightEstimateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CjFreightEstimateResult'
+        message:
+          type: string
+          example: CJ catalog item freight estimate retrieved
 
     CjPromotionItemError:
       type: object

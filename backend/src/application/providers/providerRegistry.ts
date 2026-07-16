@@ -8,6 +8,7 @@ import { CategoryRepository } from '../../infrastructure/repositories/categoryRe
 import { ProductRepository } from '../../infrastructure/repositories/productRepository';
 import { ProductVariantRepository } from '../../infrastructure/repositories/productVariantRepository';
 import { ProductTranslationRepository } from '../../infrastructure/repositories/productTranslationRepository';
+import { AutomationSettingsRepository } from '../../infrastructure/repositories/automationSettingsRepository';
 import { cjClient, CJ_PLACEHOLDER_API_KEY } from '../../infrastructure/external/cjClient';
 import { CjPromotionCategoryRequiredError, CjPromotionValidationError } from '../validator';
 import { logger } from '../../infrastructure/logger';
@@ -51,7 +52,9 @@ const cjCatalogPromotionService = new CjCatalogPromotionService(
   categoryRepository,
   productService,
   productVariantRepository,
-  supplierIntegrationRepository
+  supplierIntegrationRepository,
+  new AutomationSettingsRepository(),
+  cjClient
 );
 
 // Mirrors CjCatalogSyncService.listStagedCatalog's own page-size clamp (100).

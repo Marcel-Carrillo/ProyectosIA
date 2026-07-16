@@ -4,12 +4,14 @@ import { ICjCatalogItemRepository } from '../../../domain/repositories/cjCatalog
 import { ICategoryRepository } from '../../../domain/repositories';
 import { IProductVariantRepository } from '../../../domain/repositories/productRepository';
 import { ISupplierIntegrationRepository } from '../../../domain/repositories/supplierIntegrationRepository';
+import { IAutomationSettingsRepository } from '../../../domain/repositories/automationSettingsRepository';
+import { ICjClient } from '../../../infrastructure/external/cjTypes';
 import { ProductVariant } from '../../../domain/models/productVariant';
 import { Category } from '../../../domain/models';
 import { SupplierIntegration } from '../../../domain/models/supplierIntegration';
 import { ProductService } from '../productService';
 import { SupplierIntegrationNotFoundError } from '../../../infrastructure/repositories/supplierIntegrationRepository';
-import { CjCatalogItemNotPromotedError, CjPromotionValidationError } from '../../validator';
+import { CjCatalogItemNotPromotedError, CjPromotionValidationError, CjApiUnavailableError } from '../../validator';
 
 const mockProductCreate = jest.fn();
 const mockProductUpdate = jest.fn();
@@ -66,6 +68,8 @@ describe('CjCatalogPromotionService', () => {
   let variantRepo: jest.Mocked<IProductVariantRepository>;
   let integrationRepo: jest.Mocked<ISupplierIntegrationRepository>;
   let productService: { resolveUniqueSlug: jest.Mock; update: jest.Mock };
+  let settingsRepo: jest.Mocked<IAutomationSettingsRepository>;
+  let cjClient: jest.Mocked<ICjClient>;
   let service: CjCatalogPromotionService;
 
   beforeEach(() => {
@@ -111,6 +115,25 @@ describe('CjCatalogPromotionService', () => {
       resolveUniqueSlug: jest.fn().mockResolvedValue('test-dress'),
       update: jest.fn(),
     };
+    settingsRepo = {
+      get: jest.fn().mockResolvedValue({
+        id: 1,
+        targetMargin: 5,
+        defaultFreightDestinationCountry: 'ES',
+        carrierAllowList: [],
+      }),
+      update: jest.fn(),
+    };
+    cjClient = {
+      verifyConnection: jest.fn(),
+      fetchCategories: jest.fn(),
+      fetchCatalog: jest.fn(),
+      fetchVariants: jest.fn(),
+      calculateFreight: jest.fn(),
+      createOrder: jest.fn(),
+      getOrderDetail: jest.fn(),
+      simulateSandboxAdvance: jest.fn(),
+    };
 
     mockProductUpdate.mockResolvedValue({});
     mockProductImageCreate.mockResolvedValue({});
@@ -124,7 +147,9 @@ describe('CjCatalogPromotionService', () => {
       categoryRepo,
       productService as unknown as ProductService,
       variantRepo,
-      integrationRepo
+      integrationRepo,
+      settingsRepo,
+      cjClient
     );
   });
 
@@ -502,6 +527,66 @@ describe('CjCatalogPromotionService', () => {
       variantRepo.findByCjCatalogItemId.mockResolvedValue(null);
 
       await expect(service.deactivate(3, 1)).rejects.toThrow(CjCatalogItemNotPromotedError);
+    });
+  });
+
+  describe('estimateFreight', () => {
+    it('should_return_shipping_cost_and_a_rounded_suggested_price_using_cost_plus_shipping', async () => {
+      catalogRepo.findById.mockResolvedValue(buildCatalogItem({ supplierCost: '10.00' }));
+      cjClient.calculateFreight.mockResolvedValue([
+        { logisticName: 'CJPacket', logisticAging: '7-12', logisticPrice: 3.42, totalPostageFee: 3.42 },
+        { logisticName: 'DHL', logisticAging: '3-5', logisticPrice: 8.0, totalPostageFee: 8.0 },
+      ]);
+
+      const result = await service.estimateFreight(3, 1);
+
+      expect(cjClient.calculateFreight).toHaveBeenCalledWith({
+        startCountryCode: 'CN',
+        endCountryCode: 'ES',
+        products: [{ vid: 'vid-1', quantity: 1 }],
+      });
+      expect(result.shippingCostEstimate).toBe(3.42);
+      // cost 10 + shipping 3.42 = 13.42 -> rounded up to next ",99" ending
+      expect(result.suggestedPublicPrice).toBe(13.99);
+    });
+
+    it('should_apply_the_configured_default_markup_before_rounding_when_set', async () => {
+      process.env['CJ_DEFAULT_MARKUP_MULTIPLIER'] = '2';
+      catalogRepo.findById.mockResolvedValue(buildCatalogItem({ supplierCost: '10.00' }));
+      cjClient.calculateFreight.mockResolvedValue([
+        { logisticName: 'CJPacket', logisticAging: '7-12', logisticPrice: 3.0, totalPostageFee: 3.0 },
+      ]);
+
+      const result = await service.estimateFreight(3, 1);
+
+      // (10 * 2) + 3 = 23 -> rounds up to the next whole unit's ",99" ending
+      expect(result.suggestedPublicPrice).toBe(23.99);
+    });
+
+    it('should_reject_when_supplier_has_no_integration', async () => {
+      integrationRepo.findBySupplierId.mockResolvedValue(null);
+
+      await expect(service.estimateFreight(3, 1)).rejects.toThrow(SupplierIntegrationNotFoundError);
+    });
+
+    it('should_reject_when_item_not_found_for_supplier', async () => {
+      catalogRepo.findById.mockResolvedValue(null);
+
+      await expect(service.estimateFreight(3, 1)).rejects.toThrow(CjCatalogItemNotPromotedError);
+    });
+
+    it('should_wrap_cj_client_failures_in_CjApiUnavailableError', async () => {
+      catalogRepo.findById.mockResolvedValue(buildCatalogItem());
+      cjClient.calculateFreight.mockRejectedValue(new Error('network error'));
+
+      await expect(service.estimateFreight(3, 1)).rejects.toThrow(CjApiUnavailableError);
+    });
+
+    it('should_reject_when_cj_returns_no_freight_options', async () => {
+      catalogRepo.findById.mockResolvedValue(buildCatalogItem());
+      cjClient.calculateFreight.mockResolvedValue([]);
+
+      await expect(service.estimateFreight(3, 1)).rejects.toThrow(CjApiUnavailableError);
     });
   });
 });
