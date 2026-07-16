@@ -14,9 +14,17 @@ describe('roundToPsychologicalPrice', () => {
   });
 
   it('should_never_return_a_result_below_the_raw_input', () => {
-    for (const value of [0.5, 1, 4.99, 9.999, 15, 99.01]) {
+    for (const value of [0.5, 1, 4.99, 9.999, 15, 99.01, 8.995, 9.995, 12.995, 100, 0.99, 4.995]) {
       expect(roundToPsychologicalPrice(value)).toBeGreaterThanOrEqual(value);
     }
+  });
+
+  it('should_round_up_past_the_dot99_boundary_instead_of_tie_breaking_down_on_float_noise', () => {
+    // Regression: `9.995 * 100` evaluates to 999.4999999999999 in IEEE-754,
+    // not 999.5, which previously made Math.round tie-break down to 9.99 —
+    // one cent *below* the raw 9.995 input.
+    expect(roundToPsychologicalPrice(9.995)).toBe(10.99);
+    expect(roundToPsychologicalPrice(8.995)).toBe(9.99);
   });
 
   it('should_return_0_for_non_finite_or_non_positive_input', () => {

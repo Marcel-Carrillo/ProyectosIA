@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import CjPromoteModal from '../CjPromoteModal';
 import { CjCatalogItem } from '../../../types/cjCatalog';
 import { Category } from '../../../types/category';
@@ -34,7 +34,11 @@ const item: CjCatalogItem = {
   productVariantId: null,
 };
 
-const categories: Category[] = [{ id: 1, name: 'Dresses' }];
+const item2: CjCatalogItem = { ...item, id: 2, title: 'Blue Dress' };
+
+const categories: Category[] = [
+  { id: 1, name: 'Dresses', description: null, imageUrl: null, status: 'Active', parentId: null, createdAt: '', updatedAt: '' },
+];
 
 function renderModal(overrideItems: CjCatalogItem[] = [item]) {
   return render(
@@ -49,28 +53,26 @@ function renderModal(overrideItems: CjCatalogItem[] = [item]) {
   );
 }
 
-describe('CjPromoteModal — freight estimate', () => {
+describe('CjPromoteModal — automatic freight estimate', () => {
   beforeEach(() => {
     mockFreightEstimate.mockReset();
     mockPromote.mockReset();
   });
 
-  it('fetches and displays the shipping estimate and suggested price on click', async () => {
+  it('fetches the shipping estimate for every item automatically on open, with no manual button', async () => {
     mockFreightEstimate.mockResolvedValue({
       success: true,
       data: { shippingCostEstimate: 3.42, suggestedPublicPrice: 13.99 },
       message: 'ok',
     });
     renderModal();
-
-    fireEvent.click(screen.getByTestId('btn-estimate-freight-1'));
 
     await waitFor(() => expect(mockFreightEstimate).toHaveBeenCalledWith(3, 1));
+    expect(screen.queryByText('Consultar envío')).not.toBeInTheDocument();
     expect(await screen.findByText('3.42 €')).toBeInTheDocument();
-    expect(screen.getByTestId('btn-use-suggested-price-1')).toHaveTextContent('13.99');
   });
 
-  it('fills the public price input with the suggested price on "Usar precio sugerido"', async () => {
+  it('pre-fills the public price with the suggested price (cost + shipping + margin) automatically', async () => {
     mockFreightEstimate.mockResolvedValue({
       success: true,
       data: { shippingCostEstimate: 3.42, suggestedPublicPrice: 13.99 },
@@ -78,19 +80,27 @@ describe('CjPromoteModal — freight estimate', () => {
     });
     renderModal();
 
-    fireEvent.click(screen.getByTestId('btn-estimate-freight-1'));
-    await screen.findByTestId('btn-use-suggested-price-1');
-    fireEvent.click(screen.getByTestId('btn-use-suggested-price-1'));
-
-    expect(screen.getByTestId('input-price-1')).toHaveValue(13.99);
+    await waitFor(() => expect(screen.getByTestId('input-price-1')).toHaveValue(13.99));
   });
 
-  it('shows an inline error and lets the admin retry when the estimate call fails', async () => {
+  it('fetches all selected items in parallel, one call per item', async () => {
+    mockFreightEstimate.mockResolvedValue({
+      success: true,
+      data: { shippingCostEstimate: 1, suggestedPublicPrice: 11.99 },
+      message: 'ok',
+    });
+    renderModal([item, item2]);
+
+    await waitFor(() => expect(mockFreightEstimate).toHaveBeenCalledTimes(2));
+    expect(mockFreightEstimate).toHaveBeenCalledWith(3, 1);
+    expect(mockFreightEstimate).toHaveBeenCalledWith(3, 2);
+  });
+
+  it('shows an inline error per item and still allows manual price entry when the estimate call fails', async () => {
     mockFreightEstimate.mockRejectedValueOnce(new Error('network'));
     renderModal();
 
-    fireEvent.click(screen.getByTestId('btn-estimate-freight-1'));
     expect(await screen.findByText('No se pudo consultar el envío.')).toBeInTheDocument();
-    expect(screen.getByTestId('btn-estimate-freight-1')).toBeInTheDocument();
+    expect(screen.getByTestId('input-price-1')).not.toBeDisabled();
   });
 });

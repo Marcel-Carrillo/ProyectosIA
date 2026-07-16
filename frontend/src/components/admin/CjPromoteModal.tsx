@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Button, Alert, Table } from 'react-bootstrap';
+import { Modal, Form, Button, Alert, Table, Spinner } from 'react-bootstrap';
 import { cjCatalogService, extractCjCatalogErrorMessage } from '../../services/cjCatalogService';
 import { Category } from '../../types/category';
 import { CjCatalogItem } from '../../types/cjCatalog';
@@ -15,7 +15,11 @@ type CjPromoteModalProps = {
 
 type PriceOverride = { publicPrice: string; compareAtPrice: string };
 
-type FreightEstimateState = { shippingCostEstimate: number; suggestedPublicPrice: number } | 'error' | undefined;
+type FreightEstimateState =
+  | 'loading'
+  | 'error'
+  | { shippingCostEstimate: number; suggestedPublicPrice: number }
+  | undefined;
 
 const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   show,
@@ -31,7 +35,6 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [freightEstimates, setFreightEstimates] = useState<Record<number, FreightEstimateState>>({});
-  const [estimatingId, setEstimatingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (show) {
@@ -43,31 +46,57 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
     }
   }, [show]);
 
+  // Fetches the real supplier shipping cost for every selected item as soon
+  // as the modal opens — no manual "consultar envío" action: the public
+  // price the admin sees must already include shipping + margin by default
+  // (`items`/`supplierId` are intentionally left out of the dep array since
+  // `items` is a fresh array reference on every parent render — this must
+  // run once per open, mirroring the reset effect above, not on every
+  // re-render while the modal stays open).
+  useEffect(() => {
+    if (!show || items.length === 0) return;
+    let cancelled = false;
+    setFreightEstimates(Object.fromEntries(items.map((item) => [item.id, 'loading' as const])));
+
+    Promise.allSettled(items.map((item) => cjCatalogService.freightEstimate(supplierId, item.id))).then(
+      (results) => {
+        if (cancelled) return;
+        setFreightEstimates((prev) => {
+          const next = { ...prev };
+          results.forEach((result, i) => {
+            const itemId = items[i]!.id;
+            next[itemId] = result.status === 'fulfilled' ? result.value.data : 'error';
+          });
+          return next;
+        });
+        setOverrides((prev) => {
+          const next = { ...prev };
+          results.forEach((result, i) => {
+            if (result.status !== 'fulfilled') return;
+            const itemId = items[i]!.id;
+            const existing = next[itemId];
+            if (existing?.publicPrice) return; // never clobber a price the admin already typed
+            next[itemId] = {
+              ...(existing ?? { publicPrice: '', compareAtPrice: '' }),
+              publicPrice: String(result.value.data.suggestedPublicPrice),
+            };
+          });
+          return next;
+        });
+      }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show]);
+
   const handlePriceChange = (id: number, field: keyof PriceOverride, value: string) => {
     setOverrides((prev) => ({
       ...prev,
       [id]: { ...(prev[id] ?? { publicPrice: '', compareAtPrice: '' }), [field]: value },
     }));
-  };
-
-  // Fetches the real supplier shipping cost for this item before promoting,
-  // so the admin can see it (and the price it implies) instead of only
-  // discovering it after the variant already exists (VariantTable's
-  // "Actualizar envío"). Read-only — never blocks promoting without it.
-  const handleEstimateFreight = async (itemId: number) => {
-    setEstimatingId(itemId);
-    try {
-      const response = await cjCatalogService.freightEstimate(supplierId, itemId);
-      setFreightEstimates((prev) => ({ ...prev, [itemId]: response.data }));
-    } catch {
-      setFreightEstimates((prev) => ({ ...prev, [itemId]: 'error' }));
-    } finally {
-      setEstimatingId(null);
-    }
-  };
-
-  const applySuggestedPrice = (itemId: number, suggestedPublicPrice: number) => {
-    handlePriceChange(itemId, 'publicPrice', String(suggestedPublicPrice));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,7 +169,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
                   <th>Artículo</th>
                   <th>Coste</th>
                   <th>Envío estimado</th>
-                  <th>Precio público</th>
+                  <th>Precio público (coste + envío + margen)</th>
                   <th>Precio de comparación</th>
                 </tr>
               </thead>
@@ -158,33 +187,15 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
                         )}
                       </td>
                       <td>{item.supplierCost}</td>
-                      <td>
-                        {estimate && estimate !== 'error' ? (
-                          <div className="admin-card-row__meta">
-                            <div>{estimate.shippingCostEstimate.toFixed(2)} €</div>
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="p-0"
-                              onClick={() => applySuggestedPrice(item.id, estimate.suggestedPublicPrice)}
-                              data-testid={`btn-use-suggested-price-${item.id}`}
-                            >
-                              Usar precio sugerido ({estimate.suggestedPublicPrice.toFixed(2)} €)
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline-secondary"
-                            disabled={estimatingId === item.id}
-                            onClick={() => handleEstimateFreight(item.id)}
-                            data-testid={`btn-estimate-freight-${item.id}`}
-                          >
-                            {estimatingId === item.id ? 'Consultando…' : 'Consultar envío'}
-                          </Button>
+                      <td data-testid={`variant-shipping-estimate-${item.id}`}>
+                        {estimate === 'loading' && (
+                          <Spinner animation="border" size="sm" role="status" aria-label="Consultando envío" />
                         )}
                         {estimate === 'error' && (
-                          <div className="text-danger small mt-1">No se pudo consultar el envío.</div>
+                          <span className="text-danger small">No se pudo consultar el envío.</span>
+                        )}
+                        {estimate && estimate !== 'loading' && estimate !== 'error' && (
+                          <span>{estimate.shippingCostEstimate.toFixed(2)} €</span>
                         )}
                       </td>
                       <td>
