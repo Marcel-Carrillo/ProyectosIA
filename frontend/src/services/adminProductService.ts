@@ -58,6 +58,10 @@ export function extractErrorMessage(error: unknown): string {
   return mapProductError(code ?? '');
 }
 
+export function extractErrorCode(error: unknown): string {
+  return (error as AxiosError<AdminApiError>).response?.data?.error?.code ?? '';
+}
+
 // ─── Admin product CRUD (+ nested variants and images) ───────────────────────
 // Security invariant: supplier fields (supplierId/supplierReference/
 // supplierCost/supplierName) are READ-ONLY here — the admin API returns them
