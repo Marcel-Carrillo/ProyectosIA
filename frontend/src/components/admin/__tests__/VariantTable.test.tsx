@@ -3,11 +3,12 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import VariantTable from '../VariantTable';
 import { ProductVariant } from '../../../types/product';
-import { adminProductService, extractErrorMessage } from '../../../services/adminProductService';
+import { adminProductService, extractErrorMessage, extractErrorCode } from '../../../services/adminProductService';
 
 vi.mock('../../../services/adminProductService');
 const mocked = adminProductService as Mocked<typeof adminProductService>;
 const mockedExtractErrorMessage = extractErrorMessage as unknown as ReturnType<typeof vi.fn>;
+const mockedExtractErrorCode = extractErrorCode as unknown as ReturnType<typeof vi.fn>;
 
 const variant: ProductVariant = {
   id: 5,
@@ -126,7 +127,11 @@ describe('VariantTable', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows the missing-estimate indicator when shippingCostEstimate is null', () => {
+  it('shows the missing-estimate indicator when shippingCostEstimate is null and no fetch is in flight', () => {
+    // Not a CJ-linked variant fixture here — refreshFreightEstimate isn't
+    // mocked with a resolved value, so the automatic fetch this component
+    // fires never affects the assertion below (it settles on a later tick).
+    mocked.refreshFreightEstimate.mockReturnValue(new Promise(() => {}));
     const missing: ProductVariant = {
       ...variant,
       supplierCost: 10,
@@ -135,31 +140,48 @@ describe('VariantTable', () => {
       netMargin: 19.9,
     };
     render(<VariantTable productId={1} variants={[missing]} onVariantsChange={vi.fn()} />);
-    expect(screen.getByTestId('variant-shipping-estimate-5').textContent).toBe('—');
+    // While the automatic fetch is in flight, a spinner is shown instead of '—'.
+    expect(
+      within(screen.getByTestId('variant-shipping-estimate-5')).getByRole('status')
+    ).toBeInTheDocument();
   });
 
-  it('calls refreshFreightEstimate and refetches on click', async () => {
+  it('automatically fetches and persists the shipping estimate for a variant missing one — no manual button', async () => {
     mocked.refreshFreightEstimate.mockResolvedValue({ success: true, data: variant, message: '' });
     const onVariantsChange = vi.fn();
-    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={onVariantsChange} />);
-    fireEvent.click(
-      within(screen.getByTestId('variant-row-5')).getByTestId('btn-refresh-shipping-estimate-5')
-    );
+    const missing: ProductVariant = { ...variant, shippingCostEstimate: null, shippingEstimateMissing: true };
+    render(<VariantTable productId={1} variants={[missing]} onVariantsChange={onVariantsChange} />);
+
+    expect(screen.queryByTestId('btn-refresh-shipping-estimate-5')).not.toBeInTheDocument();
     await waitFor(() => expect(mocked.refreshFreightEstimate).toHaveBeenCalledWith(1, 5));
-    expect(onVariantsChange).toHaveBeenCalled();
+    await waitFor(() => expect(onVariantsChange).toHaveBeenCalled());
   });
 
-  it('shows the error message when refreshFreightEstimate returns CJ_ITEM_NOT_MAPPED', async () => {
+  it('suppresses the error and does not call onVariantsChange when the variant has no CJ mapping', async () => {
     mocked.refreshFreightEstimate.mockRejectedValue({
       response: { data: { error: { code: 'CJ_ITEM_NOT_MAPPED' } } },
     });
+    mockedExtractErrorCode.mockReturnValue('CJ_ITEM_NOT_MAPPED');
+    const onVariantsChange = vi.fn();
+    const missing: ProductVariant = { ...variant, shippingCostEstimate: null, shippingEstimateMissing: true };
+    render(<VariantTable productId={1} variants={[missing]} onVariantsChange={onVariantsChange} />);
+
+    await waitFor(() => expect(mocked.refreshFreightEstimate).toHaveBeenCalledWith(1, 5));
+    expect(onVariantsChange).not.toHaveBeenCalled();
+    expect(screen.queryByText(/no está vinculada a un artículo/i)).not.toBeInTheDocument();
+  });
+
+  it('shows an error message for an unexpected failure (e.g. CJ API unavailable)', async () => {
+    mocked.refreshFreightEstimate.mockRejectedValue({
+      response: { data: { error: { code: 'CJ_API_UNAVAILABLE' } } },
+    });
+    mockedExtractErrorCode.mockReturnValue('CJ_API_UNAVAILABLE');
     mockedExtractErrorMessage.mockReturnValue(
-      'Esta variante no está vinculada a un artículo del catálogo del proveedor; no se puede estimar el envío.'
+      'El servicio de CJ Dropshipping no está disponible en este momento. Inténtelo de nuevo más tarde.'
     );
-    render(<VariantTable productId={1} variants={[variant]} onVariantsChange={vi.fn()} />);
-    fireEvent.click(
-      within(screen.getByTestId('variant-row-5')).getByTestId('btn-refresh-shipping-estimate-5')
-    );
-    expect(await screen.findByText(/no está vinculada a un artículo/i)).toBeInTheDocument();
+    const missing: ProductVariant = { ...variant, shippingCostEstimate: null, shippingEstimateMissing: true };
+    render(<VariantTable productId={1} variants={[missing]} onVariantsChange={vi.fn()} />);
+
+    expect(await screen.findByText(/no está disponible en este momento/i)).toBeInTheDocument();
   });
 });
