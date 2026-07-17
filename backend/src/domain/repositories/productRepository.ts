@@ -104,11 +104,16 @@ export interface IProductVariantRepository {
   findCjCatalogItemId(id: number): Promise<number | null>;
   updateShippingCostEstimate(id: number, shippingCostEstimate: number): Promise<ProductVariant>;
   // Internal-only, admin-maintenance use (CJ category backfill). Returns
-  // every non-deleted variant belonging to a non-deleted Product currently
-  // in `categoryId`, with its cjCatalogItemId — deliberately bypasses the
-  // customer-safe variantSelect the same way findCjCatalogItemId does.
+  // every non-deleted variant belonging to up to `limit` non-deleted Products
+  // currently in `categoryId` (bounded — NOT every matching product; a
+  // production incident showed an unbounded version times out the `app`
+  // Lambda's 6s default timeout when thousands of products share the
+  // fallback category), with each variant's cjCatalogItemId — deliberately
+  // bypasses the customer-safe variantSelect the same way findCjCatalogItemId
+  // does.
   findManyByProductCategoryId(
-    categoryId: number
+    categoryId: number,
+    limit: number
   ): Promise<{ productId: number; variantId: number; cjCatalogItemId: number | null }[]>;
 }
 

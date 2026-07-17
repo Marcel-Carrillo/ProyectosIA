@@ -130,7 +130,12 @@ describe('CjCategoryBackfillService', () => {
 
     expect(categoryRepo.findOrCreateByExternalRef).toHaveBeenCalledWith('CJDropshipping', 'CJ-EXT-1', 'Dresses');
     expect(productRepo.reassignCategoryIfCurrentlyCategory).toHaveBeenCalledWith(100, 1, 42);
-    expect(result).toEqual({ fromCategoryId: 1, reassigned: [{ productId: 100, toCategoryId: 42 }], skipped: [] });
+    expect(result).toEqual({
+      fromCategoryId: 1,
+      reassigned: [{ productId: 100, toCategoryId: 42 }],
+      skipped: [],
+      hasMore: false,
+    });
   });
 
   it('should_skip_a_product_with_no_cj_mapped_variants', async () => {
@@ -205,6 +210,35 @@ describe('CjCategoryBackfillService', () => {
 
     const result = await service.recategorize(10);
 
-    expect(result).toEqual({ fromCategoryId: 1, reassigned: [], skipped: [] });
+    expect(result).toEqual({ fromCategoryId: 1, reassigned: [], skipped: [], hasMore: false });
+  });
+
+  it('should_report_hasMore_true_when_the_batch_hit_the_limit', async () => {
+    // Regression (production incident 2026-07-17): an unbounded query timed
+    // out the app Lambda when thousands of legacy products shared the
+    // fallback category. This asserts the caller-visible signal that lets an
+    // admin/frontend know to call again.
+    variantRepo.findManyByProductCategoryId.mockResolvedValue([{ productId: 100, variantId: 1, cjCatalogItemId: null }]);
+
+    const result = await service.recategorize(10, 1);
+
+    expect(variantRepo.findManyByProductCategoryId).toHaveBeenCalledWith(1, 1);
+    expect(result.hasMore).toBe(true);
+  });
+
+  it('should_clamp_an_oversized_limit_to_the_max_batch_size', async () => {
+    variantRepo.findManyByProductCategoryId.mockResolvedValue([]);
+
+    await service.recategorize(10, 100000);
+
+    expect(variantRepo.findManyByProductCategoryId).toHaveBeenCalledWith(1, 200);
+  });
+
+  it('should_fall_back_to_the_default_batch_size_for_an_invalid_limit', async () => {
+    variantRepo.findManyByProductCategoryId.mockResolvedValue([]);
+
+    await service.recategorize(10, -5);
+
+    expect(variantRepo.findManyByProductCategoryId).toHaveBeenCalledWith(1, 25);
   });
 });

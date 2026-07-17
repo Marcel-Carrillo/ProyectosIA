@@ -68,6 +68,8 @@ describe('ProductVariantRepository - findByCjCatalogItemId / create with cjCatal
   const mockFindFirst = jest.fn();
   const mockCreate = jest.fn();
   const mockUpdate = jest.fn();
+  const mockProductFindMany = jest.fn();
+  const mockVariantFindMany = jest.fn();
 
   jest.mock('../../prismaClient', () => ({
     prisma: {
@@ -75,6 +77,10 @@ describe('ProductVariantRepository - findByCjCatalogItemId / create with cjCatal
         findFirst: (...args: unknown[]) => mockFindFirst(...args),
         create: (...args: unknown[]) => mockCreate(...args),
         update: (...args: unknown[]) => mockUpdate(...args),
+        findMany: (...args: unknown[]) => mockVariantFindMany(...args),
+      },
+      product: {
+        findMany: (...args: unknown[]) => mockProductFindMany(...args),
       },
     },
   }));
@@ -209,5 +215,64 @@ describe('ProductVariantRepository - findByCjCatalogItemId / create with cjCatal
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 1 }, data: { shippingCostEstimate: 4.5 } })
     );
+  });
+
+  describe('findManyByProductCategoryId (bounded backfill query)', () => {
+    // Regression (production incident 2026-07-17): the original version had
+    // no `take` at all and queried productVariant directly by category,
+    // which loaded every matching row in one call — with thousands of
+    // legacy products sharing one supplier's fallback category, that timed
+    // out the app Lambda's 6s default timeout every time.
+    it('should_cap_by_distinct_product_count_via_take_on_the_product_query', async () => {
+      mockProductFindMany.mockResolvedValue([{ id: 100 }, { id: 101 }]);
+      mockVariantFindMany.mockResolvedValue([
+        { id: 1, productId: 100, cjCatalogItemId: 5 },
+        { id: 2, productId: 101, cjCatalogItemId: 6 },
+      ]);
+      const repoModule = await import('../productVariantRepository');
+      const repo = new repoModule.ProductVariantRepository();
+
+      const result = await repo.findManyByProductCategoryId(48, 2);
+
+      expect(mockProductFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { categoryId: 48, deletedAt: null }, take: 2 })
+      );
+      expect(mockVariantFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { deletedAt: null, productId: { in: [100, 101] } } })
+      );
+      expect(result).toEqual([
+        { productId: 100, variantId: 1, cjCatalogItemId: 5 },
+        { productId: 101, variantId: 2, cjCatalogItemId: 6 },
+      ]);
+    });
+
+    it('should_return_every_variant_for_a_capped_product_not_just_the_first', async () => {
+      // The two-step query exists specifically so a product with multiple
+      // variants doesn't get truncated mid-product by the limit — the limit
+      // caps PRODUCT count, never variant rows.
+      mockProductFindMany.mockResolvedValue([{ id: 100 }]);
+      mockVariantFindMany.mockResolvedValue([
+        { id: 1, productId: 100, cjCatalogItemId: 5 },
+        { id: 2, productId: 100, cjCatalogItemId: 6 },
+        { id: 3, productId: 100, cjCatalogItemId: 7 },
+      ]);
+      const repoModule = await import('../productVariantRepository');
+      const repo = new repoModule.ProductVariantRepository();
+
+      const result = await repo.findManyByProductCategoryId(48, 1);
+
+      expect(result).toHaveLength(3);
+    });
+
+    it('should_skip_the_variant_query_entirely_when_no_products_match', async () => {
+      mockProductFindMany.mockResolvedValue([]);
+      const repoModule = await import('../productVariantRepository');
+      const repo = new repoModule.ProductVariantRepository();
+
+      const result = await repo.findManyByProductCategoryId(48, 25);
+
+      expect(result).toEqual([]);
+      expect(mockVariantFindMany).not.toHaveBeenCalled();
+    });
   });
 });

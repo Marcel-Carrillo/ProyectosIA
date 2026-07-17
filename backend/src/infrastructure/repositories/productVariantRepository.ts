@@ -197,10 +197,24 @@ export class ProductVariantRepository implements IProductVariantRepository {
   }
 
   async findManyByProductCategoryId(
-    categoryId: number
+    categoryId: number,
+    limit: number
   ): Promise<{ productId: number; variantId: number; cjCatalogItemId: number | null }[]> {
+    // Two-step, bounded by PRODUCT count (not variant rows): a `take: limit`
+    // directly on productVariant.findMany would truncate mid-product,
+    // silently dropping a product's later variants and breaking the
+    // conflicting-CJ-category check. Cap the candidate product ids first,
+    // then fetch every variant for exactly those products.
+    const products = await prisma.product.findMany({
+      where: { categoryId, deletedAt: null },
+      select: { id: true },
+      take: limit,
+      orderBy: { id: 'asc' },
+    });
+    if (products.length === 0) return [];
+
     const rows = await prisma.productVariant.findMany({
-      where: { deletedAt: null, product: { categoryId, deletedAt: null } },
+      where: { deletedAt: null, productId: { in: products.map((p) => p.id) } },
       select: { id: true, productId: true, cjCatalogItemId: true },
     });
     return rows.map((r) => ({ productId: r.productId, variantId: r.id, cjCatalogItemId: r.cjCatalogItemId }));
