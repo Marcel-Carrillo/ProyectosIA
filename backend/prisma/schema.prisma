@@ -12,17 +12,42 @@ datasource db {
 }
 
 model Category {
-  id          Int        @id @default(autoincrement())
-  name        String     @unique
-  description String?
-  imageUrl    String?
-  status      String     @default("Active")
-  parentId    Int?
-  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  products    Product[]
+  id                     Int                     @id @default(autoincrement())
+  name                   String                  @unique
+  description            String?
+  imageUrl               String?
+  status                 String                  @default("Active")
+  parentId               Int?
+  parent                 Category?               @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children               Category[]              @relation("CategoryHierarchy")
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  products                 Product[]
+  supplierCategoryMappings SupplierCategoryMapping[]
+}
+
+// Links a supplier's own category taxonomy id (e.g. CJ Dropshipping's leaf
+// `categoryId` from /product/getCategory) to a local Category, so promotion
+// can auto-create/reuse a real category instead of always falling back to a
+// fixed default (see openspec/changes/cj-category-mapping/design.md
+// Decision 1 — a dedicated mapping table, not a field on Category, so a
+// second supplier's taxonomy can be added later without a schema change).
+// Uniqueness is enforced only on (provider, externalCategoryId) — a single
+// local Category MAY be the target of more than one supplier-category
+// mapping (e.g. two differently-named CJ leaf categories both resolved to
+// the same pre-existing local Category by name collision); nothing in this
+// domain requires the inverse to be unique.
+model SupplierCategoryMapping {
+  id                 Int      @id @default(autoincrement())
+  provider           String   @db.VarChar(50)
+  externalCategoryId String   @db.VarChar(100)
+  categoryId         Int
+  category           Category @relation(fields: [categoryId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([provider, externalCategoryId])
+  @@index([categoryId])
 }
 
 model Supplier {

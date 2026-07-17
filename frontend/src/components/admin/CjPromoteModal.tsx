@@ -30,6 +30,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   onSuccess,
 }) => {
   const [categoryId, setCategoryId] = useState('');
+  const [overrideCategory, setOverrideCategory] = useState(false);
   const [activateOnPromote, setActivateOnPromote] = useState(false);
   const [overrides, setOverrides] = useState<Record<number, PriceOverride>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +40,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   useEffect(() => {
     if (show) {
       setCategoryId('');
+      setOverrideCategory(false);
       setActivateOnPromote(false);
       setOverrides({});
       setFreightEstimates({});
@@ -101,7 +103,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!categoryId) {
+    if (overrideCategory && !categoryId) {
       setError('Seleccione una categoría antes de promocionar.');
       return;
     }
@@ -115,7 +117,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
           const compareAtPrice = override?.compareAtPrice ? Number(override.compareAtPrice) : undefined;
           return { cjCatalogItemId: item.id, publicPrice, compareAtPrice };
         }),
-        categoryId: Number(categoryId),
+        ...(overrideCategory && categoryId ? { categoryId: Number(categoryId) } : {}),
         activate: activateOnPromote,
       });
       onSuccess();
@@ -137,19 +139,37 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Form.Group className="mb-3">
-            <Form.Label>Categoría *</Form.Label>
-            <Form.Select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              data-testid="select-promote-category"
-            >
-              <option value="">Seleccione una categoría…</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Form.Select>
+            <Form.Check
+              type="checkbox"
+              label="Elegir categoría manualmente (en vez de usar la categoría de CJ automáticamente)"
+              checked={overrideCategory}
+              onChange={(e) => {
+                setOverrideCategory(e.target.checked);
+                if (!e.target.checked) setCategoryId('');
+              }}
+              data-testid="checkbox-override-category"
+            />
+            {!overrideCategory && (
+              <Form.Text className="text-muted d-block mt-1" data-testid="auto-category-hint">
+                Se usará automáticamente la categoría de CJ Dropshipping. Si no se puede determinar, se usará la
+                categoría predeterminada.
+              </Form.Text>
+            )}
+            {overrideCategory && (
+              <Form.Select
+                className="mt-2"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                data-testid="select-promote-category"
+              >
+                <option value="">Seleccione una categoría…</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Form.Select>
+            )}
           </Form.Group>
 
           <Form.Group className="mb-3">

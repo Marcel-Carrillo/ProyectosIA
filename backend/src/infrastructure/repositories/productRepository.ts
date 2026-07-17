@@ -191,4 +191,20 @@ export class ProductRepository implements IProductRepository {
       data: { deletedAt: new Date() },
     });
   }
+
+  async reassignCategoryIfCurrentlyCategory(
+    productId: number,
+    fromCategoryId: number,
+    toCategoryId: number
+  ): Promise<boolean> {
+    // updateMany (not update): { id, categoryId } together isn't a valid
+    // unique selector for Prisma's .update(), and updateMany's `count` gives
+    // exactly the "did it actually still match" signal the backfill needs to
+    // stay idempotent and never clobber a category an admin already changed.
+    const result = await prisma.product.updateMany({
+      where: { id: productId, categoryId: fromCategoryId, deletedAt: null },
+      data: { categoryId: toCategoryId },
+    });
+    return result.count > 0;
+  }
 }

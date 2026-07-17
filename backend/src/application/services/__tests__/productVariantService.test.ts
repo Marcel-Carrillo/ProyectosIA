@@ -55,6 +55,7 @@ const mockVariantRepo: jest.Mocked<IProductVariantRepository> = {
   softDelete: jest.fn(),
   findCjCatalogItemId: jest.fn(),
   updateShippingCostEstimate: jest.fn(),
+  findManyByProductCategoryId: jest.fn(),
 };
 
 const mockProductRepo: jest.Mocked<IProductRepository> = {
@@ -64,6 +65,7 @@ const mockProductRepo: jest.Mocked<IProductRepository> = {
   create: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
+  reassignCategoryIfCurrentlyCategory: jest.fn(),
 };
 
 const mockSettingsRepo: jest.Mocked<IAutomationSettingsRepository> = {

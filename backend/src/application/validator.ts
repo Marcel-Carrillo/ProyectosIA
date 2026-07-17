@@ -1194,10 +1194,20 @@ export class CjPromotionPriceRequiredError extends Error {
 export class CjPromotionCategoryRequiredError extends Error {
   readonly code = 'CJ_PROMOTION_CATEGORY_REQUIRED' as const;
   readonly status = 422;
+  // Optional: when category resolution fails for one or more pid-groups
+  // during a multi-item promote() call, this carries exactly which
+  // cjCatalogItemIds couldn't resolve a category, so a caller that retries
+  // excluding poison items (providerRegistry's auto-provisioning pipeline)
+  // can exclude precisely those and still promote the rest of the batch —
+  // mirrors CjPromotionValidationError.itemErrors. Left undefined for the
+  // single up-front explicit-categoryId-invalid check, which has no
+  // per-item breakdown to report.
+  readonly itemErrors?: CjPromotionItemError[];
 
-  constructor(message = 'A valid categoryId is required to promote CJ catalog items') {
+  constructor(message = 'A valid categoryId is required to promote CJ catalog items', itemErrors?: CjPromotionItemError[]) {
     super(message);
     this.name = 'CjPromotionCategoryRequiredError';
+    this.itemErrors = itemErrors;
     Object.setPrototypeOf(this, CjPromotionCategoryRequiredError.prototype);
   }
 }

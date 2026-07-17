@@ -47,4 +47,8 @@ export interface ICategoryRepository {
   create(data: CategoryCreateData): Promise<Category>;
   update(id: number, data: CategoryUpdateData): Promise<Category>;
   softDelete(id: number): Promise<Category>;
+  // Resolves a supplier's own taxonomy id to a local Category, auto-creating
+  // (Inactive by default) or reusing-by-name when no mapping exists yet.
+  // Race-safe under concurrent callers (see cj-category-mapping design.md).
+  findOrCreateByExternalRef(provider: string, externalCategoryId: string, name: string): Promise<Category>;
 }

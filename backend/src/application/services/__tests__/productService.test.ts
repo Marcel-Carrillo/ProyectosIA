@@ -29,6 +29,7 @@ const mockRepo: jest.Mocked<IProductRepository> = {
   create: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
+  reassignCategoryIfCurrentlyCategory: jest.fn(),
 };
 
 const mockVariantRepo: jest.Mocked<IProductVariantRepository> = {
@@ -42,6 +43,7 @@ const mockVariantRepo: jest.Mocked<IProductVariantRepository> = {
   softDelete: jest.fn(),
   findCjCatalogItemId: jest.fn(),
   updateShippingCostEstimate: jest.fn(),
+  findManyByProductCategoryId: jest.fn(),
 };
 
 const mockTranslationRepo: jest.Mocked<IProductTranslationRepository> = {

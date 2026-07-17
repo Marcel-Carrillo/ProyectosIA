@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CjCatalogPromotionService } from '../../application/services/cjCatalogPromotionService';
+import { CjCategoryBackfillService } from '../../application/services/cjCategoryBackfillService';
 import { CjCatalogItemRepository } from '../../infrastructure/repositories/cjCatalogItemRepository';
 import { CategoryRepository } from '../../infrastructure/repositories/categoryRepository';
 import { ProductRepository } from '../../infrastructure/repositories/productRepository';
@@ -33,6 +34,14 @@ const cjCatalogPromotionService = new CjCatalogPromotionService(
   new AutomationSettingsRepository(),
   cjClient
 );
+const cjCategoryBackfillService = new CjCategoryBackfillService(
+  new ProductRepository(),
+  productVariantRepository,
+  new CategoryRepository(),
+  new CjCatalogItemRepository(),
+  new SupplierIntegrationRepository(),
+  cjClient
+);
 
 export async function promote(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -63,6 +72,16 @@ export async function deactivate(req: Request, res: Response, next: NextFunction
     const cjCatalogItemId = parseCjCatalogItemIdParam(req.params['cjCatalogItemId'] as string);
     const result = await cjCatalogPromotionService.deactivate(supplierId, cjCatalogItemId);
     res.json({ success: true, data: result, message: 'CJ catalog item deactivated' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function recategorize(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const supplierId = parseSupplierIdParam(req.params['supplierId'] as string);
+    const result = await cjCategoryBackfillService.recategorize(supplierId);
+    res.json({ success: true, data: result, message: 'CJ category backfill completed' });
   } catch (err) {
     next(err);
   }
