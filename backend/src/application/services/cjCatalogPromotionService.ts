@@ -24,6 +24,7 @@ import { buildCjCategoryResolver } from './cjCategoryResolution';
 
 const DEFAULT_MARKUP_ENV = 'CJ_DEFAULT_MARKUP_MULTIPLIER';
 const DEFAULT_CATEGORY_ENV = 'CJ_DEFAULT_CATEGORY_ID';
+const DEFAULT_SHIPPING_ESTIMATE_ENV = 'CJ_DEFAULT_SHIPPING_ESTIMATE';
 const CJ_PROVIDER = 'CJDropshipping';
 
 // Prisma's default interactive-transaction timeout is 5000ms. A single
@@ -83,6 +84,23 @@ export class CjCatalogPromotionService {
     return Number.isFinite(value) && value > 0 ? value : undefined;
   }
 
+  // Flat, configurable shipping estimate added to supplierCost before markup
+  // (production bug fix, 2026-07-17: the persisted publicPrice previously
+  // ignored shipping entirely). Deliberately NOT a live CJ freight quote per
+  // item here — estimateFreight() below already offers that for the
+  // admin-facing "suggested price" preview, but calling it unconditionally
+  // for every item in promote() would reintroduce the exact Lambda-timeout
+  // risk just fixed for the recategorize endpoint (CJ's freight API is
+  // rate-limited to ~1 req/s, and the manual promote endpoint runs in the
+  // same 6s-default `app` Lambda). Defaults to 0 (no shipping added) if
+  // unconfigured.
+  private getDefaultShippingEstimate(): number {
+    const raw = process.env[DEFAULT_SHIPPING_ESTIMATE_ENV];
+    if (!raw) return 0;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  }
+
   // Resolves the store's configured fallback category — used only when CJ's
   // own taxonomy can't be resolved for a group (no explicit categoryId, no
   // CjCatalogItem.categoryId, or the CJ categories API is unavailable).
@@ -122,6 +140,7 @@ export class CjCatalogPromotionService {
     }
 
     const markup = this.getDefaultMarkupMultiplier();
+    const shippingEstimate = this.getDefaultShippingEstimate();
     const itemErrors: CjPromotionItemError[] = [];
     const resolvedPrices = new Map<number, number>();
 
@@ -143,8 +162,14 @@ export class CjCatalogPromotionService {
         });
         continue;
       }
+      // publicPrice = (supplierCost + shippingEstimate) * markup, rounded to
+      // a psychological ",99" ending — an explicit request price still wins
+      // outright (admin override, unrounded, as before).
       const resolvedPrice =
-        requestItem.publicPrice ?? (markup !== undefined ? Number(catalogItem.supplierCost) * markup : undefined);
+        requestItem.publicPrice ??
+        (markup !== undefined
+          ? roundToPsychologicalPrice((Number(catalogItem.supplierCost) + shippingEstimate) * markup)
+          : undefined);
       if (resolvedPrice === undefined || !Number.isFinite(resolvedPrice) || resolvedPrice <= 0) {
         itemErrors.push({
           cjCatalogItemId: requestItem.cjCatalogItemId,
