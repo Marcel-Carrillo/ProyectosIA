@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Table, Button, Alert, Modal } from 'react-bootstrap';
+import { Button, Alert, Modal } from 'react-bootstrap';
 import { adminProductService, extractErrorMessage } from '../services/adminProductService';
 import { categoryService } from '../services/categoryService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,6 +13,16 @@ import { Product, ProductStatus, ProductQueryParams } from '../types/product';
 import { Category } from '../types/category';
 
 const PAGE_SIZE = 20;
+
+const eur = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+
+function getMinSupplierCost(product: Product): number | null {
+  const costs = (product.variants ?? [])
+    .map((v) => v.supplierCost)
+    .filter((c): c is number => c != null && Number.isFinite(c));
+  if (costs.length === 0) return null;
+  return Math.min(...costs);
+}
 
 const ProductsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -148,43 +158,47 @@ const ProductsPage: React.FC = () => {
       )}
 
       {!loading && !error && products.length > 0 && (
-        <>
-          <div className="d-lg-none admin-card-list" data-testid="products-card-list">
-            {products.map((product) => (
-              <div
+        <div className="admin-product-card-grid" data-testid="products-card-list">
+          {products.map((product) => {
+            const supplierCost = getMinSupplierCost(product);
+            return (
+              <article
                 key={product.id}
-                className="admin-card-row"
+                className="admin-product-card"
                 data-testid={`product-card-row-${product.id}`}
               >
-                <div className="admin-card-row__header">
+                <Link
+                  to={`/products/${product.id}`}
+                  className="admin-product-card__media"
+                  data-testid={`product-card-media-${product.id}`}
+                >
                   {product.mainImageUrl ? (
-                    <img
-                      src={product.mainImageUrl}
-                      alt={product.name}
-                      className="admin-card-row__thumb"
-                    />
+                    <img src={product.mainImageUrl} alt="" className="admin-product-card__image" />
                   ) : (
-                    <span className="admin-card-row__thumb d-flex align-items-center justify-content-center bg-light text-muted">
-                      —
+                    <span className="admin-product-card__placeholder" aria-hidden="true">
+                      Sin imagen
                     </span>
                   )}
-                  <div className="flex-grow-1">
-                    <div className="fw-semibold">
-                      <Link to={`/products/${product.id}`}>{product.name}</Link>
-                    </div>
-                    <div className="admin-card-row__meta">
-                      {categories.find((c) => c.id === product.categoryId)?.name ?? '—'}
-                    </div>
-                    <StatusBadge status={product.status} />
+                </Link>
+
+                <div className="admin-product-card__body">
+                  <div
+                    className="admin-product-card__price"
+                    data-testid={`product-supplier-cost-${product.id}`}
+                  >
+                    {supplierCost != null ? eur.format(supplierCost) : '—'}
+                    <span className="admin-product-card__price-label">Proveedor</span>
                   </div>
+                  <StatusBadge status={product.status} />
                 </div>
-                <div className="admin-card-row__actions">
+
+                <div className="admin-product-card__actions">
                   <Link
                     to={`/products/${product.id}`}
                     className="btn btn-outline-primary admin-touch-btn"
                     data-testid={`btn-edit-${product.id}`}
                   >
-                    Editar
+                    Ver
                   </Link>
                   <Button
                     variant="outline-danger"
@@ -195,69 +209,10 @@ const ProductsPage: React.FC = () => {
                     Eliminar
                   </Button>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="d-none d-lg-block admin-table-wrap">
-            <Table hover data-testid="products-table">
-            <thead>
-              <tr>
-                <th>Imagen</th>
-                <th>Nombre</th>
-                <th>Slug</th>
-                <th>Estado</th>
-                <th>Categoría</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id} data-testid={`product-row-${product.id}`}>
-                  <td>
-                    {product.mainImageUrl ? (
-                      <img
-                        src={product.mainImageUrl}
-                        alt={product.name}
-                        style={{ width: 32, height: 32, objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td>
-                    <Link to={`/products/${product.id}`}>{product.name}</Link>
-                  </td>
-                  <td>
-                    <code>{product.slug}</code>
-                  </td>
-                  <td>
-                    <StatusBadge status={product.status} />
-                  </td>
-                  <td>{categories.find((c) => c.id === product.categoryId)?.name ?? '—'}</td>
-                  <td>
-                    <Link
-                      to={`/products/${product.id}`}
-                      className="btn btn-sm btn-outline-primary me-2"
-                      data-testid={`btn-edit-${product.id}`}
-                    >
-                      Editar
-                    </Link>
-                    <Button
-                      size="sm"
-                      variant="outline-danger"
-                      onClick={() => setToDelete(product)}
-                      data-testid={`btn-delete-${product.id}`}
-                    >
-                      Eliminar
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            </Table>
-          </div>
-        </>
+              </article>
+            );
+          })}
+        </div>
       )}
 
       {!loading && !error && (
