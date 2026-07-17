@@ -21,10 +21,28 @@ const mockProduct: Product = {
   brand: null,
   gtin: null,
   status: 'Active',
-  mainImageUrl: null,
+  mainImageUrl: 'https://cdn.example.com/hoodie.jpg',
   categoryId: 4,
   createdAt: '',
   updatedAt: '',
+  variants: [
+    {
+      id: 1,
+      productId: 7,
+      sku: 'RH-S',
+      size: 'S',
+      color: 'Red',
+      publicPrice: 29.99,
+      compareAtPrice: null,
+      stockPolicy: 'SupplierManaged',
+      status: 'Active',
+      stockQuantity: 10,
+      supplierCost: 8.5,
+      deletedAt: null,
+      createdAt: '',
+      updatedAt: '',
+    },
+  ],
 };
 
 const listResult = (items: Product[]) => ({
@@ -46,13 +64,18 @@ beforeEach(() => {
 });
 
 describe('ProductsPage', () => {
-  it('renders products from the admin API', async () => {
+  it('renders product cards with supplier cost, status and actions (no name/slug)', async () => {
     mockedAdmin.list.mockResolvedValue(listResult([mockProduct]));
     renderPage();
     expect(await screen.findByTestId('products-card-list')).toBeInTheDocument();
     const card = screen.getByTestId('product-card-row-7');
     expect(card).toBeInTheDocument();
-    expect(within(card).getByText('Red Hoodie')).toBeInTheDocument();
+    expect(within(card).getByTestId('product-supplier-cost-7')).toHaveTextContent('8,50');
+    expect(within(card).getByText('Activo')).toBeInTheDocument();
+    expect(within(card).getByTestId('btn-edit-7')).toHaveTextContent('Ver');
+    expect(within(card).getByTestId('btn-delete-7')).toBeInTheDocument();
+    expect(within(card).queryByText('Red Hoodie')).not.toBeInTheDocument();
+    expect(within(card).queryByText('red-hoodie')).not.toBeInTheDocument();
   });
 
   it('shows the empty state when there are no products', async () => {

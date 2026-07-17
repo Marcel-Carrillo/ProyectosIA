@@ -63,6 +63,9 @@ const variantSelect = {
   stockPolicy: true,
   status: true,
   stockQuantity: true,
+  // Admin product list cards show supplier cost; the public catalog serializer
+  // allow-lists variant fields and never emits this (see publicProduct.ts).
+  supplierCost: true,
   deletedAt: true,
   createdAt: true,
   updatedAt: true,
