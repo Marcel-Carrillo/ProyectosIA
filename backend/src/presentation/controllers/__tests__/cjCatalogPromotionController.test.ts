@@ -3,12 +3,18 @@ import { Request, Response, NextFunction } from 'express';
 const mockPromote = jest.fn();
 const mockActivate = jest.fn();
 const mockDeactivate = jest.fn();
+const mockRecategorize = jest.fn();
 
 jest.mock('../../../application/services/cjCatalogPromotionService', () => ({
   CjCatalogPromotionService: jest.fn().mockImplementation(() => ({
     promote: mockPromote,
     activate: mockActivate,
     deactivate: mockDeactivate,
+  })),
+}));
+jest.mock('../../../application/services/cjCategoryBackfillService', () => ({
+  CjCategoryBackfillService: jest.fn().mockImplementation(() => ({
+    recategorize: mockRecategorize,
   })),
 }));
 
@@ -34,7 +40,7 @@ jest.mock('../../../infrastructure/repositories/supplierIntegrationRepository', 
   SupplierIntegrationRepository: jest.fn().mockImplementation(() => ({})),
 }));
 
-import { promote, activate, deactivate } from '../cjCatalogPromotionController';
+import { promote, activate, deactivate, recategorize } from '../cjCatalogPromotionController';
 
 const mockRes = () => {
   const res = {} as Response;
@@ -156,6 +162,51 @@ describe('cjCatalogPromotionController', () => {
       await deactivate(req, mockRes(), mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(err);
+    });
+  });
+
+  describe('recategorize', () => {
+    it('should_return_200_with_the_backfill_result', async () => {
+      mockRecategorize.mockResolvedValue({
+        fromCategoryId: 1,
+        reassigned: [{ productId: 10, toCategoryId: 42 }],
+        skipped: [{ productId: 11, reason: 'NO_CJ_CATEGORY_MAPPING' }],
+      });
+      const req = { params: { supplierId: '10' } } as unknown as Request;
+      const res = mockRes();
+
+      await recategorize(req, res, mockNext);
+
+      expect(mockRecategorize).toHaveBeenCalledWith(10);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: {
+            fromCategoryId: 1,
+            reassigned: [{ productId: 10, toCategoryId: 42 }],
+            skipped: [{ productId: 11, reason: 'NO_CJ_CATEGORY_MAPPING' }],
+          },
+        })
+      );
+    });
+
+    it('should_call_next_when_no_fallback_category_is_configured', async () => {
+      const err = Object.assign(new Error('category required'), { code: 'CJ_PROMOTION_CATEGORY_REQUIRED', status: 422 });
+      mockRecategorize.mockRejectedValue(err);
+      const req = { params: { supplierId: '10' } } as unknown as Request;
+
+      await recategorize(req, mockRes(), mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(err);
+    });
+
+    it('should_call_next_with_validation_error_for_invalid_supplierId_without_calling_service', async () => {
+      const req = { params: { supplierId: 'not-a-number' } } as unknown as Request;
+
+      await recategorize(req, mockRes(), mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({ code: 'VALIDATION_ERROR' }));
+      expect(mockRecategorize).not.toHaveBeenCalled();
     });
   });
 });

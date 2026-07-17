@@ -250,7 +250,8 @@ describe('CjCatalogPage', () => {
     fireEvent.click(await screen.findByTestId('btn-promote-selected'));
     const modal = await screen.findByTestId('modal-promote-cj');
 
-    fireEvent.change(within(modal).getByTestId('select-promote-category'), { target: { value: '1' } });
+    fireEvent.click(within(modal).getByTestId('checkbox-override-category'));
+    fireEvent.change(await within(modal).findByTestId('select-promote-category'), { target: { value: '1' } });
     // The public price is auto-filled from the automatic shipping-estimate
     // fetch (cost + shipping + margin) before the admin ever clicks anything.
     await waitFor(() => expect(within(modal).getByTestId('input-price-1')).toHaveValue(13.99));
@@ -266,8 +267,9 @@ describe('CjCatalogPage', () => {
     expect(mockListCatalog).toHaveBeenCalledTimes(2);
   });
 
-  it('shows a mapped error and keeps the modal open when promote fails', async () => {
+  it('promotes in automatic category mode by default, sending no categoryId', async () => {
     mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+    mockPromote.mockResolvedValue({ data: {} });
     renderPage();
     const card = await screen.findByTestId('cj-catalog-card-row-1');
 
@@ -275,13 +277,32 @@ describe('CjCatalogPage', () => {
     fireEvent.click(await screen.findByTestId('btn-promote-selected'));
     const modal = await screen.findByTestId('modal-promote-cj');
 
+    await waitFor(() => expect(within(modal).getByTestId('input-price-1')).toHaveValue(13.99));
+    fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
+
+    await waitFor(() => expect(mockPromote).toHaveBeenCalledTimes(1));
+    expect(mockPromote.mock.calls[0]![1]).not.toHaveProperty('categoryId');
+  });
+
+  it('shows a mapped error and keeps the modal open when the backend rejects promotion for a missing category', async () => {
+    mockListCatalog.mockResolvedValue({ data: { items: [notPromotedItem], total: 1, page: 1, pageSize: 20 } });
+    mockPromote.mockRejectedValue({
+      response: { data: { error: { code: 'CJ_PROMOTION_CATEGORY_REQUIRED' } } },
+    });
+    renderPage();
+    const card = await screen.findByTestId('cj-catalog-card-row-1');
+
+    fireEvent.click(within(card).getByTestId('checkbox-select-1'));
+    fireEvent.click(await screen.findByTestId('btn-promote-selected'));
+    const modal = await screen.findByTestId('modal-promote-cj');
+
+    await waitFor(() => expect(within(modal).getByTestId('input-price-1')).toHaveValue(13.99));
     fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
 
     expect(
       await within(modal).findByText(/Seleccione una categoría antes de promocionar/i)
     ).toBeInTheDocument();
     expect(screen.getByTestId('modal-promote-cj')).toBeInTheDocument();
-    expect(mockPromote).not.toHaveBeenCalled();
     expect(mockListCatalog).toHaveBeenCalledTimes(1);
   });
 

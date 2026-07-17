@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CjPromoteModal from '../CjPromoteModal';
 import { CjCatalogItem } from '../../../types/cjCatalog';
 import { Category } from '../../../types/category';
@@ -102,5 +102,82 @@ describe('CjPromoteModal — automatic freight estimate', () => {
 
     expect(await screen.findByText('No se pudo consultar el envío.')).toBeInTheDocument();
     expect(screen.getByTestId('input-price-1')).not.toBeDisabled();
+  });
+});
+
+describe('CjPromoteModal — category auto/override toggle', () => {
+  beforeEach(() => {
+    mockFreightEstimate.mockReset();
+    mockPromote.mockReset();
+    mockFreightEstimate.mockResolvedValue({
+      success: true,
+      data: { shippingCostEstimate: 1, suggestedPublicPrice: 11 },
+      message: 'ok',
+    });
+  });
+
+  it('defaults to automatic category mode: the override checkbox is unchecked and no category select is shown', async () => {
+    renderModal();
+    await screen.findByTestId('auto-category-hint');
+    expect(screen.getByTestId('checkbox-override-category')).not.toBeChecked();
+    expect(screen.queryByTestId('select-promote-category')).not.toBeInTheDocument();
+  });
+
+  it('submits without a categoryId when in automatic mode', async () => {
+    mockPromote.mockResolvedValue({ data: {} });
+    renderModal();
+    await screen.findByTestId('auto-category-hint');
+
+    fireEvent.click(screen.getByTestId('btn-modal-promote'));
+
+    await waitFor(() => expect(mockPromote).toHaveBeenCalledTimes(1));
+    const payload = mockPromote.mock.calls[0][1];
+    expect(payload).not.toHaveProperty('categoryId');
+  });
+
+  it('reveals the category select when the override checkbox is checked, and sends the chosen categoryId', async () => {
+    mockPromote.mockResolvedValue({ data: {} });
+    renderModal();
+    await screen.findByTestId('auto-category-hint');
+
+    fireEvent.click(screen.getByTestId('checkbox-override-category'));
+    expect(await screen.findByTestId('select-promote-category')).toBeInTheDocument();
+    fireEvent.change(screen.getByTestId('select-promote-category'), { target: { value: '1' } });
+    fireEvent.click(screen.getByTestId('btn-modal-promote'));
+
+    await waitFor(() =>
+      expect(mockPromote).toHaveBeenCalledWith(3, expect.objectContaining({ categoryId: 1 }))
+    );
+  });
+
+  it('shows a validation error and does not submit when override mode is on but no category is chosen', async () => {
+    renderModal();
+    await screen.findByTestId('auto-category-hint');
+
+    fireEvent.click(screen.getByTestId('checkbox-override-category'));
+    await screen.findByTestId('select-promote-category');
+    fireEvent.click(screen.getByTestId('btn-modal-promote'));
+
+    expect(await screen.findByText('Seleccione una categoría antes de promocionar.')).toBeInTheDocument();
+    expect(mockPromote).not.toHaveBeenCalled();
+  });
+
+  it('resets to automatic mode and clears the chosen category when the modal is reopened', async () => {
+    mockPromote.mockResolvedValue({ data: {} });
+    const { rerender } = renderModal();
+    await screen.findByTestId('auto-category-hint');
+    fireEvent.click(screen.getByTestId('checkbox-override-category'));
+    await screen.findByTestId('select-promote-category');
+
+    rerender(
+      <CjPromoteModal show={false} onHide={vi.fn()} supplierId={3} items={[item]} categories={categories} onSuccess={vi.fn()} />
+    );
+    rerender(
+      <CjPromoteModal show onHide={vi.fn()} supplierId={3} items={[item]} categories={categories} onSuccess={vi.fn()} />
+    );
+
+    await screen.findByTestId('auto-category-hint');
+    expect(screen.getByTestId('checkbox-override-category')).not.toBeChecked();
+    expect(screen.queryByTestId('select-promote-category')).not.toBeInTheDocument();
   });
 });

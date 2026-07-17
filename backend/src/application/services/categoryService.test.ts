@@ -10,6 +10,7 @@ const mockRepo: jest.Mocked<ICategoryRepository> = {
   create: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
+  findOrCreateByExternalRef: jest.fn(),
 };
 
 const service = new CategoryService(mockRepo);

@@ -11,7 +11,12 @@ import { Category } from '../../../domain/models';
 import { SupplierIntegration } from '../../../domain/models/supplierIntegration';
 import { ProductService } from '../productService';
 import { SupplierIntegrationNotFoundError } from '../../../infrastructure/repositories/supplierIntegrationRepository';
-import { CjCatalogItemNotPromotedError, CjPromotionValidationError, CjApiUnavailableError } from '../../validator';
+import {
+  CjCatalogItemNotPromotedError,
+  CjPromotionValidationError,
+  CjPromotionCategoryRequiredError,
+  CjApiUnavailableError,
+} from '../../validator';
 
 const mockProductCreate = jest.fn();
 const mockProductUpdate = jest.fn();
@@ -75,6 +80,7 @@ describe('CjCatalogPromotionService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env['CJ_DEFAULT_MARKUP_MULTIPLIER'];
+    delete process.env['CJ_DEFAULT_CATEGORY_ID'];
 
     catalogRepo = {
       upsertMany: jest.fn(),
@@ -91,6 +97,7 @@ describe('CjCatalogPromotionService', () => {
       create: jest.fn(),
       update: jest.fn(),
       softDelete: jest.fn(),
+      findOrCreateByExternalRef: jest.fn(),
     };
     variantRepo = {
       findByProduct: jest.fn(),
@@ -103,6 +110,7 @@ describe('CjCatalogPromotionService', () => {
       softDelete: jest.fn(),
       findCjCatalogItemId: jest.fn(),
       updateShippingCostEstimate: jest.fn(),
+      findManyByProductCategoryId: jest.fn(),
     };
     integrationRepo = {
       findBySupplierId: jest.fn(),
@@ -471,6 +479,163 @@ describe('CjCatalogPromotionService', () => {
       // already-existing product from a prior partial promotion — even though
       // item2 has a variantImage available, no image row is created for it.
       expect(mockProductImageCreate).not.toHaveBeenCalled();
+    });
+
+    it('should_auto_resolve_and_create_a_new_category_from_cj_taxonomy_when_no_categoryId_is_given', async () => {
+      const item = buildCatalogItem({ categoryId: 'cj-ext-1' });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      cjClient.fetchCategories.mockResolvedValue([
+        { categoryFirstName: 'Women', categoryFirstList: [{ categorySecondName: 'Dresses', categorySecondList: [{ categoryId: 'cj-ext-1', categoryName: 'Dresses' }] }] },
+      ]);
+      categoryRepo.findOrCreateByExternalRef.mockResolvedValue(new Category({ id: 42, name: 'Dresses', status: 'Inactive' }));
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }] });
+
+      expect(categoryRepo.findOrCreateByExternalRef).toHaveBeenCalledWith('CJDropshipping', 'cj-ext-1', 'Dresses');
+      expect(mockProductCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ categoryId: 42 }) })
+      );
+    });
+
+    it('should_let_an_explicit_categoryId_override_cj_resolution_and_never_call_fetchCategories', async () => {
+      const item = buildCatalogItem({ categoryId: 'cj-ext-1' });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }], categoryId: 1 });
+
+      expect(cjClient.fetchCategories).not.toHaveBeenCalled();
+      expect(categoryRepo.findOrCreateByExternalRef).not.toHaveBeenCalled();
+      expect(mockProductCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ categoryId: 1 }) })
+      );
+    });
+
+    it('should_fall_back_to_CJ_DEFAULT_CATEGORY_ID_when_the_item_has_no_cj_category_id', async () => {
+      process.env['CJ_DEFAULT_CATEGORY_ID'] = '7';
+      const item = buildCatalogItem({ categoryId: null });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      categoryRepo.findById.mockImplementation(async (id: number) =>
+        id === 7 ? new Category({ id: 7, name: 'Uncategorized' }) : null
+      );
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }] });
+
+      expect(cjClient.fetchCategories).not.toHaveBeenCalled();
+      expect(mockProductCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ categoryId: 7 }) })
+      );
+    });
+
+    it('should_fall_back_to_CJ_DEFAULT_CATEGORY_ID_when_cj_resolution_fails', async () => {
+      process.env['CJ_DEFAULT_CATEGORY_ID'] = '7';
+      const item = buildCatalogItem({ categoryId: 'cj-ext-unresolvable' });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      cjClient.fetchCategories.mockRejectedValue(new Error('CJ API unavailable'));
+      categoryRepo.findById.mockImplementation(async (id: number) =>
+        id === 7 ? new Category({ id: 7, name: 'Uncategorized' }) : null
+      );
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }] });
+
+      expect(categoryRepo.findOrCreateByExternalRef).not.toHaveBeenCalled();
+      expect(mockProductCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ categoryId: 7 }) })
+      );
+    });
+
+    it('should_throw_category_required_when_no_categoryId_no_cj_resolution_and_no_fallback_configured', async () => {
+      const item = buildCatalogItem({ categoryId: null });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+
+      let caught: CjPromotionCategoryRequiredError | undefined;
+      try {
+        await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 39.99 }] });
+      } catch (err) {
+        caught = err as CjPromotionCategoryRequiredError;
+      }
+      expect(caught).toBeInstanceOf(CjPromotionCategoryRequiredError);
+      // itemErrors is populated so a retrying caller (providerRegistry) can
+      // exclude exactly this item — see the mixed-outcome test below.
+      expect(caught?.itemErrors).toEqual([
+        { cjCatalogItemId: 1, code: 'CJ_PROMOTION_CATEGORY_REQUIRED', message: expect.any(String) },
+      ]);
+      expect(mockTransaction).not.toHaveBeenCalled();
+      expect(mockProductCreate).not.toHaveBeenCalled();
+    });
+
+    it('should_report_itemErrors_only_for_the_pid_group_that_failed_when_another_group_resolves', async () => {
+      // Regression (adversarial-review Blocker finding): a single poison
+      // pid-group used to throw a bare CjPromotionCategoryRequiredError with
+      // no way to identify which item(s) were the problem, so a retrying
+      // caller had no way to exclude just the offender — this asserts the
+      // resolvable group's item is NOT included in itemErrors, only the
+      // unresolvable group's item is.
+      const resolvable = buildCatalogItem({ id: 1, pid: 'pid-1', externalRef: 'vid-1', vid: 'vid-1', categoryId: 'cj-ext-1' });
+      const unresolvable = buildCatalogItem({ id: 2, pid: 'pid-2', externalRef: 'vid-2', vid: 'vid-2', categoryId: null });
+      catalogRepo.findManyByIds.mockResolvedValue([resolvable, unresolvable]);
+      cjClient.fetchCategories.mockResolvedValue([
+        { categoryFirstName: 'Women', categoryFirstList: [{ categorySecondName: 'Dresses', categorySecondList: [{ categoryId: 'cj-ext-1', categoryName: 'Dresses' }] }] },
+      ]);
+      categoryRepo.findOrCreateByExternalRef.mockResolvedValue(new Category({ id: 42, name: 'Dresses', status: 'Inactive' }));
+
+      let caught: CjPromotionCategoryRequiredError | undefined;
+      try {
+        await service.promote(3, {
+          items: [
+            { cjCatalogItemId: 1, publicPrice: 39.99 },
+            { cjCatalogItemId: 2, publicPrice: 49.99 },
+          ],
+        });
+      } catch (err) {
+        caught = err as CjPromotionCategoryRequiredError;
+      }
+      expect(caught).toBeInstanceOf(CjPromotionCategoryRequiredError);
+      expect(caught?.itemErrors).toEqual([
+        { cjCatalogItemId: 2, code: 'CJ_PROMOTION_CATEGORY_REQUIRED', message: expect.any(String) },
+      ]);
+      // Whole call still aborts (nothing persisted) — the caller is
+      // responsible for retrying excluding item 2, matching the existing
+      // price-validation contract.
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should_call_fetchCategories_exactly_once_even_when_multiple_pid_groups_need_auto_resolution', async () => {
+      const item1 = buildCatalogItem({ id: 1, pid: 'pid-1', externalRef: 'vid-1', vid: 'vid-1', categoryId: 'cj-ext-1' });
+      const item2 = buildCatalogItem({ id: 2, pid: 'pid-2', externalRef: 'vid-2', vid: 'vid-2', categoryId: 'cj-ext-2' });
+      catalogRepo.findManyByIds.mockResolvedValue([item1, item2]);
+      cjClient.fetchCategories.mockResolvedValue([
+        {
+          categoryFirstName: 'Women',
+          categoryFirstList: [
+            { categorySecondName: 'Dresses', categorySecondList: [{ categoryId: 'cj-ext-1', categoryName: 'Dresses' }] },
+            { categorySecondName: 'Shoes', categorySecondList: [{ categoryId: 'cj-ext-2', categoryName: 'Shoes' }] },
+          ],
+        },
+      ]);
+      categoryRepo.findOrCreateByExternalRef
+        .mockResolvedValueOnce(new Category({ id: 42, name: 'Dresses', status: 'Inactive' }))
+        .mockResolvedValueOnce(new Category({ id: 43, name: 'Shoes', status: 'Inactive' }));
+      mockProductCreate.mockResolvedValueOnce({ id: 20 }).mockResolvedValueOnce({ id: 21 });
+      mockVariantCreate.mockResolvedValueOnce({ id: 50 }).mockResolvedValueOnce({ id: 51 });
+
+      await service.promote(3, {
+        items: [
+          { cjCatalogItemId: 1, publicPrice: 39.99 },
+          { cjCatalogItemId: 2, publicPrice: 49.99 },
+        ],
+      });
+
+      expect(cjClient.fetchCategories).toHaveBeenCalledTimes(1);
+      expect(categoryRepo.findOrCreateByExternalRef).toHaveBeenCalledTimes(2);
     });
   });
 
