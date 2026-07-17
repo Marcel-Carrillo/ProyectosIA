@@ -1530,16 +1530,19 @@ paths:
     post:
       summary: Backfill the real CJ category for already-promoted products still on the default category (admin)
       description: >
-        Idempotent, admin-triggered maintenance action (not automatic). Finds every `Product`
-        whose `categoryId` currently equals the configured `CJ_DEFAULT_CATEGORY_ID` fallback
-        category, resolves the real CJ category from its variants' linked
+        Idempotent, admin-triggered maintenance action (not automatic). Finds up to `limit`
+        `Product`s whose `categoryId` currently equals the configured `CJ_DEFAULT_CATEGORY_ID`
+        fallback category, resolves the real CJ category from its variants' linked
         `CjCatalogItem.categoryId` (same resolution/auto-create as
         `POST /cj/catalog/promote`), and reassigns it. Skips (and reports why) any product with
         no CJ-mapped variant, variants that disagree on CJ category, or whose category changed
         concurrently since the read. Never touches a product an admin has already moved off the
-        default category. Safe to re-run — already-reassigned products are excluded from
-        subsequent calls since the read is always scoped to the current default category.
-        Rate-limited. Never exposed on `/api/public/*`.
+        default category. **Processes one bounded batch per call** (default 25, max 200 products)
+        rather than every matching product at once — a large backlog can exceed the admin API's
+        Lambda timeout otherwise. Safe to re-run repeatedly — already-reassigned products are
+        excluded from subsequent calls since the read is always scoped to the current default
+        category; call again while the response's `hasMore` is `true` to work through a large
+        backlog. Rate-limited. Never exposed on `/api/public/*`.
       tags:
         - Admin — CJ Dropshipping Integration
       parameters:
@@ -1549,6 +1552,14 @@ paths:
           schema:
             type: integer
             minimum: 1
+        - in: query
+          name: limit
+          required: false
+          description: Maximum number of products to process in this call. Defaults to 25, capped at 200.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
       responses:
         '200':
           description: Backfill run completed (may have reassigned zero products)
@@ -5392,6 +5403,11 @@ components:
               reason:
                 type: string
                 enum: [NO_CJ_CATEGORY_MAPPING, CONFLICTING_CJ_CATEGORIES, CJ_CATEGORY_RESOLUTION_FAILED, CATEGORY_CHANGED_CONCURRENTLY]
+        hasMore:
+          type: boolean
+          description: >
+            True when this batch was capped at `limit` — more candidate products may remain at
+            fromCategoryId. Call the endpoint again to continue.
 
     CjRecategorizeResponse:
       type: object

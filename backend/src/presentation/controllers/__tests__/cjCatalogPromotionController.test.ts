@@ -171,13 +171,14 @@ describe('cjCatalogPromotionController', () => {
         fromCategoryId: 1,
         reassigned: [{ productId: 10, toCategoryId: 42 }],
         skipped: [{ productId: 11, reason: 'NO_CJ_CATEGORY_MAPPING' }],
+        hasMore: false,
       });
-      const req = { params: { supplierId: '10' } } as unknown as Request;
+      const req = { params: { supplierId: '10' }, query: {} } as unknown as Request;
       const res = mockRes();
 
       await recategorize(req, res, mockNext);
 
-      expect(mockRecategorize).toHaveBeenCalledWith(10);
+      expect(mockRecategorize).toHaveBeenCalledWith(10, undefined);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
@@ -185,15 +186,25 @@ describe('cjCatalogPromotionController', () => {
             fromCategoryId: 1,
             reassigned: [{ productId: 10, toCategoryId: 42 }],
             skipped: [{ productId: 11, reason: 'NO_CJ_CATEGORY_MAPPING' }],
+            hasMore: false,
           },
         })
       );
     });
 
+    it('should_pass_a_query_limit_through_to_the_service', async () => {
+      mockRecategorize.mockResolvedValue({ fromCategoryId: 1, reassigned: [], skipped: [], hasMore: true });
+      const req = { params: { supplierId: '10' }, query: { limit: '50' } } as unknown as Request;
+
+      await recategorize(req, mockRes(), mockNext);
+
+      expect(mockRecategorize).toHaveBeenCalledWith(10, 50);
+    });
+
     it('should_call_next_when_no_fallback_category_is_configured', async () => {
       const err = Object.assign(new Error('category required'), { code: 'CJ_PROMOTION_CATEGORY_REQUIRED', status: 422 });
       mockRecategorize.mockRejectedValue(err);
-      const req = { params: { supplierId: '10' } } as unknown as Request;
+      const req = { params: { supplierId: '10' }, query: {} } as unknown as Request;
 
       await recategorize(req, mockRes(), mockNext);
 
@@ -201,7 +212,7 @@ describe('cjCatalogPromotionController', () => {
     });
 
     it('should_call_next_with_validation_error_for_invalid_supplierId_without_calling_service', async () => {
-      const req = { params: { supplierId: 'not-a-number' } } as unknown as Request;
+      const req = { params: { supplierId: 'not-a-number' }, query: {} } as unknown as Request;
 
       await recategorize(req, mockRes(), mockNext);
 
