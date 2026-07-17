@@ -81,6 +81,7 @@ describe('CjCatalogPromotionService', () => {
     jest.clearAllMocks();
     delete process.env['CJ_DEFAULT_MARKUP_MULTIPLIER'];
     delete process.env['CJ_DEFAULT_CATEGORY_ID'];
+    delete process.env['CJ_DEFAULT_SHIPPING_ESTIMATE'];
 
     catalogRepo = {
       upsertMany: jest.fn(),
@@ -356,8 +357,59 @@ describe('CjCatalogPromotionService', () => {
 
       await service.promote(3, { items: [{ cjCatalogItemId: 1 }], categoryId: 1 });
 
+      // (10 + 0 shipping) * 2.5 = 25, rounded up to the next ",99" ending.
       expect(mockVariantCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ publicPrice: 25 }) })
+        expect.objectContaining({ data: expect.objectContaining({ publicPrice: 25.99 }) })
+      );
+    });
+
+    it('should_add_the_configured_shipping_estimate_before_applying_markup_and_round_the_result', async () => {
+      // Regression (production bug, 2026-07-17): the persisted publicPrice
+      // previously ignored shipping entirely and was never rounded to a
+      // psychological price. Formula: (supplierCost + shipping) * markup.
+      process.env['CJ_DEFAULT_MARKUP_MULTIPLIER'] = '1.6';
+      process.env['CJ_DEFAULT_SHIPPING_ESTIMATE'] = '8';
+      const item = buildCatalogItem({ supplierCost: '10.00' });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1 }], categoryId: 1 });
+
+      // (10 + 8) * 1.6 = 28.8, rounded up to 28.99.
+      expect(mockVariantCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ publicPrice: 28.99 }) })
+      );
+    });
+
+    it('should_default_shipping_estimate_to_zero_when_unconfigured', async () => {
+      process.env['CJ_DEFAULT_MARKUP_MULTIPLIER'] = '2';
+      delete process.env['CJ_DEFAULT_SHIPPING_ESTIMATE'];
+      const item = buildCatalogItem({ supplierCost: '10.00' });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1 }], categoryId: 1 });
+
+      // (10 + 0) * 2 = 20, rounded up to 20.99.
+      expect(mockVariantCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ publicPrice: 20.99 }) })
+      );
+    });
+
+    it('should_let_an_explicit_publicPrice_override_the_formula_unrounded', async () => {
+      process.env['CJ_DEFAULT_MARKUP_MULTIPLIER'] = '1.6';
+      process.env['CJ_DEFAULT_SHIPPING_ESTIMATE'] = '8';
+      const item = buildCatalogItem({ supplierCost: '10.00' });
+      catalogRepo.findManyByIds.mockResolvedValue([item]);
+      mockProductCreate.mockResolvedValue({ id: 20 });
+      mockVariantCreate.mockResolvedValue({ id: 50 });
+
+      await service.promote(3, { items: [{ cjCatalogItemId: 1, publicPrice: 33.5 }], categoryId: 1 });
+
+      expect(mockVariantCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ publicPrice: 33.5 }) })
       );
     });
 
