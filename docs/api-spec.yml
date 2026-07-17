@@ -5299,7 +5299,10 @@ components:
         publicPrice:
           type: number
           minimum: 0
-          description: Explicit price; if omitted, falls back to supplierCost * CJ_DEFAULT_MARKUP_MULTIPLIER.
+          description: >
+            Explicit price (used as-is, not rounded); if omitted, falls back to
+            (supplierCost + CJ_DEFAULT_SHIPPING_ESTIMATE) * CJ_DEFAULT_MARKUP_MULTIPLIER, rounded
+            to a psychological ",99" ending.
         compareAtPrice:
           type: number
           minimum: 0
