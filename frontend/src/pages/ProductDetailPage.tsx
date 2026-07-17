@@ -66,7 +66,7 @@ const ProductDetailPage: React.FC = () => {
         adminProductService.getById(numId),
         adminProductService.listVariants(numId),
         adminProductService.listImages(numId),
-        categoryService.getAll(),
+        categoryService.getAllAdmin(),
       ]);
       setProduct(productRes.data);
       setVariants(variantsRes.data);
@@ -332,6 +332,7 @@ const ProductDetailPage: React.FC = () => {
                         {categories.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name}
+                            {c.status === 'Inactive' ? ' (inactiva)' : ''}
                           </option>
                         ))}
                       </Form.Select>

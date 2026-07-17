@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Button, Alert, Table, Spinner } from 'react-bootstrap';
+import { Modal, Form, Button, Alert, Table } from 'react-bootstrap';
 import { cjCatalogService, extractCjCatalogErrorMessage } from '../../services/cjCatalogService';
 import { Category } from '../../types/category';
 import { CjCatalogItem } from '../../types/cjCatalog';
+import {
+  CJ_DEFAULT_SHIPPING_ESTIMATE,
+  computeCjPublicPrice,
+} from '../../utils/cjPricing';
 
 type CjPromoteModalProps = {
   show: boolean;
@@ -15,11 +19,16 @@ type CjPromoteModalProps = {
 
 type PriceOverride = { publicPrice: string; compareAtPrice: string };
 
-type FreightEstimateState =
-  | 'loading'
-  | 'error'
-  | { shippingCostEstimate: number; suggestedPublicPrice: number }
-  | undefined;
+const buildDefaultOverrides = (items: CjCatalogItem[]): Record<number, PriceOverride> =>
+  Object.fromEntries(
+    items.map((item) => [
+      item.id,
+      {
+        publicPrice: String(computeCjPublicPrice(Number(item.supplierCost))),
+        compareAtPrice: '',
+      },
+    ])
+  );
 
 const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   show,
@@ -35,62 +44,16 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   const [overrides, setOverrides] = useState<Record<number, PriceOverride>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [freightEstimates, setFreightEstimates] = useState<Record<number, FreightEstimateState>>({});
 
   useEffect(() => {
     if (show) {
       setCategoryId('');
       setOverrideCategory(false);
       setActivateOnPromote(false);
-      setOverrides({});
-      setFreightEstimates({});
+      setOverrides(buildDefaultOverrides(items));
       setError('');
     }
-  }, [show]);
-
-  // Fetches the real supplier shipping cost for every selected item as soon
-  // as the modal opens — no manual "consultar envío" action: the public
-  // price the admin sees must already include shipping + margin by default
-  // (`items`/`supplierId` are intentionally left out of the dep array since
-  // `items` is a fresh array reference on every parent render — this must
-  // run once per open, mirroring the reset effect above, not on every
-  // re-render while the modal stays open).
-  useEffect(() => {
-    if (!show || items.length === 0) return;
-    let cancelled = false;
-    setFreightEstimates(Object.fromEntries(items.map((item) => [item.id, 'loading' as const])));
-
-    Promise.allSettled(items.map((item) => cjCatalogService.freightEstimate(supplierId, item.id))).then(
-      (results) => {
-        if (cancelled) return;
-        setFreightEstimates((prev) => {
-          const next = { ...prev };
-          results.forEach((result, i) => {
-            const itemId = items[i]!.id;
-            next[itemId] = result.status === 'fulfilled' ? result.value.data : 'error';
-          });
-          return next;
-        });
-        setOverrides((prev) => {
-          const next = { ...prev };
-          results.forEach((result, i) => {
-            if (result.status !== 'fulfilled') return;
-            const itemId = items[i]!.id;
-            const existing = next[itemId];
-            if (existing?.publicPrice) return; // never clobber a price the admin already typed
-            next[itemId] = {
-              ...(existing ?? { publicPrice: '', compareAtPrice: '' }),
-              publicPrice: String(result.value.data.suggestedPublicPrice),
-            };
-          });
-          return next;
-        });
-      }
-    );
-
-    return () => {
-      cancelled = true;
-    };
+    // `items` intentionally omitted: reset once per open, not on every parent re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show]);
 
@@ -130,29 +93,31 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
   };
 
   return (
-    <Modal show={show} onHide={onHide} fullscreen="sm-down" data-testid="modal-promote-cj">
-      <Modal.Header closeButton>
-        <Modal.Title>Promocionar {items.length} artículo{items.length === 1 ? '' : 's'} del catálogo CJ</Modal.Title>
-      </Modal.Header>
+    <Modal show={show} onHide={onHide} size="lg" centered data-testid="modal-promote-cj">
       <Form onSubmit={handleSubmit}>
+        <Modal.Header closeButton>
+          <Modal.Title>Promocionar al catálogo</Modal.Title>
+        </Modal.Header>
         <Modal.Body>
-          {error && <Alert variant="danger">{error}</Alert>}
+          {error && (
+            <Alert variant="danger" data-testid="promote-error">
+              {error}
+            </Alert>
+          )}
 
           <Form.Group className="mb-3">
             <Form.Check
               type="checkbox"
-              label="Elegir categoría manualmente (en vez de usar la categoría de CJ automáticamente)"
+              id="override-category"
+              label="Elegir una categoría fija (en lugar de la de CJ)"
               checked={overrideCategory}
-              onChange={(e) => {
-                setOverrideCategory(e.target.checked);
-                if (!e.target.checked) setCategoryId('');
-              }}
+              onChange={(e) => setOverrideCategory(e.target.checked)}
               data-testid="checkbox-override-category"
             />
             {!overrideCategory && (
-              <Form.Text className="text-muted d-block mt-1" data-testid="auto-category-hint">
+              <Form.Text className="text-muted d-block" data-testid="auto-category-hint">
                 Se usará automáticamente la categoría de CJ Dropshipping. Si no se puede determinar, se usará la
-                categoría predeterminada.
+                categoría por defecto configurada.
               </Form.Text>
             )}
             {overrideCategory && (
@@ -166,6 +131,7 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
+                    {c.status === 'Inactive' ? ' (inactiva)' : ''}
                   </option>
                 ))}
               </Form.Select>
@@ -175,12 +141,18 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
           <Form.Group className="mb-3">
             <Form.Check
               type="checkbox"
-              label="Activar inmediatamente (visible en la tienda)"
+              id="activate-on-promote"
+              label="Activar productos al promocionar"
               checked={activateOnPromote}
               onChange={(e) => setActivateOnPromote(e.target.checked)}
               data-testid="checkbox-activate-on-promote"
             />
           </Form.Group>
+
+          <p className="small text-muted mb-2" data-testid="pricing-formula-hint">
+            Precio público = coste × 1,6 (margen 60 %) + {CJ_DEFAULT_SHIPPING_ESTIMATE.toFixed(0)} € de envío
+            estimado.
+          </p>
 
           <div className="admin-table-wrap">
             <Table size="sm" data-testid="promote-items-table">
@@ -194,54 +166,43 @@ const CjPromoteModal: React.FC<CjPromoteModalProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => {
-                  const estimate = freightEstimates[item.id];
-                  return (
-                    <tr key={item.id}>
-                      <td>
-                        {item.title}
-                        {(item.size || item.color) && (
-                          <div className="admin-card-row__meta">
-                            {[item.size, item.color].filter(Boolean).join(' / ')}
-                          </div>
-                        )}
-                      </td>
-                      <td>{item.supplierCost}</td>
-                      <td data-testid={`variant-shipping-estimate-${item.id}`}>
-                        {estimate === 'loading' && (
-                          <Spinner animation="border" size="sm" role="status" aria-label="Consultando envío" />
-                        )}
-                        {estimate === 'error' && (
-                          <span className="text-danger small">No se pudo consultar el envío.</span>
-                        )}
-                        {estimate && estimate !== 'loading' && estimate !== 'error' && (
-                          <span>{estimate.shippingCostEstimate.toFixed(2)} €</span>
-                        )}
-                      </td>
-                      <td>
-                        <Form.Control
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="Margen predeterminado"
-                          value={overrides[item.id]?.publicPrice ?? ''}
-                          onChange={(e) => handlePriceChange(item.id, 'publicPrice', e.target.value)}
-                          data-testid={`input-price-${item.id}`}
-                        />
-                      </td>
-                      <td>
-                        <Form.Control
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={overrides[item.id]?.compareAtPrice ?? ''}
-                          onChange={(e) => handlePriceChange(item.id, 'compareAtPrice', e.target.value)}
-                          data-testid={`input-compare-price-${item.id}`}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      {item.title}
+                      {(item.size || item.color) && (
+                        <div className="admin-card-row__meta">
+                          {[item.size, item.color].filter(Boolean).join(' / ')}
+                        </div>
+                      )}
+                    </td>
+                    <td>{item.supplierCost}</td>
+                    <td data-testid={`variant-shipping-estimate-${item.id}`}>
+                      {CJ_DEFAULT_SHIPPING_ESTIMATE.toFixed(2)} €
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Margen predeterminado"
+                        value={overrides[item.id]?.publicPrice ?? ''}
+                        onChange={(e) => handlePriceChange(item.id, 'publicPrice', e.target.value)}
+                        data-testid={`input-price-${item.id}`}
+                      />
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={overrides[item.id]?.compareAtPrice ?? ''}
+                        onChange={(e) => handlePriceChange(item.id, 'compareAtPrice', e.target.value)}
+                        data-testid={`input-compare-price-${item.id}`}
+                      />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </Table>
           </div>

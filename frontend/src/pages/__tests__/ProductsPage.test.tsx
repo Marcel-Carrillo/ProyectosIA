@@ -42,7 +42,7 @@ const renderPage = () =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockedCategory.getAll.mockResolvedValue([]);
+  mockedCategory.getAllAdmin.mockResolvedValue([]);
 });
 
 describe('ProductsPage', () => {

@@ -5,12 +5,11 @@ import CjPromoteModal from '../CjPromoteModal';
 import { CjCatalogItem } from '../../../types/cjCatalog';
 import { Category } from '../../../types/category';
 
-const mockFreightEstimate = vi.fn();
 const mockPromote = vi.fn();
 
 vi.mock('../../../services/cjCatalogService', async () => ({
   cjCatalogService: {
-    freightEstimate: (...args: unknown[]) => mockFreightEstimate(...args),
+    freightEstimate: vi.fn(),
     promote: (...args: unknown[]) => mockPromote(...args),
   },
   extractCjCatalogErrorMessage: (await vi.importActual('../../../services/cjCatalogService'))
@@ -53,67 +52,33 @@ function renderModal(overrideItems: CjCatalogItem[] = [item]) {
   );
 }
 
-describe('CjPromoteModal — automatic freight estimate', () => {
+describe('CjPromoteModal — default pricing formula', () => {
   beforeEach(() => {
-    mockFreightEstimate.mockReset();
     mockPromote.mockReset();
   });
 
-  it('fetches the shipping estimate for every item automatically on open, with no manual button', async () => {
-    mockFreightEstimate.mockResolvedValue({
-      success: true,
-      data: { shippingCostEstimate: 3.42, suggestedPublicPrice: 13.99 },
-      message: 'ok',
-    });
+  it('shows the flat 8€ shipping estimate without calling the live freight API', () => {
     renderModal();
-
-    await waitFor(() => expect(mockFreightEstimate).toHaveBeenCalledWith(3, 1));
-    expect(screen.queryByText('Consultar envío')).not.toBeInTheDocument();
-    expect(await screen.findByText('3.42 €')).toBeInTheDocument();
+    expect(screen.getByTestId('variant-shipping-estimate-1')).toHaveTextContent('8.00 €');
+    expect(screen.getByTestId('pricing-formula-hint')).toBeInTheDocument();
   });
 
-  it('pre-fills the public price with the suggested price (cost + shipping + margin) automatically', async () => {
-    mockFreightEstimate.mockResolvedValue({
-      success: true,
-      data: { shippingCostEstimate: 3.42, suggestedPublicPrice: 13.99 },
-      message: 'ok',
-    });
+  it('pre-fills the public price as cost × 1.6 + 8€ (rounded to ,99)', () => {
+    // 10 * 1.6 + 8 = 24 → 24.99
     renderModal();
-
-    await waitFor(() => expect(screen.getByTestId('input-price-1')).toHaveValue(13.99));
+    expect(screen.getByTestId('input-price-1')).toHaveValue(24.99);
   });
 
-  it('fetches all selected items in parallel, one call per item', async () => {
-    mockFreightEstimate.mockResolvedValue({
-      success: true,
-      data: { shippingCostEstimate: 1, suggestedPublicPrice: 11.99 },
-      message: 'ok',
-    });
+  it('pre-fills every selected item independently', () => {
     renderModal([item, item2]);
-
-    await waitFor(() => expect(mockFreightEstimate).toHaveBeenCalledTimes(2));
-    expect(mockFreightEstimate).toHaveBeenCalledWith(3, 1);
-    expect(mockFreightEstimate).toHaveBeenCalledWith(3, 2);
-  });
-
-  it('shows an inline error per item and still allows manual price entry when the estimate call fails', async () => {
-    mockFreightEstimate.mockRejectedValueOnce(new Error('network'));
-    renderModal();
-
-    expect(await screen.findByText('No se pudo consultar el envío.')).toBeInTheDocument();
-    expect(screen.getByTestId('input-price-1')).not.toBeDisabled();
+    expect(screen.getByTestId('input-price-1')).toHaveValue(24.99);
+    expect(screen.getByTestId('input-price-2')).toHaveValue(24.99);
   });
 });
 
 describe('CjPromoteModal — category auto/override toggle', () => {
   beforeEach(() => {
-    mockFreightEstimate.mockReset();
     mockPromote.mockReset();
-    mockFreightEstimate.mockResolvedValue({
-      success: true,
-      data: { shippingCostEstimate: 1, suggestedPublicPrice: 11 },
-      message: 'ok',
-    });
   });
 
   it('defaults to automatic category mode: the override checkbox is unchecked and no category select is shown', async () => {
