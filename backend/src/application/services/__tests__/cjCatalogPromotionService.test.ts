@@ -363,10 +363,9 @@ describe('CjCatalogPromotionService', () => {
       );
     });
 
-    it('should_add_the_configured_shipping_estimate_before_applying_markup_and_round_the_result', async () => {
-      // Regression (production bug, 2026-07-17): the persisted publicPrice
-      // previously ignored shipping entirely and was never rounded to a
-      // psychological price. Formula: (supplierCost + shipping) * markup.
+    it('should_add_the_configured_shipping_estimate_after_markup_on_cost_and_round_the_result', async () => {
+      // Formula: supplierCost * markup + shipping (margin only on cost).
+      // cost 10, markup 1.6, shipping 8 → 10*1.6 + 8 = 24 → 24.99.
       process.env['CJ_DEFAULT_MARKUP_MULTIPLIER'] = '1.6';
       process.env['CJ_DEFAULT_SHIPPING_ESTIMATE'] = '8';
       const item = buildCatalogItem({ supplierCost: '10.00' });
@@ -376,9 +375,10 @@ describe('CjCatalogPromotionService', () => {
 
       await service.promote(3, { items: [{ cjCatalogItemId: 1 }], categoryId: 1 });
 
-      // (10 + 8) * 1.6 = 28.8, rounded up to 28.99.
       expect(mockVariantCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ publicPrice: 28.99 }) })
+        expect.objectContaining({
+          data: expect.objectContaining({ publicPrice: 24.99, shippingCostEstimate: 8 }),
+        })
       );
     });
 
@@ -392,9 +392,11 @@ describe('CjCatalogPromotionService', () => {
 
       await service.promote(3, { items: [{ cjCatalogItemId: 1 }], categoryId: 1 });
 
-      // (10 + 0) * 2 = 20, rounded up to 20.99.
+      // 10 * 2 + 0 = 20, rounded up to 20.99.
       expect(mockVariantCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ publicPrice: 20.99 }) })
+        expect.objectContaining({
+          data: expect.objectContaining({ publicPrice: 20.99, shippingCostEstimate: 0 }),
+        })
       );
     });
 

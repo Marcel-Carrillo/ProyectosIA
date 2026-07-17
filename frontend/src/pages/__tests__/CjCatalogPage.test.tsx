@@ -44,6 +44,7 @@ vi.mock('../../services/cjConnectionService', async () => ({
 vi.mock('../../services/categoryService', () => ({
   categoryService: {
     getAll: (...args: unknown[]) => mockGetAllCategories(...args),
+    getAllAdmin: (...args: unknown[]) => mockGetAllCategories(...args),
   },
 }));
 
@@ -252,15 +253,14 @@ describe('CjCatalogPage', () => {
 
     fireEvent.click(within(modal).getByTestId('checkbox-override-category'));
     fireEvent.change(await within(modal).findByTestId('select-promote-category'), { target: { value: '1' } });
-    // The public price is auto-filled from the automatic shipping-estimate
-    // fetch (cost + shipping + margin) before the admin ever clicks anything.
-    await waitFor(() => expect(within(modal).getByTestId('input-price-1')).toHaveValue(13.99));
+    // publicPrice = cost × 1.6 + 8€ → 10*1.6+8 = 24 → 24.99
+    expect(within(modal).getByTestId('input-price-1')).toHaveValue(24.99);
     fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
 
     await waitFor(() =>
       expect(mockPromote).toHaveBeenCalledWith(
         3,
-        expect.objectContaining({ categoryId: 1, items: [{ cjCatalogItemId: 1, publicPrice: 13.99, compareAtPrice: undefined }] })
+        expect.objectContaining({ categoryId: 1, items: [{ cjCatalogItemId: 1, publicPrice: 24.99, compareAtPrice: undefined }] })
       )
     );
     await waitFor(() => expect(screen.queryByTestId('modal-promote-cj')).not.toBeInTheDocument());
@@ -277,7 +277,7 @@ describe('CjCatalogPage', () => {
     fireEvent.click(await screen.findByTestId('btn-promote-selected'));
     const modal = await screen.findByTestId('modal-promote-cj');
 
-    await waitFor(() => expect(within(modal).getByTestId('input-price-1')).toHaveValue(13.99));
+    expect(within(modal).getByTestId('input-price-1')).toHaveValue(24.99);
     fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
 
     await waitFor(() => expect(mockPromote).toHaveBeenCalledTimes(1));
@@ -296,7 +296,7 @@ describe('CjCatalogPage', () => {
     fireEvent.click(await screen.findByTestId('btn-promote-selected'));
     const modal = await screen.findByTestId('modal-promote-cj');
 
-    await waitFor(() => expect(within(modal).getByTestId('input-price-1')).toHaveValue(13.99));
+    expect(within(modal).getByTestId('input-price-1')).toHaveValue(24.99);
     fireEvent.click(within(modal).getByTestId('btn-modal-promote'));
 
     expect(

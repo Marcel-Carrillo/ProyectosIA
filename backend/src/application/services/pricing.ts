@@ -18,3 +18,15 @@ export function roundToPsychologicalPrice(value: number): number {
   const wholeUnits = Math.floor(cents / 100);
   return Math.round((wholeUnits + 0.99) * 100) / 100;
 }
+
+// CJ promote / auto-provision public price.
+// Margin applies ONLY to supplier cost (markup=1.6 ⇒ 60% margin on cost);
+// the flat shipping estimate is then added on top — never marked up.
+// Example: cost 10, markup 1.6, shipping 8 → 10*1.6 + 8 = 24 → 24.99.
+export function computeCjPublicPrice(
+  supplierCost: number,
+  markup: number,
+  shippingEstimate: number
+): number {
+  return roundToPsychologicalPrice(supplierCost * markup + shippingEstimate);
+}

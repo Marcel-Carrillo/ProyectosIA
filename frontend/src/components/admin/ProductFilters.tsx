@@ -63,6 +63,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         {categories.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
+            {c.status === 'Inactive' ? ' (inactiva)' : ''}
           </option>
         ))}
       </Form.Select>
