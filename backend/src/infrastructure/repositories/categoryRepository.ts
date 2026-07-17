@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prismaClient';
 import { Category } from '../../domain/models';
 import {
@@ -6,6 +7,10 @@ import {
   CategoryUpdateData,
 } from '../../domain/repositories';
 import { ValidationError } from '../../application/validator';
+
+function isUniqueConstraintError(err: unknown): err is Prisma.PrismaClientKnownRequestError {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
+}
 
 export class CategoryNameConflictError extends Error {
   readonly code = 'CATEGORY_NAME_ALREADY_EXISTS' as const;
@@ -97,5 +102,56 @@ export class CategoryRepository implements ICategoryRepository {
       data: { status: 'Inactive' },
     });
     return new Category(row);
+  }
+
+  async findOrCreateByExternalRef(
+    provider: string,
+    externalCategoryId: string,
+    name: string
+  ): Promise<Category> {
+    const existingMapping = await prisma.supplierCategoryMapping.findUnique({
+      where: { provider_externalCategoryId: { provider, externalCategoryId } },
+      include: { category: true },
+    });
+    if (existingMapping) return new Category(existingMapping.category);
+
+    const category = await this.findOrCreateByName(name);
+
+    try {
+      await prisma.supplierCategoryMapping.create({
+        data: { provider, externalCategoryId, categoryId: category.id as number },
+      });
+    } catch (err) {
+      if (!isUniqueConstraintError(err)) throw err;
+      // Lost the race to create the mapping — re-read the winner's row.
+      const raceWinner = await prisma.supplierCategoryMapping.findUnique({
+        where: { provider_externalCategoryId: { provider, externalCategoryId } },
+        include: { category: true },
+      });
+      if (raceWinner) return new Category(raceWinner.category);
+      throw err;
+    }
+
+    return category;
+  }
+
+  // Reuses an existing Category by name (e.g. one an admin already created
+  // manually) rather than violating the name-uniqueness constraint; creates
+  // a new Inactive one only when no category with that name exists yet.
+  // Race-safe: a concurrent create losing the name-uniqueness race re-reads
+  // the winner instead of throwing CategoryNameConflictError.
+  private async findOrCreateByName(name: string): Promise<Category> {
+    const existing = await this.findByName(name);
+    if (existing) return existing;
+
+    try {
+      const row = await prisma.category.create({ data: { name, status: 'Inactive' } });
+      return new Category(row);
+    } catch (err) {
+      if (!isUniqueConstraintError(err)) throw err;
+      const winner = await this.findByName(name);
+      if (winner) return winner;
+      throw err;
+    }
   }
 }

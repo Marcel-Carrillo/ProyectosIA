@@ -195,4 +195,14 @@ export class ProductVariantRepository implements IProductVariantRepository {
     });
     return new ProductVariant(row);
   }
+
+  async findManyByProductCategoryId(
+    categoryId: number
+  ): Promise<{ productId: number; variantId: number; cjCatalogItemId: number | null }[]> {
+    const rows = await prisma.productVariant.findMany({
+      where: { deletedAt: null, product: { categoryId, deletedAt: null } },
+      select: { id: true, productId: true, cjCatalogItemId: true },
+    });
+    return rows.map((r) => ({ productId: r.productId, variantId: r.id, cjCatalogItemId: r.cjCatalogItemId }));
+  }
 }

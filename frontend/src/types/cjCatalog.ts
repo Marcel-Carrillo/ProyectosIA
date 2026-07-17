@@ -46,7 +46,7 @@ export interface CjPromoteItemInput {
 
 export interface CjPromoteRequest {
   items: CjPromoteItemInput[];
-  categoryId: number;
+  categoryId?: number;
   activate?: boolean;
 }
 

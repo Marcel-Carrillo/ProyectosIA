@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import {
   CategoryRepository,
   CategoryNotFoundError,
@@ -14,8 +15,19 @@ jest.mock('../prismaClient', () => ({
       create: jest.fn(),
       update: jest.fn(),
     },
+    supplierCategoryMapping: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
   },
 }));
+
+function uniqueConstraintError(): Prisma.PrismaClientKnownRequestError {
+  return new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+    code: 'P2002',
+    clientVersion: '6.0.0',
+  });
+}
 
 const mockedPrisma = prisma as jest.Mocked<typeof prisma>;
 
@@ -161,5 +173,79 @@ describe('CategoryRepository - softDelete', () => {
   it('should throw CategoryNotFoundError when id does not exist', async () => {
     (mockedPrisma.category.findUnique as jest.Mock).mockResolvedValue(null);
     await expect(repo.softDelete(99)).rejects.toBeInstanceOf(CategoryNotFoundError);
+  });
+});
+
+describe('CategoryRepository - findOrCreateByExternalRef', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  const mapping = { id: 1, provider: 'CJDropshipping', externalCategoryId: 'cj-cat-1', categoryId: 1, category: dbRow };
+
+  it('should reuse an existing mapping without creating a category or mapping', async () => {
+    (mockedPrisma.supplierCategoryMapping.findUnique as jest.Mock).mockResolvedValue(mapping);
+
+    const result = await repo.findOrCreateByExternalRef('CJDropshipping', 'cj-cat-1', 'Dresses');
+
+    expect(result.name).toBe('Dresses');
+    expect(mockedPrisma.category.create).not.toHaveBeenCalled();
+    expect(mockedPrisma.supplierCategoryMapping.create).not.toHaveBeenCalled();
+  });
+
+  it('should create a new Inactive category and mapping when neither exists', async () => {
+    (mockedPrisma.supplierCategoryMapping.findUnique as jest.Mock).mockResolvedValue(null);
+    (mockedPrisma.category.findUnique as jest.Mock).mockResolvedValue(null);
+    const created = { ...dbRow, id: 2, name: 'Shoes', status: 'Inactive' };
+    (mockedPrisma.category.create as jest.Mock).mockResolvedValue(created);
+    (mockedPrisma.supplierCategoryMapping.create as jest.Mock).mockResolvedValue({});
+
+    const result = await repo.findOrCreateByExternalRef('CJDropshipping', 'cj-cat-2', 'Shoes');
+
+    expect(mockedPrisma.category.create).toHaveBeenCalledWith({ data: { name: 'Shoes', status: 'Inactive' } });
+    expect(mockedPrisma.supplierCategoryMapping.create).toHaveBeenCalledWith({
+      data: { provider: 'CJDropshipping', externalCategoryId: 'cj-cat-2', categoryId: 2 },
+    });
+    expect(result.status).toBe('Inactive');
+  });
+
+  it('should reuse an existing local category by name instead of violating the name-unique constraint', async () => {
+    (mockedPrisma.supplierCategoryMapping.findUnique as jest.Mock).mockResolvedValue(null);
+    (mockedPrisma.category.findUnique as jest.Mock).mockResolvedValue(dbRow); // 'Dresses' already exists
+    (mockedPrisma.supplierCategoryMapping.create as jest.Mock).mockResolvedValue({});
+
+    const result = await repo.findOrCreateByExternalRef('CJDropshipping', 'cj-cat-3', 'Dresses');
+
+    expect(mockedPrisma.category.create).not.toHaveBeenCalled();
+    expect(result.id).toBe(dbRow.id);
+    expect(mockedPrisma.supplierCategoryMapping.create).toHaveBeenCalledWith({
+      data: { provider: 'CJDropshipping', externalCategoryId: 'cj-cat-3', categoryId: dbRow.id },
+    });
+  });
+
+  it('should resolve a concurrent-creation race on the mapping by re-reading the winner instead of throwing', async () => {
+    (mockedPrisma.supplierCategoryMapping.findUnique as jest.Mock)
+      .mockResolvedValueOnce(null) // initial lookup: no mapping yet
+      .mockResolvedValueOnce(mapping); // re-read after losing the create race
+    (mockedPrisma.category.findUnique as jest.Mock).mockResolvedValue(dbRow);
+    (mockedPrisma.supplierCategoryMapping.create as jest.Mock).mockRejectedValue(uniqueConstraintError());
+
+    const result = await repo.findOrCreateByExternalRef('CJDropshipping', 'cj-cat-1', 'Dresses');
+
+    expect(result.name).toBe('Dresses');
+  });
+
+  it('should resolve a concurrent-creation race on the category name by re-reading the winner instead of throwing', async () => {
+    (mockedPrisma.supplierCategoryMapping.findUnique as jest.Mock).mockResolvedValue(null);
+    (mockedPrisma.category.findUnique as jest.Mock)
+      .mockResolvedValueOnce(null) // initial lookup: no category yet
+      .mockResolvedValueOnce(dbRow); // re-read after losing the create race
+    (mockedPrisma.category.create as jest.Mock).mockRejectedValue(uniqueConstraintError());
+    (mockedPrisma.supplierCategoryMapping.create as jest.Mock).mockResolvedValue({});
+
+    const result = await repo.findOrCreateByExternalRef('CJDropshipping', 'cj-cat-4', 'Dresses');
+
+    expect(result.id).toBe(dbRow.id);
+    expect(mockedPrisma.supplierCategoryMapping.create).toHaveBeenCalledWith({
+      data: { provider: 'CJDropshipping', externalCategoryId: 'cj-cat-4', categoryId: dbRow.id },
+    });
   });
 });

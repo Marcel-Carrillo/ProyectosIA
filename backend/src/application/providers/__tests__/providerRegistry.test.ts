@@ -147,6 +147,11 @@ describe('providerRegistry', () => {
       const promoteArgs = mockPromote.mock.calls[0][1];
       expect(promoteArgs.items).toHaveLength(105);
       expect(promoteArgs.activate).toBe(false);
+      // Regression guard (cj-category-mapping): the pipeline no longer forces
+      // a fixed categoryId on every auto-promoted item — promote() resolves
+      // each item's real CJ category itself now, falling back to
+      // CJ_DEFAULT_CATEGORY_ID only when that fails.
+      expect(promoteArgs).not.toHaveProperty('categoryId');
     });
 
     it('should_report_NO_PROMOTABLE_ITEMS_and_not_call_promote_when_nothing_is_returned', async () => {
@@ -222,6 +227,62 @@ describe('providerRegistry', () => {
       const retryItems = mockPromote.mock.calls[1][1].items.map((i: { cjCatalogItemId: number }) => i.cjCatalogItemId);
       expect(retryItems.sort()).toEqual([1, 3]);
       expect(result.promotionSkippedReason).toBeUndefined();
+    });
+
+    it('should_retry_excluding_items_that_failed_category_resolution_and_still_promote_the_rest', async () => {
+      // Regression (adversarial-review Blocker finding): a poison item with
+      // no resolvable CJ category and no CJ_DEFAULT_CATEGORY_ID fallback used
+      // to abort the ENTIRE batch with no way to identify or exclude just the
+      // offender — silently stalling auto-provisioning for a supplier
+      // forever, contradicting this change's own spec requirement that other
+      // resolvable items in the same run still get promoted.
+      mockVerifyConnection.mockResolvedValue({ healthy: true });
+      mockSyncCatalog.mockResolvedValue({ itemsUpserted: 3, itemsFailed: 0, syncedAt: new Date() });
+      mockListStagedCatalog.mockResolvedValue({
+        items: [
+          { item: { id: 1 }, promotionState: 'NotPromoted', productId: null, productVariantId: null },
+          { item: { id: 2 }, promotionState: 'NotPromoted', productId: null, productVariantId: null },
+          { item: { id: 3 }, promotionState: 'NotPromoted', productId: null, productVariantId: null },
+        ],
+        total: 3,
+        page: 1,
+        pageSize: 100,
+      });
+      mockPromote
+        .mockRejectedValueOnce(
+          new CjPromotionCategoryRequiredError(undefined, [
+            { cjCatalogItemId: 2, code: 'CJ_PROMOTION_CATEGORY_REQUIRED', message: 'no category' },
+          ])
+        )
+        .mockResolvedValueOnce({ products: [], variants: [], createdAny: true });
+
+      const result = await cjProviderDescriptor.runPipeline(1);
+
+      expect(mockPromote).toHaveBeenCalledTimes(2);
+      const retryItems = mockPromote.mock.calls[1][1].items.map((i: { cjCatalogItemId: number }) => i.cjCatalogItemId);
+      expect(retryItems.sort()).toEqual([1, 3]);
+      expect(result.promotionSkippedReason).toBeUndefined();
+    });
+
+    it('should_give_up_without_an_infinite_retry_when_every_item_fails_category_resolution', async () => {
+      mockVerifyConnection.mockResolvedValue({ healthy: true });
+      mockSyncCatalog.mockResolvedValue({ itemsUpserted: 1, itemsFailed: 0, syncedAt: new Date() });
+      mockListStagedCatalog.mockResolvedValue({
+        items: [{ item: { id: 1 }, promotionState: 'NotPromoted', productId: null, productVariantId: null }],
+        total: 1,
+        page: 1,
+        pageSize: 100,
+      });
+      mockPromote.mockRejectedValue(
+        new CjPromotionCategoryRequiredError(undefined, [
+          { cjCatalogItemId: 1, code: 'CJ_PROMOTION_CATEGORY_REQUIRED', message: 'no category' },
+        ])
+      );
+
+      const result = await cjProviderDescriptor.runPipeline(1);
+
+      expect(mockPromote).toHaveBeenCalledTimes(1); // no retry — excluding the only item leaves nothing to promote
+      expect(result.promotionSkippedReason).toBe('DEFAULT_CATEGORY_MISSING');
     });
 
     it('should_give_up_without_an_infinite_retry_when_every_item_fails_validation', async () => {

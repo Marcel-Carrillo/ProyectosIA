@@ -48,6 +48,17 @@ export interface IProductRepository {
   create(data: ProductCreateData): Promise<Product>;
   update(id: number, data: ProductUpdateData): Promise<Product>;
   softDelete(id: number): Promise<void>;
+  // Internal-only, admin-maintenance use (CJ category backfill). Atomic
+  // conditional reassignment: only writes if the product's categoryId is
+  // STILL `fromCategoryId` at the moment of the write, not just when read
+  // earlier — this is what makes the backfill idempotent and safe against a
+  // concurrent admin manually re-categorizing the same product. Returns
+  // false (no-op) if the product no longer matches.
+  reassignCategoryIfCurrentlyCategory(
+    productId: number,
+    fromCategoryId: number,
+    toCategoryId: number
+  ): Promise<boolean>;
 }
 
 export interface ProductVariantCreateData {
@@ -92,6 +103,13 @@ export interface IProductVariantRepository {
   // productVariantRepository.ts comments on the internal-only convention).
   findCjCatalogItemId(id: number): Promise<number | null>;
   updateShippingCostEstimate(id: number, shippingCostEstimate: number): Promise<ProductVariant>;
+  // Internal-only, admin-maintenance use (CJ category backfill). Returns
+  // every non-deleted variant belonging to a non-deleted Product currently
+  // in `categoryId`, with its cjCatalogItemId — deliberately bypasses the
+  // customer-safe variantSelect the same way findCjCatalogItemId does.
+  findManyByProductCategoryId(
+    categoryId: number
+  ): Promise<{ productId: number; variantId: number; cjCatalogItemId: number | null }[]>;
 }
 
 export interface ProductImageCreateData {

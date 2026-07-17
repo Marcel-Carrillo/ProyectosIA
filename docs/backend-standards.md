@@ -1138,6 +1138,46 @@ export interface ISupplierOrderRepository {
 }
 ```
 
+**Find-or-Create by External Reference**: when a domain entity may be resolved from or created on first use by an external system's own identifier (e.g. a supplier's category id), model it as an idempotent find-or-create keyed on that external reference — not a plain `create` the caller guards with its own existence check. Make it race-safe: catch the unique-constraint violation from a losing concurrent insert and re-read the winner's row instead of surfacing an error.
+
+```typescript
+// Domain layer interface (CategoryRepository.findOrCreateByExternalRef)
+export interface ICategoryRepository {
+    // ...existing methods...
+    findOrCreateByExternalRef(provider: string, externalCategoryId: string, name: string): Promise<Category>;
+}
+
+// Infrastructure layer implementation
+async findOrCreateByExternalRef(provider: string, externalCategoryId: string, name: string): Promise<Category> {
+    const existing = await prisma.supplierCategoryMapping.findUnique({
+        where: { provider_externalCategoryId: { provider, externalCategoryId } },
+        include: { category: true },
+    });
+    if (existing) return new Category(existing.category);
+
+    try {
+        const category = await prisma.$transaction(async (tx) => {
+            let row = await tx.category.findUnique({ where: { name } });
+            if (!row) row = await tx.category.create({ data: { name, status: 'Inactive' } });
+            await tx.supplierCategoryMapping.create({ data: { provider, externalCategoryId, categoryId: row.id } });
+            return row;
+        });
+        return new Category(category);
+    } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+            // Lost a concurrent race to create this exact mapping — re-read
+            // and return the winner's row instead of throwing.
+            const raceWinner = await prisma.supplierCategoryMapping.findUnique({
+                where: { provider_externalCategoryId: { provider, externalCategoryId } },
+                include: { category: true },
+            });
+            if (raceWinner) return new Category(raceWinner.category);
+        }
+        throw err;
+    }
+}
+```
+
 ## Testing Standards
 
 The project has strict requirements for code quality and maintainability. These are the unit testing standards and best practices that must be applied. 

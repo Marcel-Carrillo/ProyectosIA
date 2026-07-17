@@ -89,13 +89,6 @@ async function collectPromotableCatalogItemIds(supplierId: number): Promise<numb
   return Array.from(ids);
 }
 
-function resolveDefaultCategoryId(): number | undefined {
-  const raw = process.env.CJ_DEFAULT_CATEGORY_ID;
-  if (!raw) return undefined;
-  const value = Number(raw);
-  return Number.isInteger(value) && value > 0 ? value : undefined;
-}
-
 function isConfigured(): boolean {
   const key = process.env.CJDROPSHIPPING_API_KEY;
   return typeof key === 'string' && key.trim().length > 0 && key !== CJ_PLACEHOLDER_API_KEY;
@@ -103,35 +96,43 @@ function isConfigured(): boolean {
 
 // promote() validates the whole batch before writing anything: one item with
 // an unresolvable price (e.g. a zero-cost item — sync only rejects negative
-// cost, not zero) fails every item in the batch, not just the offender. Left
-// unhandled, the same poison item would block the entire remaining catalog's
-// auto-promotion on every scheduled run, forever. Retry once, excluding
-// exactly the items the error reports, so the rest of the batch still gets
-// promoted and only the genuinely bad item(s) are skipped (and re-attempted,
-// and re-logged, on the next run — never silently dropped).
-async function promoteExcludingPoisonItems(
-  supplierId: number,
-  ids: number[],
-  categoryId: number | undefined
-): Promise<PromoteResult> {
+// cost, not zero) OR an unresolvable category (no CJ category match and no
+// CJ_DEFAULT_CATEGORY_ID fallback configured) fails every item in the batch,
+// not just the offender. Left unhandled, the same poison item would block the
+// entire remaining catalog's auto-promotion on every scheduled run, forever.
+// Retry once, excluding exactly the items the error reports, so the rest of
+// the batch still gets promoted and only the genuinely bad item(s) are
+// skipped (and re-attempted, and re-logged, on the next run — never silently
+// dropped). CjPromotionCategoryRequiredError.itemErrors mirrors
+// CjPromotionValidationError.itemErrors for exactly this reason (see
+// cjCatalogPromotionService.ts's category-resolution loop).
+async function promoteExcludingPoisonItems(supplierId: number, ids: number[]): Promise<PromoteResult> {
   try {
     return await cjCatalogPromotionService.promote(supplierId, {
       items: ids.map((cjCatalogItemId) => ({ cjCatalogItemId })),
-      categoryId,
+      // No categoryId: promote() resolves each item's real CJ category
+      // itself, falling back to CJ_DEFAULT_CATEGORY_ID only when that fails
+      // (cj-category-mapping) — this pipeline no longer forces one fixed
+      // category on every auto-promoted item.
       activate: false, // never change to true — auto-promoted products must stay Draft (design.md D5)
     });
   } catch (err) {
-    if (err instanceof CjPromotionValidationError && err.itemErrors.length > 0) {
-      const failedIds = new Set(err.itemErrors.map((e) => e.cjCatalogItemId));
+    const itemErrors =
+      err instanceof CjPromotionValidationError
+        ? err.itemErrors
+        : err instanceof CjPromotionCategoryRequiredError
+          ? err.itemErrors
+          : undefined;
+    if (itemErrors && itemErrors.length > 0) {
+      const failedIds = new Set(itemErrors.map((e) => e.cjCatalogItemId));
       const remaining = ids.filter((id) => !failedIds.has(id));
       if (remaining.length > 0 && remaining.length < ids.length) {
-        logger.warn('CJ auto-promotion retrying batch excluding items that failed price/validation resolution', {
+        logger.warn('CJ auto-promotion retrying batch excluding items that failed price/validation/category resolution', {
           supplierId,
           excludedItemIds: Array.from(failedIds),
         });
         return await cjCatalogPromotionService.promote(supplierId, {
           items: remaining.map((cjCatalogItemId) => ({ cjCatalogItemId })),
-          categoryId,
           activate: false,
         });
       }
@@ -154,9 +155,8 @@ async function runPipeline(supplierId: number): Promise<ProviderPipelineResult> 
     return { ...base, variantsCreated: 0, alreadyPromoted: 0, promotionSkippedReason: 'NO_PROMOTABLE_ITEMS' };
   }
 
-  const categoryId = resolveDefaultCategoryId();
   try {
-    const promoteResult = await promoteExcludingPoisonItems(supplierId, promotableIds, categoryId);
+    const promoteResult = await promoteExcludingPoisonItems(supplierId, promotableIds);
     return {
       ...base,
       variantsCreated: promoteResult.variants.filter((v) => !v.wasAlreadyPromoted).length,

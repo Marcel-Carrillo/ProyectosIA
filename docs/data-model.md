@@ -50,6 +50,9 @@ Categories are soft-deleted by setting `status = Inactive` rather than removing 
 * `parent`: Many-to-one self-referencing relationship with Category model (via `parentId`)
 * `children`: One-to-many self-referencing relationship with Category model
 * `products`: One-to-many relationship with Product model (planned)
+* `supplierCategoryMappings`: One-to-many relationship with SupplierCategoryMapping model (see model 21) — a Category can be the target of more than one supplier-category mapping (e.g. two differently-named CJ leaf categories both resolving-by-name to the same pre-existing local Category)
+
+> A `Category` created directly via `POST /categories` defaults to `status = Active`. A `Category` auto-created through supplier category resolution (see model 21, `SupplierCategoryMapping`) defaults to `status = Inactive` instead, so raw/untranslated supplier category names never appear in storefront navigation before an admin reviews and activates them.
 
 ### 2. Product
 
@@ -923,6 +926,29 @@ Queryable record of a failed automatic fulfillment step (supplier-order generati
 * `customerOrder`: Many-to-one relationship with CustomerOrder model (optional)
 * `supplierOrder`: Many-to-one relationship with SupplierOrder model (optional)
 
+### 21. SupplierCategoryMapping
+
+Links an external supplier's own category taxonomy id to a local Category, so product promotion (manual and automated) can auto-create a `Category` the first time a given supplier category is seen and then reuse it on every subsequent promotion, instead of creating a duplicate `Category` per run. Introduced for CJ Dropshipping category resolution; `provider` is a free string (mirrors `SupplierIntegration.provider`, not an FK) so a second supplier's taxonomy can be added later without a schema change.
+
+**Fields:**
+
+* `id`: Auto-incremented integer primary key
+* `provider`: Supplier/integration identifier (max 50 characters — e.g. `CJDropshipping`)
+* `externalCategoryId`: The supplier's own category id (max 100 characters)
+* `categoryId`: Foreign key referencing the local Category this external category resolves to
+* `createdAt`: Timestamp when the mapping was created
+* `updatedAt`: Timestamp when the mapping was last updated
+
+**Validation Rules:**
+
+* `(provider, externalCategoryId)` is unique — a given supplier category maps to at most one local Category
+* Finding-or-creating a mapping is a single idempotent operation: if no mapping exists for the pair, a new `Category` (`status = Inactive`) and its mapping are created together; if a mapping already exists, the linked `Category` is reused and no duplicate is created
+* Race-safe under concurrent callers (e.g. a manual promotion racing the scheduled auto-provisioning job) — a losing concurrent insert re-reads and reuses the winner's row instead of surfacing a unique-constraint error
+
+**Relationships:**
+
+* `category`: Many-to-one relationship with Category model
+
 ## Entity Relationship Diagram
 
 ```mermaid
@@ -1158,8 +1184,18 @@ erDiagram
         DateTime processedAt
     }
 
+    SupplierCategoryMapping {
+        Int id PK
+        String provider
+        String externalCategoryId
+        Int categoryId FK
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
     Category ||--o{ Category : "contains"
     Category ||--o{ Product : "groups"
+    Category ||--o{ SupplierCategoryMapping : "mapped_from"
 
     Product ||--o{ ProductVariant : "has"
     Product ||--o{ ProductImage : "has"

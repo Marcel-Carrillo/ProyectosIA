@@ -1357,8 +1357,10 @@ paths:
                 $ref: '#/components/schemas/CjPromoteResponse'
         '422':
           description: >
-            Validation failure — missing/invalid categoryId (CJ_PROMOTION_CATEGORY_REQUIRED),
-            unresolved price (CJ_PROMOTION_PRICE_REQUIRED), a Failed-sync item
+            Validation failure — no category could be assigned (CJ_PROMOTION_CATEGORY_REQUIRED:
+            an explicit `categoryId` that doesn't reference an existing Category, or automatic
+            CJ-taxonomy resolution failed AND no valid `CJ_DEFAULT_CATEGORY_ID` fallback is
+            configured), unresolved price (CJ_PROMOTION_PRICE_REQUIRED), a Failed-sync item
             (CJ_CATALOG_ITEM_SYNC_FAILED_CANNOT_PROMOTE), or one or more invalid items in a bulk
             request (CJ_PROMOTION_VALIDATION_FAILED, includes a per-item `itemErrors` list).
             No records are persisted when any item is invalid.
@@ -1517,6 +1519,51 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '502':
           description: CJ Dropshipping API is unreachable (CJ_API_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/suppliers/{supplierId}/cj/recategorize:
+    post:
+      summary: Backfill the real CJ category for already-promoted products still on the default category (admin)
+      description: >
+        Idempotent, admin-triggered maintenance action (not automatic). Finds every `Product`
+        whose `categoryId` currently equals the configured `CJ_DEFAULT_CATEGORY_ID` fallback
+        category, resolves the real CJ category from its variants' linked
+        `CjCatalogItem.categoryId` (same resolution/auto-create as
+        `POST /cj/catalog/promote`), and reassigns it. Skips (and reports why) any product with
+        no CJ-mapped variant, variants that disagree on CJ category, or whose category changed
+        concurrently since the read. Never touches a product an admin has already moved off the
+        default category. Safe to re-run — already-reassigned products are excluded from
+        subsequent calls since the read is always scoped to the current default category.
+        Rate-limited. Never exposed on `/api/public/*`.
+      tags:
+        - Admin — CJ Dropshipping Integration
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Backfill run completed (may have reassigned zero products)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CjRecategorizeResponse'
+        '422':
+          description: No CJ_DEFAULT_CATEGORY_ID configured/valid to backfill against (CJ_PROMOTION_CATEGORY_REQUIRED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: CJ Dropshipping connection not found (CJ_CONNECTION_NOT_FOUND)
           content:
             application/json:
               schema:
@@ -5248,7 +5295,7 @@ components:
 
     CjPromoteRequest:
       type: object
-      required: [items, categoryId]
+      required: [items]
       properties:
         items:
           type: array
@@ -5258,6 +5305,13 @@ components:
         categoryId:
           type: integer
           minimum: 1
+          description: >
+            Optional admin override. When present, this category is used as-is and CJ-taxonomy
+            resolution is skipped entirely for the request. When omitted (the default), the
+            system resolves each pid-group's real category from CJ's own taxonomy
+            (`CjCatalogItem.categoryId`), auto-creating a local `Category` (default
+            `status = Inactive`) the first time a given CJ category is seen, then falls back to
+            the configured `CJ_DEFAULT_CATEGORY_ID` only if that resolution isn't possible.
         activate:
           type: boolean
           default: false
@@ -5312,6 +5366,44 @@ components:
         message:
           type: string
           example: CJ catalog items promoted successfully
+
+    CjRecategorizeResult:
+      type: object
+      properties:
+        fromCategoryId:
+          type: integer
+          description: The configured CJ_DEFAULT_CATEGORY_ID this run backfilled products away from.
+        reassigned:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              toCategoryId:
+                type: integer
+        skipped:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              reason:
+                type: string
+                enum: [NO_CJ_CATEGORY_MAPPING, CONFLICTING_CJ_CATEGORIES, CJ_CATEGORY_RESOLUTION_FAILED, CATEGORY_CHANGED_CONCURRENTLY]
+
+    CjRecategorizeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CjRecategorizeResult'
+        message:
+          type: string
+          example: CJ category backfill completed
 
     CjActionResult:
       type: object
