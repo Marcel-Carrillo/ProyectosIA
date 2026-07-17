@@ -18,7 +18,7 @@ beforeEach(() => {
   (adminProductService as Mocked<typeof adminProductService>).list.mockResolvedValue({
     success: true, data: { items: [], total: 0, page: 1, pageSize: 20 }, message: '',
   });
-  (categoryService as Mocked<typeof categoryService>).getAll.mockResolvedValue([]);
+  (categoryService as Mocked<typeof categoryService>).getAllAdmin.mockResolvedValue([]);
 });
 
 describe('Admin Layout — noindex coverage', () => {
