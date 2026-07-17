@@ -93,4 +93,28 @@ describe('buildCjCategoryResolver', () => {
 
     expect(resolver.resolve('cj-100')).toBeUndefined();
   });
+
+  it('should_resolve_first_and_second_level_ids_when_present_on_the_live_payload', async () => {
+    const cjClient = makeCjClient(
+      jest.fn().mockResolvedValue([
+        {
+          categoryFirstId: 'cj-first',
+          categoryFirstName: 'Women',
+          categoryFirstList: [
+            {
+              categorySecondId: 'cj-second',
+              categorySecondName: 'Dresses',
+              categorySecondList: [{ categoryId: 'cj-leaf', categoryName: 'Midi Dresses' }],
+            },
+          ],
+        },
+      ])
+    );
+
+    const resolver = await buildCjCategoryResolver(cjClient);
+
+    expect(resolver.resolve('cj-first')).toBe('Women');
+    expect(resolver.resolve('cj-second')).toBe('Dresses');
+    expect(resolver.resolve('cj-leaf')).toBe('Midi Dresses');
+  });
 });
