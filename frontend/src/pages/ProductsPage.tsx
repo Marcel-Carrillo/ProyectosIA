@@ -42,7 +42,7 @@ const ProductsPage: React.FC = () => {
   // Load categories once for the filter dropdown.
   useEffect(() => {
     categoryService
-      .getAll()
+      .getAllAdmin()
       .then(setCategories)
       .catch(() => setCategories([]));
   }, []);

@@ -1,4 +1,4 @@
-import { roundToPsychologicalPrice } from '../pricing';
+import { computeCjPublicPrice, roundToPsychologicalPrice } from '../pricing';
 
 describe('roundToPsychologicalPrice', () => {
   it('should_round_up_a_decimal_value_to_the_next_dot99_ending', () => {
@@ -32,5 +32,17 @@ describe('roundToPsychologicalPrice', () => {
     expect(roundToPsychologicalPrice(-5)).toBe(0);
     expect(roundToPsychologicalPrice(NaN)).toBe(0);
     expect(roundToPsychologicalPrice(Infinity)).toBe(0);
+  });
+});
+
+describe('computeCjPublicPrice', () => {
+  it('should_apply_markup_only_to_cost_then_add_flat_shipping', () => {
+    // 10 * 1.6 + 8 = 24 → 24.99
+    expect(computeCjPublicPrice(10, 1.6, 8)).toBe(24.99);
+  });
+
+  it('should_not_mark_up_shipping', () => {
+    // Wrong formula was (10+8)*1.6 = 28.8 → 28.99
+    expect(computeCjPublicPrice(10, 1.6, 8)).not.toBe(28.99);
   });
 });

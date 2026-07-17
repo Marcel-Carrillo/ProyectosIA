@@ -67,7 +67,7 @@ const setup = (product: Product, variants: ProductVariant[]) => {
   mockedAdmin.getById.mockResolvedValue({ success: true, data: product, message: '' });
   mockedAdmin.listVariants.mockResolvedValue({ success: true, data: variants, message: '' });
   mockedAdmin.listImages.mockResolvedValue({ success: true, data: [], message: '' });
-  mockedCategory.getAll.mockResolvedValue([]);
+  mockedCategory.getAllAdmin.mockResolvedValue([]);
   return render(
     <MemoryRouter initialEntries={['/products/42']}>
       <Routes>
@@ -146,7 +146,7 @@ describe('ProductDetailPage', () => {
     mockedAdmin.getById.mockRejectedValue(makeAxiosError('PRODUCT_NOT_FOUND', 404));
     mockedAdmin.listVariants.mockResolvedValue({ success: true, data: [], message: '' });
     mockedAdmin.listImages.mockResolvedValue({ success: true, data: [], message: '' });
-    mockedCategory.getAll.mockResolvedValue([]);
+    mockedCategory.getAllAdmin.mockResolvedValue([]);
     render(
       <MemoryRouter initialEntries={['/products/42']}>
         <Routes>

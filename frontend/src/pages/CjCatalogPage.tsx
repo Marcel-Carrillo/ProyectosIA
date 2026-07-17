@@ -58,7 +58,7 @@ const CjCatalogPage: React.FC = () => {
   const hasLoadedConnectionOnce = useRef(false);
 
   useEffect(() => {
-    categoryService.getAll().then(setCategories).catch(() => setCategories([]));
+    categoryService.getAllAdmin().then(setCategories).catch(() => setCategories([]));
   }, []);
 
   const fetchConnection = useCallback(async () => {

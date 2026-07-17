@@ -19,7 +19,7 @@ import {
 import { logger } from '../../infrastructure/logger';
 import { extractCjImages, planProductImages } from './cjImageExtraction';
 import { setProductMainImage, createProductImageRecord } from './cjProductImageSync';
-import { roundToPsychologicalPrice } from './pricing';
+import { computeCjPublicPrice, roundToPsychologicalPrice } from './pricing';
 import { buildCjCategoryResolver } from './cjCategoryResolution';
 
 const DEFAULT_MARKUP_ENV = 'CJ_DEFAULT_MARKUP_MULTIPLIER';
@@ -84,16 +84,11 @@ export class CjCatalogPromotionService {
     return Number.isFinite(value) && value > 0 ? value : undefined;
   }
 
-  // Flat, configurable shipping estimate added to supplierCost before markup
-  // (production bug fix, 2026-07-17: the persisted publicPrice previously
-  // ignored shipping entirely). Deliberately NOT a live CJ freight quote per
-  // item here — estimateFreight() below already offers that for the
-  // admin-facing "suggested price" preview, but calling it unconditionally
-  // for every item in promote() would reintroduce the exact Lambda-timeout
-  // risk just fixed for the recategorize endpoint (CJ's freight API is
-  // rate-limited to ~1 req/s, and the manual promote endpoint runs in the
-  // same 6s-default `app` Lambda). Defaults to 0 (no shipping added) if
-  // unconfigured.
+  // Flat, configurable shipping estimate ADDED after markup on cost
+  // (publicPrice = supplierCost * markup + shippingEstimate). Deliberately
+  // NOT a live CJ freight quote per item here — calling calculateFreight
+  // unconditionally for every item in promote() would risk Lambda timeouts
+  // (CJ's freight API is rate-limited to ~1 req/s). Defaults to 0 if unset.
   private getDefaultShippingEstimate(): number {
     const raw = process.env[DEFAULT_SHIPPING_ESTIMATE_ENV];
     if (!raw) return 0;
@@ -162,13 +157,14 @@ export class CjCatalogPromotionService {
         });
         continue;
       }
-      // publicPrice = (supplierCost + shippingEstimate) * markup, rounded to
-      // a psychological ",99" ending — an explicit request price still wins
+      // publicPrice = supplierCost * markup + shippingEstimate, rounded to a
+      // psychological ",99" ending. Margin applies only to cost; shipping is
+      // a flat add-on (not marked up). An explicit request price still wins
       // outright (admin override, unrounded, as before).
       const resolvedPrice =
         requestItem.publicPrice ??
         (markup !== undefined
-          ? roundToPsychologicalPrice((Number(catalogItem.supplierCost) + shippingEstimate) * markup)
+          ? computeCjPublicPrice(Number(catalogItem.supplierCost), markup, shippingEstimate)
           : undefined);
       if (resolvedPrice === undefined || !Number.isFinite(resolvedPrice) || resolvedPrice <= 0) {
         itemErrors.push({
@@ -373,6 +369,7 @@ export class CjCatalogPromotionService {
                 supplierId: integration.supplierId,
                 supplierReference: groupItem.catalogItem.externalRef,
                 supplierCost: groupItem.catalogItem.supplierCost,
+                shippingCostEstimate: shippingEstimate,
                 stockQuantity: groupItem.catalogItem.stockQuantity,
                 stockPolicy: 'SupplierManaged',
                 // Always created Active, independent of `input.activate`
@@ -484,12 +481,15 @@ export class CjCatalogPromotionService {
     const lowest = quote.reduce((min, opt) => (opt.logisticPrice < min.logisticPrice ? opt : min));
     const markup = this.getDefaultMarkupMultiplier();
     const supplierCost = Number(catalogItem.supplierCost);
-    const rawPrice =
-      markup !== undefined ? supplierCost * markup + lowest.logisticPrice : supplierCost + lowest.logisticPrice;
+    // Same formula shape as promote(): margin on cost only, then add shipping.
+    const suggestedPublicPrice =
+      markup !== undefined
+        ? computeCjPublicPrice(supplierCost, markup, lowest.logisticPrice)
+        : roundToPsychologicalPrice(supplierCost + lowest.logisticPrice);
 
     return {
       shippingCostEstimate: lowest.logisticPrice,
-      suggestedPublicPrice: roundToPsychologicalPrice(rawPrice),
+      suggestedPublicPrice,
     };
   }
 
