@@ -23,24 +23,24 @@ export interface CjEnvelope<T> {
   pointsInfo?: CjPointsInfo;
 }
 
-// Confirmed against CJ Dropshipping's published API docs
-// (https://developers.cjdropshipping.cn/en/api/api2/api/product.html, "Category List (GET)" /
-// product/getCategory — verified 2026-07-16, no CJ sandbox credentials available in this dev
-// environment to capture a live payload). The tree has exactly 3 levels; only the leaf
-// (third) level carries an id — there is no id field at the first or second level.
-// `CjProductDto.categoryId` (used in the product listing endpoint) always references this
-// leaf `categoryId`, never a first/second-level grouping.
+// Confirmed against live CJ Dropshipping /product/getCategory payloads
+// (production, 2026-07-17) and published docs. The tree has 3 levels; live
+// responses expose `categoryFirstId` / `categorySecondId` in addition to the
+// leaf `categoryId`. Product listing `categoryId` usually targets a leaf but
+// can also reference a mid-level id on some catalog entries.
 export interface CjCategoryLeafDto {
   categoryId: string;
   categoryName: string;
 }
 
 export interface CjCategorySecondLevelDto {
+  categorySecondId?: string;
   categorySecondName: string;
   categorySecondList?: CjCategoryLeafDto[];
 }
 
 export interface CjCategoryDto {
+  categoryFirstId?: string;
   categoryFirstName: string;
   categoryFirstList?: CjCategorySecondLevelDto[];
 }
