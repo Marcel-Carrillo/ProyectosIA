@@ -11,6 +11,19 @@ import { logger } from '../../infrastructure/logger';
 const DEFAULT_CATEGORY_ENV = 'CJ_DEFAULT_CATEGORY_ID';
 const CJ_PROVIDER = 'CJDropshipping';
 
+// Production incident (2026-07-17): an earlier, unbounded version of this
+// endpoint loaded every Product currently at the fallback category in one
+// call — with thousands of legacy products under one supplier's default
+// category, that blew the `app` Lambda's 6s default timeout (no explicit
+// `timeout` is set for the HTTP `app` function in serverless.yml, unlike the
+// 900s-timeout scheduled jobs) every single time, returning a 502. Bounded to
+// a conservative per-call batch instead — idempotent and safe to call
+// repeatedly (each call only ever touches products still AT the fallback
+// category, so already-reassigned ones are naturally excluded from the next
+// call) until `hasMore` is false.
+const DEFAULT_BATCH_LIMIT = 25;
+const MAX_BATCH_LIMIT = 200;
+
 export type RecategorizeSkipReason =
   | 'NO_CJ_CATEGORY_MAPPING'
   | 'CONFLICTING_CJ_CATEGORIES'
@@ -21,6 +34,10 @@ export interface RecategorizeResult {
   fromCategoryId: number;
   reassigned: { productId: number; toCategoryId: number }[];
   skipped: { productId: number; reason: RecategorizeSkipReason }[];
+  // True when this batch was capped at the limit — more candidate products
+  // may remain at fromCategoryId. Call recategorize() again to continue;
+  // it's idempotent, so repeated calls only ever pick up what's left.
+  hasMore: boolean;
 }
 
 // Admin-triggered, idempotent maintenance action (design.md Decision 7): finds
@@ -42,14 +59,19 @@ export class CjCategoryBackfillService {
     private readonly cjClient: ICjClient
   ) {}
 
-  async recategorize(supplierId: number): Promise<RecategorizeResult> {
+  async recategorize(supplierId: number, limit?: number): Promise<RecategorizeResult> {
     const integration = await this.integrationRepo.findBySupplierId(supplierId);
     if (!integration || !integration.id) throw new SupplierIntegrationNotFoundError();
 
     const fromCategoryId = await this.resolveTargetCategoryId();
     if (fromCategoryId === undefined) throw new CjPromotionCategoryRequiredError();
 
-    const rows = await this.variantRepo.findManyByProductCategoryId(fromCategoryId);
+    const effectiveLimit =
+      limit !== undefined && Number.isInteger(limit) && limit > 0
+        ? Math.min(limit, MAX_BATCH_LIMIT)
+        : DEFAULT_BATCH_LIMIT;
+
+    const rows = await this.variantRepo.findManyByProductCategoryId(fromCategoryId, effectiveLimit);
     const byProduct = new Map<number, { cjCatalogItemId: number | null }[]>();
     for (const row of rows) {
       const list = byProduct.get(row.productId) ?? [];
@@ -106,14 +128,23 @@ export class CjCategoryBackfillService {
       }
     }
 
-    logger.info('CJ category backfill run completed', {
+    // byProduct.size === effectiveLimit means the product query was capped
+    // exactly at the limit — more candidates may exist beyond this batch.
+    // (A false positive is possible if EXACTLY effectiveLimit products
+    // happened to exist total; the only cost of that is one harmless extra
+    // call that comes back with hasMore: false.)
+    const hasMore = byProduct.size === effectiveLimit;
+
+    logger.info('CJ category backfill batch completed', {
       supplierId,
       fromCategoryId,
+      batchSize: byProduct.size,
       reassignedCount: reassigned.length,
       skippedCount: skipped.length,
+      hasMore,
     });
 
-    return { fromCategoryId, reassigned, skipped };
+    return { fromCategoryId, reassigned, skipped, hasMore };
   }
 
   // Mirrors CjCatalogPromotionService.resolveFallbackCategoryId() — the

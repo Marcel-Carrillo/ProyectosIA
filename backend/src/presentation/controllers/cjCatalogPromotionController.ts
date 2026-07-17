@@ -80,8 +80,14 @@ export async function deactivate(req: Request, res: Response, next: NextFunction
 export async function recategorize(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const supplierId = parseSupplierIdParam(req.params['supplierId'] as string);
-    const result = await cjCategoryBackfillService.recategorize(supplierId);
-    res.json({ success: true, data: result, message: 'CJ category backfill completed' });
+    // Optional per-call batch size (see cjCategoryBackfillService.ts's
+    // DEFAULT_BATCH_LIMIT comment — the underlying operation is deliberately
+    // bounded per call to stay inside the `app` Lambda's timeout; call again
+    // while `hasMore` is true to work through a large backlog).
+    const rawLimit = req.query['limit'];
+    const limit = typeof rawLimit === 'string' && rawLimit.trim() !== '' ? Number(rawLimit) : undefined;
+    const result = await cjCategoryBackfillService.recategorize(supplierId, limit);
+    res.json({ success: true, data: result, message: 'CJ category backfill batch completed' });
   } catch (err) {
     next(err);
   }
