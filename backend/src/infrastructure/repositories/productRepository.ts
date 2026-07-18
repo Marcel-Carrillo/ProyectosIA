@@ -86,6 +86,7 @@ export class ProductRepository implements IProductRepository {
     const where: Record<string, unknown> = { deletedAt: null };
     if (filters.status) where['status'] = filters.status;
     if (filters.categoryId) where['categoryId'] = filters.categoryId;
+    if (filters.storefrontCategoryId) where['storefrontCategoryId'] = filters.storefrontCategoryId;
     if (filters.search) {
       where['name'] = { contains: filters.search, mode: 'insensitive' };
     }
@@ -155,6 +156,7 @@ export class ProductRepository implements IProductRepository {
         status: data.status ?? 'Draft',
         mainImageUrl: data.mainImageUrl ?? null,
         categoryId: data.categoryId ?? null,
+        storefrontCategoryId: data.storefrontCategoryId ?? null,
       },
     });
     return new Product(row);
@@ -180,6 +182,9 @@ export class ProductRepository implements IProductRepository {
         ...(data.status !== undefined && { status: data.status }),
         ...(data.mainImageUrl !== undefined && { mainImageUrl: data.mainImageUrl }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+        ...(data.storefrontCategoryId !== undefined && {
+          storefrontCategoryId: data.storefrontCategoryId,
+        }),
       },
     });
     return new Product(row);

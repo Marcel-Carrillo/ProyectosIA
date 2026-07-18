@@ -12,7 +12,8 @@ const makeProduct = () =>
     gtin: '5901234123457',
     status: 'Active',
     mainImageUrl: 'https://img/main.jpg',
-    categoryId: 3,
+    categoryId: 99,
+    storefrontCategoryId: 3,
     variants: [
       { productId: 1, sku: 'EJS-1', publicPrice: 20, status: 'Active', stockPolicy: 'SupplierManaged', stockQuantity: 8 },
       { productId: 1, sku: 'EJS-1-OLD', publicPrice: 10, status: 'Inactive', stockPolicy: 'SupplierManaged', stockQuantity: 0 },
@@ -25,6 +26,11 @@ const makeProduct = () =>
   });
 
 describe('serializePublicProduct', () => {
+  it('maps public categoryId from storefrontCategoryId, not supplier categoryId', () => {
+    const dto = serializePublicProduct(makeProduct());
+    expect(dto.categoryId).toBe(3);
+  });
+
   it('exposes only the customer-safe allow-list of fields', () => {
     const dto = serializePublicProduct(makeProduct());
     expect(Object.keys(dto).sort()).toEqual(

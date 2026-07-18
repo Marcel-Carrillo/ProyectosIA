@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import { Card, Row, Col, Form, Button, Alert } from 'react-bootstrap';
@@ -20,6 +20,18 @@ import {
 import { Category } from '../types/category';
 import { buildTranslationsPayload, readTranslationField } from '../utils/translationFormHelpers';
 import { useTranslation } from 'react-i18next';
+import {
+  STOREFRONT_CATEGORY_DB_NAMES,
+  STOREFRONT_CATEGORY_ORDER,
+  StorefrontCategoryKey,
+} from '../constants/storefrontCategories';
+
+const STOREFRONT_LABEL_KEYS: Record<StorefrontCategoryKey, string> = {
+  women: 'nav.category.women',
+  men: 'nav.category.men',
+  accessories: 'nav.category.accessories',
+  shoes: 'nav.category.shoes',
+};
 
 const errorCode = (error: unknown): string =>
   (error as AxiosError<AdminApiError>).response?.data?.error?.code ?? '';
@@ -37,6 +49,7 @@ const ProductDetailPage: React.FC = () => {
   const [loadError, setLoadError] = useState('');
 
   const { t } = useTranslation('admin');
+  const { t: tCommon } = useTranslation('common');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -44,6 +57,7 @@ const ProductDetailPage: React.FC = () => {
     brand: '',
     gtin: '',
     categoryId: '',
+    storefrontCategoryId: '',
     mainImageUrl: '',
     nameEn: '',
     descriptionEn: '',
@@ -78,6 +92,9 @@ const ProductDetailPage: React.FC = () => {
         brand: productRes.data.brand ?? '',
         gtin: productRes.data.gtin ?? '',
         categoryId: productRes.data.categoryId ? String(productRes.data.categoryId) : '',
+        storefrontCategoryId: productRes.data.storefrontCategoryId
+          ? String(productRes.data.storefrontCategoryId)
+          : '',
         mainImageUrl: productRes.data.mainImageUrl ?? '',
         nameEn: readTranslationField(productRes.data.translations, 'en', 'name') || productRes.data.name,
         descriptionEn: readTranslationField(productRes.data.translations, 'en', 'description') || (productRes.data.description ?? ''),
@@ -100,6 +117,16 @@ const ProductDetailPage: React.FC = () => {
   }, [loadAll]);
 
   const canActivate = variants.some((v) => v.status === 'Active');
+  const isActive = product?.status === 'Active';
+
+  const storefrontOptions = useMemo(() => {
+    return STOREFRONT_CATEGORY_ORDER.flatMap((key) => {
+      const dbName = STOREFRONT_CATEGORY_DB_NAMES[key];
+      const cat = categories.find((c) => c.name === dbName && c.status === 'Active');
+      if (!cat) return [];
+      return [{ id: cat.id, key, label: tCommon(STOREFRONT_LABEL_KEYS[key]) }];
+    });
+  }, [categories, tCommon]);
 
   const refetchVariants = useCallback(async () => {
     const res = await adminProductService.listVariants(numId);
@@ -135,8 +162,19 @@ const ProductDetailPage: React.FC = () => {
         mainImageUrl: formData.mainImageUrl || null,
         translations: translations.length > 0 ? translations : undefined,
       };
+      if (product.status === 'Active') {
+        payload.storefrontCategoryId = formData.storefrontCategoryId
+          ? Number(formData.storefrontCategoryId)
+          : null;
+      }
       const res = await adminProductService.update(numId, payload);
       setProduct(res.data);
+      setFormData((p) => ({
+        ...p,
+        storefrontCategoryId: res.data.storefrontCategoryId
+          ? String(res.data.storefrontCategoryId)
+          : '',
+      }));
       setSaveSuccess(true);
     } catch (error) {
       const code = errorCode(error);
@@ -157,6 +195,12 @@ const ProductDetailPage: React.FC = () => {
     try {
       const res = await adminProductService.update(numId, { status: newStatus });
       setProduct(res.data);
+      setFormData((p) => ({
+        ...p,
+        storefrontCategoryId: res.data.storefrontCategoryId
+          ? String(res.data.storefrontCategoryId)
+          : '',
+      }));
     } catch (error) {
       const code = errorCode(error);
       if (code === 'PRODUCT_NOT_FOUND') {
@@ -327,6 +371,7 @@ const ProductDetailPage: React.FC = () => {
                       <Form.Select
                         value={formData.categoryId}
                         onChange={(e) => setFormData((p) => ({ ...p, categoryId: e.target.value }))}
+                        data-testid="select-supplier-category"
                       >
                         <option value="">— Ninguna —</option>
                         {categories.map((c) => (
@@ -340,6 +385,32 @@ const ProductDetailPage: React.FC = () => {
                   </Col>
                   <Col md={4}>
                     <Form.Group className="mb-3">
+                      <Form.Label>Categoría del store</Form.Label>
+                      <Form.Select
+                        value={formData.storefrontCategoryId}
+                        onChange={(e) =>
+                          setFormData((p) => ({ ...p, storefrontCategoryId: e.target.value }))
+                        }
+                        disabled={!isActive}
+                        data-testid="select-storefront-category"
+                      >
+                        <option value="">— Ninguna —</option>
+                        {storefrontOptions.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </Form.Select>
+                      <Form.Text className="text-muted">
+                        Solo productos activos aparecen en el catálogo por sección (Mujer, Hombre,
+                        Accesorios, Zapatos).
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
                       <Form.Label>URL de imagen principal</Form.Label>
                       <Form.Control
                         type="text"
@@ -348,8 +419,6 @@ const ProductDetailPage: React.FC = () => {
                       />
                     </Form.Group>
                   </Col>
-                </Row>
-                <Row>
                   <Col md={4}>
                     <Form.Group className="mb-3">
                       <Form.Label>GTIN</Form.Label>
