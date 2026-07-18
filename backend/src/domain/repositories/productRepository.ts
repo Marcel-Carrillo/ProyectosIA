@@ -11,6 +11,7 @@ export interface ProductCreateData {
   status?: string;
   mainImageUrl?: string | null;
   categoryId?: number | null;
+  storefrontCategoryId?: number | null;
 }
 
 export interface ProductUpdateData {
@@ -22,11 +23,14 @@ export interface ProductUpdateData {
   status?: string;
   mainImageUrl?: string | null;
   categoryId?: number | null;
+  storefrontCategoryId?: number | null;
 }
 
 export interface ProductListFilters {
   status?: string;
   categoryId?: number;
+  /** Public catalog filter — matches Product.storefrontCategoryId (not supplier categoryId). */
+  storefrontCategoryId?: number;
   search?: string;
   page?: number;
   pageSize?: number;

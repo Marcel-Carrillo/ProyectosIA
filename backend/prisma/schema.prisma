@@ -22,7 +22,8 @@ model Category {
   children               Category[]              @relation("CategoryHierarchy")
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
-  products                 Product[]
+  products                 Product[]              @relation("ProductSupplierCategory")
+  storefrontProducts       Product[]              @relation("ProductStorefrontCategory")
   supplierCategoryMappings SupplierCategoryMapping[]
 }
 
@@ -67,23 +68,28 @@ model Supplier {
 }
 
 model Product {
-  id           Int                  @id @default(autoincrement())
-  name         String               @db.VarChar(150)
-  slug         String               @unique @db.VarChar(200)
-  description  String?              @db.VarChar(2000)
-  brand        String?              @db.VarChar(100)
-  gtin         String?              @db.VarChar(14)
-  status       String               @default("Draft")
-  mainImageUrl String?              @db.VarChar(500)
-  categoryId   Int?
-  category     Category?            @relation(fields: [categoryId], references: [id])
-  deletedAt    DateTime?
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  variants     ProductVariant[]
-  images       ProductImage[]
-  translations ProductTranslation[]
-  reviews      Review[]
+  id                   Int                  @id @default(autoincrement())
+  name                 String               @db.VarChar(150)
+  slug                 String               @unique @db.VarChar(200)
+  description          String?              @db.VarChar(2000)
+  brand                String?              @db.VarChar(100)
+  gtin                 String?              @db.VarChar(14)
+  status               String               @default("Draft")
+  mainImageUrl         String?              @db.VarChar(500)
+  categoryId           Int?
+  category             Category?            @relation("ProductSupplierCategory", fields: [categoryId], references: [id])
+  // Storefront nav placement (Women/Men/Accessories/Shoes) — independent of supplier taxonomy.
+  storefrontCategoryId Int?
+  storefrontCategory   Category?            @relation("ProductStorefrontCategory", fields: [storefrontCategoryId], references: [id])
+  deletedAt            DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  variants             ProductVariant[]
+  images               ProductImage[]
+  translations         ProductTranslation[]
+  reviews              Review[]
+
+  @@index([storefrontCategoryId])
 }
 
 model ProductVariant {

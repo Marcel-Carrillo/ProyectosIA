@@ -157,6 +157,8 @@ export interface Product {
   status: ProductStatus;
   mainImageUrl: string | null;
   categoryId: number | null;
+  /** Store nav placement (Women/Men/Accessories/Shoes); independent of supplier categoryId. */
+  storefrontCategoryId: number | null;
   variants?: ProductVariant[];
   images?: ProductImage[];
   translations?: ProductTranslation[];
@@ -219,6 +221,7 @@ export interface UpdateProductInput {
   status?: ProductStatus;
   mainImageUrl?: string | null;
   categoryId?: number | null;
+  storefrontCategoryId?: number | null;
   translations?: { locale: SupportedLocale; name: string; description?: string | null }[];
 }
 

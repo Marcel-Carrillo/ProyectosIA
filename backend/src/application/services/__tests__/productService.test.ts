@@ -297,6 +297,34 @@ describe('ProductService - listTranslations', () => {
   });
 });
 
+describe('ProductService - storefrontCategoryId', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.resetModules();
+  });
+
+  it('clears storefrontCategoryId when status leaves Active', async () => {
+    const current = makeProduct({ status: 'Active', storefrontCategoryId: 7 });
+    const refreshed = makeProduct({ status: 'Inactive', storefrontCategoryId: null });
+    mockRepo.findById.mockResolvedValueOnce(current).mockResolvedValueOnce(refreshed);
+    mockRepo.update.mockResolvedValue(refreshed);
+
+    await service.update(1, { status: 'Inactive' });
+
+    expect(mockRepo.update).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ status: 'Inactive', storefrontCategoryId: null }),
+    );
+  });
+
+  it('rejects setting storefrontCategoryId when product is not Active', async () => {
+    mockRepo.findById.mockResolvedValue(makeProduct({ status: 'Draft' }));
+
+    await expect(service.update(1, { storefrontCategoryId: 7 })).rejects.toBeInstanceOf(ValidationError);
+    expect(mockRepo.update).not.toHaveBeenCalled();
+  });
+});
+
 describe('ProductService - update with translations', () => {
   beforeEach(() => jest.clearAllMocks());
 

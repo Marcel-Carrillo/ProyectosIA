@@ -9,7 +9,16 @@ import {
 import { IProductTranslationRepository, TranslationUpsertData } from '../../domain/repositories/productTranslationRepository';
 import { Product } from '../../domain/models/product';
 import { ProductTranslation } from '../../domain/models/productTranslation';
-import { validateProductData, validateTranslationInput, validateAndNormalizeGtinField } from '../validator';
+import {
+  validateProductData,
+  validateTranslationInput,
+  validateAndNormalizeGtinField,
+  ValidationError,
+} from '../validator';
+import {
+  assertValidStorefrontCategoryId,
+  validateAndNormalizeStorefrontCategoryIdField,
+} from '../helpers/storefrontCategoryGuard';
 import {
   ProductNotFoundError,
   ProductRequiresActiveVariantError,
@@ -38,13 +47,16 @@ export class ProductService {
     data: Omit<ProductCreateData, 'slug'> & { slug?: string; translations?: (TranslationUpsertData & { locale: string })[] },
   ): Promise<Product> {
     validateProductData(data as Record<string, unknown>);
+    validateAndNormalizeStorefrontCategoryIdField(data as Record<string, unknown>);
     const effectiveStatus = data.status ?? 'Draft';
     if (effectiveStatus === 'Active') {
       throw new ProductRequiresActiveVariantError();
     }
+    // New products start Draft — storefront placement is assigned after activation
+    // (force null even if the client sent a storefrontCategoryId).
     const { translations, ...productData } = data;
     const slug = productData.slug ?? (await this.resolveUniqueSlug(productData.name));
-    const product = await this.repo.create({ ...productData, slug });
+    const product = await this.repo.create({ ...productData, slug, storefrontCategoryId: null });
 
     if (translations && translations.length > 0) {
       for (const t of translations) {
@@ -105,8 +117,23 @@ export class ProductService {
     // invalid-format value the same way POST does, without newly enforcing
     // name/status rules on update.
     validateAndNormalizeGtinField(data as Record<string, unknown>);
+    validateAndNormalizeStorefrontCategoryIdField(data as Record<string, unknown>);
 
     const { translations, ...productData } = data;
+    const nextStatus = (productData.status ?? current.status) as string;
+
+    if (nextStatus !== 'Active') {
+      if (data.storefrontCategoryId != null) {
+        throw new ValidationError(
+          "Field 'storefrontCategoryId' can only be set when the product status is Active",
+        );
+      }
+      // Leaving Active clears storefront placement.
+      productData.storefrontCategoryId = null;
+    } else if (productData.storefrontCategoryId != null) {
+      await assertValidStorefrontCategoryId(productData.storefrontCategoryId);
+    }
+
     await this.repo.update(id, productData);
 
     if (translations && translations.length > 0) {

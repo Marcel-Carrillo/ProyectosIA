@@ -96,7 +96,8 @@ export function serializePublicProduct(
     gtin: product.gtin ?? null,
     status: product.status,
     mainImageUrl: product.mainImageUrl ?? null,
-    categoryId: product.categoryId ?? null,
+    // Public categoryId is storefront placement only (never supplier/CJ taxonomy).
+    categoryId: product.storefrontCategoryId ?? null,
     variants,
     images,
     createdAt: product.createdAt,

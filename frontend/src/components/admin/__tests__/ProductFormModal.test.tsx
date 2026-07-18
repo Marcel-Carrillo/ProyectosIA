@@ -27,6 +27,7 @@ const created: Product = {
   status: 'Draft',
   mainImageUrl: null,
   categoryId: null,
+  storefrontCategoryId: null,
   createdAt: '',
   updatedAt: '',
 };
