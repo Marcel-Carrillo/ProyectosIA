@@ -210,7 +210,7 @@ export interface SeedFashionResult {
 export async function seedFashionCatalog(prisma: PrismaClient): Promise<SeedFashionResult> {
   const categoryIds = new Map<string, number>();
 
-  for (const name of ['Women', 'Men', 'Accessories']) {
+  for (const name of ['Women', 'Men', 'Accessories', 'Shoes']) {
     const category = await prisma.category.upsert({
       where: { name },
       update: { status: 'Active' },

@@ -14,6 +14,7 @@ const baseProduct: Product = {
   status: 'Active',
   mainImageUrl: 'https://cdn.example.com/dress.jpg',
   categoryId: 1,
+  storefrontCategoryId: null,
   variants: [
     {
       id: 1,

@@ -47,7 +47,8 @@ export async function listPublicProducts(req: Request, res: Response, next: Next
     // TODO: search currently matches Product.name (English only). Localized search is deferred.
     const result = await productService.findAll({
       status: 'Active',
-      categoryId: parseOptionalQueryInt(categoryId, 'categoryId'),
+      // Store nav sends Women/Men/Accessories/Shoes ids; filter by storefront placement.
+      storefrontCategoryId: parseOptionalQueryInt(categoryId, 'categoryId'),
       search: search as string | undefined,
       page: parseOptionalQueryInt(page, 'page'),
       pageSize: boundedPageSize,

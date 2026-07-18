@@ -23,6 +23,7 @@ const mockProduct: Product = {
   status: 'Active',
   mainImageUrl: 'https://cdn.example.com/hoodie.jpg',
   categoryId: 4,
+  storefrontCategoryId: null,
   createdAt: '',
   updatedAt: '',
   variants: [

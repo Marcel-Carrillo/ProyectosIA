@@ -74,7 +74,13 @@ describe('listPublicProducts', () => {
     const res = mockRes();
     await listPublicProducts(req, res, mockNext);
     expect(mockFindAll).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'Active', categoryId: 2, search: 'dress', sort: 'name', order: 'asc' }),
+      expect.objectContaining({
+        status: 'Active',
+        storefrontCategoryId: 2,
+        search: 'dress',
+        sort: 'name',
+        order: 'asc',
+      }),
     );
   });
 

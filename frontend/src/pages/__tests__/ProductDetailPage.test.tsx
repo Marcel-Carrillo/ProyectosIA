@@ -42,10 +42,18 @@ const makeProduct = (over: Partial<Product> = {}): Product => ({
   status: 'Draft',
   mainImageUrl: null,
   categoryId: null,
+  storefrontCategoryId: null,
   createdAt: '',
   updatedAt: '',
   ...over,
 });
+
+const storefrontCats = [
+  { id: 10, name: 'Women', description: null, imageUrl: null, status: 'Active' as const, parentId: null, createdAt: '', updatedAt: '' },
+  { id: 11, name: 'Men', description: null, imageUrl: null, status: 'Active' as const, parentId: null, createdAt: '', updatedAt: '' },
+  { id: 12, name: 'Accessories', description: null, imageUrl: null, status: 'Active' as const, parentId: null, createdAt: '', updatedAt: '' },
+  { id: 13, name: 'Shoes', description: null, imageUrl: null, status: 'Active' as const, parentId: null, createdAt: '', updatedAt: '' },
+];
 
 const variant = (status: 'Active' | 'Inactive'): ProductVariant => ({
   id: 1,
@@ -67,7 +75,7 @@ const setup = (product: Product, variants: ProductVariant[]) => {
   mockedAdmin.getById.mockResolvedValue({ success: true, data: product, message: '' });
   mockedAdmin.listVariants.mockResolvedValue({ success: true, data: variants, message: '' });
   mockedAdmin.listImages.mockResolvedValue({ success: true, data: [], message: '' });
-  mockedCategory.getAllAdmin.mockResolvedValue([]);
+  mockedCategory.getAllAdmin.mockResolvedValue(storefrontCats);
   return render(
     <MemoryRouter initialEntries={['/products/42']}>
       <Routes>
@@ -139,6 +147,34 @@ describe('ProductDetailPage', () => {
     fireEvent.click(screen.getByTestId('btn-save'));
     await waitFor(() =>
       expect(mockedAdmin.update).toHaveBeenCalledWith(42, expect.objectContaining({ gtin: null })),
+    );
+  });
+
+  it('enables the storefront category selector when the product is Active', async () => {
+    setup(makeProduct({ status: 'Active' }), [variant('Active')]);
+    expect(await screen.findByTestId('select-storefront-category')).toBeEnabled();
+  });
+
+  it('disables the storefront category selector when the product is Draft', async () => {
+    setup(makeProduct({ status: 'Draft' }), [variant('Active')]);
+    expect(await screen.findByTestId('select-storefront-category')).toBeDisabled();
+  });
+
+  it('saves storefrontCategoryId for Active products', async () => {
+    setup(makeProduct({ status: 'Active' }), [variant('Active')]);
+    await screen.findByTestId('select-storefront-category');
+    mockedAdmin.update.mockResolvedValue({
+      success: true,
+      data: makeProduct({ status: 'Active', storefrontCategoryId: 10 }),
+      message: '',
+    });
+    fireEvent.change(screen.getByTestId('select-storefront-category'), { target: { value: '10' } });
+    fireEvent.click(screen.getByTestId('btn-save'));
+    await waitFor(() =>
+      expect(mockedAdmin.update).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ storefrontCategoryId: 10 }),
+      ),
     );
   });
 
