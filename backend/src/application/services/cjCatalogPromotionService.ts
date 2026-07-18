@@ -333,6 +333,19 @@ export class CjCatalogPromotionService {
             });
             productId = createdProduct.id;
 
+            // Seed the EN translation so Accept-Language negotiation has an
+            // explicit English row (CJ catalog titles are English). Spanish
+            // content is added later via admin / translation workflows.
+            await tx.productTranslation.create({
+              data: {
+                productId,
+                locale: 'en',
+                name: title.slice(0, 150),
+                description: null,
+                source: 'import',
+              },
+            });
+
             // Image capture is scoped to brand-new products only (design.md
             // D4; see cj-catalog-cursor-and-media/tasks.md 6.2 for the
             // deliberate scope cut on variants later joining an

@@ -25,7 +25,8 @@ const CatalogPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
-  const { t } = useTranslation('catalog');
+  const { t, i18n } = useTranslation('catalog');
+  const locale = i18n.resolvedLanguage || i18n.language;
 
   useEffect(() => {
     setSearchInput(searchParams.get('search') || '');
@@ -63,7 +64,9 @@ const CatalogPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, categoryId, search, sort, order, t]);
+    // locale is intentional: refetch when ES/EN changes for Accept-Language names.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- locale drives content negotiation
+  }, [page, categoryId, search, sort, order, t, locale]);
 
   useEffect(() => {
     fetchProducts();

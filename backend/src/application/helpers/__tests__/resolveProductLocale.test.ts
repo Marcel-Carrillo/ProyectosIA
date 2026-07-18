@@ -26,6 +26,15 @@ describe('normalizeLocale', () => {
   it('strips region tag es-ES', () => expect(normalizeLocale('es-ES')).toBe('es'));
   it('strips region tag es-419', () => expect(normalizeLocale('es-419')).toBe('es'));
   it('handles en-US', () => expect(normalizeLocale('en-US')).toBe('en'));
+  it('picks the first supported locale from an Accept-Language list', () => {
+    expect(normalizeLocale('fr-FR,en;q=0.9,es;q=0.8')).toBe('en');
+  });
+  it('prefers Spanish when it is the first supported tag in the list', () => {
+    expect(normalizeLocale('es-ES,es;q=0.9,en;q=0.8')).toBe('es');
+  });
+  it('handles array Accept-Language headers', () => {
+    expect(normalizeLocale(['en-US', 'es'])).toBe('en');
+  });
 });
 
 describe('resolveProductLocale', () => {

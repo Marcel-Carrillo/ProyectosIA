@@ -5,14 +5,14 @@ import {
   ProductResponse,
   ProductQueryParams,
 } from '../types/product';
+import { getUiLocale } from '../utils/uiLocale';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 
 const publicProductAxios = axios.create({ baseURL: API_BASE_URL });
 
 publicProductAxios.interceptors.request.use((config) => {
-  const locale = i18n.language || 'es';
-  config.headers['Accept-Language'] = locale;
+  config.headers['Accept-Language'] = getUiLocale(i18n.language);
   return config;
 });
 

@@ -25,7 +25,7 @@ function buildSeoDescription(description: string | null): string | undefined {
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { addItem } = useCart();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation('product');
   const [added, setAdded] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,11 +62,11 @@ const ProductPage: React.FC = () => {
         if (err?.response?.status === 404) {
           setNotFound(true);
         } else {
-          setError('Unable to load product. Please try again later.');
+          setError(t('page.loadError'));
         }
       })
       .finally(() => setIsLoading(false));
-  }, [id, i18n.language]);
+  }, [id, i18n.language, t]);
 
   useEffect(() => {
     if (!id) return;
@@ -80,9 +80,9 @@ const ProductPage: React.FC = () => {
         setReviewsDistribution(result.distribution);
         setReviewsTotalPages(Math.max(1, Math.ceil(result.total / result.pageSize)));
       })
-      .catch(() => setReviewsError('Unable to load reviews. Please try again later.'))
+      .catch(() => setReviewsError(t('page.reviewsLoadError')))
       .finally(() => setReviewsLoading(false));
-  }, [id, reviewsPage]);
+  }, [id, reviewsPage, t]);
 
   if (isLoading) {
     return (
@@ -107,10 +107,10 @@ const ProductPage: React.FC = () => {
       <div className="storefront-section">
         <div className="storefront-container">
           <div className="storefront-empty">
-            <p className="storefront-empty__title">Product not found</p>
-            <p>This product may no longer be available.</p>
+            <p className="storefront-empty__title">{t('page.notFoundTitle')}</p>
+            <p>{t('page.notFoundText')}</p>
             <Link to="/catalog" className="storefront-btn storefront-btn--text">
-              Back to catalog
+              {t('page.backToCatalog')}
             </Link>
           </div>
         </div>
@@ -174,7 +174,7 @@ const ProductPage: React.FC = () => {
               '@type': 'OfferShippingDetails',
               shippingRate: {
                 '@type': 'MonetaryAmount',
-                value: 8,
+                value: 0,
                 currency: 'EUR',
               },
               shippingDestination: {
@@ -226,7 +226,7 @@ const ProductPage: React.FC = () => {
   };
 
   const breadcrumbItems = [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/catalog` },
+    { '@type': 'ListItem', position: 1, name: t('page.home'), item: `${SITE_URL}/catalog` },
     ...(categoryLink
       ? [{ '@type': 'ListItem', position: 2, name: categoryLink.label, item: `${SITE_URL}${categoryLink.href}` }]
       : []),
@@ -254,8 +254,8 @@ const ProductPage: React.FC = () => {
         jsonLd={[productJsonLd, breadcrumbJsonLd]}
       />
       <div className="storefront-container">
-        <nav className="storefront-breadcrumb" aria-label="Breadcrumb">
-          <Link to="/catalog">Shop</Link>
+        <nav className="storefront-breadcrumb" aria-label={t('page.breadcrumb')}>
+          <Link to="/catalog">{t('page.shop')}</Link>
           <span aria-hidden>›</span>
           <span>{product.name}</span>
         </nav>
@@ -296,7 +296,7 @@ const ProductPage: React.FC = () => {
 
             <button
               type="button"
-              aria-label="Add to cart"
+              aria-label={t('page.addToCartAria')}
               disabled={!priceVariant}
               className="storefront-btn storefront-btn--primary"
               onClick={() => {
@@ -314,18 +314,18 @@ const ProductPage: React.FC = () => {
                 setTimeout(() => setAdded(false), 2000);
               }}
             >
-              {added ? 'Added to cart' : 'Add to cart'}
+              {added ? t('page.addedToCart') : t('page.addToCart')}
             </button>
 
             <div className="storefront-pdp-details">
               <dl>
                 <div className="storefront-pdp-details-row">
-                  <dt>Shipping</dt>
-                  <dd>Free from €100</dd>
+                  <dt>{t('page.shipping')}</dt>
+                  <dd>{t('page.shippingValue')}</dd>
                 </div>
                 <div className="storefront-pdp-details-row">
-                  <dt>Returns</dt>
-                  <dd>30 days</dd>
+                  <dt>{t('page.returns')}</dt>
+                  <dd>{t('page.returnsValue')}</dd>
                 </div>
               </dl>
             </div>
