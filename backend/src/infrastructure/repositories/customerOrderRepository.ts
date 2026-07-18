@@ -237,15 +237,15 @@ export class CustomerOrderRepository implements ICustomerOrderRepository {
   }
 
   async generateNextOrderNumber(): Promise<string> {
-    // Scan all ORD-* numbers — do not use the latest row by id, because integration/E2E
-    // fixtures may insert custom orderNumber prefixes (ISOLATION-TEST-*, E2E-*, etc.).
-    const result = await prisma.$queryRaw<Array<{ max_num: number | null }>>`
-      SELECT MAX(CAST(SUBSTRING("orderNumber" FROM 5) AS INTEGER)) AS max_num
-      FROM "CustomerOrder"
-      WHERE "orderNumber" ~ '^ORD-[0-9]+$'
+    // Atomic Postgres sequence (seeded from the legacy MAX scan in migration
+    // 20260718090000_add_customer_order_number_sequence): concurrent checkouts
+    // each get a distinct value, unlike the previous MAX(orderNumber)+1 scan
+    // where two simultaneous orders computed the same number and one insert
+    // failed on the orderNumber unique constraint.
+    const result = await prisma.$queryRaw<Array<{ next_num: bigint }>>`
+      SELECT nextval('customer_order_number_seq') AS next_num
     `;
-    const nextNum = (result[0]?.max_num ?? 0) + 1;
-    return `ORD-${String(nextNum).padStart(6, '0')}`;
+    return `ORD-${String(result[0].next_num).padStart(6, '0')}`;
   }
 
   async create(
