@@ -15,13 +15,25 @@ describe('CustomerOrderRepository.generateNextOrderNumber', () => {
     jest.clearAllMocks();
   });
 
-  it('returns ORD-000001 when no ORD-* orders exist', async () => {
-    mockQueryRaw.mockResolvedValue([{ max_num: null }]);
+  it('formats the first sequence value as ORD-000001', async () => {
+    mockQueryRaw.mockResolvedValue([{ next_num: 1n }]);
     await expect(repo.generateNextOrderNumber()).resolves.toBe('ORD-000001');
   });
 
-  it('increments from the highest ORD-* number regardless of latest row id', async () => {
-    mockQueryRaw.mockResolvedValue([{ max_num: 29 }]);
+  it('pads sequence values to six digits', async () => {
+    mockQueryRaw.mockResolvedValue([{ next_num: 30n }]);
     await expect(repo.generateNextOrderNumber()).resolves.toBe('ORD-000030');
+  });
+
+  it('does not truncate sequence values beyond six digits', async () => {
+    mockQueryRaw.mockResolvedValue([{ next_num: 1234567n }]);
+    await expect(repo.generateNextOrderNumber()).resolves.toBe('ORD-1234567');
+  });
+
+  it('uses the atomic nextval sequence query (no MAX scan)', async () => {
+    mockQueryRaw.mockResolvedValue([{ next_num: 2n }]);
+    await repo.generateNextOrderNumber();
+    const [template] = mockQueryRaw.mock.calls[0] as [TemplateStringsArray];
+    expect(template.join('')).toContain("nextval('customer_order_number_seq')");
   });
 });
