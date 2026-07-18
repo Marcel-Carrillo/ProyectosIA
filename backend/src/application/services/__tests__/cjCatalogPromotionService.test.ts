@@ -22,11 +22,13 @@ const mockProductCreate = jest.fn();
 const mockProductUpdate = jest.fn();
 const mockVariantCreate = jest.fn();
 const mockProductImageCreate = jest.fn();
+const mockProductTranslationCreate = jest.fn();
 const mockTransaction = jest.fn(async (cb: (tx: unknown) => unknown, _options?: { timeout?: number }) => {
   const tx = {
     product: { create: mockProductCreate, update: mockProductUpdate },
     productVariant: { create: mockVariantCreate },
     productImage: { create: mockProductImageCreate },
+    productTranslation: { create: mockProductTranslationCreate },
   };
   return cb(tx);
 });
@@ -175,6 +177,14 @@ describe('CjCatalogPromotionService', () => {
       });
 
       expect(mockProductCreate).toHaveBeenCalledTimes(1);
+      expect(mockProductTranslationCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          productId: 20,
+          locale: 'en',
+          name: 'Test Dress',
+          source: 'import',
+        }),
+      });
       expect(mockVariantCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
