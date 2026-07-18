@@ -10,12 +10,28 @@ type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 // catalogs are English), reported as locale 'en'.
 const DEFAULT_LOCALE: SupportedLocale = 'es';
 
-export function normalizeLocale(raw: string | undefined | null): SupportedLocale {
-  if (!raw) return DEFAULT_LOCALE;
-  const tag = raw.toLowerCase().split('-')[0]!;
-  return (SUPPORTED_LOCALES as readonly string[]).includes(tag)
-    ? (tag as SupportedLocale)
-    : DEFAULT_LOCALE;
+export function normalizeLocale(raw: string | string[] | undefined | null): SupportedLocale {
+  const header = Array.isArray(raw) ? raw[0] : raw;
+  if (!header) return DEFAULT_LOCALE;
+
+  // Accept-Language may be a quality list: "es-ES,es;q=0.9,en;q=0.8".
+  // Prefer the first supported tag in client preference order.
+  const candidates = header
+    .toLowerCase()
+    .split(',')
+    .map((part) => {
+      const [tagPart] = part.trim().split(';');
+      return (tagPart ?? '').split('-')[0] ?? '';
+    })
+    .filter(Boolean);
+
+  for (const tag of candidates) {
+    if ((SUPPORTED_LOCALES as readonly string[]).includes(tag)) {
+      return tag as SupportedLocale;
+    }
+  }
+
+  return DEFAULT_LOCALE;
 }
 
 export interface ResolvedProductContent {

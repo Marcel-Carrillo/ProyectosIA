@@ -11,6 +11,23 @@
     "imageN": "Image {{n}}",
     "thumbAlt": "{{name}} thumbnail {{n}}"
   },
+  "page": {
+    "breadcrumb": "Breadcrumb",
+    "shop": "Shop",
+    "home": "Home",
+    "addToCart": "Add to cart",
+    "addedToCart": "Added to cart",
+    "addToCartAria": "Add to cart",
+    "notFoundTitle": "Product not found",
+    "notFoundText": "This product may no longer be available.",
+    "backToCatalog": "Back to catalog",
+    "loadError": "Unable to load product. Please try again later.",
+    "reviewsLoadError": "Unable to load reviews. Please try again later.",
+    "shipping": "Shipping",
+    "shippingValue": "Free",
+    "returns": "Returns",
+    "returnsValue": "30 days"
+  },
   "grid": {
     "loading": "Loading products",
     "emptyTitle": "No products found",
