@@ -1,25 +1,42 @@
 import { StorefrontCategoryKey } from './storefrontCategories';
 
-export type CatalogHeroVariantKey = 'slide1' | 'slide2' | 'slide3' | StorefrontCategoryKey | 'search';
+export type CatalogHeroSlideKey = 'slide1' | 'slide2' | 'slide3' | 'slide4' | 'slide5';
+export type CatalogHeroVariantKey = CatalogHeroSlideKey | StorefrontCategoryKey | 'search';
+export type CatalogHeroMotion = 'zoom-in' | 'zoom-out' | 'pan-right' | 'pan-left' | 'drift-up';
 
 export interface CatalogHeroImageSet {
   image: string;
   variant: CatalogHeroVariantKey;
+  motion?: CatalogHeroMotion;
 }
 
-/** Curated Unsplash imagery — neutral, editorial, Mavile tone. */
+/** Curated Unsplash imagery — editorial fashion, warm neutrals, Mavile tone. */
 export const CATALOG_HERO_DEFAULT_SLIDES: CatalogHeroImageSet[] = [
   {
     variant: 'slide1',
+    motion: 'zoom-in',
     image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1800&q=80',
   },
   {
     variant: 'slide2',
+    motion: 'pan-right',
     image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1800&q=80',
   },
   {
     variant: 'slide3',
-    image: 'https://images.unsplash.com/photo-1483985988354-763728e3685b?auto=format&fit=crop&w=1800&q=80',
+    motion: 'zoom-out',
+    // Replaces a retired Unsplash asset (404) that left slide 3 without a background.
+    image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1800&q=80',
+  },
+  {
+    variant: 'slide4',
+    motion: 'pan-left',
+    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1800&q=80',
+  },
+  {
+    variant: 'slide5',
+    motion: 'drift-up',
+    image: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?auto=format&fit=crop&w=1800&q=80',
   },
 ];
 
