@@ -1893,7 +1893,7 @@
 .storefront-oauth {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-3);
   margin-top: var(--spacing-4);
 }
 
@@ -1901,7 +1901,7 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  margin: 0 0 var(--spacing-2);
+  margin: 0;
   font-size: var(--font-size-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1916,6 +1916,54 @@
   background: var(--color-light);
 }
 
+.storefront-oauth__actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.storefront-oauth__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 1px solid var(--color-light);
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-near-black);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.storefront-oauth__icon-btn:hover {
+  border-color: var(--color-near-black);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(26, 26, 24, 0.08);
+}
+
+.storefront-oauth__icon-btn:focus-visible {
+  outline: 2px solid var(--color-near-black);
+  outline-offset: 3px;
+}
+
+.storefront-oauth__icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  display: block;
+}
+
+.storefront-oauth__icon-btn--apple .storefront-oauth__icon {
+  width: 1.45rem;
+  height: 1.45rem;
+}
+
+/* Legacy full-width text button kept for any residual usage */
 .storefront-oauth__btn {
   width: 100%;
   padding: var(--spacing-3) var(--spacing-4);
