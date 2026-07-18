@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { getUiLocale } from '../../utils/uiLocale';
 
 interface PriceTagProps {
   publicPrice: number;
@@ -9,9 +10,10 @@ interface PriceTagProps {
 const PriceTag: React.FC<PriceTagProps> = ({ publicPrice, compareAtPrice }) => {
   const { i18n } = useTranslation();
   const hasSale = compareAtPrice != null && compareAtPrice > publicPrice;
+  const locale = getUiLocale(i18n.resolvedLanguage || i18n.language);
 
   const formatPrice = (price: number): string =>
-    new Intl.NumberFormat(i18n.language === 'en' ? 'en-IE' : 'es-ES', {
+    new Intl.NumberFormat(locale === 'en' ? 'en-IE' : 'es-ES', {
       style: 'currency',
       currency: 'EUR',
     }).format(price);

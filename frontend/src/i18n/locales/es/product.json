@@ -11,6 +11,23 @@
     "imageN": "Imagen {{n}}",
     "thumbAlt": "{{name}} miniatura {{n}}"
   },
+  "page": {
+    "breadcrumb": "Breadcrumb",
+    "shop": "Tienda",
+    "home": "Inicio",
+    "addToCart": "Añadir a la cesta",
+    "addedToCart": "Añadido a la cesta",
+    "addToCartAria": "Añadir a la cesta",
+    "notFoundTitle": "Producto no encontrado",
+    "notFoundText": "Este producto ya no está disponible.",
+    "backToCatalog": "Volver al catálogo",
+    "loadError": "No se ha podido cargar el producto. Inténtalo de nuevo más tarde.",
+    "reviewsLoadError": "No se han podido cargar las opiniones. Inténtalo de nuevo más tarde.",
+    "shipping": "Envío",
+    "shippingValue": "Gratuito",
+    "returns": "Devoluciones",
+    "returnsValue": "30 días"
+  },
   "grid": {
     "loading": "Cargando productos",
     "emptyTitle": "No se han encontrado productos",

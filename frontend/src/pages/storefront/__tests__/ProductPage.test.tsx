@@ -78,6 +78,13 @@ describe('ProductPage language refetch', () => {
 
     await waitFor(() => expect(mockGetById).toHaveBeenCalledTimes(2));
   });
+
+  it('shows free shipping copy in the active language (never a €100 threshold)', async () => {
+    renderWithI18n(<ProductPage />, { lng: 'es' });
+    expect(await screen.findByText('Envío')).toBeInTheDocument();
+    expect(screen.getByText('Gratuito')).toBeInTheDocument();
+    expect(screen.queryByText(/100/)).not.toBeInTheDocument();
+  });
 });
 
 describe('ProductPage structured data — gtin', () => {
