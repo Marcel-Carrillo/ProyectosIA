@@ -29,6 +29,7 @@ const CatalogHero: React.FC<CatalogHeroProps> = ({ categoryId, search }) => {
   const { categoryIds } = useStorefrontCategories();
   const [slideIndex, setSlideIndex] = useState(0);
   const [textVisible, setTextVisible] = useState(true);
+  const [progressKey, setProgressKey] = useState(0);
 
   const categoryKey = useMemo(
     () => resolveCategoryKey(categoryId, categoryIds),
@@ -50,9 +51,19 @@ const CatalogHero: React.FC<CatalogHeroProps> = ({ categoryId, search }) => {
   const activeSlide = slides[slideIndex % slides.length];
   const textKey = `hero.variants.${activeSlide.variant}`;
 
+  const goToSlide = (index: number) => {
+    setTextVisible(false);
+    window.setTimeout(() => {
+      setSlideIndex(index);
+      setProgressKey((k) => k + 1);
+      setTextVisible(true);
+    }, 280);
+  };
+
   useEffect(() => {
     setSlideIndex(0);
     setTextVisible(true);
+    setProgressKey((k) => k + 1);
   }, [mode, categoryKey, search]);
 
   useEffect(() => {
@@ -63,6 +74,7 @@ const CatalogHero: React.FC<CatalogHeroProps> = ({ categoryId, search }) => {
       setTextVisible(false);
       window.setTimeout(() => {
         setSlideIndex((i) => (i + 1) % slides.length);
+        setProgressKey((k) => k + 1);
         setTextVisible(true);
       }, 400);
     }, CATALOG_HERO_ROTATE_MS);
@@ -81,22 +93,37 @@ const CatalogHero: React.FC<CatalogHeroProps> = ({ categoryId, search }) => {
     : t(`${textKey}.eyebrow`);
 
   return (
-    <section className="storefront-hero storefront-hero--dynamic" aria-label={t('hero.ariaLabel')}>
+    <section
+      className="storefront-hero storefront-hero--dynamic"
+      aria-label={t('hero.ariaLabel')}
+      style={{ ['--hero-rotate-ms' as string]: `${CATALOG_HERO_ROTATE_MS}ms` }}
+    >
       <div className="storefront-hero__bg" aria-hidden="true">
-        {slides.map((slide, index) => (
-          <div
-            key={slide.variant}
-            className={`storefront-hero__bg-slide${index === slideIndex % slides.length ? ' storefront-hero__bg-slide--active' : ''}`}
-            style={{ backgroundImage: `url(${slide.image})` }}
-          />
-        ))}
+        {slides.map((slide, index) => {
+          const isActive = index === slideIndex % slides.length;
+          const motion = slide.motion ?? 'zoom-in';
+          return (
+            <div
+              key={slide.variant}
+              className={[
+                'storefront-hero__bg-slide',
+                `storefront-hero__bg-slide--${motion}`,
+                isActive ? 'storefront-hero__bg-slide--active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              style={{ backgroundImage: `url(${slide.image})` }}
+            />
+          );
+        })}
         <div className="storefront-hero__scrim" />
+        <div className="storefront-hero__grain" />
       </div>
 
       <div className="storefront-hero__inner">
         <div
           className={`storefront-hero__copy${textVisible ? ' storefront-hero__copy--visible' : ''}`}
-          key={`${mode}-${activeSlide.variant}-${search ?? ''}`}
+          key={`${mode}-${activeSlide.variant}-${search ?? ''}-${progressKey}`}
         >
           <p className="storefront-hero__eyebrow">{eyebrow}</p>
           <h1 className="storefront-hero__title">{title}</h1>
@@ -105,26 +132,35 @@ const CatalogHero: React.FC<CatalogHeroProps> = ({ categoryId, search }) => {
 
         {mode === 'carousel' && slides.length > 1 && (
           <div className="storefront-hero__dots" role="tablist" aria-label={t('hero.dotsLabel')}>
-            {slides.map((slide, index) => (
-              <button
-                key={slide.variant}
-                type="button"
-                role="tab"
-                aria-selected={index === slideIndex % slides.length}
-                aria-label={t(`hero.variants.${slide.variant}.title`)}
-                className={`storefront-hero__dot${index === slideIndex % slides.length ? ' storefront-hero__dot--active' : ''}`}
-                onClick={() => {
-                  setTextVisible(false);
-                  window.setTimeout(() => {
-                    setSlideIndex(index);
-                    setTextVisible(true);
-                  }, 200);
-                }}
-              />
-            ))}
+            {slides.map((slide, index) => {
+              const isActive = index === slideIndex % slides.length;
+              return (
+                <button
+                  key={slide.variant}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={t(`hero.variants.${slide.variant}.title`)}
+                  className={`storefront-hero__dot${isActive ? ' storefront-hero__dot--active' : ''}`}
+                  onClick={() => goToSlide(index)}
+                >
+                  {isActive && (
+                    <span
+                      key={progressKey}
+                      className="storefront-hero__dot-progress"
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
+
+      <span className="visually-hidden" aria-live="polite">
+        {title}
+      </span>
     </section>
   );
 };
