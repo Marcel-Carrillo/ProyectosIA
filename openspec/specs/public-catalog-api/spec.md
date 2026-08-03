@@ -32,6 +32,13 @@ The system SHALL expose `GET /api/public/products/:id` (numeric product id) retu
 - **WHEN** a client requests `GET /api/public/products/:id` for an id that does not exist or is not active
 - **THEN** the system returns `404`
 
+### Requirement: Public product images include their color association
+Each item in a public product response's `images[]` array SHALL include a `color` field (`string | null`). `color = null` indicates a shared/product-level image that applies regardless of the selected variant; a non-null value indicates the image depicts that specific color, using the same value vocabulary as the corresponding variant's `color` field.
+
+#### Scenario: Image color is included in the product detail response
+- **WHEN** a client requests `GET /api/public/products/:id` for a product with color-associated images
+- **THEN** each item in the `images[]` array includes its `color` field, with `null` for shared/product-level images
+
 ### Requirement: Public responses never expose supplier or internal data
 The system SHALL serialize all `/api/public/...` responses so they NEVER include `supplierId`, `supplierReference`, `supplierCost`, `shippingCostEstimate`, `deletedAt`, or any internal/fulfillment notes. Public product responses SHALL expose only customer-safe fields: product `id`, `name`, `slug`, `description`, `brand`, `mainImageUrl`, `category { id, name, slug }`, `images[]`, and `variants[] { id, sku, size, color, publicPrice, compareAtPrice, status, stockQuantity }`. Only `Active` variants SHALL be included. `stockQuantity` SHALL be the sole basis for any availability signal exposed to customers; the raw `CjCatalogItem` record and any other supplier-internal stock source SHALL NOT be exposed.
 
