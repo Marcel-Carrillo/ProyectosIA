@@ -38,6 +38,31 @@ export async function adminLogin(
       return;
     }
     const result = await adminAuthService.login(email, password);
+    res.json({
+      success: true,
+      data: { mfaRequired: true, mfaToken: result.mfaToken },
+      message: 'Verification code sent',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function adminVerify2fa(
+  req: AdminAuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { mfaToken, code } = req.body as { mfaToken?: string; code?: string };
+    if (!mfaToken || !code) {
+      res.status(400).json({
+        success: false,
+        error: { message: 'mfaToken and code are required', code: 'VALIDATION_ERROR' },
+      });
+      return;
+    }
+    const result = await adminAuthService.verify2fa(mfaToken, code);
     setRefreshCookie(res, result.refreshTokenRaw);
     res.json({
       success: true,

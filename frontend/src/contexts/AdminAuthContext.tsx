@@ -4,6 +4,7 @@ import {
   adminLogout as apiLogout,
   adminMe,
   adminRefresh,
+  adminVerify2fa as apiVerify2fa,
   getAdminAccessToken,
   setAdminAccessToken,
 } from '../services/adminAuthService';
@@ -13,7 +14,8 @@ interface AdminAuthContextValue {
   admin: AdminUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ mfaRequired: true; mfaToken: string } | void>;
+  verify2fa: (mfaToken: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -50,6 +52,16 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await apiLogin(email, password);
+    if ('mfaRequired' in data && data.mfaRequired) {
+      return { mfaRequired: true as const, mfaToken: data.mfaToken };
+    }
+    if ('admin' in data) {
+      setAdmin(data.admin);
+    }
+  }, []);
+
+  const verify2fa = useCallback(async (mfaToken: string, code: string) => {
+    const data = await apiVerify2fa(mfaToken, code);
     setAdmin(data.admin);
   }, []);
 
@@ -64,9 +76,10 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       isLoading,
       isAuthenticated: !!admin,
       login,
+      verify2fa,
       logout,
     }),
-    [admin, isLoading, login, logout]
+    [admin, isLoading, login, verify2fa, logout]
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

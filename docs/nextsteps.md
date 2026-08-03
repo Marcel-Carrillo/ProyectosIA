@@ -72,3 +72,52 @@ next bottleneck. Target: ~500 virtual users, sustained 10-15 min.
   (`stockPolicy: SupplierManaged`) — no overselling lock contention, but the
   store can sell above CJ's last-synced stock. Accepted dropshipping
   trade-off; revisit if internal stock (`stockPolicy: Internal`) is adopted.
+
+## Security backlog
+
+### 6. Restrict admin panel access to home IP only
+
+Requested 2026-07-20. Today `/admin/*` (frontend SPA route, no data exposure
+by itself) and `/api/admin/*` (all real admin endpoints, mounted in
+`backend/src/index.ts:134` and `:155`) are reachable from anywhere on the
+internet, protected only by the `ADMIN_JWT_SECRET` login. Goal: add a
+network-level layer so the admin API is only reachable from the user's home
+IP, without adding a fixed recurring cost (ruled out AWS WAF — ~$5-6/mo per
+Web ACL — for this reason).
+
+Chosen design (not yet implemented):
+
+- **API Gateway resource policy** on `g54xfd8lja`, scoped to the
+  `/api/admin/*` methods only, with an `aws:SourceIp` deny-by-default
+  condition. Resource policies are a native, free feature of API Gateway
+  (no WAF needed). Public storefront routes stay untouched.
+- **Home IP is dynamic** (changes often), so a static IP in the policy would
+  break silently. Mitigation: a free DDNS hostname (DuckDNS or No-IP) updated
+  by the home router's built-in DDNS client (most consumer routers support
+  this natively — no extra software to run at home).
+- **Sync Lambda**: a new scheduled Lambda (EventBridge rate, e.g. every
+  10-15 min — same pattern as `supplierAutoProvision` /
+  `cjOrderStatusSync`) resolves the DDNS hostname, compares it to the IP
+  currently baked into the resource policy, and if it changed, calls
+  `aws apigateway update-rest-api` to patch the policy and redeploys the
+  `prod` stage (required for a resource policy change to take effect; brief,
+  no downtime for the rest of the API). Cost: effectively $0 at this
+  invocation volume, same as the two existing scheduled jobs.
+- Optional, cosmetic: a CloudFront Function (no fixed fee, ~$0.10/million
+  invocations) applying the same IP check to the `/admin` SPA route. Low
+  priority since the SPA bundle itself carries no admin data.
+- The existing JWT admin login stays as-is — this is defense in depth on top
+  of it, not a replacement.
+
+Considered and rejected:
+
+- **AWS WAF IP set**: same outcome, but ~$5-6/mo fixed Web ACL fee just for
+  this.
+- **Real VPN/tunnel (Cloudflare Tunnel, WireGuard)**: would fully hide the
+  admin surface regardless of source IP, but needs a persistent process
+  (EC2 or an always-on box at home) — heavier than justified right now for a
+  single-admin store on a cost-conscious serverless stack.
+
+Needs from the user before implementation: a free DDNS account (DuckDNS
+suggested) and the home router's DDNS hostname configured — or, if the
+router doesn't support DDNS, a lightweight alternative to design.
