@@ -370,13 +370,14 @@ model Review {
 }
 
 model AdminUser {
-  id               Int                 @id @default(autoincrement())
-  email            String              @unique @db.VarChar(255)
-  passwordHash     String              @db.VarChar(255)
-  status           String              @default("Active")
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  id               Int                   @id @default(autoincrement())
+  email            String                @unique @db.VarChar(255)
+  passwordHash     String                @db.VarChar(255)
+  status           String                @default("Active")
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
   refreshTokens    AdminRefreshToken[]
+  loginChallenges  AdminLoginChallenge[]
   moderatedReviews Review[]
 }
 
@@ -391,6 +392,20 @@ model AdminRefreshToken {
 
   @@index([adminUserId])
   @@index([tokenHash])
+}
+
+model AdminLoginChallenge {
+  id            Int       @id @default(autoincrement())
+  adminUserId   Int
+  adminUser     AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  codeHash      String    @db.VarChar(255)
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  failedAttempts Int      @default(0)
+  createdAt     DateTime  @default(now())
+
+  @@index([adminUserId])
+  @@index([expiresAt])
 }
 
 model CustomerAccount {

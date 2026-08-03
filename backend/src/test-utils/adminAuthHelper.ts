@@ -1,18 +1,37 @@
 import request from 'supertest';
 import { Express } from 'express';
+import { getLastAdminOtpForTests } from '../infrastructure/email/adminOtpTestCapture';
 
 export async function getAdminAccessToken(
   app: Express,
   email = process.env.ADMIN_EMAIL ?? 'admin@example.com',
   password = process.env.ADMIN_PASSWORD ?? 'AdminPass1'
 ): Promise<string> {
-  const res = await request(app)
+  const loginRes = await request(app)
     .post('/api/admin/auth/login')
     .send({ email, password });
-  if (res.status !== 200) {
-    throw new Error(`Admin login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (loginRes.status !== 200) {
+    throw new Error(`Admin login failed: ${loginRes.status} ${JSON.stringify(loginRes.body)}`);
   }
-  return res.body.data.accessToken as string;
+
+  const mfaToken = loginRes.body.data?.mfaToken as string | undefined;
+  if (!mfaToken) {
+    throw new Error(`Admin login did not return mfaToken: ${JSON.stringify(loginRes.body)}`);
+  }
+
+  const code = getLastAdminOtpForTests();
+  if (!code) {
+    throw new Error('Admin OTP was not captured for tests');
+  }
+
+  const verifyRes = await request(app)
+    .post('/api/admin/auth/verify-2fa')
+    .send({ mfaToken, code });
+  if (verifyRes.status !== 200) {
+    throw new Error(`Admin verify-2fa failed: ${verifyRes.status} ${JSON.stringify(verifyRes.body)}`);
+  }
+
+  return verifyRes.body.data.accessToken as string;
 }
 
 export function withAdminAuth(token: string) {
