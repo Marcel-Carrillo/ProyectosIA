@@ -11,16 +11,20 @@ async function main() {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const normalizedEmail = email.toLowerCase().trim();
   await prisma.adminUser.upsert({
-    where: { email: email.toLowerCase().trim() },
-    update: {},
+    where: { email: normalizedEmail },
+    update: {
+      passwordHash,
+      status: 'Active',
+    },
     create: {
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       passwordHash,
       status: 'Active',
     },
   });
-  console.log(`Admin user seeded for ${email.toLowerCase().trim()}`);
+  console.log(`Admin user seeded for ${normalizedEmail}`);
 }
 
 main()

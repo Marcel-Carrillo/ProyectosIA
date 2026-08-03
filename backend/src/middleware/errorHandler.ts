@@ -83,8 +83,10 @@ import {
 import { CustomerOrderItemNotFoundError } from '../infrastructure/repositories/customerOrderRepository';
 import {
   AdminDisabledError,
+  AdminOtpEmailFailedError,
   AdminRefreshTokenInvalidError,
   InvalidAdminCredentialsError,
+  InvalidAdminOtpError,
 } from '../infrastructure/repositories/adminUserRepository';
 import {
   AccountEmailConflictError,
@@ -264,6 +266,10 @@ export function globalErrorHandler(
     statusCode = 404; code = err.code; message = err.message;
   } else if (err instanceof InvalidAdminCredentialsError) {
     statusCode = 401; code = err.code; message = err.message;
+  } else if (err instanceof InvalidAdminOtpError) {
+    statusCode = 401; code = err.code; message = err.message;
+  } else if (err instanceof AdminOtpEmailFailedError) {
+    statusCode = 503; code = err.code; message = err.message;
   } else if (err instanceof AdminDisabledError) {
     statusCode = 403; code = err.code; message = err.message;
   } else if (err instanceof AdminRefreshTokenInvalidError) {

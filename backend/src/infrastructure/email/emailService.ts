@@ -1,7 +1,10 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../logger';
 import { buildPasswordResetEmail } from './templates/passwordResetEmail';
+import { buildAdminLoginOtpEmail } from './templates/adminLoginOtpEmail';
+import { recordAdminOtpForTests } from './adminOtpTestCapture';
 import { MAVILE_ICON_DATA_URI } from './mavileIconEmbedded';
+import { AdminOtpEmailFailedError } from '../repositories/adminUserRepository';
 
 const LOGO_ATTACHMENT = {
   filename: 'mavile-icon.png',
@@ -97,5 +100,32 @@ export async function sendWelcomeEmail(
     if (process.env.SMTP_STRICT === 'true') {
       throw err;
     }
+  }
+}
+
+/** Critical path: throws AdminOtpEmailFailedError if SMTP delivery fails (except Jest capture). */
+export async function sendAdminLoginOtpEmail(to: string, code: string): Promise<void> {
+  recordAdminOtpForTests(code);
+
+  // Integration tests complete MFA via the captured code; skip real SMTP.
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
+  const from = process.env.SMTP_FROM ?? 'noreply@example.com';
+  const { subject, text, html } = buildAdminLoginOtpEmail(code);
+  try {
+    await getTransporter().sendMail({
+      from,
+      to,
+      subject,
+      text,
+      html,
+      attachments: [LOGO_ATTACHMENT],
+    });
+    logger.info('Admin login OTP email sent', { to });
+  } catch (err) {
+    logger.warn('Admin login OTP email failed', { to, err: String(err) });
+    throw new AdminOtpEmailFailedError();
   }
 }

@@ -9,6 +9,7 @@ vi.mock('../../../services/adminAuthService', () => ({
   adminRefresh: vi.fn().mockRejectedValue(new Error('no session')),
   adminMe: vi.fn(),
   adminLogin: vi.fn(),
+  adminVerify2fa: vi.fn(),
   adminLogout: vi.fn(),
   getAdminAccessToken: vi.fn().mockReturnValue(null),
   setAdminAccessToken: vi.fn(),

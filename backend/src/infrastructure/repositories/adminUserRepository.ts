@@ -1,6 +1,7 @@
 import { prisma } from '../prismaClient';
 import { AdminUser } from '../../domain/models/adminUser';
 import {
+  AdminLoginChallengeRecord,
   IAdminUserRepository,
   RefreshTokenRecord,
 } from '../../domain/repositories/adminUserRepository';
@@ -38,6 +39,24 @@ export class InvalidAdminCredentialsError extends Error {
   constructor() {
     super('Invalid email or password');
     this.name = 'InvalidAdminCredentialsError';
+  }
+}
+
+export class InvalidAdminOtpError extends Error {
+  readonly code = 'INVALID_OTP';
+  readonly status = 401;
+  constructor(message = 'Invalid or expired verification code') {
+    super(message);
+    this.name = 'InvalidAdminOtpError';
+  }
+}
+
+export class AdminOtpEmailFailedError extends Error {
+  readonly code = 'ADMIN_OTP_EMAIL_FAILED';
+  readonly status = 503;
+  constructor() {
+    super('Could not send the verification code email. Try again later.');
+    this.name = 'AdminOtpEmailFailedError';
   }
 }
 
@@ -96,4 +115,63 @@ export class AdminUserRepository implements IAdminUserRepository {
       data: { revokedAt: new Date() },
     });
   }
+
+  async consumeOpenLoginChallenges(adminUserId: number): Promise<void> {
+    await prisma.adminLoginChallenge.updateMany({
+      where: { adminUserId, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+  }
+
+  async createLoginChallenge(
+    adminUserId: number,
+    codeHash: string,
+    expiresAt: Date,
+  ): Promise<AdminLoginChallengeRecord> {
+    const row = await prisma.adminLoginChallenge.create({
+      data: { adminUserId, codeHash, expiresAt },
+    });
+    return mapChallenge(row);
+  }
+
+  async findLatestOpenLoginChallenge(adminUserId: number): Promise<AdminLoginChallengeRecord | null> {
+    const row = await prisma.adminLoginChallenge.findFirst({
+      where: { adminUserId, consumedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    return row ? mapChallenge(row) : null;
+  }
+
+  async incrementLoginChallengeFailures(challengeId: number): Promise<AdminLoginChallengeRecord> {
+    const row = await prisma.adminLoginChallenge.update({
+      where: { id: challengeId },
+      data: { failedAttempts: { increment: 1 } },
+    });
+    return mapChallenge(row);
+  }
+
+  async consumeLoginChallenge(challengeId: number): Promise<void> {
+    await prisma.adminLoginChallenge.update({
+      where: { id: challengeId },
+      data: { consumedAt: new Date() },
+    });
+  }
+}
+
+function mapChallenge(row: {
+  id: number;
+  adminUserId: number;
+  codeHash: string;
+  expiresAt: Date;
+  consumedAt: Date | null;
+  failedAttempts: number;
+}): AdminLoginChallengeRecord {
+  return {
+    id: row.id,
+    adminUserId: row.adminUserId,
+    codeHash: row.codeHash,
+    expiresAt: row.expiresAt,
+    consumedAt: row.consumedAt,
+    failedAttempts: row.failedAttempts,
+  };
 }
