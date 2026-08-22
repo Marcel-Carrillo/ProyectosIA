@@ -118,6 +118,6 @@
 
 ## 20. Commit and Create Pull Request (MANDATORY - LAST STEP)
 
-- [ ] 20.1 Follow `ai-specs/skills/commit/SKILL.md`: commit on `feature/shopify-liquid-theme-mavile-visual-port`.
-- [ ] 20.2 Push and `gh pr create` targeting **`develop`**.
-- [ ] 20.3 Report the PR URL in chat.
+- [x] 20.1 Follow `ai-specs/skills/commit/SKILL.md`: commit on `feature/shopify-liquid-theme-mavile-visual-port`.
+- [x] 20.2 Push and `gh pr create` targeting **`develop`**.
+- [x] 20.3 Report the PR URL in chat.
