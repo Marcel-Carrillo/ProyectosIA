@@ -1,0 +1,127 @@
+{
+  "general": {
+    "accessibility": { "skip_to_content": "Skip to content" },
+    "header": {
+      "home": "Mavile home",
+      "account": "Account",
+      "cart": "Cart, {{ count }} items",
+      "open_menu": "Open menu",
+      "close_menu": "Close menu"
+    },
+    "nav": { "label": "Category navigation" },
+    "language": { "label": "Language" },
+    "breadcrumb": { "label": "Breadcrumb" },
+    "footer": {
+      "brand": "Timeless pieces made in Europe with noble materials.",
+      "cities": "Madrid · Lisbon · Paris",
+      "shop": "Shop",
+      "help": "Help",
+      "company": "Company"
+    },
+    "pagination": { "label": "Pagination" },
+    "hero": { "slide": "Slide {{ number }}" },
+    "password": {
+      "title": "Coming soon",
+      "message": "This Mavile Shopify storefront is not public yet.",
+      "label": "Password",
+      "submit": "Enter"
+    },
+    "search": {
+      "title": "Search",
+      "placeholder": "Search",
+      "empty": "No results."
+    },
+    "404": { "message": "Page not found.", "home": "Back home" },
+    "collections": { "title": "Collections" },
+    "contact": {
+      "title": "Contact",
+      "name": "Name",
+      "email": "Email",
+      "message": "Message",
+      "submit": "Send",
+      "success": "Message sent."
+    },
+    "cookies": {
+      "settings": "Cookie settings",
+      "banner": {
+        "aria": "Cookie notice",
+        "message": "We use cookies to improve your experience and show you relevant content. You can accept all, reject non-essential ones, or customise your preferences.",
+        "accept": "Accept all",
+        "reject": "Reject all",
+        "customize": "Customise"
+      },
+      "modal": {
+        "title": "Cookie preferences",
+        "close": "Close",
+        "necessary_name": "Necessary",
+        "necessary_desc": "Essential for the website to function. Cannot be disabled.",
+        "analytics_name": "Analytics",
+        "analytics_desc": "Help us understand how visitors use the site.",
+        "marketing_name": "Marketing",
+        "marketing_desc": "Used to deliver personalised advertising.",
+        "save": "Save preferences"
+      }
+    }
+  },
+  "products": {
+    "collection": { "sort": "Sort", "empty": "No products in this collection." },
+    "product": { "add_to_cart": "Add to cart" }
+  },
+  "sections": {
+    "cart": {
+      "title": "Cart",
+      "count": "{{ count }} items",
+      "empty": "Your cart is empty.",
+      "continue": "Continue shopping",
+      "summary": "Summary",
+      "total": "Total",
+      "checkout": "Checkout",
+      "remove": "Remove",
+      "increase": "Increase quantity",
+      "decrease": "Decrease quantity"
+    }
+  },
+  "customer": {
+    "login": {
+      "title": "Log in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Log in",
+      "register": "Create account",
+      "forgot": "Forgot password"
+    },
+    "register": {
+      "title": "Create account",
+      "first_name": "First name",
+      "last_name": "Last name",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Register"
+    },
+    "account": {
+      "title": "Account",
+      "orders": "Orders",
+      "no_orders": "You have no orders yet.",
+      "addresses": "Addresses",
+      "logout": "Log out"
+    },
+    "order": { "total": "Total" },
+    "addresses": {
+      "title": "Addresses",
+      "first_name": "First name",
+      "last_name": "Last name",
+      "address1": "Address",
+      "city": "City",
+      "zip": "Postal code",
+      "add": "Add address"
+    },
+    "reset": {
+      "title": "Reset password",
+      "password": "New password",
+      "password_confirm": "Confirm password",
+      "submit": "Save"
+    },
+    "activate": { "title": "Activate account", "submit": "Activate" }
+  },
+  "gift_cards": { "issued": { "title": "Gift card" } }
+}

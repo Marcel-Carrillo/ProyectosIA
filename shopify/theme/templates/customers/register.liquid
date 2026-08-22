@@ -1,0 +1,23 @@
+<div class="storefront-account">
+  <h1>{{ 'customer.register.title' | t }}</h1>
+  {% form 'create_customer' %}
+    {{ form.errors | default_errors }}
+    <label class="storefront-field">
+      <span>{{ 'customer.register.first_name' | t }}</span>
+      <input type="text" name="customer[first_name]" required>
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.register.last_name' | t }}</span>
+      <input type="text" name="customer[last_name]" required>
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.register.email' | t }}</span>
+      <input type="email" name="customer[email]" autocomplete="email" required>
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.register.password' | t }}</span>
+      <input type="password" name="customer[password]" autocomplete="new-password" required>
+    </label>
+    <button type="submit" class="storefront-btn storefront-btn--primary">{{ 'customer.register.submit' | t }}</button>
+  {% endform %}
+</div>

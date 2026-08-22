@@ -1,0 +1,16 @@
+<nav class="storefront-nav storefront-nav--{{ variant }}" aria-label="{{ 'general.nav.label' | t }}">
+  {% if menu != blank %}
+    <ul class="storefront-nav__list">
+      {% for link in menu.links %}
+        <li>
+          <a
+            href="{{ link.url }}"
+            class="storefront-nav__link{% if link.active %} storefront-nav__link--active{% endif %}"
+          >
+            {{ link.title }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</nav>

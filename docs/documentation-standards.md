@@ -37,6 +37,7 @@ When updating documentation, I will:
    * For API changes: Update `api-spec.yml`.
    * For backend architecture, libraries, database migrations, scripts, deployment, or setup changes: Update `backend-standards.md` or the relevant development guide.
    * For frontend architecture, UI patterns, component standards, routing, styling, or state management changes: Update `frontend-standards.md`.
+   * For the Shopify Liquid theme: Update `docs/shopify-theme-standards.md` and `docs/shopify-migration-launch-gap.md`.
    * For documentation workflow or AI rules changes: Update `documentation-standards.md`, `base-standards.md`, or the relevant AI spec file.
 3. Update each affected documentation file in English, maintaining consistency with existing documentation.
 4. Ensure all documentation is properly formatted and follows the established structure.

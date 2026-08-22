@@ -241,7 +241,19 @@ The frontend application will be available at:
 http://localhost:3001
 ```
 
-### 6. Cypress Testing Suite Setup
+### 7. Shopify theme (optional, parallel surface)
+
+The Mavile Liquid theme is in `shopify/theme`. It does not replace local React/API development.
+
+```bash
+cd shopify
+shopify theme dev --path theme --store <dev-store>.myshopify.com
+shopify theme check --path theme
+```
+
+Keep the development store password-protected or `noindex` until cutover. See `docs/shopify-theme-standards.md` and `docs/shopify-migration-launch-gap.md`. `docs/data-model.md` and `docs/api-spec.yml` still describe the live Express stack.
+
+### 8. Cypress Testing Suite Setup
 
 ```bash
 # From the frontend directory

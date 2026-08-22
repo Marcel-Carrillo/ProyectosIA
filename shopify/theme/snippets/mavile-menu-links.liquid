@@ -1,0 +1,9 @@
+{% if menu != blank %}
+  <ul class="storefront-footer__links">
+    {% for link in menu.links %}
+      <li>
+        <a href="{{ link.url }}">{{ link.title }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

@@ -1,0 +1,17 @@
+<div class="storefront-account">
+  <h1>{{ 'customer.login.title' | t }}</h1>
+  {% form 'customer_login' %}
+    {{ form.errors | default_errors }}
+    <label class="storefront-field">
+      <span>{{ 'customer.login.email' | t }}</span>
+      <input type="email" name="customer[email]" autocomplete="email" required>
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.login.password' | t }}</span>
+      <input type="password" name="customer[password]" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="storefront-btn storefront-btn--primary">{{ 'customer.login.submit' | t }}</button>
+  {% endform %}
+  <p><a href="{{ routes.account_register_url }}">{{ 'customer.login.register' | t }}</a></p>
+  <p><a href="{{ routes.account_login_url }}#recover">{{ 'customer.login.forgot' | t }}</a></p>
+</div>

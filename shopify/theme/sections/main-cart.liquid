@@ -1,0 +1,58 @@
+<div class="storefront-cart storefront-container storefront-section" data-mavile-cart>
+  <header class="storefront-cart__header">
+    <h1 class="storefront-cart__title">{{ 'sections.cart.title' | t }}</h1>
+    <p class="storefront-cart__count">{{ 'sections.cart.count' | t: count: cart.item_count }}</p>
+  </header>
+
+  {% if cart.item_count == 0 %}
+    <p class="storefront-empty">{{ 'sections.cart.empty' | t }}</p>
+    <p class="storefront-empty"><a class="storefront-btn storefront-btn--primary" href="{{ routes.all_products_collection_url }}">{{ 'sections.cart.continue' | t }}</a></p>
+  {% else %}
+    <div class="storefront-cart__layout">
+      <ul class="storefront-cart__items">
+        {% for item in cart.items %}
+          <li class="storefront-cart__item" data-line="{{ item.key }}">
+            <a class="storefront-cart__item-image" href="{{ item.url }}">
+              {% if item.image %}
+                <img src="{{ item.image | image_url: width: 240 }}" alt="{{ item.image.alt | escape }}" width="120" height="160">
+              {% endif %}
+            </a>
+            <div class="storefront-cart__item-body">
+              <a class="storefront-cart__item-name" href="{{ item.url }}">{{ item.product.title }}</a>
+              <p class="storefront-cart__item-variant">{{ item.variant.title }}</p>
+              <div class="storefront-cart__item-actions">
+                <div class="storefront-cart__qty">
+                  <button type="button" data-qty-change="-1" aria-label="{{ 'sections.cart.decrease' | t }}">−</button>
+                  <span>{{ item.quantity }}</span>
+                  <button type="button" data-qty-change="1" aria-label="{{ 'sections.cart.increase' | t }}">+</button>
+                </div>
+                <button type="button" class="storefront-cart__remove" data-qty-set="0">{{ 'sections.cart.remove' | t }}</button>
+              </div>
+            </div>
+            <p class="storefront-cart__item-price">{{ item.final_line_price | money }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+      <aside class="storefront-cart__summary">
+        <h2 class="storefront-cart__summary-title">{{ 'sections.cart.summary' | t }}</h2>
+        <dl>
+          <div class="storefront-cart__summary-row storefront-cart__summary-total">
+            <dt>{{ 'sections.cart.total' | t }}</dt>
+            <dd>{{ cart.total_price | money }}</dd>
+          </div>
+        </dl>
+        <div class="storefront-cart__summary-actions">
+          <a class="storefront-btn storefront-btn--primary" href="/checkout">{{ 'sections.cart.checkout' | t }}</a>
+        </div>
+      </aside>
+    </div>
+  {% endif %}
+</div>
+<script src="{{ 'mavile-cart.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Cart",
+  "settings": []
+}
+{% endschema %}

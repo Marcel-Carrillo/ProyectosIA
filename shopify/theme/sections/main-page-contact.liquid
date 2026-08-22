@@ -1,0 +1,29 @@
+<div class="storefront-container storefront-section">
+  <h1>{{ 'general.contact.title' | t }}</h1>
+  {% form 'contact' %}
+    {% if form.posted_successfully? %}
+      <p>{{ 'general.contact.success' | t }}</p>
+    {% endif %}
+    {{ form.errors | default_errors }}
+    <label class="storefront-field">
+      <span>{{ 'general.contact.name' | t }}</span>
+      <input type="text" name="contact[name]" required>
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'general.contact.email' | t }}</span>
+      <input type="email" name="contact[email]" required>
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'general.contact.message' | t }}</span>
+      <textarea name="contact[body]" rows="6" required></textarea>
+    </label>
+    <button type="submit" class="storefront-btn storefront-btn--primary">{{ 'general.contact.submit' | t }}</button>
+  {% endform %}
+</div>
+
+{% schema %}
+{
+  "name": "Contact",
+  "settings": []
+}
+{% endschema %}

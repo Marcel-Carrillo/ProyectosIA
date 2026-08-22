@@ -61,4 +61,7 @@ Thumbs.db
 .worktrees/
 
 # mcp servers
-.mcp.json   
+.mcp.json
+
+# Shopify CLI
+shopify/theme/.shopify/ 

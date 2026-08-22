@@ -1,0 +1,9 @@
+{% assign current = product.selected_or_first_available_variant %}
+<div class="storefront-price">
+  {% if current.compare_at_price > current.price %}
+    <span class="storefront-price__original">{{ current.compare_at_price | money }}</span>
+    <span class="storefront-price__sale">{{ current.price | money }}</span>
+  {% else %}
+    <span>{{ current.price | money }}</span>
+  {% endif %}
+</div>

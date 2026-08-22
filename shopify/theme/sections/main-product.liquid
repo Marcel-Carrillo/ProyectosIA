@@ -1,0 +1,92 @@
+{% assign current = product.selected_or_first_available_variant %}
+<div class="storefront-product-layout" data-mavile-product>
+  <nav class="storefront-breadcrumb" aria-label="{{ 'general.breadcrumb.label' | t }}">
+    <a href="{{ routes.root_url }}">{{ shop.name }}</a>
+    {% if collection %}
+      / <a href="{{ collection.url }}">{{ collection.title }}</a>
+    {% endif %}
+    / <span>{{ product.title }}</span>
+  </nav>
+
+  <div class="storefront-gallery" data-mavile-gallery>
+    <div class="storefront-gallery__main">
+      {% if product.featured_media %}
+        <img
+          data-gallery-hero
+          src="{{ product.featured_media | image_url: width: 1400 }}"
+          alt="{{ product.featured_media.alt | default: product.title | escape }}"
+          width="1400"
+          height="1867"
+          fetchpriority="high"
+        >
+      {% endif %}
+    </div>
+    {% if product.media.size > 1 %}
+      <div class="storefront-gallery__thumbs">
+        {% for media in product.media %}
+          <button
+            type="button"
+            class="storefront-gallery__thumb{% if forloop.first %} storefront-gallery__thumb--active{% endif %}"
+            data-gallery-thumb
+            data-src="{{ media | image_url: width: 1400 }}"
+            aria-current="{% if forloop.first %}true{% else %}false{% endif %}"
+          >
+            <img src="{{ media | image_url: width: 200 }}" alt="" width="200" height="267" loading="lazy">
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if product.vendor != blank %}
+      <p class="storefront-card__brand">{{ product.vendor }}</p>
+    {% endif %}
+    <h1>{{ product.title }}</h1>
+    {% render 'price', product: product %}
+
+    {% form 'product', product, data-mavile-product-form: '' %}
+      <input type="hidden" name="id" value="{{ current.id }}" data-variant-id>
+      {% unless product.has_only_default_variant %}
+        {% for option in product.options_with_values %}
+          <fieldset class="storefront-variant-group">
+            <legend class="storefront-variant-label">{{ option.name }}</legend>
+            <div class="storefront-variant-options">
+              {% for value in option.values %}
+                <button
+                  type="button"
+                  class="storefront-variant-btn{% if option.selected_value == value %} storefront-variant-btn--active{% endif %}"
+                  data-option-index="{{ forloop.parentloop.index0 }}"
+                  data-option-value="{{ value | escape }}"
+                  aria-pressed="{% if option.selected_value == value %}true{% else %}false{% endif %}"
+                >
+                  {{ value }}
+                </button>
+              {% endfor %}
+            </div>
+          </fieldset>
+        {% endfor %}
+      {% endunless %}
+      <button type="submit" class="storefront-btn storefront-btn--primary" data-add-to-cart {% unless current.available %}disabled{% endunless %}>
+        {{ 'products.product.add_to_cart' | t }}
+      </button>
+    {% endform %}
+
+    <div class="storefront-section">
+      {{ product.description }}
+    </div>
+  </div>
+
+  <script type="application/json" data-product-json>
+    {{ product | json }}
+  </script>
+</div>
+<script src="{{ 'mavile-gallery.js' | asset_url }}" defer></script>
+<script src="{{ 'mavile-variant-picker.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Product",
+  "settings": []
+}
+{% endschema %}

@@ -1,0 +1,74 @@
+<div
+  class="storefront-cookie__banner"
+  data-mavile-cookie-banner
+  hidden
+  role="dialog"
+  aria-label="{{ 'general.cookies.banner.aria' | t }}"
+>
+  <div class="storefront-cookie__banner-inner">
+    <p class="storefront-cookie__banner-message">{{ 'general.cookies.banner.message' | t }}</p>
+    <div class="storefront-cookie__banner-actions">
+      <button type="button" class="storefront-btn storefront-btn--primary" data-mavile-consent-accept>
+        {{ 'general.cookies.banner.accept' | t }}
+      </button>
+      <button type="button" class="storefront-btn" data-mavile-consent-reject>
+        {{ 'general.cookies.banner.reject' | t }}
+      </button>
+      <button type="button" class="storefront-btn storefront-btn--text" data-mavile-consent-customize>
+        {{ 'general.cookies.banner.customize' | t }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="storefront-cookie__overlay" data-mavile-cookie-overlay hidden>
+  <div
+    class="storefront-cookie__modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="mavile-cookie-title"
+    data-mavile-cookie-modal
+  >
+    <div class="storefront-cookie__modal-header">
+      <h2 class="storefront-cookie__modal-title" id="mavile-cookie-title">{{ 'general.cookies.modal.title' | t }}</h2>
+      <button type="button" class="storefront-header__icon-btn" data-mavile-consent-close aria-label="{{ 'general.cookies.modal.close' | t }}">
+        ×
+      </button>
+    </div>
+    <div class="storefront-cookie__categories">
+      <div class="storefront-cookie__category">
+        <div class="storefront-cookie__category-info">
+          <p class="storefront-cookie__category-name">{{ 'general.cookies.modal.necessary_name' | t }}</p>
+          <p class="storefront-cookie__category-desc">{{ 'general.cookies.modal.necessary_desc' | t }}</p>
+        </div>
+        <label class="storefront-cookie__toggle">
+          <input type="checkbox" checked disabled>
+          <span class="storefront-cookie__toggle-track"></span>
+        </label>
+      </div>
+      <div class="storefront-cookie__category">
+        <div class="storefront-cookie__category-info">
+          <p class="storefront-cookie__category-name">{{ 'general.cookies.modal.analytics_name' | t }}</p>
+          <p class="storefront-cookie__category-desc">{{ 'general.cookies.modal.analytics_desc' | t }}</p>
+        </div>
+        <label class="storefront-cookie__toggle">
+          <input type="checkbox" data-mavile-consent-analytics>
+          <span class="storefront-cookie__toggle-track"></span>
+        </label>
+      </div>
+      <div class="storefront-cookie__category">
+        <div class="storefront-cookie__category-info">
+          <p class="storefront-cookie__category-name">{{ 'general.cookies.modal.marketing_name' | t }}</p>
+          <p class="storefront-cookie__category-desc">{{ 'general.cookies.modal.marketing_desc' | t }}</p>
+        </div>
+        <label class="storefront-cookie__toggle">
+          <input type="checkbox" data-mavile-consent-marketing>
+          <span class="storefront-cookie__toggle-track"></span>
+        </label>
+      </div>
+    </div>
+    <button type="button" class="storefront-btn storefront-btn--primary" data-mavile-consent-save>
+      {{ 'general.cookies.modal.save' | t }}
+    </button>
+  </div>
+</div>

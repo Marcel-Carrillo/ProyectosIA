@@ -1,0 +1,31 @@
+<a href="{{ card_product.url }}" class="storefront-card">
+  <div class="storefront-card__image-wrap">
+    {% if card_product.featured_media %}
+      <img
+        class="storefront-card__image storefront-card__image--primary"
+        src="{{ card_product.featured_media | image_url: width: 800 }}"
+        alt="{{ card_product.featured_media.alt | default: card_product.title | escape }}"
+        width="800"
+        height="1067"
+        loading="lazy"
+      >
+    {% endif %}
+    {% if card_product.media[1] %}
+      <img
+        class="storefront-card__image storefront-card__image--secondary"
+        src="{{ card_product.media[1] | image_url: width: 800 }}"
+        alt=""
+        width="800"
+        height="1067"
+        loading="lazy"
+      >
+    {% endif %}
+  </div>
+  <div class="storefront-card__meta">
+    {% if card_product.vendor != blank %}
+      <p class="storefront-card__brand">{{ card_product.vendor }}</p>
+    {% endif %}
+    <h3 class="storefront-card__name">{{ card_product.title }}</h3>
+    <div class="storefront-card__price">{% render 'price', product: card_product %}</div>
+  </div>
+</a>
