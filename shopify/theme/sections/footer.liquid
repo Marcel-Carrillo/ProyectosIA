@@ -1,0 +1,51 @@
+<footer class="storefront-footer">
+  <div class="storefront-footer__grid">
+    <div>
+      <a href="{{ routes.root_url }}" class="storefront-footer__brand-link">
+        <img
+          src="{{ 'mavile-logo.svg' | asset_url }}"
+          alt="{{ shop.name }}"
+          class="storefront-footer__brand-logo"
+          width="128"
+          height="26"
+        >
+      </a>
+      <p class="storefront-footer__brand-text">{{ 'general.footer.brand' | t }}</p>
+    </div>
+    <div>
+      <h4 class="storefront-footer__col-title">{{ 'general.footer.shop' | t }}</h4>
+      {% render 'mavile-menu-links', menu: section.settings.shop_menu %}
+    </div>
+    <div>
+      <h4 class="storefront-footer__col-title">{{ 'general.footer.help' | t }}</h4>
+      {% render 'mavile-menu-links', menu: section.settings.help_menu %}
+    </div>
+    <div>
+      <h4 class="storefront-footer__col-title">{{ 'general.footer.company' | t }}</h4>
+      {% render 'mavile-menu-links', menu: section.settings.company_menu %}
+    </div>
+  </div>
+  <div class="storefront-footer__bottom">
+    <div class="storefront-footer__bottom-inner">
+      <span>&copy; {{ 'now' | date: '%Y' }} {{ shop.name }}</span>
+      <span>{{ 'general.footer.cities' | t }}</span>
+      {% for policy in shop.policies %}
+        <a href="{{ policy.url }}">{{ policy.title }}</a>
+      {% endfor %}
+      <button type="button" class="storefront-btn storefront-btn--text" data-mavile-open-cookies>
+        {{ 'general.cookies.settings' | t }}
+      </button>
+    </div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Footer",
+  "settings": [
+    { "type": "link_list", "id": "shop_menu", "label": "Shop menu" },
+    { "type": "link_list", "id": "help_menu", "label": "Help menu" },
+    { "type": "link_list", "id": "company_menu", "label": "Company menu" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,21 @@
+<div class="storefront-container storefront-section">
+  <h1>{{ 'general.collections.title' | t }}</h1>
+  <div class="storefront-grid">
+    {% for collection in collections %}
+      {% unless collection.handle == 'frontpage' %}
+        <a href="{{ collection.url }}" class="storefront-card">
+          <div class="storefront-card__meta">
+            <h3 class="storefront-card__name">{{ collection.title }}</h3>
+          </div>
+        </a>
+      {% endunless %}
+    {% endfor %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "List collections",
+  "settings": []
+}
+{% endschema %}

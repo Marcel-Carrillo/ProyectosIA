@@ -71,6 +71,8 @@ The system must be designed with flexibility around:
 * Payment status
 * Fulfillment status
 
+**Storefront surfaces:** the live customer site is still the React app in `frontend/` with the Express API in `backend/`. A Shopify Online Store 2.0 theme lives at `shopify/theme` (operator-approved stack addition). Theme quality is gated by Theme Check, not the React ESLint path. See `docs/shopify-theme-standards.md`.
+
 ## 4. Business Rules
 
 * A customer order and a supplier order are different concepts.

@@ -40,8 +40,12 @@ Main domain concepts:
 │   ├── documentation-standards.md
 │   ├── api-spec.yml             # OpenAPI specification
 │   ├── data-model.md            # Database and domain models
-│   └── development_guide.md     # Local setup and testing guide
+│   ├── development_guide.md     # Local setup and testing guide
+│   ├── shopify-theme-standards.md
+│   └── shopify-migration-launch-gap.md
 │
+├── shopify/                     # Mavile Online Store 2.0 Liquid theme
+│   └── theme/
 ├── ai-specs/
 │   ├── agents/                  # Agent role definitions
 │   │   ├── backend-developer.md

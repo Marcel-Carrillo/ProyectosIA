@@ -1,0 +1,33 @@
+<div class="storefront-container storefront-section">
+  <h1>{{ 'general.search.title' | t }}</h1>
+  <form action="{{ routes.search_url }}" method="get">
+    <label class="storefront-field">
+      <span class="visually-hidden">{{ 'general.search.title' | t }}</span>
+      <input type="search" name="q" value="{{ search.terms | escape }}" placeholder="{{ 'general.search.placeholder' | t }}">
+    </label>
+  </form>
+
+  {% paginate search.results by 12 %}
+    {% if search.performed %}
+      {% if search.results.size == 0 %}
+        <p class="storefront-empty">{{ 'general.search.empty' | t }}</p>
+      {% else %}
+        <div class="storefront-grid">
+          {% for item in search.results %}
+            {% if item.object_type == 'product' %}
+              {% render 'card-product', card_product: item %}
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% render 'pagination', paginate: paginate %}
+      {% endif %}
+    {% endif %}
+  {% endpaginate %}
+</div>
+
+{% schema %}
+{
+  "name": "Search",
+  "settings": []
+}
+{% endschema %}

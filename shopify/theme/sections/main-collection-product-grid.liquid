@@ -1,0 +1,35 @@
+<div class="storefront-container storefront-section">
+  <header class="storefront-toolbar">
+    <h1>{{ collection.title }}</h1>
+    <form>
+      <label class="visually-hidden" for="SortBy">{{ 'products.collection.sort' | t }}</label>
+      <select name="sort_by" id="SortBy" class="storefront-sort" onchange="this.form.submit()">
+        {% for option in collection.sort_options %}
+          <option value="{{ option.value }}" {% if option.value == collection.sort_by %}selected{% endif %}>
+            {{ option.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+  </header>
+
+  {% paginate collection.products by 12 %}
+    {% if collection.products.size == 0 %}
+      <p class="storefront-empty">{{ 'products.collection.empty' | t }}</p>
+    {% else %}
+      <div class="storefront-grid">
+        {% for product in collection.products %}
+          {% render 'card-product', card_product: product %}
+        {% endfor %}
+      </div>
+      {% render 'pagination', paginate: paginate %}
+    {% endif %}
+  {% endpaginate %}
+</div>
+
+{% schema %}
+{
+  "name": "Collection products",
+  "settings": []
+}
+{% endschema %}

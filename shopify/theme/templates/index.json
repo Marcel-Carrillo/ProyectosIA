@@ -1,0 +1,28 @@
+{
+  "sections": {
+    "hero": {
+      "type": "mavile-hero",
+      "blocks": {
+        "slide1": {
+          "type": "slide",
+          "settings": {
+            "eyebrow": "Mavile",
+            "title": "Timeless wardrobe",
+            "subtitle": "Editorial fashion in warm neutrals.",
+            "motion": "zoom-in"
+          }
+        }
+      },
+      "block_order": ["slide1"],
+      "settings": {
+        "rotate_ms": 7000,
+        "enable_grain": true
+      }
+    },
+    "featured": {
+      "type": "featured-collection",
+      "settings": {}
+    }
+  },
+  "order": ["hero", "featured"]
+}

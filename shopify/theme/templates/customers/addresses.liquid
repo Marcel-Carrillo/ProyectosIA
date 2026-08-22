@@ -1,0 +1,30 @@
+<div class="storefront-account">
+  <h1>{{ 'customer.addresses.title' | t }}</h1>
+  {% for address in customer.addresses %}
+    <p>{{ address | format_address }}</p>
+  {% endfor %}
+  {% form 'customer_address', customer.new_address %}
+    {{ form.errors | default_errors }}
+    <label class="storefront-field">
+      <span>{{ 'customer.addresses.first_name' | t }}</span>
+      <input type="text" name="address[first_name]">
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.addresses.last_name' | t }}</span>
+      <input type="text" name="address[last_name]">
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.addresses.address1' | t }}</span>
+      <input type="text" name="address[address1]">
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.addresses.city' | t }}</span>
+      <input type="text" name="address[city]">
+    </label>
+    <label class="storefront-field">
+      <span>{{ 'customer.addresses.zip' | t }}</span>
+      <input type="text" name="address[zip]">
+    </label>
+    <button type="submit" class="storefront-btn storefront-btn--primary">{{ 'customer.addresses.add' | t }}</button>
+  {% endform %}
+</div>

@@ -1,0 +1,18 @@
+<div class="storefront-account">
+  <h1>{{ 'customer.account.title' | t }}</h1>
+  <p>{{ customer.name }} · {{ customer.email }}</p>
+  <h2>{{ 'customer.account.orders' | t }}</h2>
+  {% if customer.orders.size == 0 %}
+    <p>{{ 'customer.account.no_orders' | t }}</p>
+  {% else %}
+    <ul class="storefront-footer__links">
+      {% for order in customer.orders %}
+        <li>
+          <a href="{{ order.customer_url }}">{{ order.name }} — {{ order.created_at | date: '%Y-%m-%d' }} — {{ order.total_price | money }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  <p><a href="{{ routes.account_addresses_url }}">{{ 'customer.account.addresses' | t }}</a></p>
+  <p><a href="{{ routes.account_logout_url }}">{{ 'customer.account.logout' | t }}</a></p>
+</div>

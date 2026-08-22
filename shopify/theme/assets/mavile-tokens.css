@@ -1,0 +1,49 @@
+:root {
+  /* Warm neutral palette (Lovable-inspired) */
+  --color-white: #ffffff;
+  --color-background: #faf9f7;
+  --color-off-white: #f5f4f1;
+  --color-surface: #f5f4f1;
+  --color-light: #e8e6e2;
+  --color-mid: #6b6a66;
+  --color-near-black: #1a1a18;
+  --color-black: #000000;
+  --color-error: #c0392b;
+  --color-error-bg: #fdf2f1;
+
+  /* Typography */
+  --font-family-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.6875rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 2.5rem;
+  --font-size-5xl: 3rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+
+  --transition-hover: 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-image: 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}

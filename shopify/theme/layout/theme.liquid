@@ -1,0 +1,58 @@
+<!doctype html>
+<html class="no-js" lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      {%- if page_title -%}
+        {{ page_title }}
+        {%- unless page_title contains shop.name %} · {{ shop.name }}{% endunless -%}
+      {%- else -%}
+        {{ shop.name }}
+      {%- endif -%}
+    </title>
+    {% if page_description %}
+      <meta name="description" content="{{ page_description | escape }}">
+    {% endif %}
+    <link rel="canonical" href="{{ canonical_url }}">
+    {% if settings.favicon %}
+      <link rel="icon" href="{{ settings.favicon | image_url: width: 32 }}" sizes="32x32">
+    {% else %}
+      <link rel="icon" href="{{ 'mavile-icon.svg' | asset_url }}" type="image/svg+xml">
+    {% endif %}
+
+    {{ 'inter-latin-400.woff2' | asset_url | preload_tag: as: 'font', type: 'font/woff2', crossorigin: 'anonymous' }}
+    {{ 'inter-latin-500.woff2' | asset_url | preload_tag: as: 'font', type: 'font/woff2', crossorigin: 'anonymous' }}
+    {{ 'inter-latin-600.woff2' | asset_url | preload_tag: as: 'font', type: 'font/woff2', crossorigin: 'anonymous' }}
+
+    {{ 'mavile-tokens.css' | asset_url | stylesheet_tag }}
+    {{ 'mavile-base.css' | asset_url | stylesheet_tag }}
+    {{ 'mavile-storefront.css' | asset_url | stylesheet_tag }}
+    {{ 'mavile-shopify.css' | asset_url | stylesheet_tag }}
+
+    {% style %}
+      :root {
+        --color-background: {{ settings.color_background }};
+        --color-surface: {{ settings.color_surface }};
+        --color-off-white: {{ settings.color_surface }};
+        --color-light: {{ settings.color_border }};
+        --color-mid: {{ settings.color_text_muted }};
+        --color-near-black: {{ settings.color_text }};
+      }
+    {% endstyle %}
+
+    {{ content_for_header }}
+    {% render 'structured-data' %}
+  </head>
+  <body class="storefront-root">
+    <a class="visually-hidden" href="#MainContent">{{ 'general.accessibility.skip_to_content' | t }}</a>
+    {% sections 'header-group' %}
+    <main id="MainContent" role="main" tabindex="-1" style="flex: 1; min-width: 0; width: 100%;">
+      {{ content_for_layout }}
+    </main>
+    {% sections 'footer-group' %}
+    {% render 'mavile-cookie-banner' %}
+    <script src="{{ 'mavile-header.js' | asset_url }}" defer></script>
+    <script src="{{ 'mavile-consent.js' | asset_url }}" defer></script>
+  </body>
+</html>

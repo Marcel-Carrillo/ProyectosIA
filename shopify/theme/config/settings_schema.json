@@ -1,0 +1,26 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Mavile",
+    "theme_version": "1.0.0",
+    "theme_author": "Mavile",
+    "theme_documentation_url": "https://github.com/Marcel-Carrillo/ProyectosIA",
+    "theme_support_url": "https://github.com/Marcel-Carrillo/ProyectosIA"
+  },
+  {
+    "name": "Colors",
+    "settings": [
+      { "type": "color", "id": "color_background", "label": "Background", "default": "#faf9f7" },
+      { "type": "color", "id": "color_surface", "label": "Surface", "default": "#f5f4f1" },
+      { "type": "color", "id": "color_text", "label": "Text", "default": "#1a1a18" },
+      { "type": "color", "id": "color_text_muted", "label": "Muted text", "default": "#6b6a66" },
+      { "type": "color", "id": "color_border", "label": "Border", "default": "#e8e6e2" }
+    ]
+  },
+  {
+    "name": "Brand",
+    "settings": [
+      { "type": "image_picker", "id": "favicon", "label": "Favicon" }
+    ]
+  }
+]

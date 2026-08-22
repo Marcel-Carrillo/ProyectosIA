@@ -1,0 +1,96 @@
+<section class="storefront-hero storefront-hero--dynamic" data-mavile-hero data-rotate-ms="{{ section.settings.rotate_ms }}">
+  <div class="storefront-hero__bg">
+    {% for block in section.blocks %}
+      <div
+        class="storefront-hero__bg-slide storefront-hero__bg-slide--{{ block.settings.motion }}{% if forloop.first %} storefront-hero__bg-slide--active{% endif %}"
+        {{ block.shopify_attributes }}
+      >
+        {% if block.settings.image != blank %}
+          <img
+            src="{{ block.settings.image | image_url: width: 2000 }}"
+            alt="{{ block.settings.image.alt | escape }}"
+            width="2000"
+            height="1200"
+            {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+          >
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="storefront-hero__scrim"></div>
+    {% if section.settings.enable_grain %}
+      <div class="storefront-hero__grain"></div>
+    {% endif %}
+  </div>
+  <div class="storefront-hero__inner">
+    {% for block in section.blocks %}
+      <div class="storefront-hero__copy{% if forloop.first %} storefront-hero__copy--visible{% endif %}" data-hero-copy>
+        {% if block.settings.eyebrow != blank %}
+          <p class="storefront-hero__eyebrow">{{ block.settings.eyebrow }}</p>
+        {% endif %}
+        {% if block.settings.title != blank %}
+          <h1 class="storefront-hero__title">{{ block.settings.title }}</h1>
+        {% endif %}
+        {% if block.settings.subtitle != blank %}
+          <p class="storefront-hero__subtitle">{{ block.settings.subtitle }}</p>
+        {% endif %}
+        {% if block.settings.cta_label != blank %}
+          <a class="storefront-btn storefront-btn--primary" href="{{ block.settings.cta_url }}">{{ block.settings.cta_label }}</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+    {% if section.blocks.size > 1 %}
+      <div class="storefront-hero__dots" role="tablist">
+        {% for block in section.blocks %}
+          <button
+            type="button"
+            class="storefront-hero__dot{% if forloop.first %} storefront-hero__dot--active{% endif %}"
+            data-hero-dot
+            aria-label="{{ 'general.hero.slide' | t: number: forloop.index }}"
+          >
+            <span class="storefront-hero__dot-progress"></span>
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+<script src="{{ 'mavile-hero.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Mavile hero",
+  "tag": "section",
+  "settings": [
+    { "type": "range", "id": "rotate_ms", "min": 4000, "max": 12000, "step": 1000, "unit": "ms", "label": "Rotation", "default": 7000 },
+    { "type": "checkbox", "id": "enable_grain", "label": "Grain overlay", "default": true }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Image" },
+        { "type": "text", "id": "eyebrow", "label": "Eyebrow" },
+        { "type": "text", "id": "title", "label": "Title" },
+        { "type": "textarea", "id": "subtitle", "label": "Subtitle" },
+        { "type": "text", "id": "cta_label", "label": "CTA label" },
+        { "type": "url", "id": "cta_url", "label": "CTA URL" },
+        {
+          "type": "select",
+          "id": "motion",
+          "label": "Motion",
+          "options": [
+            { "value": "zoom-in", "label": "Zoom in" },
+            { "value": "zoom-out", "label": "Zoom out" },
+            { "value": "pan-right", "label": "Pan right" },
+            { "value": "pan-left", "label": "Pan left" },
+            { "value": "drift-up", "label": "Drift up" }
+          ],
+          "default": "zoom-in"
+        }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Mavile hero", "blocks": [{ "type": "slide" }] }]
+}
+{% endschema %}

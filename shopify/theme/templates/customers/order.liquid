@@ -1,0 +1,11 @@
+<div class="storefront-account">
+  <h1>{{ order.name }}</h1>
+  <p>{{ order.financial_status_label }} · {{ order.fulfillment_status_label }}</p>
+  <ul>
+    {% for line_item in order.line_items %}
+      <li>{{ line_item.title }} × {{ line_item.quantity }} — {{ line_item.final_line_price | money }}</li>
+    {% endfor %}
+  </ul>
+  <p>{{ 'customer.order.total' | t }}: {{ order.total_price | money }}</p>
+  <p><a href="{{ routes.account_url }}">{{ 'customer.account.title' | t }}</a></p>
+</div>

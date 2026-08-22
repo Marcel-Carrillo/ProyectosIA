@@ -1,0 +1,21 @@
+<div class="storefront-container storefront-section">
+  {% assign featured = section.settings.collection %}
+  {% if featured != blank %}
+    <h2>{{ featured.title }}</h2>
+    <div class="storefront-grid">
+      {% for product in featured.products limit: 12 %}
+        {% render 'card-product', card_product: product %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+{% schema %}
+{
+  "name": "Featured collection",
+  "settings": [
+    { "type": "collection", "id": "collection", "label": "Collection" }
+  ],
+  "presets": [{ "name": "Featured collection" }]
+}
+{% endschema %}

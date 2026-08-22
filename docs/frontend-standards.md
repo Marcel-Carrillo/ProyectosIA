@@ -68,6 +68,8 @@ The frontend supports an online store for women's fashion and accessories. The i
 * Suppliers may ship products directly to customers.
 * The frontend must support future evolution to internal stock, hybrid fulfillment, multiple suppliers, and supplier automation.
 
+**Surfaces:** `frontend/` is the live React storefront until Shopify cutover. `shopify/theme` is the Online Store 2.0 Liquid port of the Mavile look. See `docs/shopify-theme-standards.md` and `docs/shopify-migration-launch-gap.md`. Do not mix Shopify Liquid conventions into `frontend/src`.
+
 ## Technology Stack
 
 ### Core Technologies

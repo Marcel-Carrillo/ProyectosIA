@@ -1,0 +1,127 @@
+{
+  "general": {
+    "accessibility": { "skip_to_content": "Saltar al contenido" },
+    "header": {
+      "home": "Inicio de Mavile",
+      "account": "Mi cuenta",
+      "cart": "Carrito, {{ count }} artículos",
+      "open_menu": "Abrir menú",
+      "close_menu": "Cerrar menú"
+    },
+    "nav": { "label": "Navegación por categorías" },
+    "language": { "label": "Idioma" },
+    "breadcrumb": { "label": "Migas de pan" },
+    "footer": {
+      "brand": "Piezas atemporales fabricadas en Europa con materiales nobles.",
+      "cities": "Madrid · Lisboa · París",
+      "shop": "Tienda",
+      "help": "Ayuda",
+      "company": "Empresa"
+    },
+    "pagination": { "label": "Paginación" },
+    "hero": { "slide": "Diapositiva {{ number }}" },
+    "password": {
+      "title": "Próximamente",
+      "message": "Esta tienda Shopify de Mavile aún no es pública.",
+      "label": "Contraseña",
+      "submit": "Entrar"
+    },
+    "search": {
+      "title": "Buscar",
+      "placeholder": "Buscar",
+      "empty": "No hay resultados."
+    },
+    "404": { "message": "Página no encontrada.", "home": "Volver al inicio" },
+    "collections": { "title": "Colecciones" },
+    "contact": {
+      "title": "Contacto",
+      "name": "Nombre",
+      "email": "Email",
+      "message": "Mensaje",
+      "submit": "Enviar",
+      "success": "Mensaje enviado."
+    },
+    "cookies": {
+      "settings": "Ajustes de cookies",
+      "banner": {
+        "aria": "Aviso de cookies",
+        "message": "Utilizamos cookies propias y de terceros para mejorar tu experiencia y mostrarte contenido relevante. Puedes aceptar todas, rechazar las no esenciales o personalizar tus preferencias.",
+        "accept": "Aceptar todo",
+        "reject": "Rechazar todo",
+        "customize": "Personalizar"
+      },
+      "modal": {
+        "title": "Preferencias de cookies",
+        "close": "Cerrar",
+        "necessary_name": "Necesarias",
+        "necessary_desc": "Imprescindibles para el funcionamiento del sitio. No se pueden desactivar.",
+        "analytics_name": "Analíticas",
+        "analytics_desc": "Nos ayudan a entender cómo se usa el sitio.",
+        "marketing_name": "Marketing",
+        "marketing_desc": "Permiten publicidad personalizada.",
+        "save": "Guardar preferencias"
+      }
+    }
+  },
+  "products": {
+    "collection": { "sort": "Ordenar", "empty": "No hay productos en esta colección." },
+    "product": { "add_to_cart": "Añadir al carrito" }
+  },
+  "sections": {
+    "cart": {
+      "title": "Carrito",
+      "count": "{{ count }} artículos",
+      "empty": "Tu carrito está vacío.",
+      "continue": "Seguir comprando",
+      "summary": "Resumen",
+      "total": "Total",
+      "checkout": "Pagar",
+      "remove": "Eliminar",
+      "increase": "Aumentar cantidad",
+      "decrease": "Reducir cantidad"
+    }
+  },
+  "customer": {
+    "login": {
+      "title": "Iniciar sesión",
+      "email": "Email",
+      "password": "Contraseña",
+      "submit": "Entrar",
+      "register": "Crear cuenta",
+      "forgot": "Olvidé mi contraseña"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "first_name": "Nombre",
+      "last_name": "Apellidos",
+      "email": "Email",
+      "password": "Contraseña",
+      "submit": "Registrarse"
+    },
+    "account": {
+      "title": "Mi cuenta",
+      "orders": "Pedidos",
+      "no_orders": "Aún no tienes pedidos.",
+      "addresses": "Direcciones",
+      "logout": "Cerrar sesión"
+    },
+    "order": { "total": "Total" },
+    "addresses": {
+      "title": "Direcciones",
+      "first_name": "Nombre",
+      "last_name": "Apellidos",
+      "address1": "Dirección",
+      "city": "Ciudad",
+      "zip": "Código postal",
+      "add": "Añadir dirección"
+    },
+    "reset": {
+      "title": "Restablecer contraseña",
+      "password": "Nueva contraseña",
+      "password_confirm": "Confirmar contraseña",
+      "submit": "Guardar"
+    },
+    "activate": { "title": "Activar cuenta", "submit": "Activar" }
+  },
+  "gift_cards": { "issued": { "title": "Tarjeta regalo" } }
+}
