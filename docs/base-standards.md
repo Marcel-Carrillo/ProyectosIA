@@ -375,3 +375,21 @@ Agents must not change the following without explicit user approval:
 * OpenSpec workflow rules
 
 When in doubt, ask before changing.
+
+## 18. Cursor Cloud specific instructions
+
+Cloud Agents use host PostgreSQL 16 and Mailpit. Docker is not required for day-to-day work.
+
+The environment boot script:
+
+* Starts PostgreSQL and Mailpit (SMTP `127.0.0.1:1025`, inbox UI at `http://localhost:8025`).
+* Creates `backend/.env` from `backend/.env.example` when the file is missing.
+* Creates `frontend/.env.development` with `VITE_API_BASE_URL=http://localhost:3000` and `VITE_SITE_URL=http://localhost:3001` when that file is missing.
+* Applies Prisma migrations, then runs `prisma db seed`, `prisma/seedAdmin.ts`, and `prisma/seedCoupons.ts`.
+* Serves the API at `http://localhost:3000` and the Vite storefront at `http://localhost:3001`.
+
+Seeded admin login from `.env.example`: `admin@example.com` / `AdminPass1`. Database role: `ecommerceUser` / `ecommercePassword`, database `ecommerceDb`.
+
+Frontend dependencies install with `npm ci --legacy-peer-deps`, matching CI, because `react-beautiful-dnd` does not declare React 19.
+
+`backend/jest.setup.js` loads `backend/.env` when it exists so `npm test` can reach PostgreSQL. CI variables already set in the environment are not overwritten.
